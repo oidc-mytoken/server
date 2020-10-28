@@ -1,25 +1,19 @@
 package main
 
-import (
-	"fmt"
-
-	"github.com/zachmann/mytoken/internal/db"
-	"github.com/zachmann/mytoken/internal/jws"
-	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
-	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
-	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
-)
+import "github.com/zachmann/mytoken/internal/server"
 
 func main() {
-	err := db.Connect()
-	if err != nil {
-		panic(err)
-	}
-	jws.Init()
+	server.Start()
 
-	st := supertoken.NewSuperToken("ggggggggggggggggggggggg", "https://oidc.issuer.data.kit.edu/long/url/i/test/how/long/the/token/will/get", restrictions.Restrictions{{UsagesAT: 1, Audiences: []string{"https://some.service.data.kit.edu/"}, Scope: "compute store read write"}}, capabilities.Capabilities{"AT"})
-	jwt, _ := st.ToJWT()
-	fmt.Printf("%s\n", jwt)
+	//err := db.Connect()
+	//if err != nil {
+	//	panic(err)
+	//}
+	//jws.Init()
+	//
+	//st := supertoken.NewSuperToken("ggggggggggggggggggggggg", "https://oidc.issuer.data.kit.edu/long/url/i/test/how/long/the/token/will/get", restrictions.Restrictions{{UsagesAT: 1, Audiences: []string{"https://some.service.data.kit.edu/"}, Scope: "compute store read write"}}, capabilities.Capabilities{"AT"})
+	//jwt, _ := st.ToJWT()
+	//fmt.Printf("%s\n", jwt)
 
 	// st, err := supertoken.NewSuperTokenEntry("testToken", "gabriel", "wlcg", restrictions.Restrictions{
 	// 	{
