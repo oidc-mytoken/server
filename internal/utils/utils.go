@@ -67,3 +67,27 @@ func ipIsIn(ip string, ips []string) bool {
 	}
 	return false
 }
+
+// CombineURLPath combines multiple parts of a url
+func CombineURLPath(p string, ps ...string) (r string) {
+	r = p
+	for _, pp := range ps {
+		if pp == "" {
+			continue
+		}
+		if r == "" {
+			r = pp
+			continue
+		}
+		rAppend := r
+		ppAppend := pp
+		if strings.HasSuffix(r, "/") {
+			rAppend = r[:len(r)-1]
+		}
+		if strings.HasPrefix(pp, "/") {
+			ppAppend = pp[1:]
+		}
+		r = fmt.Sprintf("%s%c%s", rAppend, '/', ppAppend)
+	}
+	return
+}

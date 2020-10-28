@@ -12,6 +12,9 @@ type Event struct {
 }
 
 func (e *Event) String() string {
+	if e.Type < 0 || e.Type >= len(allEvents) {
+		return ""
+	}
 	return allEvents[e.Type]
 }
 

@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/zachmann/mytoken/internal/endpoints/configuration"
 	"log"
 	"time"
 )
@@ -22,8 +23,9 @@ func init() {
 
 func addRoutes(s fiber.Router) {
 	s.Get("/", handleTest)
-	s.Get("/hello", handleTest)
 	s.Get("/test", handleTest)
+	s.Get("/.well-known/mytoken-configuration", configuration.HandleConfiguration)
+	//addAPIRoutes(s)
 }
 
 func start(s *fiber.App) {

@@ -2,3 +2,5 @@
 /.idea/
 /setup
 tags
+client.config
+config/config.yaml

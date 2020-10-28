@@ -1,0 +1,27 @@
+issuer: "https://mytoken.example.com"
+server:
+  hostname: "mytoken.example.com"
+signing_key_file: "/mytoken.key"
+database:
+  host: "localhost"
+  user: "mytoken"
+  password: "password"
+  db: "mytoken"
+providers:
+  - issuer: "https://example.provider.com/"
+    client_id: "clientid"
+    client_secret: "clientsecret"
+    scopes:
+      - openid
+      - profile
+enabled_oidc_flows:
+  - "authorization_code" # MUST be enabled
+  - "device"
+enabled_super_token_endpoint_grant_types:
+  - "super_token" # MUST be enabled
+  - "oidc_flow" # MUST be enabled
+  - "polling_code"
+  - "access_token"
+  - "private_key_jwt"
+token_signing_alg: "RS512"
+service_documentation: "https://github.com/zachmann/mytoken"

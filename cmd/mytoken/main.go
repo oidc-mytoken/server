@@ -1,8 +1,14 @@
 package main
 
-import "github.com/zachmann/mytoken/internal/server"
+import (
+	"github.com/zachmann/mytoken/internal/config"
+	"github.com/zachmann/mytoken/internal/endpoints/configuration"
+	"github.com/zachmann/mytoken/internal/server"
+)
 
 func main() {
+	config.Load()
+	configuration.Init()
 	server.Start()
 
 	//err := db.Connect()
