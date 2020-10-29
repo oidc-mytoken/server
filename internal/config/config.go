@@ -13,15 +13,15 @@ import (
 
 // Config holds the server configuration
 type Config struct {
-	DB dbConf `yaml:"database"`
-	Server serverConf `yaml:"server"`
-	Providers []providerConf `yaml:"providers"`
-	IssuerURL      string `yaml:"issuer"`
-	SigningKeyFile string `yaml:"signing_key_file"`
-	EnabledOIDCFlows []model.OIDCFlow `yaml:"enabled_oidc_flows"`
+	DB                                  dbConf            `yaml:"database"`
+	Server                              serverConf        `yaml:"server"`
+	Providers                           []providerConf    `yaml:"providers"`
+	IssuerURL                           string            `yaml:"issuer"`
+	SigningKeyFile                      string            `yaml:"signing_key_file"`
+	EnabledOIDCFlows                    []model.OIDCFlow  `yaml:"enabled_oidc_flows"`
 	EnabledSuperTokenEndpointGrantTypes []model.GrantType `yaml:"enabled_super_token_endpoint_grant_types"`
-	TokenSigningAlg string `yaml:"token_signing_alg"`
-	ServiceDocumentation string `yaml:"service_documentation"`
+	TokenSigningAlg                     string            `yaml:"token_signing_alg"`
+	ServiceDocumentation                string            `yaml:"service_documentation"`
 }
 
 type dbConf struct {
@@ -36,10 +36,10 @@ type serverConf struct {
 }
 
 type providerConf struct {
-	Issuer string `yaml:"issuer"`
-	ClientID string `yaml:"client_id"`
-	ClientSecret string `yaml:"client_secret"`
-	Scopes []string `yaml:"scopes"`
+	Issuer       string   `yaml:"issuer"`
+	ClientID     string   `yaml:"client_id"`
+	ClientSecret string   `yaml:"client_secret"`
+	Scopes       []string `yaml:"scopes"`
 }
 
 var conf *Config
@@ -50,13 +50,13 @@ func Get() *Config {
 }
 
 func validate() error {
-	if conf==nil {
+	if conf == nil {
 		return fmt.Errorf("config not set")
 	}
 	if conf.Server.Hostname == "" {
 		return fmt.Errorf("invalid config: server.hostname not set")
 	}
-	if len(conf.Providers) <=0{
+	if len(conf.Providers) <= 0 {
 		return fmt.Errorf("invalid config: providers must have at least one entry")
 	}
 	for i, p := range conf.Providers {
@@ -69,7 +69,7 @@ func validate() error {
 		if p.ClientSecret == "" {
 			return fmt.Errorf("invalid config: provider.clientsecret not set (Index %d)", i)
 		}
-		if len(p.Scopes)<=0  {
+		if len(p.Scopes) <= 0 {
 			return fmt.Errorf("invalid config: provider.scopes not set (Index %d)", i)
 		}
 	}
@@ -87,7 +87,6 @@ func validate() error {
 	model.GrantTypeSuperToken.AddToSliceIfNotFound(conf.EnabledSuperTokenEndpointGrantTypes)
 	return nil
 }
-
 
 var possibleConfigLocations = []string{
 	"config",
@@ -115,14 +114,14 @@ func readConfigFile(filename string) []byte {
 
 // Load reads the config file and populates the config struct; then validates the config
 func Load() {
-		data := readConfigFile("config.yaml")
-		conf = &Config{}
-		err := yaml.Unmarshal(data, conf)
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
-		if err := validate(); err != nil {
-			log.Fatal(err)
-		}
+	data := readConfigFile("config.yaml")
+	conf = &Config{}
+	err := yaml.Unmarshal(data, conf)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	if err := validate(); err != nil {
+		log.Fatal(err)
+	}
 }

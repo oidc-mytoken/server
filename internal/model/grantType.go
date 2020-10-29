@@ -8,7 +8,7 @@ import (
 
 type GrantType int
 
-var grantTypes = [...]string {"super_token", "oidc_flow", "polling_code", "access_token", "private_key_jwt"}
+var grantTypes = [...]string{"super_token", "oidc_flow", "polling_code", "access_token", "private_key_jwt"}
 
 // GrantTypes
 const (
@@ -29,7 +29,7 @@ func NewGrantType(s string) GrantType {
 	return -1
 }
 
-func (g *GrantType)String()string {
+func (g *GrantType) String() string {
 	if *g < 0 || int(*g) >= len(grantTypes) {
 		return ""
 	}
@@ -56,7 +56,7 @@ func (g *GrantType) UnmarshalYAML(value *yaml.Node) error {
 
 func (g *GrantType) UnmarshalJSON(data []byte) error {
 	var s string
-	if err := json.Unmarshal(data, &s); err !=nil {
+	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
 	*g = NewGrantType(s)
@@ -71,11 +71,11 @@ func (g *GrantType) MarshalJSON() ([]byte, error) {
 }
 
 // AddToSliceIfNotFound adds the GrantType to a slice s if it is not already there
-func (g GrantType)AddToSliceIfNotFound( s []GrantType) {
+func (g GrantType) AddToSliceIfNotFound(s []GrantType) {
 	for _, ss := range s {
-		if ss==g {
+		if ss == g {
 			return
 		}
 	}
-	s = append(s,g)
+	s = append(s, g)
 }

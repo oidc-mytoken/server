@@ -11,9 +11,9 @@ var server *fiber.App
 
 func init() {
 	server = fiber.New(fiber.Config{
-		ReadTimeout: 30*time.Second,
-		WriteTimeout:90*time.Second,
-		IdleTimeout: 150*time.Second,
+		ReadTimeout:    30 * time.Second,
+		WriteTimeout:   90 * time.Second,
+		IdleTimeout:    150 * time.Second,
 		ReadBufferSize: 8192,
 		//WriteBufferSize: 4096,
 	})

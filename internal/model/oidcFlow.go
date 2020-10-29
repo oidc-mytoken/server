@@ -8,7 +8,7 @@ import (
 
 type OIDCFlow int
 
-var oidcFlows = [...]string {"authorization_code", "device"}
+var oidcFlows = [...]string{"authorization_code", "device"}
 
 // OIDCFlows
 const (
@@ -26,7 +26,7 @@ func NewOIDCFlow(s string) OIDCFlow {
 	return -1
 }
 
-func (f *OIDCFlow)String()string {
+func (f *OIDCFlow) String() string {
 	if *f < 0 || int(*f) >= len(oidcFlows) {
 		return ""
 	}
@@ -51,10 +51,9 @@ func (f *OIDCFlow) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-
 func (f *OIDCFlow) UnmarshalJSON(data []byte) error {
 	var s string
-	if err := json.Unmarshal(data, &s); err !=nil {
+	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
 	*f = NewOIDCFlow(s)
@@ -69,11 +68,11 @@ func (f *OIDCFlow) MarshalJSON() ([]byte, error) {
 }
 
 // AddToSliceIfNotFound adds the OIDCFlow to a slice s if it is not already there
-func (f OIDCFlow)AddToSliceIfNotFound( s []OIDCFlow) {
+func (f OIDCFlow) AddToSliceIfNotFound(s []OIDCFlow) {
 	for _, ss := range s {
-		if ss==f {
+		if ss == f {
 			return
 		}
 	}
-	s = append(s,f)
+	s = append(s, f)
 }

@@ -33,8 +33,8 @@ func addLimiterMiddleware(s fiber.Router) {
 		Next: func(c *fiber.Ctx) bool {
 			return c.IP() == "127.0.0.1"
 		},
-		Max:          100,
-		Expiration:     5*time.Minute,
+		Max:        100,
+		Expiration: 5 * time.Minute,
 	}))
 }
 
