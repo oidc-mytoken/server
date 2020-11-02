@@ -1,27 +1,34 @@
 package config
 
 import (
+	"context"
 	"fmt"
-	"github.com/zachmann/mytoken/internal/model"
-	"github.com/zachmann/mytoken/internal/utils/fileutil"
-	"gopkg.in/yaml.v3"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
+
+	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/zachmann/mytoken/internal/model"
+	"github.com/zachmann/mytoken/internal/utils/fileutil"
+	"gopkg.in/yaml.v3"
 )
 
 // Config holds the server configuration
 type Config struct {
-	DB                                  dbConf            `yaml:"database"`
-	Server                              serverConf        `yaml:"server"`
-	Providers                           []providerConf    `yaml:"providers"`
-	IssuerURL                           string            `yaml:"issuer"`
-	SigningKeyFile                      string            `yaml:"signing_key_file"`
-	EnabledOIDCFlows                    []model.OIDCFlow  `yaml:"enabled_oidc_flows"`
-	EnabledSuperTokenEndpointGrantTypes []model.GrantType `yaml:"enabled_super_token_endpoint_grant_types"`
-	TokenSigningAlg                     string            `yaml:"token_signing_alg"`
-	ServiceDocumentation                string            `yaml:"service_documentation"`
+	DB                                  dbConf                   `yaml:"database"`
+	Server                              serverConf               `yaml:"server"`
+	Providers                           []*ProviderConf          `yaml:"providers"`
+	ProviderByIssuer                    map[string]*ProviderConf `yaml:"-"`
+	IssuerURL                           string                   `yaml:"issuer"`
+	SigningKeyFile                      string                   `yaml:"signing_key_file"`
+	EnabledOIDCFlows                    []model.OIDCFlow         `yaml:"enabled_oidc_flows"`
+	EnabledSuperTokenEndpointGrantTypes []model.GrantType        `yaml:"enabled_super_token_endpoint_grant_types"`
+	TokenSigningAlg                     string                   `yaml:"token_signing_alg"`
+	ServiceDocumentation                string                   `yaml:"service_documentation"`
+	PollingCodeExpiresAfter             int64                    `yaml:"polling_code_expires_after"`
 }
 
 type dbConf struct {
@@ -35,11 +42,13 @@ type serverConf struct {
 	Hostname string `yaml:"hostname"`
 }
 
-type providerConf struct {
-	Issuer       string   `yaml:"issuer"`
-	ClientID     string   `yaml:"client_id"`
-	ClientSecret string   `yaml:"client_secret"`
-	Scopes       []string `yaml:"scopes"`
+// ProviderConf holds information about a provider
+type ProviderConf struct {
+	Issuer       string         `yaml:"issuer"`
+	ClientID     string         `yaml:"client_id"`
+	ClientSecret string         `yaml:"client_secret"`
+	Scopes       []string       `yaml:"scopes"`
+	Provider     *oidc.Provider `yaml:"-"`
 }
 
 var conf *Config
@@ -63,6 +72,12 @@ func validate() error {
 		if p.Issuer == "" {
 			return fmt.Errorf("invalid config: provider.issuer not set (Index %d)", i)
 		}
+		ctx := context.Background()
+		var err error
+		p.Provider, err = oidc.NewProvider(ctx, p.Issuer)
+		if err != nil {
+			return fmt.Errorf("Error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
+		}
 		if p.ClientID == "" {
 			return fmt.Errorf("invalid config: provider.clientid not set (Index %d)", i)
 		}
@@ -72,6 +87,9 @@ func validate() error {
 		if len(p.Scopes) <= 0 {
 			return fmt.Errorf("invalid config: provider.scopes not set (Index %d)", i)
 		}
+		iss0, iss1 := issuerUtils.GetIssuerWithAndWithoutSlash(p.Issuer)
+		conf.ProviderByIssuer[iss0] = p
+		conf.ProviderByIssuer[iss1] = p
 	}
 	if conf.IssuerURL == "" {
 		return fmt.Errorf("invalid config: issuerurl not set")
@@ -115,7 +133,7 @@ func readConfigFile(filename string) []byte {
 // Load reads the config file and populates the config struct; then validates the config
 func Load() {
 	data := readConfigFile("config.yaml")
-	conf = &Config{}
+	conf = newConfig()
 	err := yaml.Unmarshal(data, conf)
 	if err != nil {
 		log.Fatal(err)
@@ -123,5 +141,11 @@ func Load() {
 	}
 	if err := validate(); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func newConfig() *Config {
+	return &Config{
+		ProviderByIssuer: make(map[string]*ProviderConf),
 	}
 }

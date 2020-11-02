@@ -1,10 +1,11 @@
 package server
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/zachmann/mytoken/internal/endpoints/configuration"
 	"log"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/zachmann/mytoken/internal/endpoints/configuration"
 )
 
 var server *fiber.App
@@ -25,11 +26,11 @@ func addRoutes(s fiber.Router) {
 	s.Get("/", handleTest)
 	s.Get("/test", handleTest)
 	s.Get("/.well-known/mytoken-configuration", configuration.HandleConfiguration)
-	//addAPIRoutes(s)
+	addAPIRoutes(s)
 }
 
 func start(s *fiber.App) {
-	log.Fatal(s.Listen(":3000"))
+	log.Fatal(s.Listen(":8000"))
 }
 
 func Start() {

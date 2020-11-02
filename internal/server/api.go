@@ -1,6 +1,9 @@
 package server
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/gofiber/fiber/v2"
+	"github.com/zachmann/mytoken/internal/endpoints/token/super"
+)
 
 func addAPIRoutes(s fiber.Router) {
 	api := s.Group("/api")
@@ -10,6 +13,6 @@ func addAPIRoutes(s fiber.Router) {
 func addAPIv0Routes(s fiber.Router) {
 	api := s.Group("/v0")
 	tokens := api.Group("/token")
-	tokens.Get("/super")
-	api.Get("/something")
+	tokens.Post("/super", super.HandleSuperTokenEndpoint)
+	//api.Get("/something")
 }

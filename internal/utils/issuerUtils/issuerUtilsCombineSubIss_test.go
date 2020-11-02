@@ -1,4 +1,4 @@
-package utils
+package issuerUtils
 
 import "testing"
 

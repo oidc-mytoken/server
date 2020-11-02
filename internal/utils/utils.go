@@ -2,16 +2,43 @@ package utils
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"strings"
+	"time"
+	"unsafe"
 )
 
-// CombineSubIss combines subject and issuer
-func CombineSubIss(sub, iss string) string {
-	if sub == "" || iss == "" {
-		return ""
+var src rand.Source
+
+func init() {
+	src = rand.NewSource(time.Now().UnixNano())
+}
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const (
+	letterIdxBits = 6                    // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+)
+
+// RandASCIIString returns a random string consisting of ASCII characters of the given
+// length.
+func RandASCIIString(n int) string {
+	b := make([]byte, n)
+	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
+	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = src.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			b[i] = letterBytes[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
 	}
-	return fmt.Sprintf("%s@%s", sub, iss)
+	return *(*string)(unsafe.Pointer(&b))
 }
 
 func IntersectSlices(a, b []string) (res []string) {

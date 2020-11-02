@@ -1,6 +1,7 @@
 package restrictions
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"math"
 	"strings"
@@ -32,11 +33,19 @@ type TokenUsage struct {
 	UsagesATUsed    uint   `db:"usages_AT"`
 }
 
-// Scan unmarshals restrictions from a json db field
+// Scan implements the sql.Scanner interface.
 func (r *Restrictions) Scan(src interface{}) error {
 	val := src.([]uint8)
 	err := json.Unmarshal(val, &r)
 	return err
+}
+
+// Value implements the driver.Valuer interface
+func (r Restrictions) Value() (driver.Value, error) {
+	if len(r) == 0 {
+		return nil, nil
+	}
+	return json.Marshal(r)
 }
 
 // GetExpires gets the maximum (latest) expiration time of all restrictions

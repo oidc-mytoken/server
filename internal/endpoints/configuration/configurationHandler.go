@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/model"
+	"github.com/zachmann/mytoken/internal/server/apiPath"
 	"github.com/zachmann/mytoken/internal/utils"
 )
 
@@ -23,15 +24,13 @@ func getProvidersFromConfig() (providers []SupportedProviderConfig) {
 	return
 }
 
-var apiPath = "/api/v0"
-
 func Init() {
 	mytokenConfig = &MytokenConfiguration{
 		Issuer:                                 config.Get().IssuerURL,
-		AccessTokenEndpoint:                    utils.CombineURLPath(config.Get().IssuerURL, apiPath, "/token/access"),
-		SuperTokenEndpoint:                     utils.CombineURLPath(config.Get().IssuerURL, apiPath, "/token/super"),
-		TokeninfoEndpoint:                      utils.CombineURLPath(config.Get().IssuerURL, apiPath, "/tokeninfo"),
-		RevocationEndpoint:                     utils.CombineURLPath(config.Get().IssuerURL, apiPath, "/revocation"),
+		AccessTokenEndpoint:                    utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/token/access"),
+		SuperTokenEndpoint:                     utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/token/super"),
+		TokeninfoEndpoint:                      utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/tokeninfo"),
+		RevocationEndpoint:                     utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/revocation"),
 		JWKSURI:                                utils.CombineURLPath(config.Get().IssuerURL, "/jwks"),
 		ProvidersSupported:                     getProvidersFromConfig(),
 		TokenSigningAlgValue:                   config.Get().TokenSigningAlg,
