@@ -36,3 +36,16 @@ func NewNullString(s string) sql.NullString {
 		Valid:  true,
 	}
 }
+
+func Transact(fn func(*sqlx.Tx) error) error {
+	tx, err := DB().Beginx()
+	if err != nil {
+		return err
+	}
+	err = fn(tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
+}
