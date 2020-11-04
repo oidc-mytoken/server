@@ -7,8 +7,8 @@ import (
 
 type authCodeFlowResponse struct {
 	AuthorizationURL   string `json:"authorization_url"`
-	PollingCode        string `json:"polling_code"`
-	PollingCodeExpires int64  `json:"polling_code_expires"`
+	PollingCode        string `json:"polling_code,omitempty"`
+	PollingCodeExpires int64  `json:"polling_code_expires,omitempty"`
 }
 
 type AuthCodeFlowResponse struct {
@@ -19,9 +19,11 @@ type AuthCodeFlowResponse struct {
 
 func (r AuthCodeFlowResponse) MarshalJSON() ([]byte, error) {
 	rr := authCodeFlowResponse{
-		AuthorizationURL:   r.AuthorizationURL,
-		PollingCode:        r.PollingCode,
-		PollingCodeExpires: r.PollingCodeExpires.Unix(),
+		AuthorizationURL: r.AuthorizationURL,
+		PollingCode:      r.PollingCode,
+	}
+	if rr.PollingCode != "" {
+		rr.PollingCodeExpires = r.PollingCodeExpires.Unix()
 	}
 	return json.Marshal(rr)
 }

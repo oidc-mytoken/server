@@ -24,10 +24,10 @@ func (t *SuperTokenEntryTree) print(level int) {
 	}
 }
 
-func NewSuperTokenEntryFromSuperToken(name string, parent dbModels.SuperTokenEntry, r restrictions.Restrictions, c capabilities.Capabilities) (*dbModels.SuperTokenEntry, error) {
+func NewSuperTokenEntryFromSuperToken(name string, parent dbModels.SuperTokenEntry, r restrictions.Restrictions, c capabilities.Capabilities, ip string) (*dbModels.SuperTokenEntry, error) {
 	newRestrictions := restrictions.Tighten(parent.Token.Restrictions, r)
 	newCapabilities := capabilities.Tighten(parent.Token.Capabilities, c)
-	ste := dbModels.NewSuperTokenEntry(name, parent.Token.OIDCSubject, parent.Token.OIDCIssuer, newRestrictions, newCapabilities)
+	ste := dbModels.NewSuperTokenEntry(name, parent.Token.OIDCSubject, parent.Token.OIDCIssuer, newRestrictions, newCapabilities, ip)
 	ste.ParentID = parent.ID.String()
 	rootID := parent.ID.String()
 	if !parent.Root() {

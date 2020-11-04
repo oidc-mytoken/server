@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/jmoiron/sqlx"
+
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 
@@ -30,10 +32,7 @@ type SuperTokenEntry struct {
 	IP           string    `db:"ip_created"`
 }
 
-func NewSuperTokenEntry(name, oidcSub, oidcIss string, r restrictions.Restrictions, c capabilities.Capabilities) *SuperTokenEntry {
-	//TODO
-	ip := "192.168.0.31"
-
+func NewSuperTokenEntry(name, oidcSub, oidcIss string, r restrictions.Restrictions, c capabilities.Capabilities, ip string) *SuperTokenEntry {
 	st := supertoken.NewSuperToken(oidcSub, oidcIss, r, c)
 	return &SuperTokenEntry{
 		ID:    st.ID,
@@ -84,6 +83,24 @@ type superTokenEntryStore struct {
 }
 
 func (e *superTokenEntryStore) Store() error {
-	_, err := db.DB().NamedExec(`INSERT INTO SuperTokens (id, parent_id, root_id, revoked, token, refresh_token, name, ip_created, user_id) VALUES(:id, :parent_id, :root_id, :revoked, :token, :refresh_token, :name, :ip_created, (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`, e)
-	return err
+	stmt, err := db.DB().PrepareNamed(`INSERT INTO SuperTokens (id, parent_id, root_id, revoked, token, refresh_token, name, ip_created, user_id) VALUES(:id, :parent_id, :root_id, :revoked, :token, :refresh_token, :name, :ip_created, (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
+	if err != nil {
+		return err
+	}
+	return db.Transact(func(tx *sqlx.Tx) error {
+		txStmt := tx.NamedStmt(stmt)
+		_, err := txStmt.Exec(e)
+		if err != nil {
+			if err.Error() == "correct" {
+				_, err = tx.NamedExec(`INSERT INTO Users (sub, iss) VALUES(:sub, :iss)`, e)
+				if err != nil {
+					return err
+				}
+				_, err = txStmt.Exec(e)
+				return err
+			}
+			return err
+		}
+		return nil
+	})
 }

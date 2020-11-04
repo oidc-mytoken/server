@@ -84,7 +84,7 @@ func (st *SuperToken) Valid() error {
 
 // ToJWT returns the SuperToken as JWT
 func (st *SuperToken) ToJWT() (string, error) {
-	return jwt.NewWithClaims(jwt.GetSigningMethod(config.Get().TokenSigningAlg), st).SignedString(jws.GetPrivateKey())
+	return jwt.NewWithClaims(jwt.GetSigningMethod(config.Get().Signing.Alg), st).SignedString(jws.GetPrivateKey())
 }
 
 // Value implements the driver.Valuer interface.

@@ -1,9 +1,16 @@
 package authcode
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/coreos/go-oidc/v3/oidc"
+
+	"github.com/gofiber/fiber/v2"
+
+	"github.com/zachmann/mytoken/internal/model"
 
 	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
 
@@ -90,4 +97,57 @@ func InitAuthCodeFlow(provider *config.ProviderConf, req *response.AuthCodeFlowR
 		return
 	}
 	return
+}
+
+func CodeExchange(state, code, ip string) model.Response {
+	log.Print("Handle code exchange")
+	authInfo, err := dbModels.GetAuthCodeInfoByState(state)
+	if err != nil {
+		return model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: model.APIErrorStateMismatch,
+		}
+	}
+	provider, ok := config.Get().ProviderByIssuer[authInfo.Issuer]
+	if !ok {
+		return model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: model.APIErrorUnknownIssuer,
+		}
+	}
+	oauth2Config := oauth2.Config{
+		ClientID:     provider.ClientID,
+		ClientSecret: provider.ClientSecret,
+		Endpoint:     provider.Provider.Endpoint(),
+	}
+	token, err := oauth2Config.Exchange(context.Background(), code)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	oidcSub, err := getSubjectFromUserinfo(provider.Provider, token)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	ste, err := createSuperTokenEntry(authInfo, token, oidcSub, ip)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+}
+
+func createSuperTokenEntry(authFlowInfo dbModels.AuthFlowInfo, token *oauth2.Token, oidcSub, ip string) (*dbModels.SuperTokenEntry, error) {
+	ste := dbModels.NewSuperTokenEntry(authFlowInfo.Name, oidcSub, authFlowInfo.Issuer, authFlowInfo.Restrictions, authFlowInfo.Capabilities, ip)
+	ste.RefreshToken = token.RefreshToken
+	err := ste.Store("Used grant_type oidc_flow authorization_code")
+	if err != nil {
+		return nil, err
+	}
+	return ste, nil
+}
+
+func getSubjectFromUserinfo(provider *oidc.Provider, token *oauth2.Token) (string, error) {
+	userInfo, err := provider.UserInfo(context.Background(), oauth2.StaticTokenSource(token))
+	if err != nil {
+		return "", fmt.Errorf("failed to get userinfo: %s", err)
+	}
+	return userInfo.Subject, nil
 }

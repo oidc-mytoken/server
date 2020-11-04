@@ -1,7 +1,6 @@
 issuer: "https://mytoken.example.com"
 server:
   hostname: "mytoken.example.com"
-signing_key_file: "/mytoken.key"
 database:
   host: "localhost"
   user: "mytoken"
@@ -24,5 +23,7 @@ enabled_super_token_endpoint_grant_types:
   - "access_token"
   - "private_key_jwt"
 polling_code_expires_after: 300
-token_signing_alg: "RS512"
+signing:
+  alg: "RS512"
+  key_file: "/mytoken.key"
 service_documentation: "https://github.com/zachmann/mytoken"

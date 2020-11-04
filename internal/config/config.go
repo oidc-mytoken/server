@@ -23,10 +23,9 @@ type Config struct {
 	Providers                           []*ProviderConf          `yaml:"providers"`
 	ProviderByIssuer                    map[string]*ProviderConf `yaml:"-"`
 	IssuerURL                           string                   `yaml:"issuer"`
-	SigningKeyFile                      string                   `yaml:"signing_key_file"`
 	EnabledOIDCFlows                    []model.OIDCFlow         `yaml:"enabled_oidc_flows"`
 	EnabledSuperTokenEndpointGrantTypes []model.GrantType        `yaml:"enabled_super_token_endpoint_grant_types"`
-	TokenSigningAlg                     string                   `yaml:"token_signing_alg"`
+	Signing                             signingConf              `yaml:"signing"`
 	ServiceDocumentation                string                   `yaml:"service_documentation"`
 	PollingCodeExpiresAfter             int64                    `yaml:"polling_code_expires_after"`
 }
@@ -40,6 +39,11 @@ type dbConf struct {
 
 type serverConf struct {
 	Hostname string `yaml:"hostname"`
+}
+
+type signingConf struct {
+	Alg     string `yaml:"alg"`
+	KeyFile string `yaml:"key_file"`
 }
 
 // ProviderConf holds information about a provider
@@ -94,10 +98,10 @@ func validate() error {
 	if conf.IssuerURL == "" {
 		return fmt.Errorf("invalid config: issuerurl not set")
 	}
-	if conf.SigningKeyFile == "" {
+	if conf.Signing.KeyFile == "" {
 		return fmt.Errorf("invalid config: signingkeyfile not set")
 	}
-	if conf.TokenSigningAlg == "" {
+	if conf.Signing.Alg == "" {
 		return fmt.Errorf("invalid config: tokensigningalg not set")
 	}
 	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(conf.EnabledOIDCFlows)

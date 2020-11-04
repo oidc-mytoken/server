@@ -13,8 +13,8 @@ import (
 
 // GenerateRSAKeyPair generates an RSA key pair
 func GenerateRSAKeyPair() (*rsa.PrivateKey, *rsa.PublicKey) {
-	privkey, _ := rsa.GenerateKey(rand.Reader, 4096)
-	return privkey, &privkey.PublicKey
+	sk, _ := rsa.GenerateKey(rand.Reader, 1024)
+	return sk, &sk.PublicKey
 }
 
 // ExportRSAPrivateKeyAsPemStr exports the private key
@@ -59,7 +59,7 @@ func GetPublicKey() *rsa.PublicKey {
 
 // Init does init
 func Init() {
-	keyFileContent, err := ioutil.ReadFile(config.Get().SigningKeyFile)
+	keyFileContent, err := ioutil.ReadFile(config.Get().Signing.KeyFile)
 	if err != nil {
 		panic(err)
 	}

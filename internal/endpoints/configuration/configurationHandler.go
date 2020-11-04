@@ -33,7 +33,7 @@ func Init() {
 		RevocationEndpoint:                     utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/revocation"),
 		JWKSURI:                                utils.CombineURLPath(config.Get().IssuerURL, "/jwks"),
 		ProvidersSupported:                     getProvidersFromConfig(),
-		TokenSigningAlgValue:                   config.Get().TokenSigningAlg,
+		TokenSigningAlgValue:                   config.Get().Signing.Alg,
 		AccessTokenEndpointGrantTypesSupported: []model.GrantType{model.GrantTypeSuperToken},
 		SuperTokenEndpointGrantTypesSupported:  config.Get().EnabledSuperTokenEndpointGrantTypes,
 		SuperTokenEndpointOIDCFlowsSupported:   config.Get().EnabledOIDCFlows,

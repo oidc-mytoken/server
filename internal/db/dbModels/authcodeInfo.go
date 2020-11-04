@@ -17,7 +17,7 @@ type AuthFlowInfo struct {
 	Restrictions restrictions.Restrictions
 	Capabilities capabilities.Capabilities
 	Name         string
-	PollingCode  string
+	PollingCode  string `db:"polling_code"`
 }
 
 type authFlowInfo struct {
@@ -58,4 +58,12 @@ func (e *AuthFlowInfo) Store() error {
 		_, err := tx.NamedExec(`INSERT INTO AuthInfo (state, iss, restrictions, capabilities, name, polling_code_id) VALUES(:state, :issuer, :restrictions, :capabilities, :name, :polling_code_id)`, store)
 		return err
 	})
+}
+
+func GetAuthCodeInfoByState(state string) (info AuthFlowInfo, err error) {
+	if e := db.DB().Get(&info, `SELECT * FROM AuthInfoV WHERE state=?`, state); e != nil {
+		err = e
+		return
+	}
+	return
 }
