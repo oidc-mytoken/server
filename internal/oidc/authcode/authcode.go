@@ -106,7 +106,7 @@ func InitAuthCodeFlow(provider *config.ProviderConf, req *response.AuthCodeFlowR
 	return
 }
 
-func CodeExchange(state, code, ip string) model.Response {
+func CodeExchange(state, code string, networkData model.NetworkData) model.Response {
 	log.Print("Handle code exchange")
 	authInfo, err := dbModels.GetAuthCodeInfoByState(state)
 	if err != nil {
@@ -152,13 +152,13 @@ func CodeExchange(state, code, ip string) model.Response {
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	ste, err := createSuperTokenEntry(authInfo, token, oidcSub, ip)
+	ste, err := createSuperTokenEntry(authInfo, token, oidcSub, networkData)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	at := dbModels.AccessToken{
 		Token:     token.AccessToken,
-		IP:        ip,
+		IP:        networkData.IP,
 		Comment:   "Initial Access Token from authorization code flow",
 		STID:      ste.ID,
 		Scopes:    nil, //TODO
@@ -191,8 +191,8 @@ func CodeExchange(state, code, ip string) model.Response {
 	}
 }
 
-func createSuperTokenEntry(authFlowInfo *dbModels.AuthFlowInfo, token *oauth2.Token, oidcSub, ip string) (*dbModels.SuperTokenEntry, error) {
-	ste := dbModels.NewSuperTokenEntry(authFlowInfo.Name, oidcSub, authFlowInfo.Issuer, authFlowInfo.Restrictions, authFlowInfo.Capabilities, ip)
+func createSuperTokenEntry(authFlowInfo *dbModels.AuthFlowInfo, token *oauth2.Token, oidcSub string, networkData model.NetworkData) (*dbModels.SuperTokenEntry, error) {
+	ste := dbModels.NewSuperTokenEntry(authFlowInfo.Name, oidcSub, authFlowInfo.Issuer, authFlowInfo.Restrictions, authFlowInfo.Capabilities, networkData)
 	ste.RefreshToken = token.RefreshToken
 	err := ste.Store("Used grant_type oidc_flow authorization_code")
 	if err != nil {

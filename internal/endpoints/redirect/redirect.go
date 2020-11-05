@@ -28,6 +28,10 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 		return errorRes.Send(ctx)
 	}
 	code := ctx.Query("code")
-	res := authcode.CodeExchange(state, code, ctx.IP())
+	networkData := model.NetworkData{
+		IP:        ctx.IP(),
+		UserAgent: string(ctx.Request().Header.UserAgent()),
+	}
+	res := authcode.CodeExchange(state, code, networkData)
 	return res.Send(ctx)
 }

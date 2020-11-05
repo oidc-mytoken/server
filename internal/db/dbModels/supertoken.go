@@ -6,6 +6,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/zachmann/mytoken/internal/model"
+
 	"github.com/go-sql-driver/mysql"
 
 	"github.com/jmoiron/sqlx"
@@ -34,15 +36,17 @@ type SuperTokenEntry struct {
 	Name         string
 	CreatedAt    time.Time `db:"created_at"`
 	IP           string    `db:"ip_created"`
+	networkData  model.NetworkData
 }
 
-func NewSuperTokenEntry(name, oidcSub, oidcIss string, r restrictions.Restrictions, c capabilities.Capabilities, ip string) *SuperTokenEntry {
+func NewSuperTokenEntry(name, oidcSub, oidcIss string, r restrictions.Restrictions, c capabilities.Capabilities, networkData model.NetworkData) *SuperTokenEntry {
 	st := supertoken.NewSuperToken(oidcSub, oidcIss, r, c)
 	return &SuperTokenEntry{
-		ID:    st.ID,
-		Token: st,
-		Name:  name,
-		IP:    ip,
+		ID:          st.ID,
+		Token:       st,
+		Name:        name,
+		IP:          networkData.IP,
+		networkData: networkData,
 	}
 }
 
@@ -70,7 +74,7 @@ func (ste *SuperTokenEntry) Store(comment string) error {
 	if err != nil {
 		return err
 	}
-	return eventService.LogEvent(*event.FromNumber(event.STEventSTCreated, comment), ste.ID)
+	return eventService.LogEvent(*event.FromNumber(event.STEventSTCreated, comment), ste.ID, ste.networkData)
 }
 
 type superTokenEntryStore struct {
