@@ -17,19 +17,20 @@ type AuthFlowInfo struct {
 	Restrictions restrictions.Restrictions
 	Capabilities capabilities.Capabilities
 	Name         string
-	PollingCode  string `db:"polling_code"`
+	PollingCode  string
 }
 
 type authFlowInfo struct {
 	State         string
-	Issuer        string
+	Issuer        string `db:"iss"`
 	Restrictions  restrictions.Restrictions
 	Capabilities  capabilities.Capabilities
 	Name          sql.NullString
-	PollingCodeID *uint64 `db:"polling_code_id"`
+	PollingCodeID *uint64        `db:"polling_code_id"`
+	PollingCode   sql.NullString `db:"polling_code"`
 }
 
-func newAuthFlowInfo(i *AuthFlowInfo) *authFlowInfo {
+func (i *AuthFlowInfo) toAuthFlowInfo() *authFlowInfo {
 	return &authFlowInfo{
 		State:        i.State,
 		Issuer:       i.Issuer,
@@ -39,12 +40,23 @@ func newAuthFlowInfo(i *AuthFlowInfo) *authFlowInfo {
 	}
 }
 
-func (e *AuthFlowInfo) Store() error {
+func (i *authFlowInfo) toAuthFlowInfo() *AuthFlowInfo {
+	return &AuthFlowInfo{
+		State:        i.State,
+		Issuer:       i.Issuer,
+		Restrictions: i.Restrictions,
+		Capabilities: i.Capabilities,
+		Name:         i.Name.String,
+		PollingCode:  i.PollingCode.String,
+	}
+}
+
+func (i *AuthFlowInfo) Store() error {
 	log.Printf("Storing auth flow info")
-	store := newAuthFlowInfo(e)
+	store := i.toAuthFlowInfo()
 	return db.Transact(func(tx *sqlx.Tx) error {
-		if e.PollingCode != "" {
-			res, err := tx.Exec(`INSERT INTO PollingCodes (polling_code) VALUES(?)`, e.PollingCode)
+		if i.PollingCode != "" {
+			res, err := tx.Exec(`INSERT INTO PollingCodes (polling_code) VALUES(?)`, i.PollingCode)
 			if err != nil {
 				return err
 			}
@@ -55,15 +67,15 @@ func (e *AuthFlowInfo) Store() error {
 			upid := uint64(pid)
 			store.PollingCodeID = &upid
 		}
-		_, err := tx.NamedExec(`INSERT INTO AuthInfo (state, iss, restrictions, capabilities, name, polling_code_id) VALUES(:state, :issuer, :restrictions, :capabilities, :name, :polling_code_id)`, store)
+		_, err := tx.NamedExec(`INSERT INTO AuthInfo (state, iss, restrictions, capabilities, name, polling_code_id) VALUES(:state, :iss, :restrictions, :capabilities, :name, :polling_code_id)`, store)
 		return err
 	})
 }
 
-func GetAuthCodeInfoByState(state string) (info AuthFlowInfo, err error) {
-	if e := db.DB().Get(&info, `SELECT * FROM AuthInfoV WHERE state=?`, state); e != nil {
-		err = e
-		return
+func GetAuthCodeInfoByState(state string) (*AuthFlowInfo, error) {
+	info := authFlowInfo{}
+	if err := db.DB().Get(&info, `SELECT state, iss, restrictions, capabilities, name, polling_code FROM AuthInfoV WHERE state=?`, state); err != nil {
+		return nil, err
 	}
-	return
+	return info.toAuthFlowInfo(), nil
 }

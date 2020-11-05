@@ -12,7 +12,7 @@ type grantTypeReqObj struct {
 }
 
 func GetGrantTypeStr(ctx *fiber.Ctx) string {
-	grantType := ctx.Params("grant_type")
+	grantType := ctx.Query("grant_type")
 	if grantType != "" {
 		return grantType
 	}

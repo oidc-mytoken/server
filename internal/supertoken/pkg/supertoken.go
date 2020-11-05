@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
-
 	"github.com/dgrijalva/jwt-go"
 	uuid "github.com/satori/go.uuid"
 	"github.com/zachmann/mytoken/internal/config"
+	response "github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/jws"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
+	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
 )
 
 // SuperToken is a mytoken SuperToken
@@ -28,6 +28,7 @@ type SuperToken struct {
 	OIDCIssuer   string                    `json:"oidc_iss"`
 	Restrictions restrictions.Restrictions `json:"restrictions,omitempty"`
 	Capabilities capabilities.Capabilities `json:"capabilities"`
+	jwt          string
 }
 
 // NewSuperToken creates a new SuperToken
@@ -58,6 +59,15 @@ func NewSuperToken(oidcSub, oidcIss string, r restrictions.Restrictions, c capab
 	return st
 }
 
+func (st *SuperToken) ExpiresIn() uint64 {
+	now := time.Now().Unix()
+	expAt := st.ExpiresAt
+	if expAt > 0 && expAt < now {
+		return uint64(expAt - now)
+	}
+	return 0
+}
+
 func (st *SuperToken) Valid() error {
 	standardClaims := jwt.StandardClaims{
 		Audience:  st.Audience,
@@ -82,9 +92,24 @@ func (st *SuperToken) Valid() error {
 	return nil
 }
 
+// ToSuperTokenResponse returns a SuperTokenResponse for this token. It requires that jwt is set, i.e. ToJWT must have been called earlier on this token. This is always the case, if the token has been stored.
+func (st *SuperToken) ToSuperTokenResponse() response.SuperTokenResponse {
+	return response.SuperTokenResponse{
+		SuperToken:   st.jwt,
+		ExpiresIn:    st.ExpiresIn(),
+		Restrictions: st.Restrictions,
+		Capabilities: st.Capabilities,
+	}
+}
+
 // ToJWT returns the SuperToken as JWT
 func (st *SuperToken) ToJWT() (string, error) {
-	return jwt.NewWithClaims(jwt.GetSigningMethod(config.Get().Signing.Alg), st).SignedString(jws.GetPrivateKey())
+	if st.jwt != "" {
+		return st.jwt, nil
+	}
+	var err error
+	st.jwt, err = jwt.NewWithClaims(jwt.GetSigningMethod(config.Get().Signing.Alg), st).SignedString(jws.GetPrivateKey())
+	return st.jwt, err
 }
 
 // Value implements the driver.Valuer interface.

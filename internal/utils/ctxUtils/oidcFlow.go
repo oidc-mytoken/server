@@ -12,7 +12,7 @@ type oidcFlowReqObj struct {
 }
 
 func GetOIDCFlowStr(ctx *fiber.Ctx) string {
-	oidcFlow := ctx.Params("oidc_flow")
+	oidcFlow := ctx.Query("oidc_flow")
 	if oidcFlow != "" {
 		return oidcFlow
 	}

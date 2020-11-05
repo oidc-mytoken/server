@@ -2,9 +2,14 @@ package authcode
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/zachmann/mytoken/internal/db"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 
@@ -70,6 +75,8 @@ func authorizationURL(provider *config.ProviderConf, native bool) (string, strin
 	additionalParams := []oauth2.AuthCodeOption{oauth2.ApprovalForce}
 	if issuerUtils.CompareIssuerURLs(provider.Issuer, issuer.GOOGLE) {
 		additionalParams = append(additionalParams, oauth2.AccessTypeOffline)
+	} else if !utils.StringInSlice(oidc.ScopeOfflineAccess, oauth2Config.Scopes) {
+		oauth2Config.Scopes = append(oauth2Config.Scopes, oidc.ScopeOfflineAccess)
 	}
 	//TODO add audience from restriction
 
@@ -103,10 +110,14 @@ func CodeExchange(state, code, ip string) model.Response {
 	log.Print("Handle code exchange")
 	authInfo, err := dbModels.GetAuthCodeInfoByState(state)
 	if err != nil {
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.APIErrorStateMismatch,
+		log.Printf("%s", err)
+		if err == sql.ErrNoRows {
+			return model.Response{
+				Status:   fiber.StatusBadRequest,
+				Response: model.APIErrorStateMismatch,
+			}
 		}
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	provider, ok := config.Get().ProviderByIssuer[authInfo.Issuer]
 	if !ok {
@@ -119,11 +130,24 @@ func CodeExchange(state, code, ip string) model.Response {
 		ClientID:     provider.ClientID,
 		ClientSecret: provider.ClientSecret,
 		Endpoint:     provider.Provider.Endpoint(),
+		RedirectURL:  redirectURL,
 	}
 	token, err := oauth2Config.Exchange(context.Background(), code)
 	if err != nil {
+		var e *oauth2.RetrieveError
+		if errors.As(err, &e) {
+			res, resOK := model.OIDCErrorFromBody(e.Body)
+			if !resOK {
+				res = model.OIDCError(e.Error(), "")
+			}
+			return model.Response{
+				Status:   e.Response.StatusCode,
+				Response: res,
+			}
+		}
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
+	//TODO check if we got a RT
 	oidcSub, err := getSubjectFromUserinfo(provider.Provider, token)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
@@ -132,9 +156,42 @@ func CodeExchange(state, code, ip string) model.Response {
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
+	at := dbModels.AccessToken{
+		Token:     token.AccessToken,
+		IP:        ip,
+		Comment:   "Initial Access Token from authorization code flow",
+		STID:      ste.ID,
+		Scopes:    nil, //TODO
+		Audiences: nil, //TODO
+	}
+	if err := at.Store(); err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	db.Transact(func(tx *sqlx.Tx) error {
+		if authInfo.PollingCode != "" {
+			if _, err := tx.Exec(`INSERT INTO TmpST (polling_code_id, ST_id) VALUES((SELECT id FROM PollingCodes WHERE polling_code = ?), ?)`, authInfo.PollingCode, ste.ID); err != nil {
+				return err
+			}
+		}
+		if _, err := tx.Exec(`DELETE FROM AuthInfo WHERE state = ?`, authInfo.State); err != nil {
+			return err
+		}
+		return nil
+	})
+	//TODO on the response the idea was to redirect to a correct side, that has the response
+	if authInfo.PollingCode != "" {
+		return model.Response{
+			Status:   fiber.StatusOK,
+			Response: "ok", //TODO
+		}
+	}
+	return model.Response{
+		Status:   fiber.StatusOK,
+		Response: ste.Token.ToSuperTokenResponse(), //TODO
+	}
 }
 
-func createSuperTokenEntry(authFlowInfo dbModels.AuthFlowInfo, token *oauth2.Token, oidcSub, ip string) (*dbModels.SuperTokenEntry, error) {
+func createSuperTokenEntry(authFlowInfo *dbModels.AuthFlowInfo, token *oauth2.Token, oidcSub, ip string) (*dbModels.SuperTokenEntry, error) {
 	ste := dbModels.NewSuperTokenEntry(authFlowInfo.Name, oidcSub, authFlowInfo.Issuer, authFlowInfo.Restrictions, authFlowInfo.Capabilities, ip)
 	ste.RefreshToken = token.RefreshToken
 	err := ste.Store("Used grant_type oidc_flow authorization_code")

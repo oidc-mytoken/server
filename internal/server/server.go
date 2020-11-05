@@ -4,6 +4,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/zachmann/mytoken/internal/endpoints/redirect"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/zachmann/mytoken/internal/endpoints/configuration"
 )
@@ -26,6 +28,7 @@ func addRoutes(s fiber.Router) {
 	s.Get("/", handleTest)
 	s.Get("/test", handleTest)
 	s.Get("/.well-known/mytoken-configuration", configuration.HandleConfiguration)
+	s.Get("/redirect", redirect.HandleOIDCRedirect)
 	addAPIRoutes(s)
 }
 

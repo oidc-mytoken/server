@@ -35,6 +35,9 @@ type TokenUsage struct {
 
 // Scan implements the sql.Scanner interface.
 func (r *Restrictions) Scan(src interface{}) error {
+	if src == nil {
+		return nil
+	}
 	val := src.([]uint8)
 	err := json.Unmarshal(val, &r)
 	return err

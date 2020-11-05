@@ -1,7 +1,9 @@
 package redirect
 
 import (
-	"fmt"
+	"log"
+
+	"github.com/zachmann/mytoken/internal/model"
 
 	"github.com/zachmann/mytoken/internal/oidc/authcode"
 
@@ -9,20 +11,23 @@ import (
 )
 
 func HandleOIDCRedirect(ctx *fiber.Ctx) error {
-	error := ctx.Params("error")
-	state := ctx.Params("state")
+	log.Print("Handle redirect")
+	error := ctx.Query("error")
+	state := ctx.Query("state")
+	log.Printf("error: '%s'", error)
+	log.Printf("state: '%s'", state)
 	if error != "" {
-		errorDescription := ctx.Params("error_description")
-		if errorDescription != "" {
-			error = fmt.Sprintf("%s: %s", error, errorDescription)
-		}
 		if state != "" {
 			//TODO delete AuthInfo (and pollingCode)
 		}
-		ctx.SendStatus(fiber.StatusBadRequest)
-		return ctx.SendString(fmt.Sprintf("error: %s", error))
+		errorDescription := ctx.Query("error_description")
+		errorRes := model.Response{
+			Status:   fiber.StatusInternalServerError,
+			Response: model.OIDCError(error, errorDescription),
+		}
+		return errorRes.Send(ctx)
 	}
-	code := ctx.Params("code")
+	code := ctx.Query("code")
 	res := authcode.CodeExchange(state, code, ctx.IP())
 	return res.Send(ctx)
 }

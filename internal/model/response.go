@@ -1,6 +1,9 @@
 package model
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/gofiber/fiber/v2"
+	"github.com/valyala/fasthttp"
+)
 
 type Response struct {
 	Status   int
@@ -8,6 +11,9 @@ type Response struct {
 }
 
 func (r *Response) Send(ctx *fiber.Ctx) error {
+	if fasthttp.StatusCodeIsRedirect(r.Status) {
+		ctx.Redirect(r.Response.(string), r.Status)
+	}
 	return ctx.Status(r.Status).JSON(r.Response)
 }
 

@@ -1,5 +1,10 @@
 package model
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
 type APIError struct {
 	Error            string `json:"error"`
 	ErrorDescription string `json:"error_description,omitempty"`
@@ -26,6 +31,7 @@ const (
 // Additional Mytoken errors
 const (
 	ErrorInternal = "internal_server_error"
+	ErrorOIDC     = "oidc_error"
 )
 
 func InternalServerError(errorDescription string) APIError {
@@ -33,4 +39,25 @@ func InternalServerError(errorDescription string) APIError {
 		Error:            ErrorInternal,
 		ErrorDescription: errorDescription,
 	}
+}
+
+func OIDCError(oidcError, oidcErrorDescription string) APIError {
+	error := oidcError
+	if oidcErrorDescription != "" {
+		error = fmt.Sprintf("%s: %s", oidcError, oidcErrorDescription)
+	}
+	return APIError{
+		Error:            ErrorOIDC,
+		ErrorDescription: error,
+	}
+}
+
+func OIDCErrorFromBody(body []byte) (error APIError, ok bool) {
+	bodyError := APIError{}
+	if err := json.Unmarshal(body, &bodyError); err != nil {
+		return
+	}
+	error = OIDCError(bodyError.Error, bodyError.ErrorDescription)
+	ok = true
+	return
 }

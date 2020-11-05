@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/zachmann/mytoken/internal/config"
 
@@ -19,6 +20,9 @@ func Connect() error {
 	if err != nil {
 		return err
 	}
+	dbTmp.SetConnMaxLifetime(time.Minute * 4)
+	dbTmp.SetMaxOpenConns(10)
+	dbTmp.SetMaxIdleConns(10)
 	dbCon = dbTmp
 	return nil
 }

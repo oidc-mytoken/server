@@ -13,6 +13,9 @@ type Capability string
 
 // Scan implements the sql.Scanner interface.
 func (c *Capabilities) Scan(src interface{}) error {
+	if src == nil {
+		return nil
+	}
 	val := src.([]uint8)
 	err := json.Unmarshal(val, &c)
 	return err
