@@ -24,6 +24,7 @@ enabled_super_token_endpoint_grant_types:
   - "private_key_jwt"
 polling_code_expires_after: 300
 signing:
-  alg: "RS512"
+  alg: "ES512"
   key_file: "/mytoken.key"
+#  rsa_key_len: 2048
 service_documentation: "https://github.com/zachmann/mytoken"

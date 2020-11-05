@@ -1,16 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
+	"log"
+
+	"github.com/zachmann/mytoken/internal/config"
 
 	"github.com/zachmann/mytoken/internal/jws"
 )
 
 func main() {
-	sk, _ := jws.GenerateRSAKeyPair()
-	str := jws.ExportRSAPrivateKeyAsPemStr(sk)
-	filepath := "/tmp/mytoken.key"
+	config.LoadForSetup()
+	sk, _, err := jws.GenerateKeyPair()
+	if err != nil {
+		log.Fatal(err)
+	}
+	str := jws.ExportPrivateKeyAsPemStr(sk)
+	filepath := config.Get().Signing.KeyFile
 	ioutil.WriteFile(filepath, []byte(str), 0600)
-	fmt.Printf("Wrote key to '%s'. Copy the keyfile to a secure location.\n", filepath)
+	log.Printf("Wrote key to '%s'.\n", filepath)
 }

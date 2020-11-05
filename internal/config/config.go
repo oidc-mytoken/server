@@ -8,12 +8,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/utils/fileutil"
-	"gopkg.in/yaml.v3"
 )
 
 // Config holds the server configuration
@@ -42,8 +43,9 @@ type serverConf struct {
 }
 
 type signingConf struct {
-	Alg     string `yaml:"alg"`
-	KeyFile string `yaml:"key_file"`
+	Alg       string `yaml:"alg"`
+	KeyFile   string `yaml:"key_file"`
+	RSAKeyLen int    `yaml:"rsa_key_len"`
 }
 
 // ProviderConf holds information about a provider
@@ -136,6 +138,13 @@ func readConfigFile(filename string) []byte {
 
 // Load reads the config file and populates the config struct; then validates the config
 func Load() {
+	load()
+	if err := validate(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func load() {
 	data := readConfigFile("config.yaml")
 	conf = newConfig()
 	err := yaml.Unmarshal(data, conf)
@@ -143,9 +152,11 @@ func Load() {
 		log.Fatal(err)
 		return
 	}
-	if err := validate(); err != nil {
-		log.Fatal(err)
-	}
+}
+
+// LoadForSetup reads the config file and populates the config struct; it does not validate the config, since this is not required for setup
+func LoadForSetup() {
+	load()
 }
 
 func newConfig() *Config {

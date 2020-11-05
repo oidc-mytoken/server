@@ -17,7 +17,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	jws.Init()
+	jws.LoadKey()
 
 	server.Start()
 
