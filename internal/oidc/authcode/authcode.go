@@ -147,7 +147,12 @@ func CodeExchange(state, code string, networkData model.NetworkData) model.Respo
 		}
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	//TODO check if we got a RT
+	if token.RefreshToken == "" {
+		return model.Response{
+			Status:   fiber.StatusInternalServerError,
+			Response: model.APIErrorNoRefreshToken,
+		}
+	}
 	oidcSub, err := getSubjectFromUserinfo(provider.Provider, token)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)

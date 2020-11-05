@@ -12,8 +12,9 @@ type APIError struct {
 
 // Predefined errors
 var (
-	APIErrorUnknownIssuer = APIError{ErrorInvalidRequest, "The provided issuer is not supported"}
-	APIErrorStateMismatch = APIError{ErrorInvalidRequest, "State mismatched"}
+	APIErrorUnknownIssuer  = APIError{ErrorInvalidRequest, "The provided issuer is not supported"}
+	APIErrorStateMismatch  = APIError{ErrorInvalidRequest, "State mismatched"}
+	APIErrorNoRefreshToken = APIError{ErrorOIDC, "Did not receive a refresh token"}
 )
 
 // Predefined OAuth2/OIDC errors
