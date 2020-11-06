@@ -3,20 +3,25 @@ package configuration
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/zachmann/mytoken/internal/config"
+	"github.com/zachmann/mytoken/internal/endpoints/configuration/pkg"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/server/apiPath"
 	"github.com/zachmann/mytoken/internal/utils"
 )
 
 func HandleConfiguration(ctx *fiber.Ctx) error {
-	return ctx.JSON(mytokenConfig)
+	res := model.Response{
+		Status:   fiber.StatusOK,
+		Response: mytokenConfig,
+	}
+	return res.Send(ctx)
 }
 
-var mytokenConfig *MytokenConfiguration
+var mytokenConfig *pkg.MytokenConfiguration
 
-func getProvidersFromConfig() (providers []SupportedProviderConfig) {
+func getProvidersFromConfig() (providers []pkg.SupportedProviderConfig) {
 	for _, p := range config.Get().Providers {
-		providers = append(providers, SupportedProviderConfig{
+		providers = append(providers, pkg.SupportedProviderConfig{
 			Issuer:          p.Issuer,
 			ScopesSupported: p.Scopes,
 		})
@@ -25,7 +30,7 @@ func getProvidersFromConfig() (providers []SupportedProviderConfig) {
 }
 
 func Init() {
-	mytokenConfig = &MytokenConfiguration{
+	mytokenConfig = &pkg.MytokenConfiguration{
 		Issuer:                                 config.Get().IssuerURL,
 		AccessTokenEndpoint:                    utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/token/access"),
 		SuperTokenEndpoint:                     utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/token/super"),

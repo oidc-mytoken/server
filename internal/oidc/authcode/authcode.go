@@ -3,6 +3,7 @@ package authcode
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -83,8 +84,23 @@ func authorizationURL(provider *config.ProviderConf, native bool) (string, strin
 	return oauth2Config.AuthCodeURL(state, additionalParams...), state
 }
 
-func InitAuthCodeFlow(provider *config.ProviderConf, req *response.AuthCodeFlowRequest) (res response.AuthCodeFlowResponse, err error) {
+func InitAuthCodeFlow(body []byte) model.Response {
 	log.Print("Handle authcode")
+	req := response.NewAuthCodeFlowRequest()
+	if err := json.Unmarshal(body, &req); err != nil {
+		return model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: model.BadRequestError(err.Error()),
+		}
+	}
+	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
+	if !ok {
+		return model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: model.APIErrorUnknownIssuer,
+		}
+	}
+
 	authURL, state := authorizationURL(provider, req.Native())
 	authFlowInfo := dbModels.AuthFlowInfo{
 		State:        state,
@@ -93,17 +109,21 @@ func InitAuthCodeFlow(provider *config.ProviderConf, req *response.AuthCodeFlowR
 		Capabilities: req.Capabilities,
 		Name:         req.Name,
 	}
-	res.AuthorizationURL = authURL
+	res := response.AuthCodeFlowResponse{
+		AuthorizationURL: authURL,
+	}
 	if req.Native() {
 		authFlowInfo.PollingCode = utils.RandASCIIString(pollingCodeLen)
 		res.PollingCode = authFlowInfo.PollingCode
 		res.PollingCodeExpires = time.Now().Add(time.Duration(config.Get().PollingCodeExpiresAfter) * time.Second)
 	}
-	if e := authFlowInfo.Store(); e != nil {
-		err = e
-		return
+	if err := authFlowInfo.Store(); err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	return
+	return model.Response{
+		Status:   fiber.StatusOK,
+		Response: res,
+	}
 }
 
 func CodeExchange(state, code string, networkData model.NetworkData) model.Response {
@@ -172,7 +192,7 @@ func CodeExchange(state, code string, networkData model.NetworkData) model.Respo
 	if err := at.Store(); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	db.Transact(func(tx *sqlx.Tx) error {
+	if err := db.Transact(func(tx *sqlx.Tx) error {
 		if authInfo.PollingCode != "" {
 			if _, err := tx.Exec(`INSERT INTO TmpST (polling_code_id, ST_id) VALUES((SELECT id FROM PollingCodes WHERE polling_code = ?), ?)`, authInfo.PollingCode, ste.ID); err != nil {
 				return err
@@ -182,7 +202,9 @@ func CodeExchange(state, code string, networkData model.NetworkData) model.Respo
 			return err
 		}
 		return nil
-	})
+	}); err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
 	//TODO on the response the idea was to redirect to a correct side, that has the response
 	if authInfo.PollingCode != "" {
 		return model.Response{

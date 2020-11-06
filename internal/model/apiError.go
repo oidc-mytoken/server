@@ -3,6 +3,8 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type APIError struct {
@@ -10,11 +12,16 @@ type APIError struct {
 	ErrorDescription string `json:"error_description,omitempty"`
 }
 
+var ResponseNYI = Response{fiber.StatusNotImplemented, APIErrorNYI}
+
 // Predefined errors
 var (
-	APIErrorUnknownIssuer  = APIError{ErrorInvalidRequest, "The provided issuer is not supported"}
-	APIErrorStateMismatch  = APIError{ErrorInvalidRequest, "State mismatched"}
-	APIErrorNoRefreshToken = APIError{ErrorOIDC, "Did not receive a refresh token"}
+	APIErrorUnknownIssuer    = APIError{ErrorInvalidRequest, "The provided issuer is not supported"}
+	APIErrorStateMismatch    = APIError{ErrorInvalidRequest, "State mismatched"}
+	APIErrorUnknownOIDCFlow  = APIError{ErrorInvalidGrant, "Unknown oidc_flow"}
+	APIErrorUnknownGrantType = APIError{ErrorInvalidGrant, "Unknown grant_type"}
+	APIErrorNoRefreshToken   = APIError{ErrorOIDC, "Did not receive a refresh token"}
+	APIErrorNYI              = APIError{ErrorNYI, ""}
 )
 
 // Predefined OAuth2/OIDC errors
@@ -33,6 +40,7 @@ const (
 const (
 	ErrorInternal = "internal_server_error"
 	ErrorOIDC     = "oidc_error"
+	ErrorNYI      = "not_yet_implemented"
 )
 
 func InternalServerError(errorDescription string) APIError {
@@ -61,4 +69,11 @@ func OIDCErrorFromBody(body []byte) (error APIError, ok bool) {
 	error = OIDCError(bodyError.Error, bodyError.ErrorDescription)
 	ok = true
 	return
+}
+
+func BadRequestError(errorDescription string) APIError {
+	return APIError{
+		Error:            ErrorInvalidRequest,
+		ErrorDescription: errorDescription,
+	}
 }

@@ -1,4 +1,4 @@
-package configuration
+package pkg
 
 import "github.com/zachmann/mytoken/internal/model"
 
