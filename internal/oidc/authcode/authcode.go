@@ -56,7 +56,7 @@ func parseState(state string) stateInfo {
 	info := stateInfo{}
 	native := 0
 	var r string
-	fmt.Scanf(stateFmt, native, r)
+	fmt.Sscanf(state, stateFmt, &native, &r)
 	if native != 0 {
 		info.Native = true
 	}

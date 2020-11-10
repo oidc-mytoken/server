@@ -62,7 +62,7 @@ func NewSuperToken(oidcSub, oidcIss string, r restrictions.Restrictions, c capab
 func (st *SuperToken) ExpiresIn() uint64 {
 	now := time.Now().Unix()
 	expAt := st.ExpiresAt
-	if expAt > 0 && expAt < now {
+	if expAt > 0 && expAt > now {
 		return uint64(expAt - now)
 	}
 	return 0

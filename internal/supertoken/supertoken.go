@@ -3,6 +3,8 @@ package supertoken
 import (
 	"fmt"
 
+	"github.com/zachmann/mytoken/internal/model"
+
 	"github.com/zachmann/mytoken/internal/db/dbModels"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
@@ -24,10 +26,10 @@ func (t *SuperTokenEntryTree) print(level int) {
 	}
 }
 
-func NewSuperTokenEntryFromSuperToken(name string, parent dbModels.SuperTokenEntry, r restrictions.Restrictions, c capabilities.Capabilities, ip string) (*dbModels.SuperTokenEntry, error) {
+func NewSuperTokenEntryFromSuperToken(name string, parent dbModels.SuperTokenEntry, r restrictions.Restrictions, c capabilities.Capabilities, networkData model.NetworkData) (*dbModels.SuperTokenEntry, error) {
 	newRestrictions := restrictions.Tighten(parent.Token.Restrictions, r)
 	newCapabilities := capabilities.Tighten(parent.Token.Capabilities, c)
-	ste := dbModels.NewSuperTokenEntry(name, parent.Token.OIDCSubject, parent.Token.OIDCIssuer, newRestrictions, newCapabilities, ip)
+	ste := dbModels.NewSuperTokenEntry(name, parent.Token.OIDCSubject, parent.Token.OIDCIssuer, newRestrictions, newCapabilities, networkData)
 	ste.ParentID = parent.ID.String()
 	rootID := parent.ID.String()
 	if !parent.Root() {

@@ -85,6 +85,24 @@ func (r *Restrictions) GetNotBefore() int64 {
 	return nbf
 }
 
+// GetScopes returns the union of all scopes, i.e. all scopes that must be requested at the issuer
+func (r *Restrictions) GetScopes() (scopes []string) {
+	for _, rr := range *r {
+		scopes = append(scopes, strings.Split(rr.Scope, " ")...)
+	}
+	scopes = utils.UniqueSlice(scopes)
+	return
+}
+
+// GetAudiences returns the union of all audiences, i.e. all audiences that must be requested at the issuer
+func (r *Restrictions) GetAudiences() (auds []string) {
+	for _, rr := range *r {
+		auds = append(auds, rr.Audiences...)
+	}
+	auds = utils.UniqueSlice(auds)
+	return
+}
+
 func Tighten(old, wanted Restrictions) (res Restrictions) {
 	if len(old) == 0 {
 		return wanted

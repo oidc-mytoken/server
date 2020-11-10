@@ -29,7 +29,7 @@ func (c Capabilities) Value() (driver.Value, error) {
 	return json.Marshal(c)
 }
 
-// Tighten thightens two set of Capabilities into one new
+// Tighten tightens two set of Capabilities into one new
 func Tighten(a, b Capabilities) (res Capabilities) {
 	for _, bb := range b {
 		for _, aa := range a {

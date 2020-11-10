@@ -118,3 +118,16 @@ func CombineURLPath(p string, ps ...string) (r string) {
 	}
 	return
 }
+
+func UniqueSlice(a []string) (unique []string) {
+	for _, aa := range a {
+		if !StringInSlice(aa, unique) {
+			unique = append(unique, aa)
+		}
+	}
+	return
+}
+
+func SliceUnion(a, b []string) []string {
+	return UniqueSlice(append(a, b...))
+}

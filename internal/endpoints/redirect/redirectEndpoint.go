@@ -18,7 +18,7 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 	log.Printf("state: '%s'", state)
 	if oidcError != "" {
 		if state != "" {
-			db.Transact(func(tx *sqlx.Tx) error {
+			_ = db.Transact(func(tx *sqlx.Tx) error {
 				if _, err := tx.Exec(`DELETE FROM PollingCodes WHERE id=(SELECT polling_code_id FROM AuthInfo WHERE state=?)`, state); err != nil {
 					return err
 				}
