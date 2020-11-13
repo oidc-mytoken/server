@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 
@@ -109,6 +110,12 @@ func InitAuthCodeFlow(body []byte) model.Response {
 		return model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.APIErrorUnknownIssuer,
+		}
+	}
+	if req.Restrictions.GetExpires() < time.Now().Unix() {
+		return model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: model.BadRequestError("token would already be expired"),
 		}
 	}
 
