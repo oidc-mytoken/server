@@ -28,7 +28,12 @@ type Config struct {
 	EnabledSuperTokenEndpointGrantTypes []model.GrantType        `yaml:"enabled_super_token_endpoint_grant_types"`
 	Signing                             signingConf              `yaml:"signing"`
 	ServiceDocumentation                string                   `yaml:"service_documentation"`
-	PollingCodeExpiresAfter             int64                    `yaml:"polling_code_expires_after"`
+	Polling                             pollingConf              `yaml:"polling_codes"`
+}
+
+type pollingConf struct {
+	PollingCodeExpiresAfter int64 `yaml:"expires_after"`
+	PollingInterval         int64 `yaml:"polling_interval"`
 }
 
 type dbConf struct {
@@ -105,6 +110,12 @@ func validate() error {
 	}
 	if conf.Signing.Alg == "" {
 		return fmt.Errorf("invalid config: tokensigningalg not set")
+	}
+	if conf.Polling.PollingInterval == 0 {
+		conf.Polling.PollingInterval = 5
+	}
+	if conf.Polling.PollingCodeExpiresAfter == 0 {
+		conf.Polling.PollingCodeExpiresAfter = 300
 	}
 	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(conf.EnabledOIDCFlows)
 	model.GrantTypeOIDCFlow.AddToSliceIfNotFound(conf.EnabledSuperTokenEndpointGrantTypes)

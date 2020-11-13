@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/zachmann/mytoken/internal/db"
@@ -115,7 +114,8 @@ func InitAuthCodeFlow(body []byte) model.Response {
 	if req.Native() {
 		authFlowInfo.PollingCode = utils.RandASCIIString(pollingCodeLen)
 		res.PollingCode = authFlowInfo.PollingCode
-		res.PollingCodeExpires = time.Now().Add(time.Duration(config.Get().PollingCodeExpiresAfter) * time.Second)
+		res.PollingCodeExpiresIn = config.Get().Polling.PollingCodeExpiresAfter
+		res.PollingInterval = config.Get().Polling.PollingInterval
 	}
 	if err := authFlowInfo.Store(); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)

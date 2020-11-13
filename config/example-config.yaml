@@ -22,7 +22,9 @@ enabled_super_token_endpoint_grant_types:
   - "polling_code"
   - "access_token"
   - "private_key_jwt"
-polling_code_expires_after: 300
+polling_codes:
+  expires_after: 300
+  polling_interval: 5
 signing:
   alg: "ES512"
   key_file: "/mytoken.key"
