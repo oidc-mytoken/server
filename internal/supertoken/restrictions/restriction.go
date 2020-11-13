@@ -6,6 +6,9 @@ import (
 	"math"
 	"strings"
 
+	"github.com/jinzhu/copier"
+	"github.com/zachmann/mytoken/internal/model"
+
 	"github.com/zachmann/mytoken/internal/utils"
 )
 
@@ -14,15 +17,15 @@ type Restrictions []Restriction
 
 // Restriction describes a token usage restriction
 type Restriction struct {
-	NotBefore   int64    `json:"nbf,omitempty"`
-	ExpiresAt   int64    `json:"exp,omitempty"`
-	Scope       string   `json:"scope,omitempty"`
-	Audiences   []string `json:"audience,omitempty"`
-	IPs         []string `json:"ip,omitempty"`
-	GeoIPWhite  []string `json:"geoip_white,omitempty"`
-	GeoIPBlack  []string `json:"geoip_black,omitempty"`
-	UsagesAT    uint     `json:"usages_AT,omitempty"`
-	UsagesOther uint     `json:"usages_other,omitempty"`
+	NotBefore   int64             `json:"nbf,omitempty"`
+	ExpiresAt   int64             `json:"exp,omitempty"`
+	Scope       string            `json:"scope,omitempty"`
+	Audiences   []string          `json:"audience,omitempty"`
+	IPs         []string          `json:"ip,omitempty"`
+	GeoIPWhite  []string          `json:"geoip_white,omitempty"`
+	GeoIPBlack  []string          `json:"geoip_black,omitempty"`
+	UsagesAT    model.JSONNullInt `json:"usages_AT,omitempty"`
+	UsagesOther model.JSONNullInt `json:"usages_other,omitempty"`
 }
 
 type TokenUsages []TokenUsage
@@ -107,10 +110,13 @@ func Tighten(old, wanted Restrictions) (res Restrictions) {
 	if len(old) == 0 {
 		return wanted
 	}
-	for _, a := range wanted {
-		for _, o := range old {
+	base := Restrictions{}
+	copier.Copy(&base, &old)
+	for i, a := range wanted {
+		for _, o := range base {
 			if a.IsTighterThan(o) {
 				res = append(res, a)
+				base = append(base[:i], base[i+1:]...)
 				break
 			}
 		}
@@ -157,10 +163,10 @@ func (r *Restriction) IsTighterThan(b Restriction) bool {
 	if !utils.IsSubSet(b.GeoIPBlack, r.GeoIPBlack) { // for Blacklist r must have all the values from b to be tighter
 		return false
 	}
-	if r.UsagesAT == 0 && b.UsagesAT != 0 || r.UsagesAT > b.UsagesAT && b.UsagesAT != 0 {
+	if !r.UsagesAT.Valid && b.UsagesAT.Valid || r.UsagesAT.Value > b.UsagesAT.Value && b.UsagesAT.Valid {
 		return false
 	}
-	if r.UsagesOther == 0 && b.UsagesOther != 0 || r.UsagesOther > b.UsagesOther && b.UsagesOther != 0 {
+	if !r.UsagesOther.Valid && b.UsagesOther.Valid || r.UsagesOther.Value > b.UsagesOther.Value && b.UsagesOther.Valid {
 		return false
 	}
 	return true
