@@ -3,7 +3,7 @@ package restrictions
 import (
 	"testing"
 
-	"github.com/zachmann/mytoken/internal/model"
+	"github.com/zachmann/mytoken/internal/utils"
 )
 
 func checkRestrictions(t *testing.T, exp, a Restrictions) {
@@ -154,24 +154,15 @@ func TestTighten_RestrictDontCombineTwo(t *testing.T) {
 func TestTighten_RestrictDontExtendUsages(t *testing.T) {
 	base := Restrictions{
 		{
-			UsagesAT: model.JSONNullInt{
-				Value: 10,
-				Valid: true,
-			},
+			UsagesAT: utils.NewInt64(10),
 		},
 	}
 	wanted := Restrictions{
 		{
-			UsagesAT: model.JSONNullInt{
-				Value: 10,
-				Valid: true,
-			},
+			UsagesAT: utils.NewInt64(10),
 		},
 		{
-			UsagesAT: model.JSONNullInt{
-				Value: 10,
-				Valid: true,
-			},
+			UsagesAT: utils.NewInt64(10),
 		},
 	}
 	expected := base
@@ -310,26 +301,26 @@ func TestIsTighterThanGeoIPBlackOneEmpty(t *testing.T) {
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanUsagesAT(t *testing.T) {
-	a := Restriction{UsagesAT: model.JSONNullInt{Value: 20, Valid: true}}
-	b := Restriction{UsagesAT: model.JSONNullInt{Value: 10, Valid: true}}
+	a := Restriction{UsagesAT: utils.NewInt64(20)}
+	b := Restriction{UsagesAT: utils.NewInt64(10)}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanUsagesATOneEmpty(t *testing.T) {
 	a := Restriction{}
-	b := Restriction{UsagesAT: model.JSONNullInt{Value: 10, Valid: true}}
+	b := Restriction{UsagesAT: utils.NewInt64(10)}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanUsagesOther(t *testing.T) {
-	a := Restriction{UsagesOther: model.JSONNullInt{Value: 20, Valid: true}}
-	b := Restriction{UsagesOther: model.JSONNullInt{Value: 10, Valid: true}}
+	a := Restriction{UsagesOther: utils.NewInt64(20)}
+	b := Restriction{UsagesOther: utils.NewInt64(10)}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanUsagesOtherOneEmpty(t *testing.T) {
 	a := Restriction{}
-	b := Restriction{UsagesOther: model.JSONNullInt{Value: 20, Valid: true}}
+	b := Restriction{UsagesOther: utils.NewInt64(20)}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
@@ -337,8 +328,8 @@ func TestIsTighterThanMultiple1(t *testing.T) {
 	a := Restriction{}
 	b := Restriction{
 		Scope:       "a",
-		UsagesAT:    model.JSONNullInt{Value: 50, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 100, Valid: true},
+		UsagesAT:    utils.NewInt64(50),
+		UsagesOther: utils.NewInt64(100),
 	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
@@ -346,25 +337,25 @@ func TestIsTighterThanMultiple1(t *testing.T) {
 func TestIsTighterThanMultiple2(t *testing.T) {
 	a := Restriction{
 		Scope:       "a",
-		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+		UsagesAT:    utils.NewInt64(20),
+		UsagesOther: utils.NewInt64(20),
 	}
 	b := Restriction{
 		Scope:       "a b",
-		UsagesAT:    model.JSONNullInt{Value: 50, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 100, Valid: true},
+		UsagesAT:    utils.NewInt64(50),
+		UsagesOther: utils.NewInt64(100),
 	}
 	testIsTighter(t, a, b, true)
 	testIsTighter(t, b, a, false)
 }
 func TestIsTighterThanMultiple3(t *testing.T) {
 	a := Restriction{
-		UsagesAT:    model.JSONNullInt{Value: 100, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 50, Valid: true},
+		UsagesAT:    utils.NewInt64(100),
+		UsagesOther: utils.NewInt64(50),
 	}
 	b := Restriction{
-		UsagesAT:    model.JSONNullInt{Value: 50, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 100, Valid: true},
+		UsagesAT:    utils.NewInt64(50),
+		UsagesOther: utils.NewInt64(100),
 	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, false)
@@ -372,13 +363,13 @@ func TestIsTighterThanMultiple3(t *testing.T) {
 func TestIsTighterThanMultiple4(t *testing.T) {
 	a := Restriction{
 		Scope:       "a b c",
-		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+		UsagesAT:    utils.NewInt64(20),
+		UsagesOther: utils.NewInt64(20),
 	}
 	b := Restriction{
 		Scope:       "a c b d",
-		UsagesAT:    model.JSONNullInt{Value: 50, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 100, Valid: true},
+		UsagesAT:    utils.NewInt64(50),
+		UsagesOther: utils.NewInt64(100),
 	}
 	testIsTighter(t, a, b, true)
 	testIsTighter(t, b, a, false)
@@ -386,8 +377,8 @@ func TestIsTighterThanMultiple4(t *testing.T) {
 func TestIsTighterThanMultipleE(t *testing.T) {
 	a := Restriction{
 		Scope:       "a b c",
-		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+		UsagesAT:    utils.NewInt64(20),
+		UsagesOther: utils.NewInt64(20),
 	}
 	b := a
 	testIsTighter(t, a, b, true)
@@ -402,8 +393,8 @@ func TestIsTighterThanAll1(t *testing.T) {
 		IPs:         []string{"a", "b", "c"},
 		GeoIPWhite:  []string{"a", "b", "c"},
 		GeoIPBlack:  []string{"a", "b", "c"},
-		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+		UsagesAT:    utils.NewInt64(20),
+		UsagesOther: utils.NewInt64(20),
 	}
 	b := a
 	testIsTighter(t, a, b, true)
@@ -418,8 +409,8 @@ func TestIsTighterThanAll2(t *testing.T) {
 		IPs:         []string{"a", "b", "c"},
 		GeoIPWhite:  []string{"a", "b", "c"},
 		GeoIPBlack:  []string{"a", "b", "c"},
-		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+		UsagesAT:    utils.NewInt64(20),
+		UsagesOther: utils.NewInt64(20),
 	}
 	b := Restriction{
 		NotBefore:   700,
@@ -429,8 +420,8 @@ func TestIsTighterThanAll2(t *testing.T) {
 		IPs:         []string{"a", "b", "c"},
 		GeoIPWhite:  []string{"a", "b", "c"},
 		GeoIPBlack:  []string{"a", "b", "c"},
-		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+		UsagesAT:    utils.NewInt64(20),
+		UsagesOther: utils.NewInt64(20),
 	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
@@ -444,8 +435,8 @@ func TestIsTighterThanAll3(t *testing.T) {
 		IPs:         []string{"a", "b", "c"},
 		GeoIPWhite:  []string{"a", "b", "c"},
 		GeoIPBlack:  []string{"a", "b", "c"},
-		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+		UsagesAT:    utils.NewInt64(20),
+		UsagesOther: utils.NewInt64(20),
 	}
 	b := Restriction{
 		NotBefore:   700,
@@ -455,8 +446,8 @@ func TestIsTighterThanAll3(t *testing.T) {
 		IPs:         []string{"a", "b", "c"},
 		GeoIPWhite:  []string{"a", "b", "c"},
 		GeoIPBlack:  []string{"a", "b", "c"},
-		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+		UsagesAT:    utils.NewInt64(20),
+		UsagesOther: utils.NewInt64(20),
 	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, false)
@@ -470,8 +461,8 @@ func TestIsTighterThanAll4(t *testing.T) {
 		IPs:         []string{"a", "b", "c"},
 		GeoIPWhite:  []string{"a", "b", "c"},
 		GeoIPBlack:  []string{"a", "b", "c"},
-		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+		UsagesAT:    utils.NewInt64(20),
+		UsagesOther: utils.NewInt64(20),
 	}
 	b := Restriction{
 		NotBefore:   700,
@@ -481,8 +472,8 @@ func TestIsTighterThanAll4(t *testing.T) {
 		IPs:         []string{"b", "c"},
 		GeoIPWhite:  []string{"a"},
 		GeoIPBlack:  []string{"a", "b"},
-		UsagesAT:    model.JSONNullInt{Value: 10, Valid: true},
-		UsagesOther: model.JSONNullInt{Value: 0, Valid: true},
+		UsagesAT:    utils.NewInt64(10),
+		UsagesOther: utils.NewInt64(0),
 	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, false)

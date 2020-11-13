@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"github.com/jinzhu/copier"
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/utils"
 )
 
@@ -17,15 +15,15 @@ type Restrictions []Restriction
 
 // Restriction describes a token usage restriction
 type Restriction struct {
-	NotBefore   int64             `json:"nbf,omitempty"`
-	ExpiresAt   int64             `json:"exp,omitempty"`
-	Scope       string            `json:"scope,omitempty"`
-	Audiences   []string          `json:"audience,omitempty"`
-	IPs         []string          `json:"ip,omitempty"`
-	GeoIPWhite  []string          `json:"geoip_white,omitempty"`
-	GeoIPBlack  []string          `json:"geoip_black,omitempty"`
-	UsagesAT    model.JSONNullInt `json:"usages_AT,omitempty"`
-	UsagesOther model.JSONNullInt `json:"usages_other,omitempty"`
+	NotBefore   int64    `json:"nbf,omitempty"`
+	ExpiresAt   int64    `json:"exp,omitempty"`
+	Scope       string   `json:"scope,omitempty"`
+	Audiences   []string `json:"audience,omitempty"`
+	IPs         []string `json:"ip,omitempty"`
+	GeoIPWhite  []string `json:"geoip_white,omitempty"`
+	GeoIPBlack  []string `json:"geoip_black,omitempty"`
+	UsagesAT    *int64   `json:"usages_AT,omitempty"`
+	UsagesOther *int64   `json:"usages_other,omitempty"`
 }
 
 type TokenUsages []TokenUsage
@@ -179,10 +177,10 @@ func (r *Restriction) IsTighterThan(b Restriction) bool {
 	if !utils.IsSubSet(b.GeoIPBlack, r.GeoIPBlack) { // for Blacklist r must have all the values from b to be tighter
 		return false
 	}
-	if !r.UsagesAT.Valid && b.UsagesAT.Valid || r.UsagesAT.Value > b.UsagesAT.Value && b.UsagesAT.Valid {
+	if utils.CompareNullableIntsWithNilAsInfinity(r.UsagesAT, b.UsagesAT) > 0 {
 		return false
 	}
-	if !r.UsagesOther.Valid && b.UsagesOther.Valid || r.UsagesOther.Value > b.UsagesOther.Value && b.UsagesOther.Valid {
+	if utils.CompareNullableIntsWithNilAsInfinity(r.UsagesOther, b.UsagesOther) > 0 {
 		return false
 	}
 	return true
