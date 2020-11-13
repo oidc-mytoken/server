@@ -7,6 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
+
+	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
+
+	"github.com/dgrijalva/jwt-go"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/zachmann/mytoken/internal/db"
@@ -34,7 +39,7 @@ func Init() {
 }
 
 const stateLen = 16
-const pollingCodeLen = 16
+const pollingCodeLen = 32
 
 type stateInfo struct {
 	Native bool
@@ -62,14 +67,18 @@ func parseState(state string) stateInfo {
 	return info
 }
 
-func authorizationURL(provider *config.ProviderConf, native bool) (string, string) {
+func authorizationURL(provider *config.ProviderConf, restrictions restrictions.Restrictions, native bool) (string, string) {
 	log.Printf("Generating authorization url")
+	scopes := restrictions.GetScopes()
+	if len(scopes) <= 0 {
+		scopes = provider.Scopes
+	}
 	oauth2Config := oauth2.Config{
 		ClientID:     provider.ClientID,
 		ClientSecret: provider.ClientSecret,
 		Endpoint:     provider.Provider.Endpoint(),
 		RedirectURL:  redirectURL,
-		Scopes:       provider.Scopes, //TODO use restrictions
+		Scopes:       scopes,
 	}
 	state := createState(stateInfo{Native: native})
 	additionalParams := []oauth2.AuthCodeOption{oauth2.ApprovalForce}
@@ -78,7 +87,10 @@ func authorizationURL(provider *config.ProviderConf, native bool) (string, strin
 	} else if !utils.StringInSlice(oidc.ScopeOfflineAccess, oauth2Config.Scopes) {
 		oauth2Config.Scopes = append(oauth2Config.Scopes, oidc.ScopeOfflineAccess)
 	}
-	//TODO add audience from restriction
+	auds := restrictions.GetAudiences()
+	if len(auds) > 0 {
+		additionalParams = append(additionalParams, oauth2.SetAuthURLParam("audience", strings.Join(auds, " ")))
+	}
 
 	return oauth2Config.AuthCodeURL(state, additionalParams...), state
 }
@@ -100,7 +112,7 @@ func InitAuthCodeFlow(body []byte) model.Response {
 		}
 	}
 
-	authURL, state := authorizationURL(provider, req.Native())
+	authURL, state := authorizationURL(provider, req.Restrictions, req.Native())
 	authFlowInfo := dbModels.AuthFlowInfo{
 		State:        state,
 		Issuer:       provider.Issuer,
@@ -173,6 +185,22 @@ func CodeExchange(state, code string, networkData model.NetworkData) model.Respo
 			Response: model.APIErrorNoRefreshToken,
 		}
 	}
+	scopes := authInfo.Restrictions.GetScopes()
+	scopesStr, ok := token.Extra("scope").(string)
+	if ok && scopesStr != "" {
+		scopes = strings.Split(scopesStr, " ")
+		authInfo.Restrictions.SetMaxScopes(scopes) // Update restrictions with correct scopes
+	}
+	audiences := authInfo.Restrictions.GetAudiences()
+	if atJWT, _ := jwt.Parse(token.AccessToken, nil); atJWT != nil {
+		if claims, ok := atJWT.Claims.(jwt.MapClaims); ok {
+			if tmp, ok := claims["aud"].([]string); ok {
+				audiences = tmp
+			}
+		}
+	}
+	authInfo.Restrictions.SetMaxAudiences(audiences) // Update restrictions with correct audiences
+
 	oidcSub, err := getSubjectFromUserinfo(provider.Provider, token)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
@@ -186,8 +214,8 @@ func CodeExchange(state, code string, networkData model.NetworkData) model.Respo
 		IP:        networkData.IP,
 		Comment:   "Initial Access Token from authorization code flow",
 		STID:      ste.ID,
-		Scopes:    nil, //TODO
-		Audiences: nil, //TODO
+		Scopes:    scopes,
+		Audiences: audiences,
 	}
 	if err := at.Store(); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
@@ -214,7 +242,7 @@ func CodeExchange(state, code string, networkData model.NetworkData) model.Respo
 	}
 	return model.Response{
 		Status:   fiber.StatusOK,
-		Response: ste.Token.ToSuperTokenResponse(), //TODO
+		Response: ste.Token.ToSuperTokenResponse(""), //TODO redirect
 	}
 }
 

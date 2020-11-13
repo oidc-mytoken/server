@@ -92,10 +92,13 @@ func (st *SuperToken) Valid() error {
 	return nil
 }
 
-// ToSuperTokenResponse returns a SuperTokenResponse for this token. It requires that jwt is set, i.e. ToJWT must have been called earlier on this token. This is always the case, if the token has been stored.
-func (st *SuperToken) ToSuperTokenResponse() response.SuperTokenResponse {
+// ToSuperTokenResponse returns a SuperTokenResponse for this token. It requires that jwt is set or that the jwt is passed as argument; if not passed as argument ToJWT must have been called earlier on this token to set jwt. This is always the case, if the token has been stored.
+func (st *SuperToken) ToSuperTokenResponse(jwt string) response.SuperTokenResponse {
+	if jwt == "" {
+		jwt = st.jwt
+	}
 	return response.SuperTokenResponse{
-		SuperToken:   st.jwt,
+		SuperToken:   jwt,
 		ExpiresIn:    st.ExpiresIn(),
 		Restrictions: st.Restrictions,
 		Capabilities: st.Capabilities,

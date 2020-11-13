@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"log"
 
+	"github.com/zachmann/mytoken/internal/config"
+
 	"github.com/jmoiron/sqlx"
 
 	"github.com/zachmann/mytoken/internal/db"
@@ -56,7 +58,7 @@ func (i *AuthFlowInfo) Store() error {
 	store := i.toAuthFlowInfo()
 	return db.Transact(func(tx *sqlx.Tx) error {
 		if i.PollingCode != "" {
-			res, err := tx.Exec(`INSERT INTO PollingCodes (polling_code) VALUES(?)`, i.PollingCode)
+			res, err := tx.Exec(`INSERT INTO PollingCodes (polling_code, expires_in) VALUES(?, ?)`, i.PollingCode, config.Get().Polling.PollingCodeExpiresAfter)
 			if err != nil {
 				return err
 			}

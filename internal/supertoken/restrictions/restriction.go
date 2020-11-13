@@ -106,6 +106,22 @@ func (r *Restrictions) GetAudiences() (auds []string) {
 	return
 }
 
+// SetMaxScopes sets the maximum scopes, i.e. all scopes are stripped from the restrictions if not included in the passed argument. This is used to eliminate requested scopes that are dropped by the provider. Don't use it to eliminate scopes that are not enabled for the oidc client, because it also could be a custom scope.
+func (r *Restrictions) SetMaxScopes(mScopes []string) {
+	for _, rr := range *r {
+		rScopes := strings.Split(rr.Scope, " ")
+		okScopes := utils.IntersectSlices(mScopes, rScopes)
+		rr.Scope = strings.Join(okScopes, " ")
+	}
+}
+
+// SetMaxAudiences sets the maximum audiences, i.e. all audiences are stripped from the restrictions if not included in the passed argument. This is used to eliminate requested audiences that are dropped by the provider.
+func (r *Restrictions) SetMaxAudiences(mAud []string) {
+	for _, rr := range *r {
+		rr.Audiences = utils.IntersectSlices(mAud, rr.Audiences)
+	}
+}
+
 func Tighten(old, wanted Restrictions) (res Restrictions) {
 	if len(old) == 0 {
 		return wanted

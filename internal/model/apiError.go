@@ -16,12 +16,15 @@ var ResponseNYI = Response{fiber.StatusNotImplemented, APIErrorNYI}
 
 // Predefined errors
 var (
-	APIErrorUnknownIssuer    = APIError{ErrorInvalidRequest, "The provided issuer is not supported"}
-	APIErrorStateMismatch    = APIError{ErrorInvalidRequest, "State mismatched"}
-	APIErrorUnknownOIDCFlow  = APIError{ErrorInvalidGrant, "Unknown oidc_flow"}
-	APIErrorUnknownGrantType = APIError{ErrorInvalidGrant, "Unknown grant_type"}
-	APIErrorNoRefreshToken   = APIError{ErrorOIDC, "Did not receive a refresh token"}
-	APIErrorNYI              = APIError{ErrorNYI, ""}
+	APIErrorUnknownIssuer        = APIError{ErrorInvalidRequest, "The provided issuer is not supported"}
+	APIErrorStateMismatch        = APIError{ErrorInvalidRequest, "State mismatched"}
+	APIErrorUnknownOIDCFlow      = APIError{ErrorInvalidGrant, "Unknown oidc_flow"}
+	APIErrorUnknownGrantType     = APIError{ErrorInvalidGrant, "Unknown grant_type"}
+	APIErrorBadPollingCode       = APIError{ErrorAccessDenied, "Bad polling_code"}
+	APIErrorPollingCodeExpired   = APIError{ErrorExpiredToken, "polling_code is expired"}
+	APIErrorAuthorizationPending = ErrorWithoutDescription(ErrorAuthorizationPending)
+	APIErrorNoRefreshToken       = APIError{ErrorOIDC, "Did not receive a refresh token"}
+	APIErrorNYI                  = ErrorWithoutDescription(ErrorNYI)
 )
 
 // Predefined OAuth2/OIDC errors
@@ -34,6 +37,9 @@ const (
 	ErrorInvalidScope         = "invalid_scope"
 	ErrorInvalidToken         = "invalid_token"
 	ErrorInsufficientScope    = "insufficient_scope"
+	ErrorExpiredToken         = "expired_token"
+	ErrorAccessDenied         = "access_denied"
+	ErrorAuthorizationPending = "authorization_pending"
 )
 
 // Additional Mytoken errors
@@ -75,5 +81,11 @@ func BadRequestError(errorDescription string) APIError {
 	return APIError{
 		Error:            ErrorInvalidRequest,
 		ErrorDescription: errorDescription,
+	}
+}
+
+func ErrorWithoutDescription(error string) APIError {
+	return APIError{
+		Error: error,
 	}
 }

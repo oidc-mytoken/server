@@ -37,10 +37,10 @@ func (t *AccessToken) toDBObject() accessToken {
 func (t *AccessToken) getDBAttributes(atID uint64) (attrs []AccessTokenAttribute, err error) {
 	var scopeAttrID uint64
 	var audAttrID uint64
-	if err = db.DB().QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, "scope").Scan(scopeAttrID); err != nil {
+	if err = db.DB().QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, "scope").Scan(&scopeAttrID); err != nil {
 		return
 	}
-	if err = db.DB().QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, "audience").Scan(audAttrID); err != nil {
+	if err = db.DB().QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, "audience").Scan(&audAttrID); err != nil {
 		return
 	}
 	for _, s := range t.Scopes {
@@ -73,6 +73,9 @@ func (t *AccessToken) Store() error {
 				return err
 			}
 			attrs, err := t.getDBAttributes(uint64(atID))
+			if err != nil {
+				return err
+			}
 			if _, err := tx.NamedExec(`INSERT INTO AT_Attributes (AT_id, attribute_id, attribute) VALUES (:AT_id, :attribute_id, :attribute)`, attrs); err != nil {
 				return err
 			}

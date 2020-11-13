@@ -7,7 +7,7 @@ import (
 
 type SuperTokenResponse struct {
 	SuperToken   string                    `json:"super_token"`
-	ExpiresIn    uint64                    `json:"expires_in"`
-	Restrictions restrictions.Restrictions `json:"restrictions"`
-	Capabilities capabilities.Capabilities `json:"capabilities"`
+	ExpiresIn    uint64                    `json:"expires_in,omitempty"`
+	Restrictions restrictions.Restrictions `json:"restrictions,omitempty"`
+	Capabilities capabilities.Capabilities `json:"capabilities,omitempty"`
 }

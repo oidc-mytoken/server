@@ -131,3 +131,11 @@ func UniqueSlice(a []string) (unique []string) {
 func SliceUnion(a, b []string) []string {
 	return UniqueSlice(append(a, b...))
 }
+
+func GetTimeIn(seconds int64) time.Time {
+	return time.Now().Add(time.Duration(seconds) * time.Second)
+}
+
+func GetUnixTimeIn(seconds int64) int64 {
+	return GetTimeIn(seconds).Unix()
+}

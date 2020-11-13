@@ -1,6 +1,7 @@
 package super
 
 import (
+	"github.com/zachmann/mytoken/internal/endpoints/token/super/polling"
 	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,9 +16,9 @@ func HandleSuperTokenEndpoint(ctx *fiber.Ctx) error {
 		return model.ResponseNYI.Send(ctx)
 	case model.GrantTypeOIDCFlow:
 		return handleOIDCFlow(ctx)
-	case model.GrantTypeAccessToken:
-		return model.ResponseNYI.Send(ctx)
 	case model.GrantTypePollingCode:
+		return polling.HandlePollingCode(ctx)
+	case model.GrantTypeAccessToken:
 		return model.ResponseNYI.Send(ctx)
 	case model.GrantTypePrivateKeyJWT:
 		return model.ResponseNYI.Send(ctx)
