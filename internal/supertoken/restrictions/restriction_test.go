@@ -6,10 +6,6 @@ import (
 	"github.com/zachmann/mytoken/internal/model"
 )
 
-// import "testing"
-
-//TODO TestTighten
-
 func checkRestrictions(t *testing.T, exp, a Restrictions) {
 	if len(a) != len(exp) {
 		t.Errorf("Expected '%+v', but got '%+v'", exp, a)
@@ -23,7 +19,6 @@ func checkRestrictions(t *testing.T, exp, a Restrictions) {
 		}
 	}
 }
-
 func TestTighten_RestrictEmpty(t *testing.T) {
 	base := Restrictions{}
 	wanted := Restrictions{
@@ -36,7 +31,6 @@ func TestTighten_RestrictEmpty(t *testing.T) {
 	res := Tighten(base, wanted)
 	checkRestrictions(t, expected, res)
 }
-
 func TestTighten_RequestEmpty(t *testing.T) {
 	base := Restrictions{
 		{
@@ -57,7 +51,6 @@ func TestTighten_RequestEmpty(t *testing.T) {
 	res := Tighten(base, wanted)
 	checkRestrictions(t, expected, res)
 }
-
 func TestTighten_RestrictToOne(t *testing.T) {
 	base := Restrictions{
 		{
@@ -83,7 +76,6 @@ func TestTighten_RestrictToOne(t *testing.T) {
 	res := Tighten(base, wanted)
 	checkRestrictions(t, expected, res)
 }
-
 func TestTighten_RestrictToTwo(t *testing.T) {
 	base := Restrictions{
 		{
@@ -113,7 +105,6 @@ func TestTighten_RestrictToTwo(t *testing.T) {
 	res := Tighten(base, wanted)
 	checkRestrictions(t, expected, res)
 }
-
 func TestTighten_RestrictConflict(t *testing.T) {
 	base := Restrictions{
 		{
@@ -139,7 +130,6 @@ func TestTighten_RestrictConflict(t *testing.T) {
 	res := Tighten(base, wanted)
 	checkRestrictions(t, expected, res)
 }
-
 func TestTighten_RestrictDontCombineTwo(t *testing.T) {
 	base := Restrictions{
 		{
@@ -161,7 +151,6 @@ func TestTighten_RestrictDontCombineTwo(t *testing.T) {
 	res := Tighten(base, wanted)
 	checkRestrictions(t, expected, res)
 }
-
 func TestTighten_RestrictDontExtendUsages(t *testing.T) {
 	base := Restrictions{
 		{
@@ -188,4 +177,421 @@ func TestTighten_RestrictDontExtendUsages(t *testing.T) {
 	expected := base
 	res := Tighten(base, wanted)
 	checkRestrictions(t, expected, res)
+}
+
+func testIsTighter(t *testing.T, a, b Restriction, expected bool) {
+	tighter := a.IsTighterThan(b)
+	if tighter != expected {
+		if expected {
+			t.Errorf("Actually '%+v' is tighter than '%+v'", a, b)
+		} else {
+			t.Errorf("Actually '%+v' is not tighter than '%+v'", a, b)
+		}
+	}
+}
+func TestIsTighterThanBothEmpty(t *testing.T) {
+	a := Restriction{}
+	b := Restriction{}
+	testIsTighter(t, a, b, true)
+}
+func TestIsTighterThanOneEmpty(t *testing.T) {
+	a := Restriction{}
+	b := Restriction{Scope: "some"}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanNotBefore(t *testing.T) {
+	a := Restriction{NotBefore: 50}
+	b := Restriction{NotBefore: 100}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanNotBeforeOneEmpty(t *testing.T) {
+	a := Restriction{}
+	b := Restriction{NotBefore: 100}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanExpiresAt(t *testing.T) {
+	a := Restriction{ExpiresAt: 200}
+	b := Restriction{ExpiresAt: 100}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanExpiresAtOneEmpty(t *testing.T) {
+	a := Restriction{}
+	b := Restriction{ExpiresAt: 100}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanScope(t *testing.T) {
+	a := Restriction{Scope: "some scopes"}
+	b := Restriction{Scope: "some"}
+	c := Restriction{Scope: "some other"}
+	d := Restriction{Scope: "completely different"}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+	testIsTighter(t, a, c, false)
+	testIsTighter(t, b, c, true)
+	testIsTighter(t, c, a, false)
+	testIsTighter(t, c, b, false)
+	testIsTighter(t, a, d, false)
+	testIsTighter(t, d, a, false)
+}
+func TestIsTighterThanScopeOneEmpty(t *testing.T) {
+	a := Restriction{}
+	b := Restriction{Scope: "some scopes"}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanIP(t *testing.T) {
+	a := Restriction{IPs: []string{"192.168.0.12"}}
+	b := Restriction{IPs: []string{"192.168.0.12", "192.168.0.14"}}
+	c := Restriction{IPs: []string{"192.168.0.0/24"}}
+	d := Restriction{IPs: []string{"192.168.1.2", "192.168.0.12"}}
+	e := Restriction{IPs: []string{"192.168.0.0/24", "192.168.1.2"}}
+	testIsTighter(t, a, b, true)
+	testIsTighter(t, b, a, false)
+	testIsTighter(t, a, c, true)
+	testIsTighter(t, b, c, true)
+	testIsTighter(t, c, a, false)
+	testIsTighter(t, c, b, false)
+	testIsTighter(t, a, d, true)
+	testIsTighter(t, d, a, false)
+	testIsTighter(t, a, e, true)
+	testIsTighter(t, e, a, false)
+	testIsTighter(t, d, e, true)
+	testIsTighter(t, e, d, false)
+}
+func TestIsTighterThanIPOneEmpty(t *testing.T) {
+	a := Restriction{}
+	b := Restriction{IPs: []string{"192.168.0.12", "192.168.0.14"}}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanGeoIPWhite(t *testing.T) {
+	a := Restriction{GeoIPWhite: []string{"Germany", "USA"}}
+	b := Restriction{GeoIPWhite: []string{"Germany"}}
+	c := Restriction{GeoIPWhite: []string{"France", "Germany"}}
+	d := Restriction{GeoIPWhite: []string{"Japan", "China"}}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+	testIsTighter(t, a, c, false)
+	testIsTighter(t, b, c, true)
+	testIsTighter(t, c, a, false)
+	testIsTighter(t, c, b, false)
+	testIsTighter(t, a, d, false)
+	testIsTighter(t, d, a, false)
+}
+func TestIsTighterThanGeoIPWhiteOneEmpty(t *testing.T) {
+	a := Restriction{}
+	b := Restriction{GeoIPWhite: []string{"Germany", "USA"}}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanGeoIPBlack(t *testing.T) {
+	a := Restriction{GeoIPBlack: []string{"Germany", "USA"}}
+	b := Restriction{GeoIPBlack: []string{"Germany"}}
+	c := Restriction{GeoIPBlack: []string{"France", "Germany"}}
+	d := Restriction{GeoIPBlack: []string{"Japan", "China"}}
+	testIsTighter(t, a, b, true)
+	testIsTighter(t, b, a, false)
+	testIsTighter(t, a, c, false)
+	testIsTighter(t, b, c, false)
+	testIsTighter(t, c, a, false)
+	testIsTighter(t, c, b, true)
+	testIsTighter(t, a, d, false)
+	testIsTighter(t, d, a, false)
+}
+func TestIsTighterThanGeoIPBlackOneEmpty(t *testing.T) {
+	a := Restriction{}
+	b := Restriction{GeoIPBlack: []string{"Germany", "USA"}}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanUsagesAT(t *testing.T) {
+	a := Restriction{UsagesAT: model.JSONNullInt{Value: 20, Valid: true}}
+	b := Restriction{UsagesAT: model.JSONNullInt{Value: 10, Valid: true}}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanUsagesATOneEmpty(t *testing.T) {
+	a := Restriction{}
+	b := Restriction{UsagesAT: model.JSONNullInt{Value: 10, Valid: true}}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanUsagesOther(t *testing.T) {
+	a := Restriction{UsagesOther: model.JSONNullInt{Value: 20, Valid: true}}
+	b := Restriction{UsagesOther: model.JSONNullInt{Value: 10, Valid: true}}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanUsagesOtherOneEmpty(t *testing.T) {
+	a := Restriction{}
+	b := Restriction{UsagesOther: model.JSONNullInt{Value: 20, Valid: true}}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanMultiple1(t *testing.T) {
+	a := Restriction{}
+	b := Restriction{
+		Scope:       "a",
+		UsagesAT:    model.JSONNullInt{Value: 50, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 100, Valid: true},
+	}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanMultiple2(t *testing.T) {
+	a := Restriction{
+		Scope:       "a",
+		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+	}
+	b := Restriction{
+		Scope:       "a b",
+		UsagesAT:    model.JSONNullInt{Value: 50, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 100, Valid: true},
+	}
+	testIsTighter(t, a, b, true)
+	testIsTighter(t, b, a, false)
+}
+func TestIsTighterThanMultiple3(t *testing.T) {
+	a := Restriction{
+		UsagesAT:    model.JSONNullInt{Value: 100, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 50, Valid: true},
+	}
+	b := Restriction{
+		UsagesAT:    model.JSONNullInt{Value: 50, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 100, Valid: true},
+	}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, false)
+}
+func TestIsTighterThanMultiple4(t *testing.T) {
+	a := Restriction{
+		Scope:       "a b c",
+		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+	}
+	b := Restriction{
+		Scope:       "a c b d",
+		UsagesAT:    model.JSONNullInt{Value: 50, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 100, Valid: true},
+	}
+	testIsTighter(t, a, b, true)
+	testIsTighter(t, b, a, false)
+}
+func TestIsTighterThanMultipleE(t *testing.T) {
+	a := Restriction{
+		Scope:       "a b c",
+		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+	}
+	b := a
+	testIsTighter(t, a, b, true)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanAll1(t *testing.T) {
+	a := Restriction{
+		NotBefore:   500,
+		ExpiresAt:   1000,
+		Scope:       "a b c",
+		Audiences:   []string{"a", "b", "c"},
+		IPs:         []string{"a", "b", "c"},
+		GeoIPWhite:  []string{"a", "b", "c"},
+		GeoIPBlack:  []string{"a", "b", "c"},
+		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+	}
+	b := a
+	testIsTighter(t, a, b, true)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanAll2(t *testing.T) {
+	a := Restriction{
+		NotBefore:   500,
+		ExpiresAt:   1000,
+		Scope:       "a b c",
+		Audiences:   []string{"a", "b", "c"},
+		IPs:         []string{"a", "b", "c"},
+		GeoIPWhite:  []string{"a", "b", "c"},
+		GeoIPBlack:  []string{"a", "b", "c"},
+		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+	}
+	b := Restriction{
+		NotBefore:   700,
+		ExpiresAt:   1000,
+		Scope:       "a b c",
+		Audiences:   []string{"a", "b", "c"},
+		IPs:         []string{"a", "b", "c"},
+		GeoIPWhite:  []string{"a", "b", "c"},
+		GeoIPBlack:  []string{"a", "b", "c"},
+		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+	}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, true)
+}
+func TestIsTighterThanAll3(t *testing.T) {
+	a := Restriction{
+		NotBefore:   500,
+		ExpiresAt:   1000,
+		Scope:       "a c",
+		Audiences:   []string{"a", "b", "c"},
+		IPs:         []string{"a", "b", "c"},
+		GeoIPWhite:  []string{"a", "b", "c"},
+		GeoIPBlack:  []string{"a", "b", "c"},
+		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+	}
+	b := Restriction{
+		NotBefore:   700,
+		ExpiresAt:   1000,
+		Scope:       "a b c",
+		Audiences:   []string{"a", "b", "c"},
+		IPs:         []string{"a", "b", "c"},
+		GeoIPWhite:  []string{"a", "b", "c"},
+		GeoIPBlack:  []string{"a", "b", "c"},
+		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+	}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, false)
+}
+func TestIsTighterThanAll4(t *testing.T) {
+	a := Restriction{
+		NotBefore:   500,
+		ExpiresAt:   1000,
+		Scope:       "a b c",
+		Audiences:   []string{"a", "b", "c"},
+		IPs:         []string{"a", "b", "c"},
+		GeoIPWhite:  []string{"a", "b", "c"},
+		GeoIPBlack:  []string{"a", "b", "c"},
+		UsagesAT:    model.JSONNullInt{Value: 20, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 20, Valid: true},
+	}
+	b := Restriction{
+		NotBefore:   700,
+		ExpiresAt:   900,
+		Scope:       "b c",
+		Audiences:   []string{"a", "c"},
+		IPs:         []string{"b", "c"},
+		GeoIPWhite:  []string{"a"},
+		GeoIPBlack:  []string{"a", "b"},
+		UsagesAT:    model.JSONNullInt{Value: 10, Valid: true},
+		UsagesOther: model.JSONNullInt{Value: 0, Valid: true},
+	}
+	testIsTighter(t, a, b, false)
+	testIsTighter(t, b, a, false)
+}
+
+func TestRestrictions_GetExpiresEmpty(t *testing.T) {
+	r := Restrictions{}
+	expires := r.GetExpires()
+	var expected int64 = 0
+	if expected != expires {
+		t.Errorf("Expected %d, but got %d", expected, expires)
+	}
+}
+func TestRestrictions_GetExpiresInfinite(t *testing.T) {
+	r := Restrictions{
+		{ExpiresAt: 0},
+	}
+	expires := r.GetExpires()
+	var expected int64 = 0
+	if expected != expires {
+		t.Errorf("Expected %d, but got %d", expected, expires)
+	}
+}
+func TestRestrictions_GetExpiresOne(t *testing.T) {
+	r := Restrictions{
+		{ExpiresAt: 100},
+	}
+	expires := r.GetExpires()
+	var expected int64 = 100
+	if expected != expires {
+		t.Errorf("Expected %d, but got %d", expected, expires)
+	}
+}
+func TestRestrictions_GetExpiresMultiple(t *testing.T) {
+	r := Restrictions{
+		{ExpiresAt: 100},
+		{ExpiresAt: 300},
+		{ExpiresAt: 200},
+	}
+	expires := r.GetExpires()
+	var expected int64 = 300
+	if expected != expires {
+		t.Errorf("Expected %d, but got %d", expected, expires)
+	}
+}
+func TestRestrictions_GetExpiresMultipleAndInfinite(t *testing.T) {
+	r := Restrictions{
+		{ExpiresAt: 100},
+		{ExpiresAt: 0},
+		{ExpiresAt: 300},
+		{ExpiresAt: 200},
+	}
+	expires := r.GetExpires()
+	var expected int64 = 0
+	if expected != expires {
+		t.Errorf("Expected %d, but got %d", expected, expires)
+	}
+}
+
+func TestRestrictions_GetNotBeforeEmpty(t *testing.T) {
+	r := Restrictions{}
+	expires := r.GetNotBefore()
+	var expected int64 = 0
+	if expected != expires {
+		t.Errorf("Expected %d, but got %d", expected, expires)
+	}
+}
+func TestRestrictions_GetNotBeforeInfinite(t *testing.T) {
+	r := Restrictions{
+		{NotBefore: 0},
+	}
+	expires := r.GetNotBefore()
+	var expected int64 = 0
+	if expected != expires {
+		t.Errorf("Expected %d, but got %d", expected, expires)
+	}
+}
+func TestRestrictions_GetNotBeforeOne(t *testing.T) {
+	r := Restrictions{
+		{NotBefore: 100},
+	}
+	expires := r.GetNotBefore()
+	var expected int64 = 100
+	if expected != expires {
+		t.Errorf("Expected %d, but got %d", expected, expires)
+	}
+}
+func TestRestrictions_GetNotBeforeMultiple(t *testing.T) {
+	r := Restrictions{
+		{NotBefore: 100},
+		{NotBefore: 300},
+		{NotBefore: 200},
+	}
+	expires := r.GetNotBefore()
+	var expected int64 = 100
+	if expected != expires {
+		t.Errorf("Expected %d, but got %d", expected, expires)
+	}
+}
+func TestRestrictions_GetNotBeforeMultipleAndInfinite(t *testing.T) {
+	r := Restrictions{
+		{NotBefore: 100},
+		{NotBefore: 0},
+		{NotBefore: 300},
+		{NotBefore: 200},
+	}
+	expires := r.GetNotBefore()
+	var expected int64 = 0
+	if expected != expires {
+		t.Errorf("Expected %d, but got %d", expected, expires)
+	}
 }
