@@ -12,7 +12,7 @@ type APIError struct {
 	ErrorDescription string `json:"error_description,omitempty"`
 }
 
-var ResponseNYI = Response{fiber.StatusNotImplemented, APIErrorNYI}
+var ResponseNYI = Response{Status: fiber.StatusNotImplemented, Response: APIErrorNYI}
 
 // Predefined errors
 var (

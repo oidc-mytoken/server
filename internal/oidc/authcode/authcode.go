@@ -248,9 +248,19 @@ func CodeExchange(state, code string, networkData model.NetworkData) model.Respo
 			Response: "ok", //TODO
 		}
 	}
+	res := ste.Token.ToSuperTokenResponse("")
 	return model.Response{
-		Status:   fiber.StatusOK,
-		Response: ste.Token.ToSuperTokenResponse(""), //TODO redirect
+		Status:   fiber.StatusSeeOther,
+		Response: "/", //TODO redirect
+		Cookies: []*fiber.Cookie{{
+			Name:     "mytoken-supertoken",
+			Value:    res.SuperToken,
+			Path:     "/api",
+			MaxAge:   3600,  //TODO from config
+			Secure:   false, //TODO true
+			HTTPOnly: true,
+			SameSite: "Strict",
+		}},
 	}
 }
 
