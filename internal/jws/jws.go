@@ -10,10 +10,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/dgrijalva/jwt-go"
-
 	"github.com/coreos/go-oidc/v3/oidc"
-
+	"github.com/dgrijalva/jwt-go"
 	"github.com/zachmann/mytoken/internal/config"
 )
 

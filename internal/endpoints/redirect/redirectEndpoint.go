@@ -1,21 +1,18 @@
 package redirect
 
 import (
-	"log"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/oidc/authcode"
 )
 
 func HandleOIDCRedirect(ctx *fiber.Ctx) error {
-	log.Print("Handle redirect")
+	log.Debug("Handle redirect")
 	oidcError := ctx.Query("error")
 	state := ctx.Query("state")
-	log.Printf("error: '%s'", oidcError)
-	log.Printf("state: '%s'", state)
 	if oidcError != "" {
 		if state != "" {
 			_ = db.Transact(func(tx *sqlx.Tx) error {

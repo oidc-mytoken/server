@@ -1,12 +1,11 @@
 package super
 
 import (
-	"github.com/zachmann/mytoken/internal/endpoints/token/super/polling"
-	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
-
 	"github.com/gofiber/fiber/v2"
+	"github.com/zachmann/mytoken/internal/endpoints/token/super/polling"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/oidc/authcode"
+	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
 )
 
 func HandleSuperTokenEndpoint(ctx *fiber.Ctx) error {

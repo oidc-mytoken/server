@@ -3,25 +3,19 @@ package dbModels
 import (
 	"database/sql"
 	"errors"
-	"log"
 	"time"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/go-sql-driver/mysql"
-
 	"github.com/jmoiron/sqlx"
-
+	uuid "github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
+	"github.com/zachmann/mytoken/internal/db"
+	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
-	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
-
 	eventService "github.com/zachmann/mytoken/internal/supertoken/event"
 	event "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
-
-	"github.com/zachmann/mytoken/internal/db"
-
-	uuid "github.com/satori/go.uuid"
 	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
+	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 )
 
 // SuperTokenEntry holds the information of a SuperTokenEntry as stored in the
@@ -99,7 +93,7 @@ func (e *superTokenEntryStore) Store() error {
 		txStmt := tx.NamedStmt(stmt)
 		_, err := txStmt.Exec(e)
 		if err != nil {
-			log.Printf("%s", err)
+			log.WithError(err).Error()
 			var mysqlError *mysql.MySQLError
 			if errors.As(err, &mysqlError) && mysqlError.Number == 1048 {
 				_, err = tx.NamedExec(`INSERT INTO Users (sub, iss) VALUES(:sub, :iss)`, e)

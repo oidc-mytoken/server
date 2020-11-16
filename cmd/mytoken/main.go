@@ -7,10 +7,12 @@ import (
 	"github.com/zachmann/mytoken/internal/jws"
 	"github.com/zachmann/mytoken/internal/oidc/authcode"
 	"github.com/zachmann/mytoken/internal/server"
+	loggerUtils "github.com/zachmann/mytoken/internal/utils/logger"
 )
 
 func main() {
 	config.Load()
+	loggerUtils.Init()
 	server.Init()
 	configurationEndpoint.Init()
 	authcode.Init()

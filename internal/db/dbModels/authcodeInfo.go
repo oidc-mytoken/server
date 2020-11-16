@@ -2,12 +2,10 @@ package dbModels
 
 import (
 	"database/sql"
-	"log"
-
-	"github.com/zachmann/mytoken/internal/config"
 
 	"github.com/jmoiron/sqlx"
-
+	log "github.com/sirupsen/logrus"
+	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
@@ -60,7 +58,7 @@ func (i *authFlowInfo) toAuthFlowInfo() *AuthFlowInfo {
 }
 
 func (i *AuthFlowInfo) Store() error {
-	log.Printf("Storing auth flow info")
+	log.Debug("Storing auth flow info")
 	store := i.toAuthFlowInfo()
 	return db.Transact(func(tx *sqlx.Tx) error {
 		if i.PollingCode != "" {

@@ -3,18 +3,17 @@ package config
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
-
 	"github.com/coreos/go-oidc/v3/oidc"
+	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/utils/fileutil"
+	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
 )
 
 // Config holds the server configuration
@@ -33,13 +32,14 @@ type Config struct {
 }
 
 type loggingConf struct {
-	Access   loggerConf `yaml:"access"`
-	Internal loggerConf `yaml:"internal"`
+	Access   LoggerConf `yaml:"access"`
+	Internal LoggerConf `yaml:"internal"`
 }
 
-type loggerConf struct {
+type LoggerConf struct {
 	Dir    string `yaml:"dir"`
 	StdErr bool   `yaml:"stderr"`
+	Level  string `yaml:"level"`
 }
 
 type pollingConf struct {
@@ -148,13 +148,12 @@ func readConfigFile(filename string) []byte {
 			homeDir := os.Getenv("HOME")
 			filep = filepath.Join(homeDir, filep[1:])
 		}
-		log.Printf("Looking for config file at: %s\n", filep)
+		log.WithField("filepath", filep).Debug("Looking for config file")
 		if fileutil.FileExists(filep) {
 			return fileutil.MustReadFile(filep)
 		}
 	}
-	fmt.Printf("Could not find config file %s in any of the possible directories\n", filename)
-	os.Exit(1)
+	log.WithField("filepath", filename).Fatal("Could not find config file in any of the possible directories")
 	return nil
 }
 
@@ -162,7 +161,7 @@ func readConfigFile(filename string) []byte {
 func Load() {
 	load()
 	if err := validate(); err != nil {
-		log.Fatal(err)
+		log.WithError(err).Fatal()
 	}
 }
 
@@ -171,7 +170,7 @@ func load() {
 	conf = newConfig()
 	err := yaml.Unmarshal(data, conf)
 	if err != nil {
-		log.Fatal(err)
+		log.WithError(err).Fatal()
 		return
 	}
 }

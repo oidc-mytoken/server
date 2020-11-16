@@ -1,13 +1,12 @@
 package server
 
 import (
-	"log"
 	"time"
 
-	"github.com/zachmann/mytoken/internal/endpoints/redirect"
-
 	"github.com/gofiber/fiber/v2"
+	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/endpoints/configuration"
+	"github.com/zachmann/mytoken/internal/endpoints/redirect"
 )
 
 var server *fiber.App

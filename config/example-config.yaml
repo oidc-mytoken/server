@@ -37,4 +37,5 @@ logging:
   internal:
     dir: "/var/log/mytoken"
     stderr: false
+    level: "info"
 

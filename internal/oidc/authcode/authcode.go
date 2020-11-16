@@ -6,30 +6,23 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
-	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
-
-	"github.com/dgrijalva/jwt-go"
-
-	"github.com/jmoiron/sqlx"
-	"github.com/zachmann/mytoken/internal/db"
-
 	"github.com/coreos/go-oidc/v3/oidc"
-
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
-
-	"github.com/zachmann/mytoken/internal/model"
-
-	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
-
+	"github.com/jmoiron/sqlx"
+	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/config"
+	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/db/dbModels"
 	response "github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
+	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/oidc/issuer"
+	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 	"github.com/zachmann/mytoken/internal/utils"
+	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
 	"golang.org/x/oauth2"
 )
 
@@ -69,7 +62,7 @@ func parseState(state string) stateInfo {
 }
 
 func authorizationURL(provider *config.ProviderConf, restrictions restrictions.Restrictions, native bool) (string, string) {
-	log.Printf("Generating authorization url")
+	log.Debug("Generating authorization url")
 	scopes := restrictions.GetScopes()
 	if len(scopes) <= 0 {
 		scopes = provider.Scopes
@@ -97,7 +90,7 @@ func authorizationURL(provider *config.ProviderConf, restrictions restrictions.R
 }
 
 func InitAuthCodeFlow(body []byte) model.Response {
-	log.Print("Handle authcode")
+	log.Debug("Handle authcode")
 	req := response.NewAuthCodeFlowRequest()
 	if err := json.Unmarshal(body, &req); err != nil {
 		return model.Response{
@@ -147,10 +140,9 @@ func InitAuthCodeFlow(body []byte) model.Response {
 }
 
 func CodeExchange(state, code string, networkData model.NetworkData) model.Response {
-	log.Print("Handle code exchange")
+	log.Debug("Handle code exchange")
 	authInfo, err := dbModels.GetAuthCodeInfoByState(state)
 	if err != nil {
-		log.Printf("%s", err)
 		if err == sql.ErrNoRows {
 			return model.Response{
 				Status:   fiber.StatusBadRequest,

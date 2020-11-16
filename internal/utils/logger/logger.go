@@ -1,36 +1,33 @@
 package logger
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/config"
-
-	"github.com/kjk/dailyrotate"
 )
 
-const accessFileFormat = "access_2006-01-02.log"
-
-func mustGetRotateWriter(pathFormat string) io.Writer {
-	w, err := dailyrotate.NewFile(pathFormat, nil)
-	if err != nil {
-		fmt.Printf("ERROR: Could not open %s - %s\n", time.Now().Format(pathFormat), err.Error())
-		os.Exit(1)
+func mustGetFile(path string) io.Writer {
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err == nil {
+		return file
 	}
-	defer w.Close()
-	return w
+	panic(err)
 }
 
 func MustGetAccessLogger() io.Writer {
+	return mustGetLogWriter(config.Get().Logging.Access, "access.log")
+}
+
+func mustGetLogWriter(logConf config.LoggerConf, logfileName string) io.Writer {
 	var loggers []io.Writer
-	if config.Get().Logging.Access.StdErr {
+	if logConf.StdErr {
 		loggers = append(loggers, os.Stderr)
 	}
-	if logDir := config.Get().Logging.Access.Dir; logDir != "" {
-		loggers = append(loggers, mustGetRotateWriter(filepath.Join(logDir, accessFileFormat)))
+	if logDir := logConf.Dir; logDir != "" {
+		loggers = append(loggers, mustGetFile(filepath.Join(logDir, logfileName)))
 	}
 	switch len(loggers) {
 	case 0:
@@ -40,4 +37,22 @@ func MustGetAccessLogger() io.Writer {
 	default:
 		return io.MultiWriter(loggers...)
 	}
+}
+
+func parseLogLevel() log.Level {
+	logLevel := config.Get().Logging.Internal.Level
+	level, err := log.ParseLevel(logLevel)
+	if err != nil {
+		log.WithField("level", logLevel).WithError(err).Error("Unknown log level")
+		return log.InfoLevel
+	}
+	return level
+}
+
+func Init() {
+	log.SetLevel(parseLogLevel())
+	if log.IsLevelEnabled(log.DebugLevel) {
+		log.SetReportCaller(true)
+	}
+	log.SetOutput(mustGetLogWriter(config.Get().Logging.Internal, "mytoken.log"))
 }
