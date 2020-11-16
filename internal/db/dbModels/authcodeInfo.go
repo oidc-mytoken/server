@@ -30,6 +30,7 @@ type authFlowInfo struct {
 	Name          sql.NullString
 	PollingCodeID *uint64        `db:"polling_code_id"`
 	PollingCode   sql.NullString `db:"polling_code"`
+	ExpiresIn     int64          `db:"expires_in"`
 }
 
 func (i *AuthFlowInfo) toAuthFlowInfo() *authFlowInfo {
@@ -39,6 +40,7 @@ func (i *AuthFlowInfo) toAuthFlowInfo() *authFlowInfo {
 		Restrictions: i.Restrictions,
 		Capabilities: i.Capabilities,
 		Name:         db.NewNullString(i.Name),
+		ExpiresIn:    config.Get().Polling.PollingCodeExpiresAfter,
 	}
 }
 
@@ -69,14 +71,14 @@ func (i *AuthFlowInfo) Store() error {
 			upid := uint64(pid)
 			store.PollingCodeID = &upid
 		}
-		_, err := tx.NamedExec(`INSERT INTO AuthInfo (state, iss, restrictions, capabilities, name, polling_code_id) VALUES(:state, :iss, :restrictions, :capabilities, :name, :polling_code_id)`, store)
+		_, err := tx.NamedExec(`INSERT INTO AuthInfo (state, iss, restrictions, capabilities, name, expires_in, polling_code_id) VALUES(:state, :iss, :restrictions, :capabilities, :name, :expires_in, :polling_code_id)`, store)
 		return err
 	})
 }
 
 func GetAuthCodeInfoByState(state string) (*AuthFlowInfo, error) {
 	info := authFlowInfo{}
-	if err := db.DB().Get(&info, `SELECT state, iss, restrictions, capabilities, name, polling_code FROM AuthInfoV WHERE state=?`, state); err != nil {
+	if err := db.DB().Get(&info, `SELECT state, iss, restrictions, capabilities, name, polling_code FROM AuthInfoV WHERE state=? AND expires_at >= CURRENT_TIMESTAMP()`, state); err != nil {
 		return nil, err
 	}
 	return info.toAuthFlowInfo(), nil
