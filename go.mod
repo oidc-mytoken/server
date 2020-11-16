@@ -13,6 +13,7 @@ require (
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/jinzhu/copier v0.0.0-20201025035756-632e723a6687
 	github.com/jmoiron/sqlx v1.2.1-0.20200615141059-0794cb1f47ee
+	github.com/kjk/dailyrotate v0.0.0-20191009232928-ae3b0facf5a6
 	github.com/klauspost/compress v1.11.2 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pquerna/cachecontrol v0.0.0-20200921180117-858c6e7e6b7e // indirect

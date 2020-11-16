@@ -30,3 +30,11 @@ signing:
   key_file: "/mytoken.key"
 #  rsa_key_len: 2048
 service_documentation: "https://github.com/zachmann/mytoken"
+logging:
+  access:
+    dir: "/var/log/mytoken"
+    stderr: false
+  internal:
+    dir: "/var/log/mytoken"
+    stderr: false
+

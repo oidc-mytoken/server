@@ -12,7 +12,7 @@ import (
 
 var server *fiber.App
 
-func init() {
+func Init() {
 	server = fiber.New(fiber.Config{
 		ReadTimeout:    30 * time.Second,
 		WriteTimeout:   90 * time.Second,

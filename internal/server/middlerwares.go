@@ -1,6 +1,8 @@
 package server
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
@@ -8,8 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/helmet/v2"
-	"os"
-	"time"
+	loggerUtils "github.com/zachmann/mytoken/internal/utils/logger"
 )
 
 func addMiddlewares(s fiber.Router) {
@@ -24,7 +25,7 @@ func addLoggerMiddleware(s fiber.Router) {
 	s.Use(logger.New(logger.Config{
 		Format:     "${time} ${ip} ${latency} - ${status} ${method} ${path}\n",
 		TimeFormat: "2006-01-02 15:04:05",
-		Output:     os.Stderr,
+		Output:     loggerUtils.MustGetAccessLogger(),
 	}))
 }
 

@@ -11,6 +11,7 @@ import (
 
 func main() {
 	config.Load()
+	server.Init()
 	configurationEndpoint.Init()
 	authcode.Init()
 	if err := db.Connect(); err != nil {

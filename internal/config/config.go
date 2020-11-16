@@ -29,6 +29,17 @@ type Config struct {
 	Signing                             signingConf              `yaml:"signing"`
 	ServiceDocumentation                string                   `yaml:"service_documentation"`
 	Polling                             pollingConf              `yaml:"polling_codes"`
+	Logging                             loggingConf              `yaml:"logging"`
+}
+
+type loggingConf struct {
+	Access   loggerConf `yaml:"access"`
+	Internal loggerConf `yaml:"internal"`
+}
+
+type loggerConf struct {
+	Dir    string `yaml:"dir"`
+	StdErr bool   `yaml:"stderr"`
 }
 
 type pollingConf struct {
