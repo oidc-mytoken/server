@@ -28,6 +28,9 @@ func addRoutes(s fiber.Router) {
 	s.Get("/", handleTest)
 	s.Get("/test", handleTest)
 	s.Get("/.well-known/mytoken-configuration", configuration.HandleConfiguration)
+	s.Get("/.well-known/openid-configuration", func(ctx *fiber.Ctx) error {
+		return ctx.Redirect("/.well-known/mytoken-configuration")
+	})
 	s.Get("/redirect", redirect.HandleOIDCRedirect)
 	addAPIRoutes(s)
 }
