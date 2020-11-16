@@ -25,6 +25,7 @@ type AuthCodeFlowRequest struct {
 func NewAuthCodeFlowRequest() *AuthCodeFlowRequest {
 	return &AuthCodeFlowRequest{
 		RedirectType: RedirectTypeWeb,
+		Capabilities: capabilities.Capabilities{capabilities.CapabilityAT},
 	}
 }
 

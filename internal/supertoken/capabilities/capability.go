@@ -5,6 +5,16 @@ import (
 	"encoding/json"
 )
 
+// Constants for capabilities
+const (
+	CapabilityAT               Capability = "AT"
+	CapabilityCreateST                    = "create_super_token"
+	CapabilitySettings                    = "settings"
+	CapabilityTokeninfoHistory            = "tokeninfo_history"
+	CapabilityTokeninfoTree               = "tokeninfo_tree"
+	CapabilityListST                      = "list_super_tokens"
+)
+
 // Capabilities is a slice of Capability
 type Capabilities []Capability
 
