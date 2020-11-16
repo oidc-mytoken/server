@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/db"
-	"github.com/zachmann/mytoken/internal/endpoints/configuration"
+	configurationEndpoint "github.com/zachmann/mytoken/internal/endpoints/configuration"
 	"github.com/zachmann/mytoken/internal/jws"
 	"github.com/zachmann/mytoken/internal/oidc/authcode"
 	"github.com/zachmann/mytoken/internal/server"
@@ -11,10 +11,9 @@ import (
 
 func main() {
 	config.Load()
-	configuration.Init()
+	configurationEndpoint.Init()
 	authcode.Init()
-	err := db.Connect()
-	if err != nil {
+	if err := db.Connect(); err != nil {
 		panic(err)
 	}
 	jws.LoadKey()
