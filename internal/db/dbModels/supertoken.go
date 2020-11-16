@@ -39,8 +39,8 @@ type SuperTokenEntry struct {
 	networkData  model.NetworkData
 }
 
-func NewSuperTokenEntry(name, oidcSub, oidcIss string, r restrictions.Restrictions, c capabilities.Capabilities, networkData model.NetworkData) *SuperTokenEntry {
-	st := supertoken.NewSuperToken(oidcSub, oidcIss, r, c)
+func NewSuperTokenEntry(name, oidcSub, oidcIss string, r restrictions.Restrictions, c, sc capabilities.Capabilities, networkData model.NetworkData) *SuperTokenEntry {
+	st := supertoken.NewSuperToken(oidcSub, oidcIss, r, c, sc)
 	return &SuperTokenEntry{
 		ID:          st.ID,
 		Token:       st,

@@ -50,3 +50,12 @@ func Tighten(a, b Capabilities) (res Capabilities) {
 	}
 	return
 }
+
+func (c Capabilities) Has(a Capability) bool {
+	for _, cc := range c {
+		if cc == a {
+			return true
+		}
+	}
+	return false
+}

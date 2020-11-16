@@ -17,33 +17,35 @@ import (
 
 // SuperToken is a mytoken SuperToken
 type SuperToken struct {
-	Issuer       string                    `json:"iss"`
-	Subject      string                    `json:"sub"`
-	ExpiresAt    int64                     `json:"exp,omitempty"`
-	NotBefore    int64                     `json:"nbf"`
-	IssuedAt     int64                     `json:"iat"`
-	ID           uuid.UUID                 `json:"jti"`
-	Audience     string                    `json:"aud"`
-	OIDCSubject  string                    `json:"oidc_sub"`
-	OIDCIssuer   string                    `json:"oidc_iss"`
-	Restrictions restrictions.Restrictions `json:"restrictions,omitempty"`
-	Capabilities capabilities.Capabilities `json:"capabilities"`
-	jwt          string
+	Issuer               string                    `json:"iss"`
+	Subject              string                    `json:"sub"`
+	ExpiresAt            int64                     `json:"exp,omitempty"`
+	NotBefore            int64                     `json:"nbf"`
+	IssuedAt             int64                     `json:"iat"`
+	ID                   uuid.UUID                 `json:"jti"`
+	Audience             string                    `json:"aud"`
+	OIDCSubject          string                    `json:"oidc_sub"`
+	OIDCIssuer           string                    `json:"oidc_iss"`
+	Restrictions         restrictions.Restrictions `json:"restrictions,omitempty"`
+	Capabilities         capabilities.Capabilities `json:"capabilities"`
+	SubtokenCapabilities capabilities.Capabilities `json:"subtoken_capabilities,omitempty"`
+	jwt                  string
 }
 
 // NewSuperToken creates a new SuperToken
-func NewSuperToken(oidcSub, oidcIss string, r restrictions.Restrictions, c capabilities.Capabilities) *SuperToken {
+func NewSuperToken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc capabilities.Capabilities) *SuperToken {
 	now := time.Now().Unix()
 	st := &SuperToken{
-		ID:           uuid.NewV4(),
-		IssuedAt:     now,
-		NotBefore:    now,
-		Issuer:       config.Get().IssuerURL,
-		Subject:      issuerUtils.CombineSubIss(oidcSub, oidcIss),
-		Audience:     config.Get().IssuerURL,
-		OIDCIssuer:   oidcIss,
-		OIDCSubject:  oidcSub,
-		Capabilities: c,
+		ID:                   uuid.NewV4(),
+		IssuedAt:             now,
+		NotBefore:            now,
+		Issuer:               config.Get().IssuerURL,
+		Subject:              issuerUtils.CombineSubIss(oidcSub, oidcIss),
+		Audience:             config.Get().IssuerURL,
+		OIDCIssuer:           oidcIss,
+		OIDCSubject:          oidcSub,
+		Capabilities:         c,
+		SubtokenCapabilities: sc,
 	}
 	if len(r) > 0 {
 		st.Restrictions = r
@@ -98,10 +100,11 @@ func (st *SuperToken) ToSuperTokenResponse(jwt string) response.SuperTokenRespon
 		jwt = st.jwt
 	}
 	return response.SuperTokenResponse{
-		SuperToken:   jwt,
-		ExpiresIn:    st.ExpiresIn(),
-		Restrictions: st.Restrictions,
-		Capabilities: st.Capabilities,
+		SuperToken:           jwt,
+		ExpiresIn:            st.ExpiresIn(),
+		Restrictions:         st.Restrictions,
+		Capabilities:         st.Capabilities,
+		SubtokenCapabilities: st.SubtokenCapabilities,
 	}
 }
 

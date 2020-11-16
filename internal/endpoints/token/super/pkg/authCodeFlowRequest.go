@@ -1,6 +1,8 @@
 package pkg
 
 import (
+	"encoding/json"
+
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
@@ -13,13 +15,14 @@ const (
 )
 
 type AuthCodeFlowRequest struct {
-	Issuer       string                    `json:"oidc_issuer"`
-	GrantType    model.GrantType           `json:"grant_type"`
-	OIDCFlow     model.OIDCFlow            `json:"oidc_flow"`
-	Restrictions restrictions.Restrictions `json:"restrictions"`
-	Capabilities capabilities.Capabilities `json:"capabilities"`
-	RedirectType string                    `json:"redirect_type"`
-	Name         string                    `json:"name"`
+	Issuer               string                    `json:"oidc_issuer"`
+	GrantType            model.GrantType           `json:"grant_type"`
+	OIDCFlow             model.OIDCFlow            `json:"oidc_flow"`
+	Restrictions         restrictions.Restrictions `json:"restrictions"`
+	Capabilities         capabilities.Capabilities `json:"capabilities"`
+	SubtokenCapabilities capabilities.Capabilities `json:"subtoken_capabilities"`
+	RedirectType         string                    `json:"redirect_type"`
+	Name                 string                    `json:"name"`
 }
 
 func NewAuthCodeFlowRequest() *AuthCodeFlowRequest {
@@ -34,4 +37,17 @@ func (r *AuthCodeFlowRequest) Native() bool {
 		return true
 	}
 	return false
+}
+
+func (r *AuthCodeFlowRequest) UnmarshalJSON(data []byte) error {
+	type authCodeFlowRequest2 AuthCodeFlowRequest
+	rr := authCodeFlowRequest2{}
+	if err := json.Unmarshal(data, &rr); err != nil {
+		return err
+	}
+	*r = AuthCodeFlowRequest(rr)
+	if r.SubtokenCapabilities != nil && !r.Capabilities.Has(capabilities.CapabilityCreateST) {
+		r.SubtokenCapabilities = nil
+	}
+	return nil
 }

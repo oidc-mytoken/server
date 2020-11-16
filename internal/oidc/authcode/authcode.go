@@ -121,11 +121,12 @@ func InitAuthCodeFlow(body []byte) model.Response {
 
 	authURL, state := authorizationURL(provider, req.Restrictions, req.Native())
 	authFlowInfo := dbModels.AuthFlowInfo{
-		State:        state,
-		Issuer:       provider.Issuer,
-		Restrictions: req.Restrictions,
-		Capabilities: req.Capabilities,
-		Name:         req.Name,
+		State:                state,
+		Issuer:               provider.Issuer,
+		Restrictions:         req.Restrictions,
+		Capabilities:         req.Capabilities,
+		SubtokenCapabilities: req.SubtokenCapabilities,
+		Name:                 req.Name,
 	}
 	res := response.AuthCodeFlowResponse{
 		AuthorizationURL: authURL,
@@ -254,7 +255,7 @@ func CodeExchange(state, code string, networkData model.NetworkData) model.Respo
 }
 
 func createSuperTokenEntry(authFlowInfo *dbModels.AuthFlowInfo, token *oauth2.Token, oidcSub string, networkData model.NetworkData) (*dbModels.SuperTokenEntry, error) {
-	ste := dbModels.NewSuperTokenEntry(authFlowInfo.Name, oidcSub, authFlowInfo.Issuer, authFlowInfo.Restrictions, authFlowInfo.Capabilities, networkData)
+	ste := dbModels.NewSuperTokenEntry(authFlowInfo.Name, oidcSub, authFlowInfo.Issuer, authFlowInfo.Restrictions, authFlowInfo.Capabilities, authFlowInfo.SubtokenCapabilities, networkData)
 	ste.RefreshToken = token.RefreshToken
 	err := ste.Store("Used grant_type oidc_flow authorization_code")
 	if err != nil {
