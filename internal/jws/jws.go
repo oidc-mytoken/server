@@ -12,6 +12,7 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/zachmann/mytoken/internal/config"
 )
 
@@ -82,6 +83,7 @@ func exportRSAPrivateKeyAsPemStr(privkey *rsa.PrivateKey) string {
 
 var privateKey interface{}
 var publicKey interface{}
+var jwks jwk.Set
 
 // GetPrivateKey returns the private key
 func GetPrivateKey() interface{} {
@@ -91,6 +93,10 @@ func GetPrivateKey() interface{} {
 // GetPublicKey returns the public key
 func GetPublicKey() interface{} {
 	return publicKey
+}
+
+func GetJWKS() jwk.Set {
+	return jwks
 }
 
 // LoadKey loads the private and public key
@@ -117,4 +123,11 @@ func LoadKey() {
 	default:
 		panic(fmt.Errorf("unknown signing alg"))
 	}
+	key, err := jwk.New(publicKey)
+	if err != nil {
+		panic(err)
+	}
+	jwk.AssignKeyID(key)
+	key.Set(jwk.KeyUsageKey, string(jwk.ForSignature))
+	jwks = jwk.Set{Keys: []jwk.Key{key}}
 }

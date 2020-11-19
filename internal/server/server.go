@@ -3,6 +3,8 @@ package server
 import (
 	"time"
 
+	"github.com/zachmann/mytoken/internal/endpoints"
+
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/endpoints/configuration"
@@ -30,6 +32,7 @@ func addRoutes(s fiber.Router) {
 	s.Get("/.well-known/openid-configuration", func(ctx *fiber.Ctx) error {
 		return ctx.Redirect("/.well-known/mytoken-configuration")
 	})
+	s.Get("/jwks", endpoints.HandleJWKS)
 	s.Get("/redirect", redirect.HandleOIDCRedirect)
 	addAPIRoutes(s)
 }
