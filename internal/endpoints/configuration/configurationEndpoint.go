@@ -43,5 +43,6 @@ func Init() {
 		SuperTokenEndpointGrantTypesSupported:  config.Get().EnabledSuperTokenEndpointGrantTypes,
 		SuperTokenEndpointOIDCFlowsSupported:   config.Get().EnabledOIDCFlows,
 		ServiceDocumentation:                   config.Get().ServiceDocumentation,
+		Version:                                model.VERSION,
 	}
 }
