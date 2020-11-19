@@ -8,6 +8,7 @@ type MytokenConfiguration struct {
 	SuperTokenEndpoint                     string                    `json:"super_token_endpoint"`
 	TokeninfoEndpoint                      string                    `json:"tokeninfo_endpoint,omitempty"`
 	RevocationEndpoint                     string                    `json:"revocation_endpoint,omitempty"`
+	UserSettingsEndpoint                   string                    `json:"usersettings_endpoint"`
 	JWKSURI                                string                    `json:"jwks_uri"`
 	ProvidersSupported                     []SupportedProviderConfig `json:"providers_supported"`
 	TokenSigningAlgValue                   string                    `json:"token_signing_alg_value"`

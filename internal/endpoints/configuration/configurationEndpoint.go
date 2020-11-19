@@ -36,6 +36,7 @@ func Init() {
 		SuperTokenEndpoint:                     utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/token/super"),
 		TokeninfoEndpoint:                      utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/tokeninfo"),
 		RevocationEndpoint:                     utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/revocation"),
+		UserSettingsEndpoint:                   utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/user"),
 		JWKSURI:                                utils.CombineURLPath(config.Get().IssuerURL, "/jwks"),
 		ProvidersSupported:                     getProvidersFromConfig(),
 		TokenSigningAlgValue:                   config.Get().Signing.Alg,
