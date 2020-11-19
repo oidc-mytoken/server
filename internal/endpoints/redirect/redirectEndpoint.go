@@ -7,6 +7,7 @@ import (
 	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/oidc/authcode"
+	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
 )
 
 func HandleOIDCRedirect(ctx *fiber.Ctx) error {
@@ -33,10 +34,6 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 		return errorRes.Send(ctx)
 	}
 	code := ctx.Query("code")
-	networkData := model.NetworkData{
-		IP:        ctx.IP(),
-		UserAgent: string(ctx.Request().Header.UserAgent()),
-	}
-	res := authcode.CodeExchange(state, code, networkData)
+	res := authcode.CodeExchange(state, code, *ctxUtils.NetworkData(ctx))
 	return res.Send(ctx)
 }

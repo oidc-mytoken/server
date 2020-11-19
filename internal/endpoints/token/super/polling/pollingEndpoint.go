@@ -22,11 +22,10 @@ func HandlePollingCode(ctx *fiber.Ctx) error {
 		}
 		return res.Send(ctx)
 	}
-	res := handlePollingCode(req)
-	return res.Send(ctx)
+	return handlePollingCode(req).Send(ctx)
 }
 
-func handlePollingCode(req response.PollingCodeRequest) model.Response {
+func handlePollingCode(req response.PollingCodeRequest) *model.Response {
 	pollingCode := req.PollingCode
 	log.WithField("polling_code", pollingCode).Debug("Handle polling code")
 	pollingCodeStatus, err := dbModels.CheckPollingCode(pollingCode)
@@ -35,14 +34,14 @@ func handlePollingCode(req response.PollingCodeRequest) model.Response {
 	}
 	if !pollingCodeStatus.Found {
 		log.WithField("polling_code", pollingCode).Debug("Polling code not known")
-		return model.Response{
+		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
 			Response: model.APIErrorBadPollingCode,
 		}
 	}
 	if pollingCodeStatus.Expired {
 		log.WithField("polling_code", pollingCode).Debug("Polling code expired")
-		return model.Response{
+		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
 			Response: model.APIErrorPollingCodeExpired,
 		}
@@ -64,7 +63,7 @@ func handlePollingCode(req response.PollingCodeRequest) model.Response {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if token == "" {
-		return model.Response{
+		return &model.Response{
 			Status:   fiber.StatusPreconditionRequired,
 			Response: model.APIErrorAuthorizationPending,
 		}
@@ -74,7 +73,7 @@ func handlePollingCode(req response.PollingCodeRequest) model.Response {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	log.Tracef("The JWT was parsed as '%+v'", st)
-	return model.Response{
+	return &model.Response{
 		Status:   fiber.StatusOK,
 		Response: st.ToSuperTokenResponse(token),
 	}

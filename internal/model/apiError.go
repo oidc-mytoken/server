@@ -16,15 +16,17 @@ var ResponseNYI = Response{Status: fiber.StatusNotImplemented, Response: APIErro
 
 // Predefined errors
 var (
-	APIErrorUnknownIssuer        = APIError{ErrorInvalidRequest, "The provided issuer is not supported"}
-	APIErrorStateMismatch        = APIError{ErrorInvalidRequest, "State mismatched"}
-	APIErrorUnknownOIDCFlow      = APIError{ErrorInvalidGrant, "Unknown oidc_flow"}
-	APIErrorUnknownGrantType     = APIError{ErrorInvalidGrant, "Unknown grant_type"}
-	APIErrorBadPollingCode       = APIError{ErrorAccessDenied, "Bad polling_code"}
-	APIErrorPollingCodeExpired   = APIError{ErrorExpiredToken, "polling_code is expired"}
-	APIErrorAuthorizationPending = ErrorWithoutDescription(ErrorAuthorizationPending)
-	APIErrorNoRefreshToken       = APIError{ErrorOIDC, "Did not receive a refresh token"}
-	APIErrorNYI                  = ErrorWithoutDescription(ErrorNYI)
+	APIErrorUnknownIssuer            = APIError{ErrorInvalidRequest, "The provided issuer is not supported"}
+	APIErrorStateMismatch            = APIError{ErrorInvalidRequest, "State mismatched"}
+	APIErrorUnsupportedOIDCFlow      = APIError{ErrorInvalidGrant, "Unsupported oidc_flow"}
+	APIErrorUnsupportedGrantType     = APIError{ErrorInvalidGrant, "Unsupported grant_type"}
+	APIErrorBadPollingCode           = APIError{ErrorAccessDenied, "Bad polling_code"}
+	APIErrorPollingCodeExpired       = APIError{ErrorExpiredToken, "polling_code is expired"}
+	APIErrorAuthorizationPending     = ErrorWithoutDescription(ErrorAuthorizationPending)
+	APIErrorNoRefreshToken           = APIError{ErrorOIDC, "Did not receive a refresh token"}
+	APIErrorInsufficientCapabilities = APIError{ErrorInsufficientCapabilities, "The provided token does not have the required capability for this operation"}
+	APIErrorUsageRestricted          = APIError{ErrorUsageRestricted, "The restrictions of this token does not allow this usage"}
+	APIErrorNYI                      = ErrorWithoutDescription(ErrorNYI)
 )
 
 // Predefined OAuth2/OIDC errors
@@ -44,9 +46,11 @@ const (
 
 // Additional Mytoken errors
 const (
-	ErrorInternal = "internal_server_error"
-	ErrorOIDC     = "oidc_error"
-	ErrorNYI      = "not_yet_implemented"
+	ErrorInternal                 = "internal_server_error"
+	ErrorOIDC                     = "oidc_error"
+	ErrorNYI                      = "not_yet_implemented"
+	ErrorInsufficientCapabilities = "insufficient_capabilities"
+	ErrorUsageRestricted          = "usage_restricted"
 )
 
 func InternalServerError(errorDescription string) APIError {
@@ -87,5 +91,12 @@ func BadRequestError(errorDescription string) APIError {
 func ErrorWithoutDescription(error string) APIError {
 	return APIError{
 		Error: error,
+	}
+}
+
+func ErrorWithErrorDescription(error string, err error) APIError {
+	return APIError{
+		Error:            error,
+		ErrorDescription: err.Error(),
 	}
 }

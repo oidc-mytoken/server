@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/zachmann/mytoken/internal/utils/oidcUtils"
+
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
@@ -89,24 +90,24 @@ func authorizationURL(provider *config.ProviderConf, restrictions restrictions.R
 	return oauth2Config.AuthCodeURL(state, additionalParams...), state
 }
 
-func InitAuthCodeFlow(body []byte) model.Response {
+func InitAuthCodeFlow(body []byte) *model.Response {
 	log.Debug("Handle authcode")
 	req := response.NewAuthCodeFlowRequest()
 	if err := json.Unmarshal(body, &req); err != nil {
-		return model.Response{
+		return &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.BadRequestError(err.Error()),
 		}
 	}
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
 	if !ok {
-		return model.Response{
+		return &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.APIErrorUnknownIssuer,
 		}
 	}
 	if req.Restrictions.GetExpires() < time.Now().Unix() {
-		return model.Response{
+		return &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.BadRequestError("token would already be expired"),
 		}
@@ -133,18 +134,18 @@ func InitAuthCodeFlow(body []byte) model.Response {
 	if err := authFlowInfo.Store(); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	return model.Response{
+	return &model.Response{
 		Status:   fiber.StatusOK,
 		Response: res,
 	}
 }
 
-func CodeExchange(state, code string, networkData model.NetworkData) model.Response {
+func CodeExchange(state, code string, networkData model.NetworkData) *model.Response {
 	log.Debug("Handle code exchange")
 	authInfo, err := dbModels.GetAuthCodeInfoByState(state)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return model.Response{
+			return &model.Response{
 				Status:   fiber.StatusBadRequest,
 				Response: model.APIErrorStateMismatch,
 			}
@@ -153,7 +154,7 @@ func CodeExchange(state, code string, networkData model.NetworkData) model.Respo
 	}
 	provider, ok := config.Get().ProviderByIssuer[authInfo.Issuer]
 	if !ok {
-		return model.Response{
+		return &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.APIErrorUnknownIssuer,
 		}
@@ -172,7 +173,7 @@ func CodeExchange(state, code string, networkData model.NetworkData) model.Respo
 			if !resOK {
 				res = model.OIDCError(e.Error(), "")
 			}
-			return model.Response{
+			return &model.Response{
 				Status:   e.Response.StatusCode,
 				Response: res,
 			}
@@ -180,7 +181,7 @@ func CodeExchange(state, code string, networkData model.NetworkData) model.Respo
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if token.RefreshToken == "" {
-		return model.Response{
+		return &model.Response{
 			Status:   fiber.StatusInternalServerError,
 			Response: model.APIErrorNoRefreshToken,
 		}
@@ -188,16 +189,12 @@ func CodeExchange(state, code string, networkData model.NetworkData) model.Respo
 	scopes := authInfo.Restrictions.GetScopes()
 	scopesStr, ok := token.Extra("scope").(string)
 	if ok && scopesStr != "" {
-		scopes = strings.Split(scopesStr, " ")
+		scopes = utils.SplitIgnoreEmpty(scopesStr, " ")
 		authInfo.Restrictions.SetMaxScopes(scopes) // Update restrictions with correct scopes
 	}
 	audiences := authInfo.Restrictions.GetAudiences()
-	if atJWT, _ := jwt.Parse(token.AccessToken, nil); atJWT != nil {
-		if claims, ok := atJWT.Claims.(jwt.MapClaims); ok {
-			if tmp, ok := claims["aud"].([]string); ok {
-				audiences = tmp
-			}
-		}
+	if tmp, ok := oidcUtils.GetAudiencesFromJWT(token.AccessToken); ok {
+		audiences = tmp
 	}
 	authInfo.Restrictions.SetMaxAudiences(audiences) // Update restrictions with correct audiences
 
@@ -235,13 +232,13 @@ func CodeExchange(state, code string, networkData model.NetworkData) model.Respo
 	}
 	//TODO on the response the idea was to redirect to a correct side, that has the response
 	if authInfo.PollingCode != "" {
-		return model.Response{
+		return &model.Response{
 			Status:   fiber.StatusOK,
 			Response: "ok", //TODO
 		}
 	}
 	res := ste.Token.ToSuperTokenResponse("")
-	return model.Response{
+	return &model.Response{
 		Status:   fiber.StatusSeeOther,
 		Response: "/", //TODO redirect
 		Cookies: []*fiber.Cookie{{

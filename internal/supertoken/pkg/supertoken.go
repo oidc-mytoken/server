@@ -32,6 +32,35 @@ type SuperToken struct {
 	jwt                  string
 }
 
+func (st *SuperToken) VerifyID() bool {
+	if len(st.ID.String()) == 0 {
+		return false
+	}
+	return true
+}
+
+func (st *SuperToken) VerifySubject() bool {
+	if len(st.Subject) == 0 {
+		return false
+	}
+	if st.Subject != issuerUtils.CombineSubIss(st.OIDCSubject, st.OIDCIssuer) {
+		return false
+	}
+	return true
+}
+
+func (st *SuperToken) VerifyCapabilities(required ...capabilities.Capability) bool {
+	if st.Capabilities == nil || len(st.Capabilities) == 0 {
+		return false
+	}
+	for _, c := range required {
+		if !st.Capabilities.Has(c) {
+			return false
+		}
+	}
+	return true
+}
+
 // NewSuperToken creates a new SuperToken
 func NewSuperToken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc capabilities.Capabilities) *SuperToken {
 	now := time.Now().Unix()
@@ -84,13 +113,17 @@ func (st *SuperToken) Valid() error {
 		return err
 	}
 	if ok := standardClaims.VerifyIssuer(config.Get().IssuerURL, true); !ok {
-		return fmt.Errorf("Invalid issuer")
+		return fmt.Errorf("invalid issuer")
 	}
 	if ok := standardClaims.VerifyAudience(config.Get().IssuerURL, true); !ok {
-		return fmt.Errorf("Invalid Audience")
+		return fmt.Errorf("invalid Audience")
 	}
-
-	//TODO
+	if ok := st.VerifyID(); !ok {
+		return fmt.Errorf("invalid id")
+	}
+	if ok := st.VerifySubject(); !ok {
+		return fmt.Errorf("invalid subject")
+	}
 	return nil
 }
 
@@ -144,5 +177,5 @@ func ParseJWT(token string) (*SuperToken, error) {
 	if st, ok := tok.Claims.(*SuperToken); ok && tok.Valid {
 		return st, nil
 	}
-	return nil, fmt.Errorf("Propably token not valid")
+	return nil, fmt.Errorf("token not valid")
 }

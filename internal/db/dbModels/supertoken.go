@@ -68,7 +68,7 @@ func (ste *SuperTokenEntry) Store(comment string) error {
 	if err != nil {
 		return err
 	}
-	return eventService.LogEvent(*event.FromNumber(event.STEventSTCreated, comment), ste.ID, ste.networkData)
+	return eventService.LogEvent(event.FromNumber(event.STEventSTCreated, comment), ste.ID, ste.networkData)
 }
 
 type superTokenEntryStore struct {

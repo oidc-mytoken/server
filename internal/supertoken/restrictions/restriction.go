@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"math"
 	"strings"
+	"time"
 
 	"github.com/jinzhu/copier"
+	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/utils"
 )
 
@@ -24,6 +26,102 @@ type Restriction struct {
 	GeoIPBlack  []string `json:"geoip_black,omitempty"`
 	UsagesAT    *int64   `json:"usages_AT,omitempty"`
 	UsagesOther *int64   `json:"usages_other,omitempty"`
+	//Usages    *int64   `json:"usages,omitempty"`
+}
+
+func (r *Restriction) VerifyTimeBased() bool {
+	now := time.Now().Unix()
+	return (r.NotBefore == 0 || now >= r.NotBefore) &&
+		now <= r.ExpiresAt
+}
+func (r *Restriction) VerifyIPBased(ip string) bool {
+	return len(r.IPs) == 0 ||
+		utils.IPIsIn(ip, r.IPs)
+	//TODO check geoip
+}
+func (r *Restriction) VerifyATUsageCounts() bool {
+	if r.UsagesAT == nil {
+		return true
+	}
+	//TODO get usages from db and check
+	return true
+}
+func (r *Restriction) VerifyOtherUsageCounts() bool {
+	if r.UsagesOther == nil {
+		return true
+	}
+	//TODO get usages from db and check
+	return true
+}
+func (r *Restriction) verify(ip string) bool {
+	return r.VerifyTimeBased() &&
+		r.VerifyIPBased(ip)
+}
+func (r *Restriction) VerifyAT(ip string) bool {
+	return r.verify(ip) &&
+		r.VerifyATUsageCounts()
+}
+func (r *Restriction) VerifyOther(ip string) bool {
+	return r.verify(ip) &&
+		r.VerifyOtherUsageCounts()
+}
+
+func (r Restrictions) VerifyForAT(ip string) bool {
+	if len(r) == 0 {
+		return true
+	}
+	return len(r.GetValidForAT(ip)) > 0
+}
+func (r Restrictions) VerifyForOther(ip string) bool {
+	if len(r) == 0 {
+		return true
+	}
+	return len(r.GetValidForOther(ip)) > 0
+}
+
+func (r Restrictions) GetValidForAT(ip string) (ret Restrictions) {
+	for _, rr := range r {
+		if rr.VerifyAT(ip) {
+			log.Trace("Found a valid restriction")
+			ret = append(ret, rr)
+		}
+	}
+	return
+}
+func (r Restrictions) GetValidForOther(ip string) (ret Restrictions) {
+	for _, rr := range r {
+		if rr.VerifyOther(ip) {
+			ret = append(ret, rr)
+		}
+	}
+	return
+}
+
+func (r Restrictions) WithScopes(scopes []string) (ret Restrictions) {
+	log.WithField("scopes", scopes).WithField("len", len(scopes)).Trace("Filter restrictions for scopes")
+	if len(scopes) == 0 {
+		log.Trace("scopes empty, returning all restrictions")
+		return r
+	}
+	for _, rr := range r {
+		if len(rr.Scope) == 0 || utils.IsSubSet(scopes, utils.SplitIgnoreEmpty(rr.Scope, " ")) {
+			ret = append(ret, rr)
+		}
+	}
+	return
+}
+func (r Restrictions) WithAudiences(audiences []string) (ret Restrictions) {
+	log.WithField("audiences", audiences).WithField("len", len(audiences)).Trace("Filter restrictions for audiences")
+	if len(audiences) == 0 {
+		log.Trace("audiences empty, returning all restrictions")
+		return r
+	}
+	for _, rr := range r {
+		if len(rr.Audiences) == 0 || utils.IsSubSet(audiences, rr.Audiences) {
+			ret = append(ret, rr)
+		}
+	}
+	return
 }
 
 type TokenUsages []TokenUsage
@@ -89,7 +187,7 @@ func (r *Restrictions) GetNotBefore() int64 {
 // GetScopes returns the union of all scopes, i.e. all scopes that must be requested at the issuer
 func (r *Restrictions) GetScopes() (scopes []string) {
 	for _, rr := range *r {
-		scopes = append(scopes, strings.Split(rr.Scope, " ")...)
+		scopes = append(scopes, utils.SplitIgnoreEmpty(rr.Scope, " ")...)
 	}
 	scopes = utils.UniqueSlice(scopes)
 	return
@@ -107,7 +205,7 @@ func (r *Restrictions) GetAudiences() (auds []string) {
 // SetMaxScopes sets the maximum scopes, i.e. all scopes are stripped from the restrictions if not included in the passed argument. This is used to eliminate requested scopes that are dropped by the provider. Don't use it to eliminate scopes that are not enabled for the oidc client, because it also could be a custom scope.
 func (r *Restrictions) SetMaxScopes(mScopes []string) {
 	for _, rr := range *r {
-		rScopes := strings.Split(rr.Scope, " ")
+		rScopes := utils.SplitIgnoreEmpty(rr.Scope, " ")
 		okScopes := utils.IntersectSlices(mScopes, rScopes)
 		rr.Scope = strings.Join(okScopes, " ")
 	}
@@ -154,11 +252,11 @@ func (r *Restriction) IsTighterThan(b Restriction) bool {
 	if r.ExpiresAt == 0 && b.ExpiresAt != 0 || r.ExpiresAt > b.ExpiresAt && b.ExpiresAt != 0 {
 		return false
 	}
-	rScopes := strings.Split(r.Scope, " ")
+	rScopes := utils.SplitIgnoreEmpty(r.Scope, " ")
 	if r.Scope == "" {
 		rScopes = []string{}
 	}
-	bScopes := strings.Split(b.Scope, " ")
+	bScopes := utils.SplitIgnoreEmpty(b.Scope, " ")
 	if b.Scope == "" {
 		bScopes = []string{}
 	}

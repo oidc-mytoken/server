@@ -24,7 +24,7 @@ func HandleSuperTokenEndpoint(ctx *fiber.Ctx) error {
 	default:
 		res := model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model.APIErrorUnknownGrantType,
+			Response: model.APIErrorUnsupportedGrantType,
 		}
 		return res.Send(ctx)
 	}
@@ -34,14 +34,13 @@ func handleOIDCFlow(ctx *fiber.Ctx) error {
 	flow := ctxUtils.GetOIDCFlow(ctx)
 	switch flow {
 	case model.OIDCFlowAuthorizationCode:
-		res := authcode.InitAuthCodeFlow(ctx.Body())
-		return res.Send(ctx)
+		return authcode.InitAuthCodeFlow(ctx.Body()).Send(ctx)
 	case model.OIDCFlowDevice:
 		return model.ResponseNYI.Send(ctx)
 	default:
 		res := model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model.APIErrorUnknownOIDCFlow,
+			Response: model.APIErrorUnsupportedOIDCFlow,
 		}
 		return res.Send(ctx)
 	}

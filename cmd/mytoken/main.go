@@ -4,6 +4,7 @@ import (
 	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/db"
 	configurationEndpoint "github.com/zachmann/mytoken/internal/endpoints/configuration"
+	"github.com/zachmann/mytoken/internal/httpClient"
 	"github.com/zachmann/mytoken/internal/jws"
 	"github.com/zachmann/mytoken/internal/oidc/authcode"
 	"github.com/zachmann/mytoken/internal/server"
@@ -20,6 +21,7 @@ func main() {
 		panic(err)
 	}
 	jws.LoadKey()
+	httpClient.Init()
 
 	server.Start()
 

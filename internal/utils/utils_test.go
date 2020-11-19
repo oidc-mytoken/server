@@ -270,3 +270,22 @@ func TestUniqueSlice_Duplicates(t *testing.T) {
 	u := UniqueSlice(a)
 	checkSlice(t, u, exp)
 }
+
+func TestSplitIgnoreEmpty_Empty(t *testing.T) {
+	s := ""
+	exp := []string{}
+	split := SplitIgnoreEmpty(s, " ")
+	checkSlice(t, split, exp)
+}
+func TestSplitIgnoreEmpty_Normal(t *testing.T) {
+	s := "a b c d"
+	exp := []string{"a", "b", "c", "d"}
+	split := SplitIgnoreEmpty(s, " ")
+	checkSlice(t, split, exp)
+}
+func TestSplitIgnoreEmpty_MultipleEmpty(t *testing.T) {
+	s := "a b  c    d"
+	exp := []string{"a", "b", "c", "d"}
+	split := SplitIgnoreEmpty(s, " ")
+	checkSlice(t, split, exp)
+}

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 	"unsafe"
+
+	"github.com/fatih/structs"
 )
 
 var src rand.Source
@@ -70,19 +72,22 @@ func IsSubSet(a, b []string) bool {
 
 func IPsAreSubSet(ipsA, ipsB []string) bool {
 	for _, ipA := range ipsA {
-		if !ipIsIn(ipA, ipsB) {
+		if !IPIsIn(ipA, ipsB) {
 			return false
 		}
 	}
 	return true
 }
 
-func ipIsIn(ip string, ips []string) bool {
+func IPIsIn(ip string, ips []string) bool {
+	if ips == nil {
+		return false
+	}
 	ipA := net.ParseIP(ip)
 	for _, ipp := range ips {
 		if strings.Contains(ipp, "/") {
 			_, ipNetB, _ := net.ParseCIDR(ipp)
-			if ipNetB.Contains(ipA) {
+			if ipNetB != nil && ipNetB.Contains(ipA) {
 				return true
 			}
 		} else {
@@ -90,7 +95,6 @@ func ipIsIn(ip string, ips []string) bool {
 				return true
 			}
 		}
-
 	}
 	return false
 }
@@ -163,4 +167,35 @@ func CompareNullableIntsWithNilAsInfinity(a, b *int64) int {
 
 func NewInt64(i int64) *int64 {
 	return &i
+}
+
+func SplitIgnoreEmpty(s, del string) (ret []string) {
+	tmp := strings.Split(s, del)
+	for _, ss := range tmp {
+		if ss != "" {
+			ret = append(ret, ss)
+		}
+	}
+	return
+}
+
+func StructToStringMap(st interface{}, tag string) map[string]string {
+	s := structs.New(st)
+	s.TagName = tag
+	m := make(map[string]string)
+	for k, v := range s.Map() {
+		var s string
+		switch v.(type) {
+		case string:
+			s = v.(string)
+		default:
+			s = fmt.Sprintf("%v", v)
+		}
+		m[k] = s
+	}
+	return m
+}
+
+func StructToStringMapUsingJSONTags(st interface{}) map[string]string {
+	return StructToStringMap(st, "json")
 }
