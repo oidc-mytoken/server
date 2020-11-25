@@ -2,6 +2,8 @@ package capabilities
 
 import "testing"
 
+//TODO add tests for verify...
+
 func fail(t *testing.T, expected, got Capabilities) {
 	t.Errorf("Expected '%v', got '%v'", expected, got)
 }

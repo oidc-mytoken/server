@@ -5,11 +5,7 @@ import (
 	"time"
 )
 
-//TODO
-// func TestValid(t *testing.T) {
-// a := newSuperToken{}
-// 	testValid(t, a,  true)
-// }
+//TODO add test for verify..
 
 func TestSuperToken_ExpiresIn_Unset(t *testing.T) {
 	st := SuperToken{}

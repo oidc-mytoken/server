@@ -7,6 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/zachmann/mytoken/internal/utils/geoip"
+
+	uuid "github.com/satori/go.uuid"
+
 	"github.com/jinzhu/copier"
 	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/utils"
@@ -35,18 +39,37 @@ func (r *Restriction) VerifyTimeBased() bool {
 		now <= r.ExpiresAt
 }
 func (r *Restriction) VerifyIPBased(ip string) bool {
+	return r.verifyIPs(ip) && r.verifyGeoIP(ip)
+}
+func (r *Restriction) verifyIPs(ip string) bool {
 	return len(r.IPs) == 0 ||
 		utils.IPIsIn(ip, r.IPs)
-	//TODO check geoip
 }
-func (r *Restriction) VerifyATUsageCounts() bool {
+func (r *Restriction) verifyGeoIP(ip string) bool {
+	return r.verifyGeoIPBlack(ip) && r.verifyGeoIPWhite(ip)
+}
+func (r *Restriction) verifyGeoIPWhite(ip string) bool {
+	white := r.GeoIPWhite
+	if len(white) == 0 {
+		return true
+	}
+	return utils.StringInSlice(geoip.CountryCode(ip), white)
+}
+func (r *Restriction) verifyGeoIPBlack(ip string) bool {
+	black := r.GeoIPBlack
+	if len(black) == 0 {
+		return true
+	}
+	return !utils.StringInSlice(geoip.CountryCode(ip), black)
+}
+func (r *Restriction) VerifyATUsageCounts(stid uuid.UUID) bool {
 	if r.UsagesAT == nil {
 		return true
 	}
 	//TODO get usages from db and check
 	return true
 }
-func (r *Restriction) VerifyOtherUsageCounts() bool {
+func (r *Restriction) VerifyOtherUsageCounts(stid uuid.UUID) bool {
 	if r.UsagesOther == nil {
 		return true
 	}
@@ -57,40 +80,40 @@ func (r *Restriction) verify(ip string) bool {
 	return r.VerifyTimeBased() &&
 		r.VerifyIPBased(ip)
 }
-func (r *Restriction) VerifyAT(ip string) bool {
+func (r *Restriction) VerifyAT(ip string, stid uuid.UUID) bool {
 	return r.verify(ip) &&
-		r.VerifyATUsageCounts()
+		r.VerifyATUsageCounts(stid)
 }
-func (r *Restriction) VerifyOther(ip string) bool {
+func (r *Restriction) VerifyOther(ip string, stid uuid.UUID) bool {
 	return r.verify(ip) &&
-		r.VerifyOtherUsageCounts()
+		r.VerifyOtherUsageCounts(stid)
 }
 
-func (r Restrictions) VerifyForAT(ip string) bool {
+func (r Restrictions) VerifyForAT(ip string, stid uuid.UUID) bool {
 	if len(r) == 0 {
 		return true
 	}
-	return len(r.GetValidForAT(ip)) > 0
+	return len(r.GetValidForAT(ip, stid)) > 0
 }
-func (r Restrictions) VerifyForOther(ip string) bool {
+func (r Restrictions) VerifyForOther(ip string, stid uuid.UUID) bool {
 	if len(r) == 0 {
 		return true
 	}
-	return len(r.GetValidForOther(ip)) > 0
+	return len(r.GetValidForOther(ip, stid)) > 0
 }
 
-func (r Restrictions) GetValidForAT(ip string) (ret Restrictions) {
+func (r Restrictions) GetValidForAT(ip string, stid uuid.UUID) (ret Restrictions) {
 	for _, rr := range r {
-		if rr.VerifyAT(ip) {
+		if rr.VerifyAT(ip, stid) {
 			log.Trace("Found a valid restriction")
 			ret = append(ret, rr)
 		}
 	}
 	return
 }
-func (r Restrictions) GetValidForOther(ip string) (ret Restrictions) {
+func (r Restrictions) GetValidForOther(ip string, stid uuid.UUID) (ret Restrictions) {
 	for _, rr := range r {
-		if rr.VerifyOther(ip) {
+		if rr.VerifyOther(ip, stid) {
 			ret = append(ret, rr)
 		}
 	}
