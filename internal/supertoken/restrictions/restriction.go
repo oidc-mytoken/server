@@ -1,11 +1,17 @@
 package restrictions
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"math"
 	"strings"
 	"time"
+
+	"github.com/zachmann/mytoken/internal/db"
+
+	"github.com/zachmann/mytoken/internal/utils/hashUtils"
 
 	"github.com/zachmann/mytoken/internal/utils/geoip"
 
@@ -33,22 +39,34 @@ type Restriction struct {
 	//Usages    *int64   `json:"usages,omitempty"`
 }
 
+func (r *Restriction) Hash() ([]byte, error) {
+	j, err := json.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+	return hashUtils.SHA512(j)
+}
+
 func (r *Restriction) VerifyTimeBased() bool {
+	log.Trace("Verifying time based")
 	now := time.Now().Unix()
-	return (r.NotBefore == 0 || now >= r.NotBefore) &&
-		now <= r.ExpiresAt
+	return (now >= r.NotBefore) && (r.ExpiresAt == 0 ||
+		now <= r.ExpiresAt)
 }
 func (r *Restriction) VerifyIPBased(ip string) bool {
 	return r.verifyIPs(ip) && r.verifyGeoIP(ip)
 }
 func (r *Restriction) verifyIPs(ip string) bool {
+	log.Trace("Verifying ips")
 	return len(r.IPs) == 0 ||
 		utils.IPIsIn(ip, r.IPs)
 }
 func (r *Restriction) verifyGeoIP(ip string) bool {
+	log.Trace("Verifying ip geo location")
 	return r.verifyGeoIPBlack(ip) && r.verifyGeoIPWhite(ip)
 }
 func (r *Restriction) verifyGeoIPWhite(ip string) bool {
+	log.Trace("Verifying ip geo location white list")
 	white := r.GeoIPWhite
 	if len(white) == 0 {
 		return true
@@ -56,6 +74,7 @@ func (r *Restriction) verifyGeoIPWhite(ip string) bool {
 	return utils.StringInSlice(geoip.CountryCode(ip), white)
 }
 func (r *Restriction) verifyGeoIPBlack(ip string) bool {
+	log.Trace("Verifying ip geo location black list")
 	black := r.GeoIPBlack
 	if len(black) == 0 {
 		return true
@@ -63,30 +82,75 @@ func (r *Restriction) verifyGeoIPBlack(ip string) bool {
 	return !utils.StringInSlice(geoip.CountryCode(ip), black)
 }
 func (r *Restriction) VerifyATUsageCounts(stid uuid.UUID) bool {
+	log.Trace("Verifying AT usage count")
 	if r.UsagesAT == nil {
 		return true
 	}
-	//TODO get usages from db and check
-	return true
+	hash, err := r.Hash()
+	if err != nil {
+		log.WithError(err).Error()
+		return false
+	}
+	var usages int64
+	if err := db.DB().Get(&usages, `SELECT usages_AT FROM TokenUsages WHERE restriction_hash=? AND ST_id=?`, string(hash), stid); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.WithError(err).Error()
+			return false
+		}
+		// No usage entry -> was not used before
+		log.WithField("stid", stid.String()).WithField("restriction_hash", string(hash)).Debug("Did not found restriction in database; it was not used before")
+		return *r.UsagesAT > 0
+	}
+	log.WithField("stid", stid.String()).WithField("restriction_hash", string(hash)).WithField("used", usages).WithField("usageLimit", *r.UsagesAT).Debug("Found in db.")
+	return usages < *r.UsagesAT
 }
 func (r *Restriction) VerifyOtherUsageCounts(stid uuid.UUID) bool {
 	if r.UsagesOther == nil {
 		return true
 	}
-	//TODO get usages from db and check
-	return true
+	hash, err := r.Hash()
+	if err != nil {
+		log.WithError(err).Error()
+		return false
+	}
+	var usages int64
+	if err := db.DB().Get(&usages, `SELECT usages_other FROM TokenUsages WHERE restriction_hash=? AND ST_id=?`, string(hash), stid); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.WithError(err).Error()
+			return false
+		}
+		// No usage entry -> was not used before
+		return *r.UsagesOther > 0
+	}
+	return usages < *r.UsagesOther
 }
 func (r *Restriction) verify(ip string) bool {
 	return r.VerifyTimeBased() &&
 		r.VerifyIPBased(ip)
 }
 func (r *Restriction) VerifyAT(ip string, stid uuid.UUID) bool {
-	return r.verify(ip) &&
-		r.VerifyATUsageCounts(stid)
+	return r.verify(ip) && r.VerifyATUsageCounts(stid)
 }
 func (r *Restriction) VerifyOther(ip string, stid uuid.UUID) bool {
 	return r.verify(ip) &&
 		r.VerifyOtherUsageCounts(stid)
+}
+
+func (r *Restriction) UsedAT(stid uuid.UUID) error {
+	js, err := json.Marshal(r)
+	if err != nil {
+		return err
+	}
+	_, err = db.DB().Exec(`INSERT INTO TokenUsages (ST_id, restriction, usages_AT) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE usages_AT = usages_AT + 1`, stid, js)
+	return err
+}
+func (r *Restriction) UsedOther(stid uuid.UUID) error {
+	js, err := json.Marshal(r)
+	if err != nil {
+		return err
+	}
+	_, err = db.DB().Exec(`INSERT INTO TokenUsages (ST_id, restriction, usages_other) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE usages_other = usages_other + 1`, stid, js)
+	return err
 }
 
 func (r Restrictions) VerifyForAT(ip string, stid uuid.UUID) bool {

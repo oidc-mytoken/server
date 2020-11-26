@@ -6,6 +6,8 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
+
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/config"
@@ -53,10 +55,10 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		return res.Send(ctx)
 	}
 	log.Trace("Parsed super token")
-	if ok := st.Restrictions.VerifyForAT(ctx.IP()); !ok {
+	if ok := st.Restrictions.VerifyForAT(ctx.IP(), st.ID); !ok {
 		res := model.Response{
 			Status:   fiber.StatusForbidden,
-			Response: model.ErrorUsageRestricted,
+			Response: model.APIErrorUsageRestricted,
 		}
 		return res.Send(ctx)
 	}
@@ -64,7 +66,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	if ok := st.VerifyCapabilities(capabilities.CapabilityAT); !ok {
 		res := model.Response{
 			Status:   fiber.StatusForbidden,
-			Response: model.ErrorInsufficientCapabilities,
+			Response: model.APIErrorInsufficientCapabilities,
 		}
 		return res.Send(ctx)
 	}
@@ -92,23 +94,25 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 
 	scopes := strings.Join(provider.Scopes, " ") // default if no restrictions apply
 	auds := ""                                   // default if no restrictions apply
+	var usedRestriction *restrictions.Restriction
 	if len(st.Restrictions) > 0 {
-		possibleRestrictions := st.Restrictions.GetValidForAT(networkData.IP).WithScopes(utils.SplitIgnoreEmpty(req.Scope, " ")).WithAudiences(utils.SplitIgnoreEmpty(req.Audience, " "))
+		possibleRestrictions := st.Restrictions.GetValidForAT(networkData.IP, st.ID).WithScopes(utils.SplitIgnoreEmpty(req.Scope, " ")).WithAudiences(utils.SplitIgnoreEmpty(req.Audience, " "))
 		if len(possibleRestrictions) == 0 {
 			return &model.Response{
 				Status:   fiber.StatusBadRequest,
 				Response: model.APIErrorUsageRestricted,
 			}
 		}
+		usedRestriction = &possibleRestrictions[0]
 		if len(req.Scope) > 0 {
 			scopes = req.Scope
-		} else if len(possibleRestrictions[0].Scope) > 0 {
-			scopes = possibleRestrictions[0].Scope
+		} else if len(usedRestriction.Scope) > 0 {
+			scopes = usedRestriction.Scope
 		}
 		if len(req.Audience) != 0 {
 			auds = req.Audience
-		} else if len(possibleRestrictions[0].Audiences) > 0 {
-			auds = strings.Join(possibleRestrictions[0].Audiences, " ")
+		} else if len(usedRestriction.Audiences) > 0 {
+			auds = strings.Join(usedRestriction.Audiences, " ")
 		}
 	}
 	var rt string
@@ -150,6 +154,11 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 	}
 	if err := eventService.LogEvent(event.FromNumber(event.STEventATCreated, "Used grant_type super_token"), st.ID, networkData); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	if usedRestriction != nil {
+		if err := usedRestriction.UsedAT(st.ID); err != nil {
+			return model.ErrorToInternalServerErrorResponse(err)
+		}
 	}
 	return &model.Response{
 		Status: fiber.StatusOK,

@@ -5,10 +5,11 @@ import (
 	"errors"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
-	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
@@ -93,7 +94,6 @@ func (e *superTokenEntryStore) Store() error {
 		txStmt := tx.NamedStmt(stmt)
 		_, err := txStmt.Exec(e)
 		if err != nil {
-			log.WithError(err).Error()
 			var mysqlError *mysql.MySQLError
 			if errors.As(err, &mysqlError) && mysqlError.Number == 1048 {
 				_, err = tx.NamedExec(`INSERT INTO Users (sub, iss) VALUES(:sub, :iss)`, e)
@@ -103,6 +103,7 @@ func (e *superTokenEntryStore) Store() error {
 				_, err = txStmt.Exec(e)
 				return err
 			}
+			log.WithError(err).Error()
 			return err
 		}
 		return nil

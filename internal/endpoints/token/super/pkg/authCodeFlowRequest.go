@@ -41,11 +41,11 @@ func (r *AuthCodeFlowRequest) Native() bool {
 
 func (r *AuthCodeFlowRequest) UnmarshalJSON(data []byte) error {
 	type authCodeFlowRequest2 AuthCodeFlowRequest
-	rr := authCodeFlowRequest2{}
+	rr := (*authCodeFlowRequest2)(NewAuthCodeFlowRequest())
 	if err := json.Unmarshal(data, &rr); err != nil {
 		return err
 	}
-	*r = AuthCodeFlowRequest(rr)
+	*r = AuthCodeFlowRequest(*rr)
 	if r.SubtokenCapabilities != nil && !r.Capabilities.Has(capabilities.CapabilityCreateST) {
 		r.SubtokenCapabilities = nil
 	}

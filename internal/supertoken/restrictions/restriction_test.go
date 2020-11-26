@@ -1,6 +1,8 @@
 package restrictions
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/zachmann/mytoken/internal/utils"
@@ -584,5 +586,26 @@ func TestRestrictions_GetNotBeforeMultipleAndInfinite(t *testing.T) {
 	var expected int64 = 0
 	if expected != expires {
 		t.Errorf("Expected %d, but got %d", expected, expires)
+	}
+}
+
+func TestRestriction_Hash(t *testing.T) {
+	r := Restriction{
+		NotBefore: 1599939600,
+		ExpiresAt: 1599948600,
+		IPs:       []string{"192.168.0.31"},
+		UsagesAT:  utils.NewInt64(11),
+	}
+
+	j, err := json.Marshal(r)
+	fmt.Printf("%s\n", j)
+
+	hash, err := r.Hash()
+	if err != nil {
+		t.Error(err)
+	}
+	expected := "052dd67c76c735489553cb09f85e3d1fdfbaf479c5b5f543cb69b6daf06fe7cf276749066e554dc5911cad337ee4d52246433b5bcd0de15a4f83011905997ede"
+	if string(hash) != expected {
+		t.Errorf("Hash '%s' does not match expected hash '%s'", hash, expected)
 	}
 }

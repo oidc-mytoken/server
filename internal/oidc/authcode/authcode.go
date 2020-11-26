@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zachmann/mytoken/internal/utils/oidcUtils"
+	"golang.org/x/oauth2"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gofiber/fiber/v2"
@@ -24,7 +24,7 @@ import (
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 	"github.com/zachmann/mytoken/internal/utils"
 	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
-	"golang.org/x/oauth2"
+	"github.com/zachmann/mytoken/internal/utils/oidcUtils"
 )
 
 var redirectURL string
@@ -106,7 +106,8 @@ func InitAuthCodeFlow(body []byte) *model.Response {
 			Response: model.APIErrorUnknownIssuer,
 		}
 	}
-	if req.Restrictions.GetExpires() < time.Now().Unix() {
+	exp := req.Restrictions.GetExpires()
+	if exp > 0 && exp < time.Now().Unix() {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.BadRequestError("token would already be expired"),
@@ -144,7 +145,7 @@ func CodeExchange(state, code string, networkData model.NetworkData) *model.Resp
 	log.Debug("Handle code exchange")
 	authInfo, err := dbModels.GetAuthCodeInfoByState(state)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return &model.Response{
 				Status:   fiber.StatusBadRequest,
 				Response: model.APIErrorStateMismatch,
