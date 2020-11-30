@@ -5,11 +5,10 @@ import (
 	"errors"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"

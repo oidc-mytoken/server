@@ -4,10 +4,6 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/zachmann/mytoken/internal/utils/dbUtils"
-
-	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
-
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/config"
@@ -19,8 +15,10 @@ import (
 	eventService "github.com/zachmann/mytoken/internal/supertoken/event"
 	event "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
 	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
+	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 	"github.com/zachmann/mytoken/internal/utils"
 	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
+	"github.com/zachmann/mytoken/internal/utils/dbUtils"
 	"github.com/zachmann/mytoken/internal/utils/oidcUtils"
 )
 

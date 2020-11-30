@@ -3,10 +3,9 @@ package server
 import (
 	"time"
 
-	"github.com/zachmann/mytoken/internal/endpoints"
-
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
+	"github.com/zachmann/mytoken/internal/endpoints"
 	"github.com/zachmann/mytoken/internal/endpoints/configuration"
 	"github.com/zachmann/mytoken/internal/endpoints/redirect"
 )

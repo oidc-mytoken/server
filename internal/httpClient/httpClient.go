@@ -3,9 +3,8 @@ package httpClient
 import (
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/go-resty/resty/v2"
+	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/config"
 )
 
