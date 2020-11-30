@@ -3,6 +3,8 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -21,6 +23,7 @@ const (
 )
 
 func NewGrantType(s string) GrantType {
+	log.WithField("grant_type", s).Trace("Grant Type")
 	for i, f := range grantTypes {
 		if f == s {
 			return GrantType(i)

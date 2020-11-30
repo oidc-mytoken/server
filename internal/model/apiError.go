@@ -88,6 +88,13 @@ func BadRequestError(errorDescription string) APIError {
 	}
 }
 
+func InvalidTokenError(errorDescription string) APIError {
+	return APIError{
+		Error:            ErrorInvalidToken,
+		ErrorDescription: errorDescription,
+	}
+}
+
 func ErrorWithoutDescription(error string) APIError {
 	return APIError{
 		Error: error,

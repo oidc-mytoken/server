@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-//TODO add test for verify..
-
 func TestSuperToken_ExpiresIn_Unset(t *testing.T) {
 	st := SuperToken{}
 	expIn := st.ExpiresIn()

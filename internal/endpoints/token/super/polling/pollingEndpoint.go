@@ -16,11 +16,7 @@ import (
 func HandlePollingCode(ctx *fiber.Ctx) error {
 	req := response.PollingCodeRequest{}
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
-		res := model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError(err.Error()),
-		}
-		return res.Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	return handlePollingCode(req).Send(ctx)
 }

@@ -41,11 +41,12 @@ func (c Capabilities) Value() (driver.Value, error) {
 
 // Tighten tightens two set of Capabilities into one new
 func Tighten(a, b Capabilities) (res Capabilities) {
+	if b == nil {
+		return a
+	}
 	for _, bb := range b {
-		for _, aa := range a {
-			if bb == aa {
-				res = append(res, bb)
-			}
+		if a.Has(bb) {
+			res = append(res, bb)
 		}
 	}
 	return

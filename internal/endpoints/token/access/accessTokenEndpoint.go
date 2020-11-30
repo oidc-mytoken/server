@@ -1,17 +1,16 @@
 package access
 
 import (
-	"database/sql"
 	"encoding/json"
-	"errors"
 	"strings"
+
+	"github.com/zachmann/mytoken/internal/utils/dbUtils"
 
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/config"
-	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/db/dbModels"
 	request "github.com/zachmann/mytoken/internal/endpoints/token/access/pkg"
 	"github.com/zachmann/mytoken/internal/model"
@@ -29,11 +28,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	log.Debug("Handle access token request")
 	req := request.AccessTokenRequest{}
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
-		res := model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError(err.Error()),
-		}
-		return res.Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	log.Trace("Parsed access token request")
 
@@ -50,7 +45,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	if err != nil {
 		res := model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model.ErrorWithErrorDescription(model.ErrorInvalidToken, err),
+			Response: model.InvalidTokenError(err.Error()),
 		}
 		return res.Send(ctx)
 	}
@@ -115,17 +110,17 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 			auds = strings.Join(usedRestriction.Audiences, " ")
 		}
 	}
-	var rt string
-	if err := db.DB().Get(&rt, `SELECT refresh_token FROM SuperTokens WHERE id=? AND revoked=false`, st.ID); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return &model.Response{
-				Status:   fiber.StatusUnauthorized,
-				Response: model.ErrorInvalidToken,
-			}
-		} else {
-			return model.ErrorToInternalServerErrorResponse(err)
+	rt, rtFound, dbErr := dbUtils.GetRefreshToken(st.ID)
+	if dbErr != nil {
+		return model.ErrorToInternalServerErrorResponse(dbErr)
+	}
+	if !rtFound {
+		return &model.Response{
+			Status:   fiber.StatusUnauthorized,
+			Response: model.InvalidTokenError("No refresh token attached"),
 		}
 	}
+
 	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, rt, scopes, auds)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)

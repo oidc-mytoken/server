@@ -94,10 +94,7 @@ func InitAuthCodeFlow(body []byte) *model.Response {
 	log.Debug("Handle authcode")
 	req := response.NewAuthCodeFlowRequest()
 	if err := json.Unmarshal(body, &req); err != nil {
-		return &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError(err.Error()),
-		}
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
 	if !ok {
@@ -247,7 +244,7 @@ func CodeExchange(state, code string, networkData model.NetworkData) *model.Resp
 			Value:    res.SuperToken,
 			Path:     "/api",
 			MaxAge:   3600,  //TODO from config
-			Secure:   false, //TODO true
+			Secure:   false, //TODO depending on TLS
 			HTTPOnly: true,
 			SameSite: "Strict",
 		}},

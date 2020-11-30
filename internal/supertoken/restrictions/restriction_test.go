@@ -609,3 +609,42 @@ func TestRestriction_Hash(t *testing.T) {
 		t.Errorf("Hash '%s' does not match expected hash '%s'", hash, expected)
 	}
 }
+
+func TestRestriction_VerifyTimeBased(t *testing.T) {
+	now := utils.GetUnixTimeIn(0)
+	cases := []struct {
+		r   Restriction
+		exp bool
+	}{
+		{
+			r:   Restriction{NotBefore: 0, ExpiresAt: 0},
+			exp: true,
+		},
+		{
+			r:   Restriction{NotBefore: now - 10, ExpiresAt: 0},
+			exp: true,
+		},
+		{
+			r:   Restriction{NotBefore: 0, ExpiresAt: now + 10},
+			exp: true,
+		},
+		{
+			r:   Restriction{NotBefore: now + 10, ExpiresAt: 0},
+			exp: false,
+		},
+		{
+			r:   Restriction{NotBefore: 0, ExpiresAt: now - 10},
+			exp: false,
+		},
+		{
+			r:   Restriction{NotBefore: now + 10, ExpiresAt: now - 10},
+			exp: false,
+		},
+	}
+	for _, c := range cases {
+		valid := c.r.VerifyTimeBased()
+		if valid != c.exp {
+			t.Errorf("For '%+v' expected time based attributes to verify as '%v' but got '%v'", c.r, c.exp, valid)
+		}
+	}
+}

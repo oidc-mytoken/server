@@ -29,3 +29,10 @@ func ErrorToInternalServerErrorResponse(err error) *Response {
 		Response: InternalServerError(err.Error()),
 	}
 }
+
+func ErrorToBadRequestErrorResponse(err error) *Response {
+	return &Response{
+		Status:   fiber.StatusBadRequest,
+		Response: BadRequestError(err.Error()),
+	}
+}

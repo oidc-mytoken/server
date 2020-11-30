@@ -2,17 +2,23 @@ package super
 
 import (
 	"github.com/gofiber/fiber/v2"
+	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/endpoints/token/super/polling"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/oidc/authcode"
+	"github.com/zachmann/mytoken/internal/supertoken"
 	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
 )
 
 func HandleSuperTokenEndpoint(ctx *fiber.Ctx) error {
-	grantType := ctxUtils.GetGrantType(ctx)
+	grantType, err := ctxUtils.GetGrantType(ctx)
+	if err != nil {
+		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+	}
+	log.WithField("grant_type", grantType).Trace("Received super token request")
 	switch grantType {
 	case model.GrantTypeSuperToken:
-		return model.ResponseNYI.Send(ctx)
+		return supertoken.HandleSuperTokenFromSuperToken(ctx).Send(ctx)
 	case model.GrantTypeOIDCFlow:
 		return handleOIDCFlow(ctx)
 	case model.GrantTypePollingCode:
