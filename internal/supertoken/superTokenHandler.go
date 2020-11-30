@@ -3,6 +3,9 @@ package supertoken
 import (
 	"encoding/json"
 
+	eventService "github.com/zachmann/mytoken/internal/supertoken/event"
+	event "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
+
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/db/dbModels"
@@ -72,6 +75,9 @@ func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if err := ste.Store("Used grant_type super_token"); err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	if err := eventService.LogEvent(event.FromNumber(event.STEventInheritedRT, "Got RT from parent"), ste.ID, *networkData); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 

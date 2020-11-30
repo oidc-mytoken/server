@@ -62,14 +62,13 @@ func eventStringToInt(str string) int {
 }
 
 // AllEvents hold all possible Events
-var allEvents = [...]string{"unknown", "AT_created", "ST_created", "ST_revoked", "tokeninfo_history", "tokeninfo_tree", "tokeninfo_list_super_tokens", "mng_enabled_AT_grant", "mng_disabled_AT_grant", "mng_enabled_JWT_grant", "mng_disabled_JWT_grant", "mng_linked_grant", "mng_unlinked_grant", "mng_enabled_tracing", "mng_disabled_tracing", "inherited_RT"}
+var allEvents = [...]string{"unknown", "AT_created", "ST_created", "tokeninfo_history", "tokeninfo_tree", "tokeninfo_list_super_tokens", "mng_enabled_AT_grant", "mng_disabled_AT_grant", "mng_enabled_JWT_grant", "mng_disabled_JWT_grant", "mng_linked_grant", "mng_unlinked_grant", "mng_enabled_tracing", "mng_disabled_tracing", "inherited_RT"}
 
 // Events for SuperTokens
 const (
 	STEventUnknown = iota
 	STEventATCreated
 	STEventSTCreated
-	STEventSTRevoked
 	STEventTokenInfoHistory
 	STEventTokenInfoTree
 	STEventTokenInfoListSTs
