@@ -24,7 +24,6 @@ type SuperTokenEntry struct {
 	ID           uuid.UUID
 	ParentID     string `db:"parent_id"`
 	RootID       string `db:"root_id"`
-	Revoked      bool
 	Token        *supertoken.SuperToken
 	RefreshToken string `db:"refresh_token"`
 	Name         string
@@ -56,7 +55,6 @@ func (ste *SuperTokenEntry) Store(comment string) error {
 		ID:           ste.ID,
 		ParentID:     db.NewNullString(ste.ParentID),
 		RootID:       db.NewNullString(ste.RootID),
-		Revoked:      ste.Revoked,
 		Token:        ste.Token,
 		RefreshToken: db.NewNullString(ste.RefreshToken),
 		Name:         db.NewNullString(ste.Name),
@@ -75,7 +73,6 @@ type superTokenEntryStore struct {
 	ID           uuid.UUID
 	ParentID     sql.NullString `db:"parent_id"`
 	RootID       sql.NullString `db:"root_id"`
-	Revoked      bool
 	Token        *supertoken.SuperToken
 	RefreshToken sql.NullString `db:"refresh_token"`
 	Name         sql.NullString
@@ -85,7 +82,7 @@ type superTokenEntryStore struct {
 }
 
 func (e *superTokenEntryStore) Store() error {
-	stmt, err := db.DB().PrepareNamed(`INSERT INTO SuperTokens (id, parent_id, root_id, revoked, token, refresh_token, name, ip_created, user_id) VALUES(:id, :parent_id, :root_id, :revoked, :token, :refresh_token, :name, :ip_created, (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
+	stmt, err := db.DB().PrepareNamed(`INSERT INTO SuperTokens (id, parent_id, root_id,  token, refresh_token, name, ip_created, user_id) VALUES(:id, :parent_id, :root_id, :token, :refresh_token, :name, :ip_created, (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
 	if err != nil {
 		return err
 	}

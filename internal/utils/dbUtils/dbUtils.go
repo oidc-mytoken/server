@@ -12,13 +12,13 @@ import (
 
 func GetRefreshToken(stid uuid.UUID) (string, bool, error) {
 	var rt string
-	err := db.DB().Get(&rt, `SELECT refresh_token FROM SuperTokens WHERE id=? AND revoked=false`, stid)
+	err := db.DB().Get(&rt, `SELECT refresh_token FROM SuperTokens WHERE id=?`, stid)
 	return parseStringResult(rt, err)
 }
 
 func GetRefreshTokenByTokenString(token string) (string, bool, error) {
 	var rt string
-	err := db.DB().Get(&rt, `SELECT refresh_token FROM SuperTokens WHERE token=? AND revoked=false`, token)
+	err := db.DB().Get(&rt, `SELECT refresh_token FROM SuperTokens WHERE token=?`, token)
 	return parseStringResult(rt, err)
 }
 
@@ -71,4 +71,15 @@ SELECT id
 FROM   childs
 )`, token)
 	return err
+}
+
+func CheckTokenRevoked(token string) (bool, error) {
+	var count int
+	if err := db.DB().Get(&count, `SELECT COUNT(1) FROM SuperTokens WHERE token=?`, token); err != nil {
+		return true, err
+	}
+	if count == 0 {
+		return true, nil
+	}
+	return false, nil
 }

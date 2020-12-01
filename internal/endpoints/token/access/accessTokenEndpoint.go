@@ -39,6 +39,19 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	}
 	log.Trace("Checked grant type")
 
+	revoked, dbErr := dbUtils.CheckTokenRevoked(req.SuperToken)
+	if dbErr != nil {
+		return model.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
+	}
+	if revoked {
+		res := &model.Response{
+			Status:   fiber.StatusUnauthorized,
+			Response: model.InvalidTokenError("not a valid token"),
+		}
+		return res.Send(ctx)
+	}
+	log.Trace("Checked token not revoked")
+
 	st, err := supertoken.ParseJWT(req.SuperToken)
 	if err != nil {
 		res := model.Response{
