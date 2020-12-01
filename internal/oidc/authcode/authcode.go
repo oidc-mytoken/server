@@ -1,13 +1,14 @@
 package authcode
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/zachmann/mytoken/internal/context"
 
 	"golang.org/x/oauth2"
 
@@ -163,7 +164,7 @@ func CodeExchange(state, code string, networkData model.NetworkData) *model.Resp
 		Endpoint:     provider.Endpoints.OAuth2(),
 		RedirectURL:  redirectURL,
 	}
-	token, err := oauth2Config.Exchange(context.Background(), code)
+	token, err := oauth2Config.Exchange(context.Get(), code)
 	if err != nil {
 		var e *oauth2.RetrieveError
 		if errors.As(err, &e) {
@@ -262,7 +263,7 @@ func createSuperTokenEntry(authFlowInfo *dbModels.AuthFlowInfo, token *oauth2.To
 }
 
 func getSubjectFromUserinfo(provider *oidc.Provider, token *oauth2.Token) (string, error) {
-	userInfo, err := provider.UserInfo(context.Background(), oauth2.StaticTokenSource(token))
+	userInfo, err := provider.UserInfo(context.Get(), oauth2.StaticTokenSource(token))
 	if err != nil {
 		return "", fmt.Errorf("failed to get userinfo: %s", err)
 	}

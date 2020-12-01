@@ -1,22 +1,19 @@
 package config
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-
-	"github.com/zachmann/mytoken/pkg/oauth2x"
-
-	"gopkg.in/yaml.v3"
-
 	log "github.com/sirupsen/logrus"
+	"github.com/zachmann/mytoken/internal/context"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/utils/fileutil"
 	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
+	"github.com/zachmann/mytoken/pkg/oauth2x"
+	"gopkg.in/yaml.v3"
 )
 
 // Config holds the server configuration
@@ -98,13 +95,12 @@ func validate() error {
 		if p.Issuer == "" {
 			return fmt.Errorf("invalid config: provider.issuer not set (Index %d)", i)
 		}
-		ctx := context.Background()
 		var err error
-		p.Endpoints, err = oauth2x.NewConfig(ctx, p.Issuer).Endpoints()
+		p.Endpoints, err = oauth2x.NewConfig(context.Get(), p.Issuer).Endpoints()
 		if err != nil {
 			return fmt.Errorf("Error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
 		}
-		p.Provider, err = oidc.NewProvider(ctx, p.Issuer)
+		p.Provider, err = oidc.NewProvider(context.Get(), p.Issuer)
 		if err != nil {
 			return fmt.Errorf("Error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
 		}
