@@ -2,6 +2,16 @@ package supertoken
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/zachmann/mytoken/internal/server/httpStatus"
+
+	"github.com/zachmann/mytoken/internal/config"
+	"github.com/zachmann/mytoken/internal/oidc/revoke"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/zachmann/mytoken/internal/db"
 
 	eventService "github.com/zachmann/mytoken/internal/supertoken/event"
 	event "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
@@ -126,4 +136,53 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 	ste.ParentID = parent.ID.String()
 	ste.RootID = rootID
 	return ste, nil
+}
+
+func RevokeSuperToken(token string, recursive bool, issuer string) *model.Response {
+	rt, rtFound, dbErr := dbUtils.GetRefreshTokenByTokenString(token)
+	if dbErr != nil {
+		return model.ErrorToInternalServerErrorResponse(dbErr)
+	}
+	if !rtFound {
+		return nil
+	}
+	provider, ok := config.Get().ProviderByIssuer[issuer]
+	if !ok {
+		return &model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: model.APIErrorUnknownIssuer,
+		}
+	}
+	if err := db.Transact(func(tx *sqlx.Tx) error {
+		if recursive {
+			if err := dbUtils.RecursiveRevokeSTByTokenString(token, tx); err != nil {
+				return err
+			}
+		} else {
+			if _, err := tx.Exec(`DELETE FROM SuperTokens WHERE token=?`, token); err != nil {
+				return err
+			}
+		}
+		var count int
+		if err := tx.Get(&count, `SELECT COUNT(1) FROM SuperTokens WHERE refresh_token=?`, rt); err != nil {
+			return err
+		}
+		if count == 0 {
+			if err := revoke.RevokeRefreshToken(provider, rt); err != nil {
+				e := err.Response.(model.APIError)
+				return fmt.Errorf("%s: %s", e.Error, e.ErrorDescription)
+			}
+		}
+		return nil
+	}); err != nil {
+		if strings.HasPrefix(err.Error(), "oidc_error") {
+			return &model.Response{
+				Status:   httpStatus.StatusOIDPError,
+				Response: model.OIDCError(err.Error(), ""),
+			}
+		} else {
+			return model.ErrorToInternalServerErrorResponse(err)
+		}
+	}
+	return nil
 }

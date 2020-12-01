@@ -71,7 +71,7 @@ func authorizationURL(provider *config.ProviderConf, restrictions restrictions.R
 	oauth2Config := oauth2.Config{
 		ClientID:     provider.ClientID,
 		ClientSecret: provider.ClientSecret,
-		Endpoint:     provider.Provider.Endpoint(),
+		Endpoint:     provider.Endpoints.OAuth2(),
 		RedirectURL:  redirectURL,
 		Scopes:       scopes,
 	}
@@ -160,7 +160,7 @@ func CodeExchange(state, code string, networkData model.NetworkData) *model.Resp
 	oauth2Config := oauth2.Config{
 		ClientID:     provider.ClientID,
 		ClientSecret: provider.ClientSecret,
-		Endpoint:     provider.Provider.Endpoint(),
+		Endpoint:     provider.Endpoints.OAuth2(),
 		RedirectURL:  redirectURL,
 	}
 	token, err := oauth2Config.Exchange(context.Background(), code)

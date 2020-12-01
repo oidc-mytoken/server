@@ -20,11 +20,11 @@ func RefreshFlowAndUpdate(provider *config.ProviderConf, rt string, scopes, audi
 	req := oidcReqRes.NewRefreshRequest(rt)
 	req.Scopes = scopes
 	req.Audiences = audiences
-	httpRes, err := httpClient.Do().R().SetBasicAuth(provider.ClientID, provider.ClientSecret).SetFormData(req.ToFormData()).SetResult(&oidcReqRes.OIDCTokenResponse{}).SetError(&oidcReqRes.OIDCErrorResponse{}).Post(provider.Provider.Endpoint().TokenURL)
+	httpRes, err := httpClient.Do().R().SetBasicAuth(provider.ClientID, provider.ClientSecret).SetFormData(req.ToFormData()).SetResult(&oidcReqRes.OIDCTokenResponse{}).SetError(&oidcReqRes.OIDCErrorResponse{}).Post(provider.Endpoints.Token)
 	if err != nil {
 		return nil, nil, err
 	}
-	if errRes, ok := httpRes.Error().(*oidcReqRes.OIDCErrorResponse); ok && errRes != nil {
+	if errRes, ok := httpRes.Error().(*oidcReqRes.OIDCErrorResponse); ok && errRes != nil && len(errRes.Error) > 0 {
 		errRes.Status = httpRes.RawResponse.StatusCode
 		return nil, errRes, nil
 	}

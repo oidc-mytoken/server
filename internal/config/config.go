@@ -7,9 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/coreos/go-oidc/v3/oidc"
+
+	"github.com/zachmann/mytoken/pkg/oauth2x"
+
 	"gopkg.in/yaml.v3"
 
-	"github.com/coreos/go-oidc/v3/oidc"
 	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/utils/fileutil"
@@ -66,11 +69,12 @@ type signingConf struct {
 
 // ProviderConf holds information about a provider
 type ProviderConf struct {
-	Issuer       string         `yaml:"issuer"`
-	ClientID     string         `yaml:"client_id"`
-	ClientSecret string         `yaml:"client_secret"`
-	Scopes       []string       `yaml:"scopes"`
-	Provider     *oidc.Provider `yaml:"-"`
+	Issuer       string             `yaml:"issuer"`
+	ClientID     string             `yaml:"client_id"`
+	ClientSecret string             `yaml:"client_secret"`
+	Scopes       []string           `yaml:"scopes"`
+	Endpoints    *oauth2x.Endpoints `yaml:"-"`
+	Provider     *oidc.Provider     `yaml:"-"`
 }
 
 var conf *Config
@@ -96,6 +100,10 @@ func validate() error {
 		}
 		ctx := context.Background()
 		var err error
+		p.Endpoints, err = oauth2x.NewConfig(ctx, p.Issuer).Endpoints()
+		if err != nil {
+			return fmt.Errorf("Error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
+		}
 		p.Provider, err = oidc.NewProvider(ctx, p.Issuer)
 		if err != nil {
 			return fmt.Errorf("Error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)

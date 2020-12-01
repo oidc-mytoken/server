@@ -19,3 +19,19 @@ func NewRefreshRequest(rt string) *RefreshRequest {
 func (r *RefreshRequest) ToFormData() map[string]string {
 	return utils.StructToStringMapUsingJSONTags(r)
 }
+
+type RevokeRequest struct {
+	Token     string `json:"token"`
+	TokenType string `json:"token_type_hint"`
+}
+
+func NewRTRevokeRequest(rt string) *RevokeRequest {
+	return &RevokeRequest{
+		Token:     rt,
+		TokenType: "refresh_token",
+	}
+}
+
+func (r *RevokeRequest) ToFormData() map[string]string {
+	return utils.StructToStringMapUsingJSONTags(r)
+}
