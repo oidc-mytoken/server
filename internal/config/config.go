@@ -25,6 +25,7 @@ type Config struct {
 	IssuerURL                           string                   `yaml:"issuer"`
 	EnabledOIDCFlows                    []model.OIDCFlow         `yaml:"enabled_oidc_flows"`
 	EnabledSuperTokenEndpointGrantTypes []model.GrantType        `yaml:"enabled_super_token_endpoint_grant_types"`
+	EnabledResponseTypes                []model.ResponseType     `yaml:"enabled_response_types"`
 	Signing                             signingConf              `yaml:"signing"`
 	ServiceDocumentation                string                   `yaml:"service_documentation"`
 	Polling                             pollingConf              `yaml:"polling_codes"`
@@ -135,6 +136,7 @@ func validate() error {
 	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(conf.EnabledOIDCFlows)
 	model.GrantTypeOIDCFlow.AddToSliceIfNotFound(conf.EnabledSuperTokenEndpointGrantTypes)
 	model.GrantTypeSuperToken.AddToSliceIfNotFound(conf.EnabledSuperTokenEndpointGrantTypes)
+	model.ResponseTypeToken.AddToSliceIfNotFound(conf.EnabledResponseTypes)
 	return nil
 }
 

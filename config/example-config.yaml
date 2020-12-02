@@ -22,6 +22,10 @@ enabled_super_token_endpoint_grant_types:
   - "polling_code"
   - "access_token"
   - "private_key_jwt"
+enabled_response_types:
+  - "token" # MUST be enabled
+  - "short_token"
+  - "transfer_code"
 polling_codes:
   expires_after: 300
   polling_interval: 5

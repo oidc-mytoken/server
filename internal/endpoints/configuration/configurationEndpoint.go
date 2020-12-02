@@ -43,6 +43,7 @@ func Init() {
 		AccessTokenEndpointGrantTypesSupported: []model.GrantType{model.GrantTypeSuperToken},
 		SuperTokenEndpointGrantTypesSupported:  config.Get().EnabledSuperTokenEndpointGrantTypes,
 		SuperTokenEndpointOIDCFlowsSupported:   config.Get().EnabledOIDCFlows,
+		ResponseTypesSupported:                 config.Get().EnabledResponseTypes,
 		ServiceDocumentation:                   config.Get().ServiceDocumentation,
 		Version:                                model.VERSION,
 	}

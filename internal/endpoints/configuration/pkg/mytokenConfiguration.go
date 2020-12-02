@@ -15,6 +15,7 @@ type MytokenConfiguration struct {
 	AccessTokenEndpointGrantTypesSupported []model.GrantType         `json:"access_token_endpoint_grant_types_supported"`
 	SuperTokenEndpointGrantTypesSupported  []model.GrantType         `json:"super_token_endpoint_grant_types_supported"`
 	SuperTokenEndpointOIDCFlowsSupported   []model.OIDCFlow          `json:"super_token_endpoint_oidc_flow_supported"`
+	ResponseTypesSupported                 []model.ResponseType      `json:"response_types_supported"`
 	ServiceDocumentation                   string                    `json:"service_documentation,omitempty"`
 	Version                                string                    `json:"version,omitempty"`
 }
