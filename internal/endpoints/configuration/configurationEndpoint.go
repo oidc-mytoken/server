@@ -35,16 +35,35 @@ func Init() {
 		AccessTokenEndpoint:                    utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/token/access"),
 		SuperTokenEndpoint:                     utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/token/super"),
 		TokeninfoEndpoint:                      utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/tokeninfo"),
-		RevocationEndpoint:                     utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/revocation"),
 		UserSettingsEndpoint:                   utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/user"),
 		JWKSURI:                                utils.CombineURLPath(config.Get().IssuerURL, "/jwks"),
 		ProvidersSupported:                     getProvidersFromConfig(),
 		TokenSigningAlgValue:                   config.Get().Signing.Alg,
 		AccessTokenEndpointGrantTypesSupported: []model.GrantType{model.GrantTypeSuperToken},
-		SuperTokenEndpointGrantTypesSupported:  config.Get().EnabledSuperTokenEndpointGrantTypes,
-		SuperTokenEndpointOIDCFlowsSupported:   config.Get().EnabledOIDCFlows,
-		ResponseTypesSupported:                 config.Get().EnabledResponseTypes,
+		SuperTokenEndpointGrantTypesSupported:  []model.GrantType{model.GrantTypeOIDCFlow, model.GrantTypeSuperToken},
+		SuperTokenEndpointOIDCFlowsSupported:   config.Get().Features.EnabledOIDCFlows,
+		ResponseTypesSupported:                 []model.ResponseType{model.ResponseTypeToken},
 		ServiceDocumentation:                   config.Get().ServiceDocumentation,
 		Version:                                model.VERSION,
+	}
+	if config.Get().Features.TokenRevocation.Enabled {
+		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/token/revoke")
+	}
+	if config.Get().Features.TransferCodes.Enabled {
+		model.ResponseTypeShortToken.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
+	}
+	if config.Get().Features.TransferCodes.Enabled {
+		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/token/transfer")
+		model.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+		model.ResponseTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
+	}
+	if config.Get().Features.Polling.Enabled {
+		model.GrantTypePollingCode.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+	}
+	if config.Get().Features.AccessTokenGrant.Enabled {
+		model.GrantTypeAccessToken.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+	}
+	if config.Get().Features.SignedJWTGrant.Enabled {
+		model.GrantTypePrivateKeyJWT.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
 	}
 }

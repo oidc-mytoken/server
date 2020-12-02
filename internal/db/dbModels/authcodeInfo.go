@@ -41,7 +41,7 @@ func (i *AuthFlowInfo) toAuthFlowInfo() *authFlowInfo {
 		Capabilities:         i.Capabilities,
 		SubtokenCapabilities: i.SubtokenCapabilities,
 		Name:                 db.NewNullString(i.Name),
-		ExpiresIn:            config.Get().Polling.PollingCodeExpiresAfter,
+		ExpiresIn:            config.Get().Features.Polling.PollingCodeExpiresAfter,
 	}
 }
 
@@ -62,7 +62,7 @@ func (i *AuthFlowInfo) Store() error {
 	store := i.toAuthFlowInfo()
 	return db.Transact(func(tx *sqlx.Tx) error {
 		if i.PollingCode != "" {
-			res, err := tx.Exec(`INSERT INTO PollingCodes (polling_code, expires_in) VALUES(?, ?)`, i.PollingCode, config.Get().Polling.PollingCodeExpiresAfter)
+			res, err := tx.Exec(`INSERT INTO PollingCodes (polling_code, expires_in) VALUES(?, ?)`, i.PollingCode, config.Get().Features.Polling.PollingCodeExpiresAfter)
 			if err != nil {
 				return err
 			}

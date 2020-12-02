@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -69,10 +70,17 @@ func (f *OIDCFlow) MarshalJSON() ([]byte, error) {
 
 // AddToSliceIfNotFound adds the OIDCFlow to a slice s if it is not already there
 func (f OIDCFlow) AddToSliceIfNotFound(s []OIDCFlow) {
-	for _, ss := range s {
-		if ss == f {
-			return
-		}
+	if OIDCFlowIsInSlice(f, s) {
+		return
 	}
 	s = append(s, f)
+}
+
+func OIDCFlowIsInSlice(f OIDCFlow, s []OIDCFlow) bool {
+	for _, ss := range s {
+		if ss == f {
+			return true
+		}
+	}
+	return false
 }

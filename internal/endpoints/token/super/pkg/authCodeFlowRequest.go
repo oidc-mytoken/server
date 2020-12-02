@@ -23,12 +23,14 @@ type AuthCodeFlowRequest struct {
 	SubtokenCapabilities capabilities.Capabilities `json:"subtoken_capabilities"`
 	RedirectType         string                    `json:"redirect_type"`
 	Name                 string                    `json:"name"`
+	ResponseType         model.ResponseType        `json:"response_type"`
 }
 
 func NewAuthCodeFlowRequest() *AuthCodeFlowRequest {
 	return &AuthCodeFlowRequest{
 		RedirectType: RedirectTypeWeb,
 		Capabilities: capabilities.Capabilities{capabilities.CapabilityAT},
+		ResponseType: model.ResponseTypeToken,
 	}
 }
 

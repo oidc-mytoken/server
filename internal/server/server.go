@@ -1,7 +1,10 @@
 package server
 
 import (
+	"fmt"
 	"time"
+
+	"github.com/zachmann/mytoken/internal/config"
 
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
@@ -26,7 +29,6 @@ func Init() {
 
 func addRoutes(s fiber.Router) {
 	s.Get("/", handleTest)
-	s.Get("/test", handleTest)
 	s.Get("/.well-known/mytoken-configuration", configuration.HandleConfiguration)
 	s.Get("/.well-known/openid-configuration", func(ctx *fiber.Ctx) error {
 		return ctx.Redirect("/.well-known/mytoken-configuration")
@@ -37,7 +39,7 @@ func addRoutes(s fiber.Router) {
 }
 
 func start(s *fiber.App) {
-	log.Fatal(s.Listen(":8000"))
+	log.Fatal(s.Listen(fmt.Sprintf(":%d", config.Get().Server.Port)))
 }
 
 func Start() {

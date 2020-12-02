@@ -16,20 +16,75 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var defaultConfig = Config{
+	Server: serverConf{
+		Port: 443,
+	},
+	DB: dbConf{
+		Host:     "localhost",
+		User:     "mytoken",
+		Password: "mytoken",
+		DB:       "mytoken",
+	},
+	Signing: signingConf{
+		Alg:       oidc.ES512,
+		RSAKeyLen: 2048,
+	},
+	Logging: loggingConf{
+		Access: LoggerConf{
+			Dir:    "/var/log/mytoken",
+			StdErr: false,
+		},
+		Internal: LoggerConf{
+			Dir:    "/var/log/mytoken",
+			StdErr: false,
+			Level:  "error",
+		},
+	},
+	ServiceDocumentation: "https://github.com/zachmann/mytoken",
+	Features: featuresConf{
+		EnabledOIDCFlows: []model.OIDCFlow{
+			model.OIDCFlowAuthorizationCode,
+		},
+		TokenRevocation: onlyEnable{true},
+		ShortTokens:     onlyEnable{true},
+		TransferCodes:   onlyEnable{true},
+		Polling: pollingConf{
+			Enabled:                 true,
+			PollingCodeExpiresAfter: 300,
+			PollingInterval:         5,
+		},
+		AccessTokenGrant: onlyEnable{true},
+		SignedJWTGrant:   onlyEnable{true},
+	},
+	ProviderByIssuer: make(map[string]*ProviderConf),
+}
+
 // Config holds the server configuration
 type Config struct {
-	DB                                  dbConf                   `yaml:"database"`
-	Server                              serverConf               `yaml:"server"`
-	Providers                           []*ProviderConf          `yaml:"providers"`
-	ProviderByIssuer                    map[string]*ProviderConf `yaml:"-"`
-	IssuerURL                           string                   `yaml:"issuer"`
-	EnabledOIDCFlows                    []model.OIDCFlow         `yaml:"enabled_oidc_flows"`
-	EnabledSuperTokenEndpointGrantTypes []model.GrantType        `yaml:"enabled_super_token_endpoint_grant_types"`
-	EnabledResponseTypes                []model.ResponseType     `yaml:"enabled_response_types"`
-	Signing                             signingConf              `yaml:"signing"`
-	ServiceDocumentation                string                   `yaml:"service_documentation"`
-	Polling                             pollingConf              `yaml:"polling_codes"`
-	Logging                             loggingConf              `yaml:"logging"`
+	IssuerURL            string                   `yaml:"issuer"`
+	Server               serverConf               `yaml:"server"`
+	DB                   dbConf                   `yaml:"database"`
+	Signing              signingConf              `yaml:"signing"`
+	Logging              loggingConf              `yaml:"logging"`
+	ServiceDocumentation string                   `yaml:"service_documentation"`
+	Features             featuresConf             `yaml:"features"`
+	Providers            []*ProviderConf          `yaml:"providers"`
+	ProviderByIssuer     map[string]*ProviderConf `yaml:"-"`
+}
+
+type featuresConf struct {
+	EnabledOIDCFlows []model.OIDCFlow `yaml:"enabled_oidc_flows"`
+	TokenRevocation  onlyEnable       `yaml:"token_revocation"`
+	ShortTokens      onlyEnable       `yaml:"short_tokens"`
+	TransferCodes    onlyEnable       `yaml:"transfer_codes"`
+	Polling          pollingConf      `yaml:"polling_codes"`
+	AccessTokenGrant onlyEnable       `yaml:"access_token_grant"`
+	SignedJWTGrant   onlyEnable       `yaml:"signed_jwt_grant"`
+}
+
+type onlyEnable struct {
+	Enabled bool `yaml:"enabled"`
 }
 
 type loggingConf struct {
@@ -44,6 +99,7 @@ type LoggerConf struct {
 }
 
 type pollingConf struct {
+	Enabled                 bool  `yaml:"enabled"`
 	PollingCodeExpiresAfter int64 `yaml:"expires_after"`
 	PollingInterval         int64 `yaml:"polling_interval"`
 }
@@ -57,6 +113,7 @@ type dbConf struct {
 
 type serverConf struct {
 	Hostname string `yaml:"hostname"`
+	Port     int    `yaml:"port"`
 }
 
 type signingConf struct {
@@ -127,16 +184,10 @@ func validate() error {
 	if conf.Signing.Alg == "" {
 		return fmt.Errorf("invalid config: tokensigningalg not set")
 	}
-	if conf.Polling.PollingInterval == 0 {
-		conf.Polling.PollingInterval = 5
+	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(conf.Features.EnabledOIDCFlows)
+	if model.OIDCFlowIsInSlice(model.OIDCFlowDevice, conf.Features.EnabledOIDCFlows) && conf.Features.Polling.Enabled == false {
+		return fmt.Errorf("oidc flow device flow requires polling_codes to be enabled")
 	}
-	if conf.Polling.PollingCodeExpiresAfter == 0 {
-		conf.Polling.PollingCodeExpiresAfter = 300
-	}
-	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(conf.EnabledOIDCFlows)
-	model.GrantTypeOIDCFlow.AddToSliceIfNotFound(conf.EnabledSuperTokenEndpointGrantTypes)
-	model.GrantTypeSuperToken.AddToSliceIfNotFound(conf.EnabledSuperTokenEndpointGrantTypes)
-	model.ResponseTypeToken.AddToSliceIfNotFound(conf.EnabledResponseTypes)
 	return nil
 }
 
@@ -173,7 +224,7 @@ func Load() {
 
 func load() {
 	data := readConfigFile("config.yaml")
-	conf = newConfig()
+	conf = &defaultConfig
 	err := yaml.Unmarshal(data, conf)
 	if err != nil {
 		log.WithError(err).Fatal()
@@ -184,10 +235,4 @@ func load() {
 // LoadForSetup reads the config file and populates the config struct; it does not validate the config, since this is not required for setup
 func LoadForSetup() {
 	load()
-}
-
-func newConfig() *Config {
-	return &Config{
-		ProviderByIssuer: make(map[string]*ProviderConf),
-	}
 }

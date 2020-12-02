@@ -70,11 +70,11 @@ func (r *ResponseType) MarshalJSON() ([]byte, error) {
 }
 
 // AddToSliceIfNotFound adds the ResponseType to a slice s if it is not already there
-func (r ResponseType) AddToSliceIfNotFound(s []ResponseType) {
-	for _, ss := range s {
+func (r ResponseType) AddToSliceIfNotFound(s *[]ResponseType) {
+	for _, ss := range *s {
 		if ss == r {
 			return
 		}
 	}
-	s = append(s, r)
+	*s = append(*s, r)
 }

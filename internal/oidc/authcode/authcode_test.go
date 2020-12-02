@@ -1,11 +1,21 @@
 package authcode
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/zachmann/mytoken/internal/model"
+)
 
 func TestParseState(t *testing.T) {
 	stateInfos := []stateInfo{
 		{Native: false},
 		{Native: true},
+		{Native: false, ResponseType: model.ResponseTypeToken},
+		{Native: true, ResponseType: model.ResponseTypeToken},
+		{Native: false, ResponseType: model.ResponseTypeShortToken},
+		{Native: true, ResponseType: model.ResponseTypeShortToken},
+		{Native: false, ResponseType: model.ResponseTypeTransferCode},
+		{Native: true, ResponseType: model.ResponseTypeTransferCode},
 	}
 	for _, stateInfo := range stateInfos {
 		state := createState(stateInfo)

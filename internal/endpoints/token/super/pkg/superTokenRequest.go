@@ -16,10 +16,13 @@ type SuperTokenFromSuperTokenRequest struct {
 	Capabilities         capabilities.Capabilities `json:"capabilities"`
 	SubtokenCapabilities capabilities.Capabilities `json:"subtoken_capabilities"`
 	Name                 string                    `json:"name"`
+	ResponseType         model.ResponseType        `json:"response_type"`
 }
 
 func NewSuperTokenRequest() *SuperTokenFromSuperTokenRequest {
-	return &SuperTokenFromSuperTokenRequest{}
+	return &SuperTokenFromSuperTokenRequest{
+		ResponseType: model.ResponseTypeToken,
+	}
 }
 
 func (r *SuperTokenFromSuperTokenRequest) UnmarshalJSON(data []byte) error {

@@ -9,7 +9,7 @@ import (
 
 type GrantType int
 
-var grantTypes = [...]string{"super_token", "oidc_flow", "polling_code", "access_token", "private_key_jwt"}
+var grantTypes = [...]string{"super_token", "oidc_flow", "polling_code", "access_token", "private_key_jwt", "transfer_code"}
 
 // GrantTypes
 const (
@@ -18,6 +18,7 @@ const (
 	GrantTypePollingCode
 	GrantTypeAccessToken
 	GrantTypePrivateKeyJWT
+	GrantTypeTransferCode
 	maxGrantType
 )
 
@@ -72,11 +73,11 @@ func (g *GrantType) MarshalJSON() ([]byte, error) {
 }
 
 // AddToSliceIfNotFound adds the GrantType to a slice s if it is not already there
-func (g GrantType) AddToSliceIfNotFound(s []GrantType) {
-	for _, ss := range s {
+func (g GrantType) AddToSliceIfNotFound(s *[]GrantType) {
+	for _, ss := range *s {
 		if ss == g {
 			return
 		}
 	}
-	s = append(s, g)
+	*s = append(*s, g)
 }

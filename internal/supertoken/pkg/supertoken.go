@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/zachmann/mytoken/internal/model"
+
 	"github.com/dgrijalva/jwt-go"
 	uuid "github.com/satori/go.uuid"
 	"github.com/zachmann/mytoken/internal/config"
@@ -134,6 +136,7 @@ func (st *SuperToken) ToSuperTokenResponse(jwt string) response.SuperTokenRespon
 	}
 	return response.SuperTokenResponse{
 		SuperToken:           jwt,
+		SuperTokenType:       model.ResponseTypeToken,
 		ExpiresIn:            st.ExpiresIn(),
 		Restrictions:         st.Restrictions,
 		Capabilities:         st.Capabilities,

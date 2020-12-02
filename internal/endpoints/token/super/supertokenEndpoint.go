@@ -3,6 +3,7 @@ package super
 import (
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
+	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/endpoints/token/super/polling"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/oidc/authcode"
@@ -22,18 +23,27 @@ func HandleSuperTokenEndpoint(ctx *fiber.Ctx) error {
 	case model.GrantTypeOIDCFlow:
 		return handleOIDCFlow(ctx)
 	case model.GrantTypePollingCode:
-		return polling.HandlePollingCode(ctx)
-	case model.GrantTypeAccessToken:
-		return model.ResponseNYI.Send(ctx)
-	case model.GrantTypePrivateKeyJWT:
-		return model.ResponseNYI.Send(ctx)
-	default:
-		res := model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.APIErrorUnsupportedGrantType,
+		if config.Get().Features.Polling.Enabled {
+			return polling.HandlePollingCode(ctx)
 		}
-		return res.Send(ctx)
+	case model.GrantTypeAccessToken:
+		if config.Get().Features.AccessTokenGrant.Enabled {
+			return model.ResponseNYI.Send(ctx)
+		}
+	case model.GrantTypePrivateKeyJWT:
+		if config.Get().Features.SignedJWTGrant.Enabled {
+			return model.ResponseNYI.Send(ctx)
+		}
+	case model.GrantTypeTransferCode:
+		if config.Get().Features.TransferCodes.Enabled {
+			return model.ResponseNYI.Send(ctx)
+		}
 	}
+	res := model.Response{
+		Status:   fiber.StatusBadRequest,
+		Response: model.APIErrorUnsupportedGrantType,
+	}
+	return res.Send(ctx)
 }
 
 func handleOIDCFlow(ctx *fiber.Ctx) error {

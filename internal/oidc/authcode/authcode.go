@@ -38,10 +38,11 @@ const stateLen = 16
 const pollingCodeLen = 32
 
 type stateInfo struct {
-	Native bool
+	Native       bool
+	ResponseType model.ResponseType
 }
 
-const stateFmt = "%d%s"
+const stateFmt = "%d:%d:%s"
 
 func createState(info stateInfo) string {
 	r := utils.RandASCIIString(stateLen)
@@ -49,14 +50,14 @@ func createState(info stateInfo) string {
 	if info.Native {
 		native = 1
 	}
-	return fmt.Sprintf(stateFmt, native, r)
+	return fmt.Sprintf(stateFmt, native, info.ResponseType, r)
 }
 
 func parseState(state string) stateInfo {
 	info := stateInfo{}
 	native := 0
 	var r string
-	fmt.Sscanf(state, stateFmt, &native, &r)
+	fmt.Sscanf(state, stateFmt, &native, &info.ResponseType, &r)
 	if native != 0 {
 		info.Native = true
 	}
@@ -124,11 +125,11 @@ func InitAuthCodeFlow(body []byte) *model.Response {
 	res := response.AuthCodeFlowResponse{
 		AuthorizationURL: authURL,
 	}
-	if req.Native() {
+	if req.Native() && config.Get().Features.Polling.Enabled {
 		authFlowInfo.PollingCode = utils.RandASCIIString(pollingCodeLen)
 		res.PollingCode = authFlowInfo.PollingCode
-		res.PollingCodeExpiresIn = config.Get().Polling.PollingCodeExpiresAfter
-		res.PollingInterval = config.Get().Polling.PollingInterval
+		res.PollingCodeExpiresIn = config.Get().Features.Polling.PollingCodeExpiresAfter
+		res.PollingInterval = config.Get().Features.Polling.PollingInterval
 	}
 	if err := authFlowInfo.Store(); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
