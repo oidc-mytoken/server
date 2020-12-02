@@ -68,7 +68,7 @@ func (g *GrantType) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (g *GrantType) MarshalJSON() ([]byte, error) {
+func (g GrantType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(g.String())
 }
 

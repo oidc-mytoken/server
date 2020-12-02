@@ -21,4 +21,7 @@ func addAPIv0Routes(s fiber.Router) {
 	if config.Get().Features.TokenRevocation.Enabled {
 		tokens.Post("/revoke", revocation.HandleRevoke)
 	}
+	if config.Get().Features.TransferCodes.Enabled {
+		tokens.Post("/transfer", super.HandleCreateTransferCodeForExistingSuperToken)
+	}
 }

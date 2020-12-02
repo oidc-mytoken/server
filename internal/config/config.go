@@ -47,8 +47,15 @@ var defaultConfig = Config{
 			model.OIDCFlowAuthorizationCode,
 		},
 		TokenRevocation: onlyEnable{true},
-		ShortTokens:     onlyEnable{true},
-		TransferCodes:   onlyEnable{true},
+		ShortTokens: shortTokenConfig{
+			Enabled: true,
+			Len:     64,
+		},
+		TransferCodes: transferCodeConfig{
+			Enabled:      true,
+			Len:          8,
+			ExpiresAfter: 300,
+		},
 		Polling: pollingConf{
 			Enabled:                 true,
 			PollingCodeExpiresAfter: 300,
@@ -74,13 +81,24 @@ type Config struct {
 }
 
 type featuresConf struct {
-	EnabledOIDCFlows []model.OIDCFlow `yaml:"enabled_oidc_flows"`
-	TokenRevocation  onlyEnable       `yaml:"token_revocation"`
-	ShortTokens      onlyEnable       `yaml:"short_tokens"`
-	TransferCodes    onlyEnable       `yaml:"transfer_codes"`
-	Polling          pollingConf      `yaml:"polling_codes"`
-	AccessTokenGrant onlyEnable       `yaml:"access_token_grant"`
-	SignedJWTGrant   onlyEnable       `yaml:"signed_jwt_grant"`
+	EnabledOIDCFlows []model.OIDCFlow   `yaml:"enabled_oidc_flows"`
+	TokenRevocation  onlyEnable         `yaml:"token_revocation"`
+	ShortTokens      shortTokenConfig   `yaml:"short_tokens"`
+	TransferCodes    transferCodeConfig `yaml:"transfer_codes"`
+	Polling          pollingConf        `yaml:"polling_codes"`
+	AccessTokenGrant onlyEnable         `yaml:"access_token_grant"`
+	SignedJWTGrant   onlyEnable         `yaml:"signed_jwt_grant"`
+}
+
+type shortTokenConfig struct {
+	Enabled bool `yaml:"enabled"`
+	Len     int  `yaml:"len"`
+}
+
+type transferCodeConfig struct {
+	Enabled      bool `yaml:"enabled"`
+	Len          int  `yaml:"len"`
+	ExpiresAfter int  `yaml:"expires_after"`
 }
 
 type onlyEnable struct {

@@ -65,7 +65,7 @@ func (r *ResponseType) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (r *ResponseType) MarshalJSON() ([]byte, error) {
+func (r ResponseType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(r.String())
 }
 

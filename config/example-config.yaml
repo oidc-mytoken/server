@@ -55,10 +55,12 @@ features:
   # Support for short super tokens
   short_tokens:
     enabled: true
+    len: 64 # Default 64, max 256
 
   # Support for transfer codes for super tokens
   transfer_codes:
     enabled: true
+    len: 8 # Default 8, max 64
 
   # Support for polling codes that are used by native applications. Only disable this if you have good reasons for it.
   polling_codes:

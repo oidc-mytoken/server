@@ -64,7 +64,7 @@ func (f *OIDCFlow) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (f *OIDCFlow) MarshalJSON() ([]byte, error) {
+func (f OIDCFlow) MarshalJSON() ([]byte, error) {
 	return json.Marshal(f.String())
 }
 

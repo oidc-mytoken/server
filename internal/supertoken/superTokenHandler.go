@@ -38,7 +38,7 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 
 	// GrantType already checked
 
-	revoked, dbErr := dbUtils.CheckTokenRevoked(req.SuperToken)
+	token, revoked, dbErr := dbUtils.CheckTokenRevoked(req.SuperToken)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -49,6 +49,7 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 		}
 	}
 	log.Trace("Checked token not revoked")
+	req.SuperToken = token
 
 	st, err := supertoken.ParseJWT(req.SuperToken)
 	if err != nil {

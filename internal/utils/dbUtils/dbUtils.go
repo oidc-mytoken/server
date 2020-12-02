@@ -73,13 +73,22 @@ FROM   childs
 	return err
 }
 
-func CheckTokenRevoked(token string) (bool, error) {
+// CheckTokenRevoked takes a short super token or a normal super token and checks if it was revoked. If the token is found in the db, the super token string will be returned.
+// Therefore, this function can also be used to exchange a short super token into a normal one.
+func CheckTokenRevoked(token string) (string, bool, error) {
 	var count int
 	if err := db.DB().Get(&count, `SELECT COUNT(1) FROM SuperTokens WHERE token=?`, token); err != nil {
-		return true, err
+		return token, true, err
 	}
-	if count == 0 {
-		return true, nil
+	if count > 0 { // token was found as SuperToken
+		return token, false, nil
 	}
-	return false, nil
+	var superToken string
+	if err := db.DB().Get(&superToken, `SELECT token FROM ShortSuperTokensV WHERE short_token=?`, token); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+		return token, true, err
+	}
+	return superToken, true, nil
 }
