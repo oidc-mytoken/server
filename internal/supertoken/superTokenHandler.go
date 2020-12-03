@@ -86,10 +86,10 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 		log.Trace("Checked issuer")
 	}
 
-	return handleSuperTokenFromSuperToken(st, req, ctxUtils.NetworkData(ctx))
+	return handleSuperTokenFromSuperToken(st, req, ctxUtils.NetworkData(ctx), req.ResponseType)
 }
 
-func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response.SuperTokenFromSuperTokenRequest, networkData *model.NetworkData) *model.Response {
+func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response.SuperTokenFromSuperTokenRequest, networkData *model.NetworkData, responseType model.ResponseType) *model.Response {
 	ste, errorResponse := createSuperTokenEntry(parent, req, *networkData)
 	if errorResponse != nil {
 		return errorResponse
@@ -104,9 +104,13 @@ func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 
+	res, err := ste.Token.ToTokenResponse(responseType, *networkData, "")
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
 	return &model.Response{
 		Status:   fiber.StatusOK,
-		Response: ste.Token.ToSuperTokenResponse(""),
+		Response: res,
 	}
 }
 

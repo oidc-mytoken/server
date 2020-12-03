@@ -42,7 +42,24 @@ type stateInfo struct {
 	ResponseType model.ResponseType
 }
 
+type pollingInfo struct {
+	ResponseType model.ResponseType
+}
+
 const stateFmt = "%d:%d:%s"
+const pollingFmt = "%d:%s"
+
+func createPollingCode(info pollingInfo) string {
+	r := utils.RandASCIIString(pollingCodeLen)
+	return fmt.Sprintf(pollingFmt, info.ResponseType, r)
+}
+
+func ParsePollingCode(pollingCode string) pollingInfo {
+	info := pollingInfo{}
+	var r string
+	fmt.Sscanf(pollingCode, pollingFmt, &info.ResponseType, &r)
+	return info
+}
 
 func createState(info stateInfo) string {
 	r := utils.RandASCIIString(stateLen)
@@ -126,7 +143,7 @@ func InitAuthCodeFlow(body []byte) *model.Response {
 		AuthorizationURL: authURL,
 	}
 	if req.Native() && config.Get().Features.Polling.Enabled {
-		authFlowInfo.PollingCode = utils.RandASCIIString(pollingCodeLen)
+		authFlowInfo.PollingCode = createPollingCode(pollingInfo{ResponseType: req.ResponseType})
 		res.PollingCode = authFlowInfo.PollingCode
 		res.PollingCodeExpiresIn = config.Get().Features.Polling.PollingCodeExpiresAfter
 		res.PollingInterval = config.Get().Features.Polling.PollingInterval
@@ -237,15 +254,27 @@ func CodeExchange(state, code string, networkData model.NetworkData) *model.Resp
 			Response: "ok", //TODO
 		}
 	}
-	res := ste.Token.ToSuperTokenResponse("")
+	stateInfo := parseState(state)
+	res, err := ste.Token.ToTokenResponse(stateInfo.ResponseType, networkData, "")
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	cookieName := "mytoken-supertoken"
+	cookieValue := res.SuperToken
+	cookieAge := 3600 //TODO from config
+	if stateInfo.ResponseType == model.ResponseTypeTransferCode {
+		cookieName = "mytoken-transfercode"
+		cookieValue = res.TransferCode
+		cookieAge = int(res.ExpiresIn)
+	}
 	return &model.Response{
 		Status:   fiber.StatusSeeOther,
 		Response: "/", //TODO redirect
 		Cookies: []*fiber.Cookie{{
-			Name:     "mytoken-supertoken",
-			Value:    res.SuperToken,
+			Name:     cookieName,
+			Value:    cookieValue,
 			Path:     "/api",
-			MaxAge:   3600,  //TODO from config
+			MaxAge:   cookieAge,
 			Secure:   false, //TODO depending on TLS
 			HTTPOnly: true,
 			SameSite: "Strict",

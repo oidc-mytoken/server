@@ -3,6 +3,10 @@ package polling
 import (
 	"encoding/json"
 
+	"github.com/zachmann/mytoken/internal/oidc/authcode"
+
+	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
@@ -18,10 +22,10 @@ func HandlePollingCode(ctx *fiber.Ctx) error {
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	return handlePollingCode(req).Send(ctx)
+	return handlePollingCode(req, *ctxUtils.NetworkData(ctx)).Send(ctx)
 }
 
-func handlePollingCode(req response.PollingCodeRequest) *model.Response {
+func handlePollingCode(req response.PollingCodeRequest, networkData model.NetworkData) *model.Response {
 	pollingCode := req.PollingCode
 	log.WithField("polling_code", pollingCode).Debug("Handle polling code")
 	pollingCodeStatus, err := dbModels.CheckPollingCode(pollingCode)
@@ -69,8 +73,13 @@ func handlePollingCode(req response.PollingCodeRequest) *model.Response {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	log.Tracef("The JWT was parsed as '%+v'", st)
+	pollingInfo := authcode.ParsePollingCode(pollingCode)
+	res, err := st.ToTokenResponse(pollingInfo.ResponseType, networkData, token)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
 	return &model.Response{
 		Status:   fiber.StatusOK,
-		Response: st.ToSuperTokenResponse(token),
+		Response: res,
 	}
 }

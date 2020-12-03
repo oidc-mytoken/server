@@ -4,12 +4,15 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/zachmann/mytoken/internal/model"
+
 	"github.com/zachmann/mytoken/internal/db"
 )
 
 type PollingCodeStatus struct {
-	Found   bool
-	Expired bool
+	Found        bool
+	Expired      bool
+	ResponseType model.ResponseType
 }
 
 func (p *PollingCodeStatus) Scan(src interface{}) error {

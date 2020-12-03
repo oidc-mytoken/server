@@ -3,17 +3,11 @@ package super
 import (
 	"encoding/json"
 
+	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
+
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/jmoiron/sqlx"
-
-	"github.com/zachmann/mytoken/internal/supertoken/event"
-	event2 "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
-
 	"github.com/zachmann/mytoken/internal/utils/dbUtils"
-
-	"github.com/zachmann/mytoken/internal/config"
-	"github.com/zachmann/mytoken/internal/utils"
 
 	"github.com/zachmann/mytoken/internal/db"
 
@@ -56,24 +50,12 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 		return res.Send(ctx)
 	}
 
-	transferCode := utils.RandASCIIString(config.Get().Features.TransferCodes.Len)
-	expiresIn := config.Get().Features.TransferCodes.ExpiresAfter
 	var stid uuid.UUID
-	if err := db.Transact(func(tx *sqlx.Tx) error {
-		if err := tx.Get(&stid, `SELECT id FROM SuperTokens WHERE token=?`, superToken); err != nil {
-			return err
-		}
-		if _, err := tx.Exec(`INSERT INTO TransferCodes (transfer_code, ST_id, expires_in, new_st) VALUES(?,?,?,0)`, transferCode, stid, expiresIn); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+	if err := db.DB().Get(&stid, `SELECT id FROM SuperTokens WHERE token=?`, superToken); err != nil {
+		return err
 	}
-	if err := event.LogEvent(&event2.Event{
-		Type:    event2.STEventTransferCodeCreated,
-		Comment: "from existing ST",
-	}, stid, *ctxUtils.NetworkData(ctx)); err != nil {
+	transferCode, expiresIn, err := supertoken.CreateTransferCode(stid, *ctxUtils.NetworkData(ctx))
+	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
 	res := &model.Response{

@@ -5,6 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jmoiron/sqlx"
+	"github.com/zachmann/mytoken/internal/supertoken/event"
+	event2 "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
+
+	"github.com/zachmann/mytoken/internal/db"
+	"github.com/zachmann/mytoken/internal/utils"
+
 	"github.com/zachmann/mytoken/internal/model"
 
 	"github.com/dgrijalva/jwt-go"
@@ -130,18 +137,71 @@ func (st *SuperToken) Valid() error {
 }
 
 // ToSuperTokenResponse returns a SuperTokenResponse for this token. It requires that jwt is set or that the jwt is passed as argument; if not passed as argument ToJWT must have been called earlier on this token to set jwt. This is always the case, if the token has been stored.
-func (st *SuperToken) ToSuperTokenResponse(jwt string) response.SuperTokenResponse {
+func (st *SuperToken) toSuperTokenResponse(jwt string) response.SuperTokenResponse {
 	if jwt == "" {
 		jwt = st.jwt
 	}
+	res := st.toTokenResponse()
+	res.SuperToken = jwt
+	res.SuperTokenType = model.ResponseTypeToken
+	return res
+}
+
+func (st *SuperToken) toShortSuperTokenResponse() (response.SuperTokenResponse, error) {
+	shortToken := utils.RandASCIIString(config.Get().Features.ShortTokens.Len)
+	if _, err := db.DB().Exec(`INSERT INTO ShortSuperTokens (short_token, ST_id) VALUES(?,?)`, shortToken, st.ID); err != nil {
+		return response.SuperTokenResponse{}, err
+	}
+	res := st.toTokenResponse()
+	res.SuperToken = shortToken
+	res.SuperTokenType = model.ResponseTypeShortToken
+	return res, nil
+}
+
+func (st *SuperToken) toTokenResponse() response.SuperTokenResponse {
 	return response.SuperTokenResponse{
-		SuperToken:           jwt,
-		SuperTokenType:       model.ResponseTypeToken,
 		ExpiresIn:            st.ExpiresIn(),
 		Restrictions:         st.Restrictions,
 		Capabilities:         st.Capabilities,
 		SubtokenCapabilities: st.SubtokenCapabilities,
 	}
+}
+
+func CreateTransferCode(stid uuid.UUID, networkData model.NetworkData) (string, uint64, error) {
+	transferCode := utils.RandASCIIString(config.Get().Features.TransferCodes.Len)
+	expiresIn := config.Get().Features.TransferCodes.ExpiresAfter
+	exp := uint64(expiresIn)
+	if err := db.Transact(func(tx *sqlx.Tx) error {
+		if _, err := tx.Exec(`INSERT INTO TransferCodes (transfer_code, ST_id, expires_in, new_st) VALUES(?,?,?,0)`, transferCode, stid, expiresIn); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return transferCode, exp, err
+	}
+	if err := event.LogEvent(&event2.Event{
+		Type: event2.STEventTransferCodeCreated,
+	}, stid, networkData); err != nil {
+		return transferCode, exp, err
+	}
+	return transferCode, exp, nil
+}
+
+func (st *SuperToken) ToTokenResponse(responseType model.ResponseType, networkData model.NetworkData, jwt string) (response.SuperTokenResponse, error) {
+	switch responseType {
+	case model.ResponseTypeShortToken:
+		if config.Get().Features.ShortTokens.Enabled {
+			return st.toShortSuperTokenResponse()
+		}
+	case model.ResponseTypeTransferCode:
+		transferCode, expiresIn, err := CreateTransferCode(st.ID, networkData)
+		res := st.toTokenResponse()
+		res.TransferCode = transferCode
+		res.SuperTokenType = model.ResponseTypeTransferCode
+		res.ExpiresIn = expiresIn
+		return res, err
+	}
+	return st.toSuperTokenResponse(jwt), nil
 }
 
 // ToJWT returns the SuperToken as JWT
