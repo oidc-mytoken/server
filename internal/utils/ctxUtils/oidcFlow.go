@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"
+
 	"github.com/zachmann/mytoken/internal/model"
 )
 
@@ -11,6 +12,7 @@ type oidcFlowReqObj struct {
 	OIDCFlow string `json:"oidc_flow"`
 }
 
+// GetOIDCFlowStr returns the oidc flow string for a fiber.Ctx by checking the query as well as the request body (json)
 func GetOIDCFlowStr(ctx *fiber.Ctx) string {
 	oidcFlow := ctx.Query("oidc_flow")
 	if oidcFlow != "" {
@@ -24,6 +26,7 @@ func GetOIDCFlowStr(ctx *fiber.Ctx) string {
 	return flow.OIDCFlow
 }
 
+// GetOIDCFlow returns the model.OIDCFlow for a fiber.Ctx by checking the query as well as the request body (json)
 func GetOIDCFlow(ctx *fiber.Ctx) model.OIDCFlow {
 	return model.NewOIDCFlow(GetOIDCFlowStr(ctx))
 }

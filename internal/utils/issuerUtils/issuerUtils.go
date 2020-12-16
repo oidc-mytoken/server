@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// GetIssuerWithAndWithoutSlash takes an issuer url that might or might not end with a slash and returns the variant with and without trailing slash
 func GetIssuerWithAndWithoutSlash(iss string) (string, string) {
 	iss0 := iss
 	var iss1 string

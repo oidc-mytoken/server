@@ -4,12 +4,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/oidc/authcode"
 	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
 )
 
+// HandleOIDCRedirect handles redirects from the openid provider after an auth code flow
 func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 	log.Debug("Handle redirect")
 	oidcError := ctx.Query("error")
@@ -34,6 +36,6 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 		return errorRes.Send(ctx)
 	}
 	code := ctx.Query("code")
-	res := authcode.CodeExchange(state, code, *ctxUtils.NetworkData(ctx))
+	res := authcode.CodeExchange(state, code, *ctxUtils.ClientMetaData(ctx))
 	return res.Send(ctx)
 }

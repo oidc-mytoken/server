@@ -52,6 +52,7 @@ func Tighten(a, b Capabilities) (res Capabilities) {
 	return
 }
 
+// Has checks if Capabilities slice contains the passed Capability
 func (c Capabilities) Has(a Capability) bool {
 	for _, cc := range c {
 		if cc == a {

@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// OIDCFlow is a enum like type for oidc flows
 type OIDCFlow int
 
 var oidcFlows = [...]string{"authorization_code", "device"}
@@ -18,6 +19,7 @@ const (
 	maxFlow
 )
 
+// NewOIDCFlow creates a new OIDCFlow from the flow string
 func NewOIDCFlow(s string) OIDCFlow {
 	for i, f := range oidcFlows {
 		if f == s {
@@ -52,6 +54,7 @@ func (f *OIDCFlow) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface
 func (f *OIDCFlow) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
@@ -64,6 +67,7 @@ func (f *OIDCFlow) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalJSON implements the json.Marshaler interface
 func (f OIDCFlow) MarshalJSON() ([]byte, error) {
 	return json.Marshal(f.String())
 }
@@ -76,6 +80,7 @@ func (f OIDCFlow) AddToSliceIfNotFound(s []OIDCFlow) {
 	s = append(s, f)
 }
 
+// OIDCFlowIsInSlice checks if a OIDCFlow is present in a slice of OIDCFlows
 func OIDCFlowIsInSlice(f OIDCFlow, s []OIDCFlow) bool {
 	for _, ss := range s {
 		if ss == f {

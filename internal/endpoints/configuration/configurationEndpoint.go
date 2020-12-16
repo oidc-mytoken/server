@@ -2,6 +2,7 @@ package configuration
 
 import (
 	"github.com/gofiber/fiber/v2"
+
 	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/endpoints/configuration/pkg"
 	"github.com/zachmann/mytoken/internal/model"
@@ -9,6 +10,7 @@ import (
 	"github.com/zachmann/mytoken/internal/utils"
 )
 
+// HandleConfiguration handles calls to the configuration endpoint
 func HandleConfiguration(ctx *fiber.Ctx) error {
 	res := model.Response{
 		Status:   fiber.StatusOK,
@@ -29,6 +31,7 @@ func getProvidersFromConfig() (providers []pkg.SupportedProviderConfig) {
 	return
 }
 
+// Init initializes the configuration endpoint
 func Init() {
 	mytokenConfig = &pkg.MytokenConfiguration{
 		Issuer:                                 config.Get().IssuerURL,

@@ -10,10 +10,11 @@ import (
 
 // Redirect types
 const (
-	RedirectTypeWeb    = "web"
-	RedirectTypeNative = "native"
+	redirectTypeWeb    = "web"
+	redirectTypeNative = "native"
 )
 
+// AuthCodeFlowRequest holds a authorization code flow request
 type AuthCodeFlowRequest struct {
 	Issuer               string                    `json:"oidc_issuer"`
 	GrantType            model.GrantType           `json:"grant_type"`
@@ -26,21 +27,24 @@ type AuthCodeFlowRequest struct {
 	ResponseType         model.ResponseType        `json:"response_type"`
 }
 
+// NewAuthCodeFlowRequest creates a new AuthCodeFlowRequest with default values where they can be omitted
 func NewAuthCodeFlowRequest() *AuthCodeFlowRequest {
 	return &AuthCodeFlowRequest{
-		RedirectType: RedirectTypeWeb,
+		RedirectType: redirectTypeWeb,
 		Capabilities: capabilities.Capabilities{capabilities.CapabilityAT},
 		ResponseType: model.ResponseTypeToken,
 	}
 }
 
+// Native checks if the request is native
 func (r *AuthCodeFlowRequest) Native() bool {
-	if r.RedirectType == RedirectTypeNative {
+	if r.RedirectType == redirectTypeNative {
 		return true
 	}
 	return false
 }
 
+// UnmarshalJSON implements the json unmarshaler interface
 func (r *AuthCodeFlowRequest) UnmarshalJSON(data []byte) error {
 	type authCodeFlowRequest2 AuthCodeFlowRequest
 	rr := (*authCodeFlowRequest2)(NewAuthCodeFlowRequest())

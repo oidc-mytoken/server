@@ -2,6 +2,7 @@ package pkg
 
 import "github.com/zachmann/mytoken/internal/model"
 
+// MytokenConfiguration holds information about a mytoken instance
 type MytokenConfiguration struct {
 	Issuer                                 string                    `json:"issuer"`
 	AccessTokenEndpoint                    string                    `json:"access_token_endpoint"`
@@ -21,6 +22,7 @@ type MytokenConfiguration struct {
 	Version                                string                    `json:"version,omitempty"`
 }
 
+// SupportedProviderConfig holds information about a provider
 type SupportedProviderConfig struct {
 	Issuer          string   `json:"issuer"`
 	ScopesSupported []string `json:"scopes_supported"`

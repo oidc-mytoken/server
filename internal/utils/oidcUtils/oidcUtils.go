@@ -5,6 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// GetAudiencesFromJWT parses the passed jwt token and returns the aud claim as a slice of strings
 func GetAudiencesFromJWT(token string) ([]string, bool) {
 	log.Trace("Getting auds from token")
 	if atJWT, _ := jwt.Parse(token, nil); atJWT != nil {

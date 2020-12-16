@@ -7,11 +7,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// APIError is an error object that is returned on the api when an error occurs
 type APIError struct {
 	Error            string `json:"error"`
 	ErrorDescription string `json:"error_description,omitempty"`
 }
 
+// ResponseNYI is the server response when something is not yet implemented
 var ResponseNYI = Response{Status: fiber.StatusNotImplemented, Response: APIErrorNYI}
 
 // Predefined errors
@@ -53,6 +55,7 @@ const (
 	ErrorUsageRestricted          = "usage_restricted"
 )
 
+// InternalServerError creates an APIError for internal server errors
 func InternalServerError(errorDescription string) APIError {
 	return APIError{
 		Error:            ErrorInternal,
@@ -60,17 +63,19 @@ func InternalServerError(errorDescription string) APIError {
 	}
 }
 
+// OIDCError creates an APIError for oidc related errors
 func OIDCError(oidcError, oidcErrorDescription string) APIError {
-	error := oidcError
+	err := oidcError
 	if oidcErrorDescription != "" {
-		error = fmt.Sprintf("%s: %s", oidcError, oidcErrorDescription)
+		err = fmt.Sprintf("%s: %s", oidcError, oidcErrorDescription)
 	}
 	return APIError{
 		Error:            ErrorOIDC,
-		ErrorDescription: error,
+		ErrorDescription: err,
 	}
 }
 
+// OIDCErrorFromBody creates an APIError for oidc related errors from the response of an oidc provider
 func OIDCErrorFromBody(body []byte) (error APIError, ok bool) {
 	bodyError := APIError{}
 	if err := json.Unmarshal(body, &bodyError); err != nil {
@@ -81,6 +86,7 @@ func OIDCErrorFromBody(body []byte) (error APIError, ok bool) {
 	return
 }
 
+// BadRequestError creates an APIError for bad request errors
 func BadRequestError(errorDescription string) APIError {
 	return APIError{
 		Error:            ErrorInvalidRequest,
@@ -88,6 +94,7 @@ func BadRequestError(errorDescription string) APIError {
 	}
 }
 
+// InvalidTokenError creates an APIError for invalid token errors
 func InvalidTokenError(errorDescription string) APIError {
 	return APIError{
 		Error:            ErrorInvalidToken,
@@ -95,15 +102,17 @@ func InvalidTokenError(errorDescription string) APIError {
 	}
 }
 
-func ErrorWithoutDescription(error string) APIError {
+// ErrorWithoutDescription creates an APIError from an error string
+func ErrorWithoutDescription(err string) APIError {
 	return APIError{
-		Error: error,
+		Error: err,
 	}
 }
 
-func ErrorWithErrorDescription(error string, err error) APIError {
+// ErrorWithErrorDescription creates an APIError from an error string and golang error
+func ErrorWithErrorDescription(e string, err error) APIError {
 	return APIError{
-		Error:            error,
+		Error:            e,
 		ErrorDescription: err.Error(),
 	}
 }

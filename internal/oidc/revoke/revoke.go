@@ -8,7 +8,8 @@ import (
 	"github.com/zachmann/mytoken/internal/oidc/oidcReqRes"
 )
 
-func RevokeRefreshToken(provider *config.ProviderConf, rt string) *model.Response {
+// RefreshToken revokes a refresh token
+func RefreshToken(provider *config.ProviderConf, rt string) *model.Response {
 	if len(provider.Endpoints.Revocation) == 0 {
 		return nil
 	}

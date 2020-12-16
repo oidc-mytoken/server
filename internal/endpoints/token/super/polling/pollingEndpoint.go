@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/db/dbModels"
 	response "github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
@@ -17,15 +18,16 @@ import (
 	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
 )
 
+// HandlePollingCode handles a request on the polling endpoint
 func HandlePollingCode(ctx *fiber.Ctx) error {
 	req := response.PollingCodeRequest{}
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	return handlePollingCode(req, *ctxUtils.NetworkData(ctx)).Send(ctx)
+	return handlePollingCode(req, *ctxUtils.ClientMetaData(ctx)).Send(ctx)
 }
 
-func handlePollingCode(req response.PollingCodeRequest, networkData model.NetworkData) *model.Response {
+func handlePollingCode(req response.PollingCodeRequest, networkData model.ClientMetaData) *model.Response {
 	pollingCode := req.PollingCode
 	log.WithField("polling_code", pollingCode).Debug("Handle polling code")
 	pollingCodeStatus, err := dbModels.CheckPollingCode(pollingCode)
@@ -47,15 +49,15 @@ func handlePollingCode(req response.PollingCodeRequest, networkData model.Networ
 		}
 	}
 	var token string
-	if err := db.Transact(func(tx *sqlx.Tx) error {
-		if err := tx.Get(&token, `SELECT token FROM TmpST_by_polling_code WHERE polling_code=? AND CURRENT_TIMESTAMP() <= polling_code_expires_at`, pollingCode); err != nil {
+	if err = db.Transact(func(tx *sqlx.Tx) error {
+		if err = tx.Get(&token, `SELECT token FROM TmpST_by_polling_code WHERE polling_code=? AND CURRENT_TIMESTAMP() <= polling_code_expires_at`, pollingCode); err != nil {
 			return err
 		}
 		log.WithFields(log.Fields{"token": token, "polling_code": pollingCode}).Debug("Retrieved token for polling code from db")
 		if token == "" {
 			return nil
 		}
-		if _, err := tx.Exec(`DELETE FROM PollingCodes WHERE polling_code=?`, pollingCode); err != nil {
+		if _, err = tx.Exec(`DELETE FROM PollingCodes WHERE polling_code=?`, pollingCode); err != nil {
 			return err
 		}
 		return nil

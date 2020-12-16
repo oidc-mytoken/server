@@ -8,15 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zachmann/mytoken/internal/context"
-
-	"golang.org/x/oauth2"
-
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
+
 	"github.com/zachmann/mytoken/internal/config"
+	"github.com/zachmann/mytoken/internal/context"
 	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/db/dbModels"
 	response "github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
@@ -30,6 +29,7 @@ import (
 
 var redirectURL string
 
+// Init initializes the authcode component
 func Init() {
 	redirectURL = utils.CombineURLPath(config.Get().IssuerURL, "/redirect")
 }
@@ -54,6 +54,7 @@ func createPollingCode(info pollingInfo) string {
 	return fmt.Sprintf(pollingFmt, info.ResponseType, r)
 }
 
+// ParsePollingCode parses a polling code string into pollingInfo
 func ParsePollingCode(pollingCode string) pollingInfo {
 	info := pollingInfo{}
 	var r string
@@ -109,7 +110,8 @@ func authorizationURL(provider *config.ProviderConf, restrictions restrictions.R
 	return oauth2Config.AuthCodeURL(state, additionalParams...), state
 }
 
-func InitAuthCodeFlow(body []byte) *model.Response {
+// StartAuthCodeFlow starts an authorization code flow
+func StartAuthCodeFlow(body []byte) *model.Response {
 	log.Debug("Handle authcode")
 	req := response.NewAuthCodeFlowRequest()
 	if err := json.Unmarshal(body, &req); err != nil {
@@ -157,9 +159,10 @@ func InitAuthCodeFlow(body []byte) *model.Response {
 	}
 }
 
-func CodeExchange(state, code string, networkData model.NetworkData) *model.Response {
+// CodeExchange performs an oidc code exchange it creates the super token and stores it in the database
+func CodeExchange(state, code string, networkData model.ClientMetaData) *model.Response {
 	log.Debug("Handle code exchange")
-	authInfo, err := dbModels.GetAuthCodeInfoByState(state)
+	authInfo, err := dbModels.GetAuthFlowInfoByState(state)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &model.Response{
@@ -231,16 +234,16 @@ func CodeExchange(state, code string, networkData model.NetworkData) *model.Resp
 		Scopes:    scopes,
 		Audiences: audiences,
 	}
-	if err := at.Store(); err != nil {
+	if err = at.Store(); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	if err := db.Transact(func(tx *sqlx.Tx) error {
+	if err = db.Transact(func(tx *sqlx.Tx) error {
 		if authInfo.PollingCode != "" {
-			if _, err := tx.Exec(`INSERT INTO TmpST (polling_code_id, ST_id) VALUES((SELECT id FROM PollingCodes WHERE polling_code = ?), ?)`, authInfo.PollingCode, ste.ID); err != nil {
+			if _, err = tx.Exec(`INSERT INTO TmpST (polling_code_id, ST_id) VALUES((SELECT id FROM PollingCodes WHERE polling_code = ?), ?)`, authInfo.PollingCode, ste.ID); err != nil {
 				return err
 			}
 		}
-		if _, err := tx.Exec(`DELETE FROM AuthInfo WHERE state = ?`, authInfo.State); err != nil {
+		if _, err = tx.Exec(`DELETE FROM AuthInfo WHERE state = ?`, authInfo.State); err != nil {
 			return err
 		}
 		return nil
@@ -251,18 +254,18 @@ func CodeExchange(state, code string, networkData model.NetworkData) *model.Resp
 	if authInfo.PollingCode != "" {
 		return &model.Response{
 			Status:   fiber.StatusOK,
-			Response: "ok", //TODO
+			Response: "ok", // TODO
 		}
 	}
-	stateInfo := parseState(state)
-	res, err := ste.Token.ToTokenResponse(stateInfo.ResponseType, networkData, "")
+	stateInf := parseState(state)
+	res, err := ste.Token.ToTokenResponse(stateInf.ResponseType, networkData, "")
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	cookieName := "mytoken-supertoken"
 	cookieValue := res.SuperToken
 	cookieAge := 3600 //TODO from config
-	if stateInfo.ResponseType == model.ResponseTypeTransferCode {
+	if stateInf.ResponseType == model.ResponseTypeTransferCode {
 		cookieName = "mytoken-transfercode"
 		cookieValue = res.TransferCode
 		cookieAge = int(res.ExpiresIn)
@@ -282,7 +285,7 @@ func CodeExchange(state, code string, networkData model.NetworkData) *model.Resp
 	}
 }
 
-func createSuperTokenEntry(authFlowInfo *dbModels.AuthFlowInfo, token *oauth2.Token, oidcSub string, networkData model.NetworkData) (*dbModels.SuperTokenEntry, error) {
+func createSuperTokenEntry(authFlowInfo *dbModels.AuthFlowInfo, token *oauth2.Token, oidcSub string, networkData model.ClientMetaData) (*dbModels.SuperTokenEntry, error) {
 	ste := dbModels.NewSuperTokenEntry(authFlowInfo.Name, oidcSub, authFlowInfo.Issuer, authFlowInfo.Restrictions, authFlowInfo.Capabilities, authFlowInfo.SubtokenCapabilities, networkData)
 	ste.RefreshToken = token.RefreshToken
 	err := ste.Store("Used grant_type oidc_flow authorization_code")

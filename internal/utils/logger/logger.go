@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
+
 	"github.com/zachmann/mytoken/internal/config"
 )
 
@@ -17,6 +18,7 @@ func mustGetFile(path string) io.Writer {
 	panic(err)
 }
 
+// MustGetAccessLogger open the server access logger; on failure the program exits
 func MustGetAccessLogger() io.Writer {
 	return mustGetLogWriter(config.Get().Logging.Access, "access.log")
 }
@@ -49,6 +51,7 @@ func parseLogLevel() log.Level {
 	return level
 }
 
+// Init initializes the logger
 func Init() {
 	log.SetLevel(parseLogLevel())
 	if log.IsLevelEnabled(log.DebugLevel) {

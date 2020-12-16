@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// Event is an event
+// Event is an enum like type for events
 type Event struct {
 	Type    int
 	Comment string
@@ -32,7 +32,7 @@ func (e *Event) Value() (driver.Value, error) {
 func (e *Event) Scan(src interface{}) error {
 	number := eventStringToInt(src.(string))
 	if number < 0 {
-		return fmt.Errorf("Unknown event")
+		return fmt.Errorf("unknown event")
 	}
 	e.Type = number
 	return nil

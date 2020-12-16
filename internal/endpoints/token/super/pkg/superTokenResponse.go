@@ -6,6 +6,7 @@ import (
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 )
 
+// SuperTokenResponse is a response to a super token request
 type SuperTokenResponse struct {
 	SuperToken           string                    `json:"super_token,omitempty"`
 	SuperTokenType       model.ResponseType        `json:"super_token_type"`

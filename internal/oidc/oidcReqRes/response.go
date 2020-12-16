@@ -1,5 +1,6 @@
 package oidcReqRes
 
+// OIDCErrorResponse is the error response of an oidc provider
 type OIDCErrorResponse struct {
 	Error            string `json:"error"`
 	ErrorDescription string `json:"error_description,omitempty"`
@@ -7,6 +8,7 @@ type OIDCErrorResponse struct {
 	Status int `json:"-"`
 }
 
+// OIDCTokenResponse is the token response of an oidc provider
 type OIDCTokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	TokenType    string `json:"token_type"`

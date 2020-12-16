@@ -16,11 +16,13 @@ func init() {
 	geoDB = db
 }
 
+// Country returns the country name string for a given ip
 func Country(ip string) string {
 	res, _ := geoDB.Get_country_long(ip)
 	return res.Country_long
 }
 
+// CountryCode returns the country code string for a given ip
 func CountryCode(ip string) string {
 	res, _ := geoDB.Get_country_short(ip)
 	return res.Country_short

@@ -4,18 +4,22 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
+
 	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/httpClient"
 	"github.com/zachmann/mytoken/internal/oidc/oidcReqRes"
 )
 
+// UpdateChangedRT is a function that should update a refresh token, it takes the old value as well as the new one
 type UpdateChangedRT func(oldRT, newRT string) error
 
+// Refresh uses an refresh token to obtain a new access token; if the refresh token changes, this is ignored
 func Refresh(provider *config.ProviderConf, rt string, scopes, audiences string) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
 	return RefreshFlowAndUpdate(provider, rt, scopes, audiences, nil)
 }
 
+// RefreshFlowAndUpdate uses an refresh token to obtain a new access token; if the refresh token changes, the UpdateChangedRT function is used to update the refresh token
 func RefreshFlowAndUpdate(provider *config.ProviderConf, rt string, scopes, audiences string, updateFnc UpdateChangedRT) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
 	req := oidcReqRes.NewRefreshRequest(rt)
 	req.Scopes = scopes
@@ -33,7 +37,7 @@ func RefreshFlowAndUpdate(provider *config.ProviderConf, rt string, scopes, audi
 		return nil, nil, fmt.Errorf("could not unmarshal oidc response")
 	}
 	if res.RefreshToken != "" && res.RefreshToken != rt && updateFnc != nil {
-		if err := updateFnc(rt, res.RefreshToken); err != nil {
+		if err = updateFnc(rt, res.RefreshToken); err != nil {
 			log.WithError(err).Error()
 			return res, nil, err
 		}
@@ -41,6 +45,7 @@ func RefreshFlowAndUpdate(provider *config.ProviderConf, rt string, scopes, audi
 	return res, nil, nil
 }
 
+// RefreshFlowAndUpdateDB uses an refresh token to obtain a new access token; if the refresh token changes, it is updated in the database
 func RefreshFlowAndUpdateDB(provider *config.ProviderConf, rt string, scopes, audiences string) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
 	return RefreshFlowAndUpdate(provider, rt, scopes, audiences, updateChangedRTInDB)
 }

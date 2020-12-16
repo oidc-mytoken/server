@@ -15,7 +15,7 @@ func checkRestrictions(t *testing.T, exp, a Restrictions) {
 	}
 	for i, ee := range exp {
 		aa := a[i]
-		if !(ee.IsTighterThan(aa) && aa.IsTighterThan(ee)) {
+		if !(ee.isTighterThan(aa) && aa.isTighterThan(ee)) {
 			t.Errorf("Expected '%+v', but got '%+v'", exp, a)
 			return
 		}
@@ -173,7 +173,7 @@ func TestTighten_RestrictDontExtendUsages(t *testing.T) {
 }
 
 func testIsTighter(t *testing.T, a, b Restriction, expected bool) {
-	tighter := a.IsTighterThan(b)
+	tighter := a.isTighterThan(b)
 	if tighter != expected {
 		if expected {
 			t.Errorf("Actually '%+v' is tighter than '%+v'", a, b)
@@ -600,13 +600,13 @@ func TestRestriction_Hash(t *testing.T) {
 	j, err := json.Marshal(r)
 	fmt.Printf("%s\n", j)
 
-	hash, err := r.Hash()
+	hash, err := r.hash()
 	if err != nil {
 		t.Error(err)
 	}
 	expected := "052dd67c76c735489553cb09f85e3d1fdfbaf479c5b5f543cb69b6daf06fe7cf276749066e554dc5911cad337ee4d52246433b5bcd0de15a4f83011905997ede"
 	if string(hash) != expected {
-		t.Errorf("Hash '%s' does not match expected hash '%s'", hash, expected)
+		t.Errorf("hash '%s' does not match expected hash '%s'", hash, expected)
 	}
 }
 
@@ -642,7 +642,7 @@ func TestRestriction_VerifyTimeBased(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		valid := c.r.VerifyTimeBased()
+		valid := c.r.verifyTimeBased()
 		if valid != c.exp {
 			t.Errorf("For '%+v' expected time based attributes to verify as '%v' but got '%v'", c.r, c.exp, valid)
 		}

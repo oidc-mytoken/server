@@ -13,11 +13,10 @@ import (
 // This function is untested
 func (c *Config) RevokeToken(oauth2Config *oauth2.Config, token string) error {
 	req, err := http.NewRequest("POST", c.endpoints.Revocation, strings.NewReader(fmt.Sprintf("token=%s", token)))
-	req.SetBasicAuth(oauth2Config.ClientID, oauth2Config.ClientSecret)
-
 	if err != nil {
 		return err
 	}
+	req.SetBasicAuth(oauth2Config.ClientID, oauth2Config.ClientSecret)
 	resp, err := doRequest(c.Ctx, req)
 	if err != nil {
 		return err

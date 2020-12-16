@@ -2,11 +2,13 @@ package ctxUtils
 
 import (
 	"github.com/gofiber/fiber/v2"
+
 	"github.com/zachmann/mytoken/internal/model"
 )
 
-func NetworkData(ctx *fiber.Ctx) *model.NetworkData {
-	return &model.NetworkData{
+// ClientMetaData returns the model.ClientMetaData for a given fiber.Ctx
+func ClientMetaData(ctx *fiber.Ctx) *model.ClientMetaData {
+	return &model.ClientMetaData{
 		IP:        ctx.IP(),
 		UserAgent: string(ctx.Request().Header.UserAgent()),
 	}

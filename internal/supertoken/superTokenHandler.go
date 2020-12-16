@@ -5,29 +5,27 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/zachmann/mytoken/internal/server/httpStatus"
+	"github.com/gofiber/fiber/v2"
+	"github.com/jmoiron/sqlx"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/zachmann/mytoken/internal/config"
-	"github.com/zachmann/mytoken/internal/oidc/revoke"
-
-	"github.com/jmoiron/sqlx"
 	"github.com/zachmann/mytoken/internal/db"
-
-	eventService "github.com/zachmann/mytoken/internal/supertoken/event"
-	event "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
-
-	"github.com/gofiber/fiber/v2"
-	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/mytoken/internal/db/dbModels"
 	response "github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/model"
+	"github.com/zachmann/mytoken/internal/oidc/revoke"
+	"github.com/zachmann/mytoken/internal/server/httpStatus"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
+	eventService "github.com/zachmann/mytoken/internal/supertoken/event"
+	event "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
 	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
 	"github.com/zachmann/mytoken/internal/utils/dbUtils"
 )
 
+// HandleSuperTokenFromSuperToken handles requests to create a super token from an existing super token
 func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 	log.Debug("Handle supertoken from supertoken")
 	req := response.NewSuperTokenRequest()
@@ -86,10 +84,10 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 		log.Trace("Checked issuer")
 	}
 
-	return handleSuperTokenFromSuperToken(st, req, ctxUtils.NetworkData(ctx), req.ResponseType)
+	return handleSuperTokenFromSuperToken(st, req, ctxUtils.ClientMetaData(ctx), req.ResponseType)
 }
 
-func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response.SuperTokenFromSuperTokenRequest, networkData *model.NetworkData, responseType model.ResponseType) *model.Response {
+func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response.SuperTokenFromSuperTokenRequest, networkData *model.ClientMetaData, responseType model.ResponseType) *model.Response {
 	ste, errorResponse := createSuperTokenEntry(parent, req, *networkData)
 	if errorResponse != nil {
 		return errorResponse
@@ -114,7 +112,7 @@ func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response
 	}
 }
 
-func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTokenFromSuperTokenRequest, networkData model.NetworkData) (*dbModels.SuperTokenEntry, *model.Response) {
+func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTokenFromSuperTokenRequest, networkData model.ClientMetaData) (*dbModels.SuperTokenEntry, *model.Response) {
 	rt, rtFound, dbErr := dbUtils.GetRefreshToken(parent.ID)
 	if dbErr != nil {
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
@@ -155,6 +153,7 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 	return ste, nil
 }
 
+// RevokeSuperToken revokes a super token
 func RevokeSuperToken(token string, recursive bool, issuer string) *model.Response {
 	rt, rtFound, dbErr := dbUtils.GetRefreshTokenByTokenString(token)
 	if dbErr != nil {
@@ -185,7 +184,7 @@ func RevokeSuperToken(token string, recursive bool, issuer string) *model.Respon
 			return err
 		}
 		if count == 0 {
-			if err := revoke.RevokeRefreshToken(provider, rt); err != nil {
+			if err := revoke.RefreshToken(provider, rt); err != nil {
 				e := err.Response.(model.APIError)
 				return fmt.Errorf("%s: %s", e.Error, e.ErrorDescription)
 			}

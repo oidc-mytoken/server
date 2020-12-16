@@ -12,11 +12,13 @@ import (
 	"github.com/zachmann/mytoken/internal/db"
 
 	"github.com/gofiber/fiber/v2"
+
 	"github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
 )
 
+// HandleCreateTransferCodeForExistingSuperToken handles request to create a transfer code for an existing supertoken
 func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 	token := ctxUtils.GetAuthHeaderToken(ctx)
 	if len(token) == 0 {
@@ -54,7 +56,7 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 	if err := db.DB().Get(&stid, `SELECT id FROM SuperTokens WHERE token=?`, superToken); err != nil {
 		return err
 	}
-	transferCode, expiresIn, err := supertoken.CreateTransferCode(stid, *ctxUtils.NetworkData(ctx))
+	transferCode, expiresIn, err := supertoken.CreateTransferCode(stid, *ctxUtils.ClientMetaData(ctx))
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
@@ -63,7 +65,7 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 		Response: pkg.TransferCodeResponse{
 			SuperTokenType: model.ResponseTypeTransferCode,
 			TransferCode:   transferCode,
-			ExpiresIn:      uint64(expiresIn),
+			ExpiresIn:      expiresIn,
 		},
 	}
 	return res.Send(ctx)

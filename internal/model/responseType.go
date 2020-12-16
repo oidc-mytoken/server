@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// ResponseType is a enum like type for response types
 type ResponseType int
 
 var responseTypes = [...]string{"token", "short_token", "transfer_code"}
@@ -19,6 +20,7 @@ const (
 	maxResponseType
 )
 
+// NewResponseType creates a new ResponseType from the given response type string
 func NewResponseType(s string) ResponseType {
 	for i, f := range responseTypes {
 		if f == s {
@@ -53,6 +55,7 @@ func (r *ResponseType) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface
 func (r *ResponseType) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
@@ -65,6 +68,7 @@ func (r *ResponseType) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalJSON implements the json.Marshaler interface
 func (r ResponseType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(r.String())
 }

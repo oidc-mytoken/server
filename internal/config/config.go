@@ -8,15 +8,16 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
+
 	"github.com/zachmann/mytoken/internal/context"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/utils/fileutil"
 	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
 	"github.com/zachmann/mytoken/pkg/oauth2x"
-	"gopkg.in/yaml.v3"
 )
 
-var defaultConfig = Config{
+var defaultConfig = config{
 	Server: serverConf{
 		Port: 443,
 	},
@@ -67,8 +68,8 @@ var defaultConfig = Config{
 	ProviderByIssuer: make(map[string]*ProviderConf),
 }
 
-// Config holds the server configuration
-type Config struct {
+// config holds the server configuration
+type config struct {
 	IssuerURL            string                   `yaml:"issuer"`
 	Server               serverConf               `yaml:"server"`
 	DB                   dbConf                   `yaml:"database"`
@@ -110,6 +111,7 @@ type loggingConf struct {
 	Internal LoggerConf `yaml:"internal"`
 }
 
+// LoggerConf holds configuration related to logging
 type LoggerConf struct {
 	Dir    string `yaml:"dir"`
 	StdErr bool   `yaml:"stderr"`
@@ -150,10 +152,10 @@ type ProviderConf struct {
 	Provider     *oidc.Provider     `yaml:"-"`
 }
 
-var conf *Config
+var conf *config
 
 // Get returns the config
-func Get() *Config {
+func Get() *config {
 	return conf
 }
 
@@ -174,11 +176,11 @@ func validate() error {
 		var err error
 		p.Endpoints, err = oauth2x.NewConfig(context.Get(), p.Issuer).Endpoints()
 		if err != nil {
-			return fmt.Errorf("Error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
+			return fmt.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
 		}
 		p.Provider, err = oidc.NewProvider(context.Get(), p.Issuer)
 		if err != nil {
-			return fmt.Errorf("Error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
+			return fmt.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
 		}
 		if p.ClientID == "" {
 			return fmt.Errorf("invalid config: provider.clientid not set (Index %d)", i)

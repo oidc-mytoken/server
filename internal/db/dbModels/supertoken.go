@@ -9,6 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
@@ -29,10 +30,11 @@ type SuperTokenEntry struct {
 	Name         string
 	CreatedAt    time.Time `db:"created_at"`
 	IP           string    `db:"ip_created"`
-	networkData  model.NetworkData
+	networkData  model.ClientMetaData
 }
 
-func NewSuperTokenEntry(name, oidcSub, oidcIss string, r restrictions.Restrictions, c, sc capabilities.Capabilities, networkData model.NetworkData) *SuperTokenEntry {
+// NewSuperTokenEntry creates a new SuperTokenEntry
+func NewSuperTokenEntry(name, oidcSub, oidcIss string, r restrictions.Restrictions, c, sc capabilities.Capabilities, networkData model.ClientMetaData) *SuperTokenEntry {
 	st := supertoken.NewSuperToken(oidcSub, oidcIss, r, c, sc)
 	return &SuperTokenEntry{
 		ID:          st.ID,
@@ -43,6 +45,7 @@ func NewSuperTokenEntry(name, oidcSub, oidcIss string, r restrictions.Restrictio
 	}
 }
 
+// Root checks if this SuperTokenEntry is a root token
 func (ste *SuperTokenEntry) Root() bool {
 	if ste.RootID == "" {
 		return true
@@ -50,6 +53,7 @@ func (ste *SuperTokenEntry) Root() bool {
 	return false
 }
 
+// Store stores the SuperTokenEntry in the database
 func (ste *SuperTokenEntry) Store(comment string) error {
 	steStore := superTokenEntryStore{
 		ID:           ste.ID,
@@ -81,6 +85,7 @@ type superTokenEntryStore struct {
 	Sub          string
 }
 
+// Store stores the superTokenEntryStore in the database; if this is the first token for this user, the user is also added to the db
 func (e *superTokenEntryStore) Store() error {
 	stmt, err := db.DB().PrepareNamed(`INSERT INTO SuperTokens (id, parent_id, root_id,  token, refresh_token, name, ip_created, user_id) VALUES(:id, :parent_id, :root_id, :token, :refresh_token, :name, :ip_created, (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
 	if err != nil {
@@ -88,8 +93,7 @@ func (e *superTokenEntryStore) Store() error {
 	}
 	return db.Transact(func(tx *sqlx.Tx) error {
 		txStmt := tx.NamedStmt(stmt)
-		_, err := txStmt.Exec(e)
-		if err != nil {
+		if _, err = txStmt.Exec(e); err != nil {
 			var mysqlError *mysql.MySQLError
 			if errors.As(err, &mysqlError) && mysqlError.Number == 1048 {
 				_, err = tx.NamedExec(`INSERT INTO Users (sub, iss) VALUES(:sub, :iss)`, e)

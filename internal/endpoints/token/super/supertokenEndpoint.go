@@ -3,6 +3,7 @@ package super
 import (
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/endpoints/token/super/polling"
 	"github.com/zachmann/mytoken/internal/model"
@@ -11,6 +12,7 @@ import (
 	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
 )
 
+// HandleSuperTokenEndpoint handles requests on the super token endpoint
 func HandleSuperTokenEndpoint(ctx *fiber.Ctx) error {
 	grantType, err := ctxUtils.GetGrantType(ctx)
 	if err != nil {
@@ -50,7 +52,7 @@ func handleOIDCFlow(ctx *fiber.Ctx) error {
 	flow := ctxUtils.GetOIDCFlow(ctx)
 	switch flow {
 	case model.OIDCFlowAuthorizationCode:
-		return authcode.InitAuthCodeFlow(ctx.Body()).Send(ctx)
+		return authcode.StartAuthCodeFlow(ctx.Body()).Send(ctx)
 	case model.OIDCFlowDevice:
 		return model.ResponseNYI.Send(ctx)
 	default:

@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// GrantType is an enum like type for grant types
 type GrantType int
 
 var grantTypes = [...]string{"super_token", "oidc_flow", "polling_code", "access_token", "private_key_jwt", "transfer_code"}
@@ -22,6 +23,7 @@ const (
 	maxGrantType
 )
 
+// NewGrantType creates a new GrantType from the grant type string
 func NewGrantType(s string) GrantType {
 	for i, f := range grantTypes {
 		if f == s {
@@ -38,7 +40,7 @@ func (g *GrantType) String() string {
 	return grantTypes[*g]
 }
 
-// Valid checks that GrantType is a defined flow
+// Valid checks that GrantType is a defined grant type
 func (g *GrantType) Valid() bool {
 	return *g < maxGrantType && *g >= 0
 }
@@ -56,6 +58,7 @@ func (g *GrantType) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface
 func (g *GrantType) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
@@ -68,6 +71,7 @@ func (g *GrantType) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalJSON implements the json.Marshaler interface
 func (g GrantType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(g.String())
 }

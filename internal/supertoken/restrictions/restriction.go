@@ -9,17 +9,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zachmann/mytoken/internal/db"
-
-	"github.com/zachmann/mytoken/internal/utils/hashUtils"
-
-	"github.com/zachmann/mytoken/internal/utils/geoip"
-
-	uuid "github.com/satori/go.uuid"
-
 	"github.com/jinzhu/copier"
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/utils"
+	"github.com/zachmann/mytoken/internal/utils/geoip"
+	"github.com/zachmann/mytoken/internal/utils/hashUtils"
 )
 
 // Restrictions is a slice of Restriction
@@ -36,10 +33,11 @@ type Restriction struct {
 	GeoIPBlack  []string `json:"geoip_black,omitempty"`
 	UsagesAT    *int64   `json:"usages_AT,omitempty"`
 	UsagesOther *int64   `json:"usages_other,omitempty"`
-	//Usages    *int64   `json:"usages,omitempty"`
+	// Usages    *int64   `json:"usages,omitempty"`
 }
 
-func (r *Restriction) Hash() ([]byte, error) {
+// hash returns the hash of this restriction
+func (r *Restriction) hash() ([]byte, error) {
 	j, err := json.Marshal(r)
 	if err != nil {
 		return nil, err
@@ -47,13 +45,13 @@ func (r *Restriction) Hash() ([]byte, error) {
 	return hashUtils.SHA512(j)
 }
 
-func (r *Restriction) VerifyTimeBased() bool {
+func (r *Restriction) verifyTimeBased() bool {
 	log.Trace("Verifying time based")
 	now := time.Now().Unix()
 	return (now >= r.NotBefore) && (r.ExpiresAt == 0 ||
 		now <= r.ExpiresAt)
 }
-func (r *Restriction) VerifyIPBased(ip string) bool {
+func (r *Restriction) verifyIPBased(ip string) bool {
 	return r.verifyIPs(ip) && r.verifyGeoIP(ip)
 }
 func (r *Restriction) verifyIPs(ip string) bool {
@@ -81,18 +79,18 @@ func (r *Restriction) verifyGeoIPBlack(ip string) bool {
 	}
 	return !utils.StringInSlice(geoip.CountryCode(ip), black)
 }
-func (r *Restriction) VerifyATUsageCounts(stid uuid.UUID) bool {
+func (r *Restriction) verifyATUsageCounts(stid uuid.UUID) bool {
 	log.Trace("Verifying AT usage count")
 	if r.UsagesAT == nil {
 		return true
 	}
-	hash, err := r.Hash()
+	hash, err := r.hash()
 	if err != nil {
 		log.WithError(err).Error()
 		return false
 	}
 	var usages int64
-	if err := db.DB().Get(&usages, `SELECT usages_AT FROM TokenUsages WHERE restriction_hash=? AND ST_id=?`, string(hash), stid); err != nil {
+	if err = db.DB().Get(&usages, `SELECT usages_AT FROM TokenUsages WHERE restriction_hash=? AND ST_id=?`, string(hash), stid); err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			log.WithError(err).Error()
 			return false
@@ -104,17 +102,17 @@ func (r *Restriction) VerifyATUsageCounts(stid uuid.UUID) bool {
 	log.WithField("stid", stid.String()).WithField("restriction_hash", string(hash)).WithField("used", usages).WithField("usageLimit", *r.UsagesAT).Debug("Found in db.")
 	return usages < *r.UsagesAT
 }
-func (r *Restriction) VerifyOtherUsageCounts(stid uuid.UUID) bool {
+func (r *Restriction) verifyOtherUsageCounts(stid uuid.UUID) bool {
 	if r.UsagesOther == nil {
 		return true
 	}
-	hash, err := r.Hash()
+	hash, err := r.hash()
 	if err != nil {
 		log.WithError(err).Error()
 		return false
 	}
 	var usages int64
-	if err := db.DB().Get(&usages, `SELECT usages_other FROM TokenUsages WHERE restriction_hash=? AND ST_id=?`, string(hash), stid); err != nil {
+	if err = db.DB().Get(&usages, `SELECT usages_other FROM TokenUsages WHERE restriction_hash=? AND ST_id=?`, string(hash), stid); err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			log.WithError(err).Error()
 			return false
@@ -125,17 +123,18 @@ func (r *Restriction) VerifyOtherUsageCounts(stid uuid.UUID) bool {
 	return usages < *r.UsagesOther
 }
 func (r *Restriction) verify(ip string) bool {
-	return r.VerifyTimeBased() &&
-		r.VerifyIPBased(ip)
+	return r.verifyTimeBased() &&
+		r.verifyIPBased(ip)
 }
-func (r *Restriction) VerifyAT(ip string, stid uuid.UUID) bool {
-	return r.verify(ip) && r.VerifyATUsageCounts(stid)
+func (r *Restriction) verifyAT(ip string, stid uuid.UUID) bool {
+	return r.verify(ip) && r.verifyATUsageCounts(stid)
 }
-func (r *Restriction) VerifyOther(ip string, stid uuid.UUID) bool {
+func (r *Restriction) verifyOther(ip string, stid uuid.UUID) bool {
 	return r.verify(ip) &&
-		r.VerifyOtherUsageCounts(stid)
+		r.verifyOtherUsageCounts(stid)
 }
 
+// UsedAT will update the usages_AT value for this restriction; it should be called after this restriction was used to obtain an access token;
 func (r *Restriction) UsedAT(stid uuid.UUID) error {
 	js, err := json.Marshal(r)
 	if err != nil {
@@ -144,6 +143,8 @@ func (r *Restriction) UsedAT(stid uuid.UUID) error {
 	_, err = db.DB().Exec(`INSERT INTO TokenUsages (ST_id, restriction, usages_AT) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE usages_AT = usages_AT + 1`, stid, js)
 	return err
 }
+
+// UsedOther will update the usages_other value for this restriction; it should be called after this restriction was used for other reasons than obtaining an access token;
 func (r *Restriction) UsedOther(stid uuid.UUID) error {
 	js, err := json.Marshal(r)
 	if err != nil {
@@ -153,12 +154,15 @@ func (r *Restriction) UsedOther(stid uuid.UUID) error {
 	return err
 }
 
+// VerifyForAT verifies if this restrictions can be used to obtain an access token
 func (r Restrictions) VerifyForAT(ip string, stid uuid.UUID) bool {
 	if len(r) == 0 {
 		return true
 	}
 	return len(r.GetValidForAT(ip, stid)) > 0
 }
+
+// VerifyForOther verifies if this restrictions can be used for other actions than obtaining an access token
 func (r Restrictions) VerifyForOther(ip string, stid uuid.UUID) bool {
 	if len(r) == 0 {
 		return true
@@ -166,24 +170,28 @@ func (r Restrictions) VerifyForOther(ip string, stid uuid.UUID) bool {
 	return len(r.GetValidForOther(ip, stid)) > 0
 }
 
+// GetValidForAT returns the subset of Restrictions that can be used to obtain an access token
 func (r Restrictions) GetValidForAT(ip string, stid uuid.UUID) (ret Restrictions) {
 	for _, rr := range r {
-		if rr.VerifyAT(ip, stid) {
+		if rr.verifyAT(ip, stid) {
 			log.Trace("Found a valid restriction")
 			ret = append(ret, rr)
 		}
 	}
 	return
 }
+
+// GetValidForOther returns the subset of Restrictions that can be used for other actions than obtaining an access token
 func (r Restrictions) GetValidForOther(ip string, stid uuid.UUID) (ret Restrictions) {
 	for _, rr := range r {
-		if rr.VerifyOther(ip, stid) {
+		if rr.verifyOther(ip, stid) {
 			ret = append(ret, rr)
 		}
 	}
 	return
 }
 
+// WithScopes returns the subset of Restrictions that can be used with the specified scopes
 func (r Restrictions) WithScopes(scopes []string) (ret Restrictions) {
 	log.WithField("scopes", scopes).WithField("len", len(scopes)).Trace("Filter restrictions for scopes")
 	if len(scopes) == 0 {
@@ -197,6 +205,8 @@ func (r Restrictions) WithScopes(scopes []string) (ret Restrictions) {
 	}
 	return
 }
+
+// WithAudiences returns the subset of Restrictions that can be used with the specified audiences
 func (r Restrictions) WithAudiences(audiences []string) (ret Restrictions) {
 	log.WithField("audiences", audiences).WithField("len", len(audiences)).Trace("Filter restrictions for audiences")
 	if len(audiences) == 0 {
@@ -211,8 +221,10 @@ func (r Restrictions) WithAudiences(audiences []string) (ret Restrictions) {
 	return
 }
 
+// TokenUsages is a slice of TokenUsage
 type TokenUsages []TokenUsage
 
+// TokenUsage holds the information about the usages of an super token
 type TokenUsage struct {
 	STID            string `db:"ST_id"`
 	UsagesOtherUsed uint   `db:"usages_other"`
@@ -305,15 +317,18 @@ func (r *Restrictions) SetMaxAudiences(mAud []string) {
 	}
 }
 
+// Tighten tightens/restricts a Restrictions with another set; if the wanted Restrictions are not tighter the original ones are returned
 func Tighten(old, wanted Restrictions) (res Restrictions) {
 	if len(old) == 0 {
 		return wanted
 	}
 	base := Restrictions{}
-	copier.Copy(&base, &old)
+	if err := copier.Copy(&base, &old); err != nil {
+		log.WithError(err).Error()
+	}
 	for i, a := range wanted {
 		for _, o := range base {
-			if a.IsTighterThan(o) {
+			if a.isTighterThan(o) {
 				res = append(res, a)
 				base = append(base[:i], base[i+1:]...)
 				break
@@ -326,13 +341,13 @@ func Tighten(old, wanted Restrictions) (res Restrictions) {
 	return
 }
 
-func (r *Restrictions) RemoveIndex(i int) {
+func (r *Restrictions) removeIndex(i int) {
 	copy((*r)[i:], (*r)[i+1:]) // Shift r[i+1:] left one index.
 	// r[len(r)-1] = ""     // Erase last element (write zero value).
 	*r = (*r)[:len(*r)-1] // Truncate slice.
 }
 
-func (r *Restriction) IsTighterThan(b Restriction) bool {
+func (r *Restriction) isTighterThan(b Restriction) bool {
 	if r.NotBefore < b.NotBefore {
 		return false
 	}

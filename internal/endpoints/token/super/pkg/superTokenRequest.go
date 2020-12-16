@@ -8,6 +8,7 @@ import (
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 )
 
+// SuperTokenFromSuperTokenRequest is a request to create a new supertoken from an existing supertoken
 type SuperTokenFromSuperTokenRequest struct {
 	Issuer               string                    `json:"oidc_issuer"`
 	GrantType            model.GrantType           `json:"grant_type"`
@@ -19,12 +20,14 @@ type SuperTokenFromSuperTokenRequest struct {
 	ResponseType         model.ResponseType        `json:"response_type"`
 }
 
+// NewSuperTokenRequest creates a SuperTokenFromSuperTokenRequest with the default values where they can be omitted
 func NewSuperTokenRequest() *SuperTokenFromSuperTokenRequest {
 	return &SuperTokenFromSuperTokenRequest{
 		ResponseType: model.ResponseTypeToken,
 	}
 }
 
+// UnmarshalJSON implements the json unmarshaler interface
 func (r *SuperTokenFromSuperTokenRequest) UnmarshalJSON(data []byte) error {
 	type superTokenFromSuperTokenRequest2 SuperTokenFromSuperTokenRequest
 	rr := (*superTokenFromSuperTokenRequest2)(NewSuperTokenRequest())

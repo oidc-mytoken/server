@@ -13,9 +13,11 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/lestrrat-go/jwx/jwk"
+
 	"github.com/zachmann/mytoken/internal/config"
 )
 
+// GenerateKeyPair generates a cryptographic key pair for the algorithm specified in the mytoken config.
 func GenerateKeyPair() (sk interface{}, pk interface{}, err error) {
 	alg := config.Get().Signing.Alg
 	switch alg {
@@ -41,7 +43,7 @@ func GenerateKeyPair() (sk interface{}, pk interface{}, err error) {
 		case *ecdsa.PrivateKey:
 			pk = &sk.(*ecdsa.PrivateKey).PublicKey
 		default:
-			err = fmt.Errorf("Something went wrong. We just created an unknown key type.")
+			err = fmt.Errorf("something went wrong, we just created an unknown key type")
 		}
 	}
 	return
@@ -95,6 +97,7 @@ func GetPublicKey() interface{} {
 	return publicKey
 }
 
+// GetJWKS returns the jwks
 func GetJWKS() jwk.Set {
 	return jwks
 }
@@ -127,7 +130,11 @@ func LoadKey() {
 	if err != nil {
 		panic(err)
 	}
-	jwk.AssignKeyID(key)
-	key.Set(jwk.KeyUsageKey, string(jwk.ForSignature))
+	if err = jwk.AssignKeyID(key); err != nil {
+		panic(err)
+	}
+	if err = key.Set(jwk.KeyUsageKey, string(jwk.ForSignature)); err != nil {
+		panic(err)
+	}
 	jwks = jwk.Set{Keys: []jwk.Key{key}}
 }

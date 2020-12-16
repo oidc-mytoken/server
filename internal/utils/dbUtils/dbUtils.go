@@ -5,17 +5,19 @@ import (
 	"errors"
 
 	"github.com/jmoiron/sqlx"
-
 	uuid "github.com/satori/go.uuid"
+
 	"github.com/zachmann/mytoken/internal/db"
 )
 
+// GetRefreshToken returns the refresh token for a super token id
 func GetRefreshToken(stid uuid.UUID) (string, bool, error) {
 	var rt string
 	err := db.DB().Get(&rt, `SELECT refresh_token FROM SuperTokens WHERE id=?`, stid)
 	return parseStringResult(rt, err)
 }
 
+// GetRefreshTokenByTokenString returns the refresh token for a super token jwt string
 func GetRefreshTokenByTokenString(token string) (string, bool, error) {
 	var rt string
 	err := db.DB().Get(&rt, `SELECT refresh_token FROM SuperTokens WHERE token=?`, token)
@@ -33,6 +35,7 @@ func parseStringResult(res string, err error) (string, bool, error) {
 	return res, true, nil
 }
 
+// GetSTParentID returns the id of the parent super token of the passed super token id
 func GetSTParentID(stid uuid.UUID) (string, bool, error) {
 	var parentID sql.NullString
 	if err := db.DB().Get(&parentID, `SELECT parent_id FROM SuperTokens WHERE id=?`, stid); err != nil {
@@ -45,6 +48,7 @@ func GetSTParentID(stid uuid.UUID) (string, bool, error) {
 	return parentID.String, true, nil
 }
 
+// GetSTRootID returns the id of the root super token of the passed super token id
 func GetSTRootID(stid uuid.UUID) (string, bool, error) {
 	var rootID sql.NullString
 	if err := db.DB().Get(&rootID, `SELECT root_id FROM SuperTokens WHERE id=?`, stid); err != nil {
@@ -57,6 +61,7 @@ func GetSTRootID(stid uuid.UUID) (string, bool, error) {
 	return rootID.String, true, nil
 }
 
+// RecursiveRevokeSTByTokenString revokes the passed super token as well as all children
 func RecursiveRevokeSTByTokenString(token string, tx *sqlx.Tx) error {
 	_, err := tx.Exec(`
 DELETE FROM SuperTokens WHERE id=ANY(

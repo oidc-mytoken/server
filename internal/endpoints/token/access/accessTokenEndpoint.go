@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/db/dbModels"
 	request "github.com/zachmann/mytoken/internal/endpoints/token/access/pkg"
@@ -22,6 +23,7 @@ import (
 	"github.com/zachmann/mytoken/internal/utils/oidcUtils"
 )
 
+// HandleAccessTokenEndpoint handles request on the access token endpoint
 func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	log.Debug("Handle access token request")
 	req := request.AccessTokenRequest{}
@@ -87,10 +89,10 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	}
 	log.Trace("Checked issuer")
 
-	return handleAccessTokenRefresh(st, req, *ctxUtils.NetworkData(ctx)).Send(ctx)
+	return handleAccessTokenRefresh(st, req, *ctxUtils.ClientMetaData(ctx)).Send(ctx)
 }
 
-func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessTokenRequest, networkData model.NetworkData) *model.Response {
+func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessTokenRequest, networkData model.ClientMetaData) *model.Response {
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
 	if !ok {
 		return &model.Response{
@@ -156,14 +158,14 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 		Scopes:    utils.SplitIgnoreEmpty(retScopes, " "),
 		Audiences: retAudiences,
 	}
-	if err := at.Store(); err != nil {
+	if err = at.Store(); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	if err := eventService.LogEvent(event.FromNumber(event.STEventATCreated, "Used grant_type super_token"), st.ID, networkData); err != nil {
+	if err = eventService.LogEvent(event.FromNumber(event.STEventATCreated, "Used grant_type super_token"), st.ID, networkData); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if usedRestriction != nil {
-		if err := usedRestriction.UsedAT(st.ID); err != nil {
+		if err = usedRestriction.UsedAT(st.ID); err != nil {
 			return model.ErrorToInternalServerErrorResponse(err)
 		}
 	}

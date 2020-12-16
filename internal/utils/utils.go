@@ -43,6 +43,7 @@ func RandASCIIString(n int) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
+// IntersectSlices returns the common elements of two slices
 func IntersectSlices(a, b []string) (res []string) {
 	for _, bb := range b {
 		if StringInSlice(bb, a) {
@@ -52,6 +53,7 @@ func IntersectSlices(a, b []string) (res []string) {
 	return
 }
 
+// StringInSlice checks if a string is in a slice of strings
 func StringInSlice(key string, slice []string) bool {
 	for _, s := range slice {
 		if s == key {
@@ -61,6 +63,7 @@ func StringInSlice(key string, slice []string) bool {
 	return false
 }
 
+// IsSubSet checks if all strings of a slice 'a' are contained in the slice 'b'
 func IsSubSet(a, b []string) bool {
 	for _, aa := range a {
 		if !StringInSlice(aa, b) {
@@ -70,6 +73,7 @@ func IsSubSet(a, b []string) bool {
 	return true
 }
 
+// IPsAreSubSet checks if all ips of ipsA are contained in ipsB, it will also check ip subnets
 func IPsAreSubSet(ipsA, ipsB []string) bool {
 	for _, ipA := range ipsA {
 		if !IPIsIn(ipA, ipsB) {
@@ -79,6 +83,7 @@ func IPsAreSubSet(ipsA, ipsB []string) bool {
 	return true
 }
 
+// IPIsIn checks if a ip is in a slice of ips, it will also check ip subnets
 func IPIsIn(ip string, ips []string) bool {
 	if ips == nil {
 		return false
@@ -123,6 +128,7 @@ func CombineURLPath(p string, ps ...string) (r string) {
 	return
 }
 
+// UniqueSlice will remove all duplicates from the given slice of strings
 func UniqueSlice(a []string) (unique []string) {
 	for _, aa := range a {
 		if !StringInSlice(aa, unique) {
@@ -132,14 +138,21 @@ func UniqueSlice(a []string) (unique []string) {
 	return
 }
 
-func SliceUnion(a, b []string) []string {
-	return UniqueSlice(append(a, b...))
+// SliceUnion will create a slice of string that contains all strings part of the passed slices
+func SliceUnion(a ...[]string) []string {
+	res := []string{}
+	for _, aa := range a {
+		res = append(res, aa...)
+	}
+	return UniqueSlice(res)
 }
 
+// GetTimeIn adds the passed number of seconds to the current time
 func GetTimeIn(seconds int64) time.Time {
 	return time.Now().Add(time.Duration(seconds) * time.Second)
 }
 
+// GetUnixTimeIn returns the unix time stamp for the current time + the number of passed seconds
 func GetUnixTimeIn(seconds int64) int64 {
 	return GetTimeIn(seconds).Unix()
 }
@@ -165,10 +178,12 @@ func CompareNullableIntsWithNilAsInfinity(a, b *int64) int {
 	}
 }
 
+// NewInt64 creates a new *int64
 func NewInt64(i int64) *int64 {
 	return &i
 }
 
+// SplitIgnoreEmpty splits a string at the specified delimiter without generating empty parts
 func SplitIgnoreEmpty(s, del string) (ret []string) {
 	tmp := strings.Split(s, del)
 	for _, ss := range tmp {
@@ -179,23 +194,25 @@ func SplitIgnoreEmpty(s, del string) (ret []string) {
 	return
 }
 
+// StructToStringMap creates a string map from an interface{} using the passed tag name
 func StructToStringMap(st interface{}, tag string) map[string]string {
 	s := structs.New(st)
 	s.TagName = tag
 	m := make(map[string]string)
 	for k, v := range s.Map() {
-		var s string
+		var str string
 		switch v.(type) {
 		case string:
-			s = v.(string)
+			str = v.(string)
 		default:
-			s = fmt.Sprintf("%v", v)
+			str = fmt.Sprintf("%v", v)
 		}
-		m[k] = s
+		m[k] = str
 	}
 	return m
 }
 
+// StructToStringMapUsingJSONTags creates a string map from an interface{} using json tags
 func StructToStringMapUsingJSONTags(st interface{}) map[string]string {
 	return StructToStringMap(st, "json")
 }

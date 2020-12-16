@@ -5,22 +5,20 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jmoiron/sqlx"
-	"github.com/zachmann/mytoken/internal/supertoken/event"
-	event2 "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
-
-	"github.com/zachmann/mytoken/internal/db"
-	"github.com/zachmann/mytoken/internal/utils"
-
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/dgrijalva/jwt-go"
+	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
+
 	"github.com/zachmann/mytoken/internal/config"
+	"github.com/zachmann/mytoken/internal/db"
 	response "github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/jws"
+	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
+	"github.com/zachmann/mytoken/internal/supertoken/event"
+	pkg "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
+	"github.com/zachmann/mytoken/internal/utils"
 	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
 )
 
@@ -41,14 +39,14 @@ type SuperToken struct {
 	jwt                  string
 }
 
-func (st *SuperToken) VerifyID() bool {
+func (st *SuperToken) verifyID() bool {
 	if len(st.ID.String()) == 0 {
 		return false
 	}
 	return true
 }
 
-func (st *SuperToken) VerifySubject() bool {
+func (st *SuperToken) verifySubject() bool {
 	if len(st.Subject) == 0 {
 		return false
 	}
@@ -58,6 +56,7 @@ func (st *SuperToken) VerifySubject() bool {
 	return true
 }
 
+// VerifyCapabilities verifies that this super token has the required capabilities
 func (st *SuperToken) VerifyCapabilities(required ...capabilities.Capability) bool {
 	if st.Capabilities == nil || len(st.Capabilities) == 0 {
 		return false
@@ -99,7 +98,7 @@ func NewSuperToken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc c
 	return st
 }
 
-func (st *SuperToken) ExpiresIn() uint64 {
+func (st *SuperToken) expiresIn() uint64 {
 	now := time.Now().Unix()
 	expAt := st.ExpiresAt
 	if expAt > 0 && expAt > now {
@@ -108,6 +107,7 @@ func (st *SuperToken) ExpiresIn() uint64 {
 	return 0
 }
 
+// Valid checks if this SuperToken is valid
 func (st *SuperToken) Valid() error {
 	standardClaims := jwt.StandardClaims{
 		Audience:  st.Audience,
@@ -127,16 +127,16 @@ func (st *SuperToken) Valid() error {
 	if ok := standardClaims.VerifyAudience(config.Get().IssuerURL, true); !ok {
 		return fmt.Errorf("invalid Audience")
 	}
-	if ok := st.VerifyID(); !ok {
+	if ok := st.verifyID(); !ok {
 		return fmt.Errorf("invalid id")
 	}
-	if ok := st.VerifySubject(); !ok {
+	if ok := st.verifySubject(); !ok {
 		return fmt.Errorf("invalid subject")
 	}
 	return nil
 }
 
-// ToSuperTokenResponse returns a SuperTokenResponse for this token. It requires that jwt is set or that the jwt is passed as argument; if not passed as argument ToJWT must have been called earlier on this token to set jwt. This is always the case, if the token has been stored.
+// ToSuperTokenResponse returns a SuperTokenResponse for this token. It requires that jwt is set or that the jwt is passed as argument; if not passed as argument toJWT must have been called earlier on this token to set jwt. This is always the case, if the token has been stored.
 func (st *SuperToken) toSuperTokenResponse(jwt string) response.SuperTokenResponse {
 	if jwt == "" {
 		jwt = st.jwt
@@ -160,14 +160,15 @@ func (st *SuperToken) toShortSuperTokenResponse() (response.SuperTokenResponse, 
 
 func (st *SuperToken) toTokenResponse() response.SuperTokenResponse {
 	return response.SuperTokenResponse{
-		ExpiresIn:            st.ExpiresIn(),
+		ExpiresIn:            st.expiresIn(),
 		Restrictions:         st.Restrictions,
 		Capabilities:         st.Capabilities,
 		SubtokenCapabilities: st.SubtokenCapabilities,
 	}
 }
 
-func CreateTransferCode(stid uuid.UUID, networkData model.NetworkData) (string, uint64, error) {
+// CreateTransferCode creates a transfer code for the passed super token
+func CreateTransferCode(stid uuid.UUID, networkData model.ClientMetaData) (string, uint64, error) {
 	transferCode := utils.RandASCIIString(config.Get().Features.TransferCodes.Len)
 	expiresIn := config.Get().Features.TransferCodes.ExpiresAfter
 	exp := uint64(expiresIn)
@@ -179,15 +180,16 @@ func CreateTransferCode(stid uuid.UUID, networkData model.NetworkData) (string, 
 	}); err != nil {
 		return transferCode, exp, err
 	}
-	if err := event.LogEvent(&event2.Event{
-		Type: event2.STEventTransferCodeCreated,
+	if err := event.LogEvent(&pkg.Event{
+		Type: pkg.STEventTransferCodeCreated,
 	}, stid, networkData); err != nil {
 		return transferCode, exp, err
 	}
 	return transferCode, exp, nil
 }
 
-func (st *SuperToken) ToTokenResponse(responseType model.ResponseType, networkData model.NetworkData, jwt string) (response.SuperTokenResponse, error) {
+// ToTokenResponse creates a SuperTokenResponse for this SuperToken according to the passed model.ResponseType
+func (st *SuperToken) ToTokenResponse(responseType model.ResponseType, networkData model.ClientMetaData, jwt string) (response.SuperTokenResponse, error) {
 	switch responseType {
 	case model.ResponseTypeShortToken:
 		if config.Get().Features.ShortTokens.Enabled {
@@ -204,8 +206,8 @@ func (st *SuperToken) ToTokenResponse(responseType model.ResponseType, networkDa
 	return st.toSuperTokenResponse(jwt), nil
 }
 
-// ToJWT returns the SuperToken as JWT
-func (st *SuperToken) ToJWT() (string, error) {
+// toJWT returns the SuperToken as JWT
+func (st *SuperToken) toJWT() (string, error) {
 	if st.jwt != "" {
 		return st.jwt, nil
 	}
@@ -216,7 +218,7 @@ func (st *SuperToken) ToJWT() (string, error) {
 
 // Value implements the driver.Valuer interface.
 func (st *SuperToken) Value() (driver.Value, error) {
-	return st.ToJWT()
+	return st.toJWT()
 }
 
 // Scan implements the sql.Scanner interface.
@@ -229,6 +231,7 @@ func (st *SuperToken) Scan(src interface{}) error {
 	return nil
 }
 
+// ParseJWT parses a token string into a SuperToken
 func ParseJWT(token string) (*SuperToken, error) {
 	tok, err := jwt.ParseWithClaims(token, &SuperToken{}, func(t *jwt.Token) (interface{}, error) {
 		return jws.GetPublicKey(), nil

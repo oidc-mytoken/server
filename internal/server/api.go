@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/gofiber/fiber/v2"
+
 	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/endpoints/revocation"
 	"github.com/zachmann/mytoken/internal/endpoints/token/access"

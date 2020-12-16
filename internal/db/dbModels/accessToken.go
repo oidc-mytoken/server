@@ -5,9 +5,11 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
+
 	"github.com/zachmann/mytoken/internal/db"
 )
 
+// AccessToken holds database information about an access token
 type AccessToken struct {
 	Token   string
 	IP      string
@@ -34,7 +36,7 @@ func (t *AccessToken) toDBObject() accessToken {
 	}
 }
 
-func (t *AccessToken) getDBAttributes(atID uint64) (attrs []AccessTokenAttribute, err error) {
+func (t *AccessToken) getDBAttributes(atID uint64) (attrs []accessTokenAttribute, err error) {
 	var scopeAttrID uint64
 	var audAttrID uint64
 	if err = db.DB().QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, "scope").Scan(&scopeAttrID); err != nil {
@@ -44,14 +46,14 @@ func (t *AccessToken) getDBAttributes(atID uint64) (attrs []AccessTokenAttribute
 		return
 	}
 	for _, s := range t.Scopes {
-		attrs = append(attrs, AccessTokenAttribute{
+		attrs = append(attrs, accessTokenAttribute{
 			ATID:   atID,
 			AttrID: scopeAttrID,
 			Attr:   s,
 		})
 	}
 	for _, a := range t.Audiences {
-		attrs = append(attrs, AccessTokenAttribute{
+		attrs = append(attrs, accessTokenAttribute{
 			ATID:   atID,
 			AttrID: audAttrID,
 			Attr:   a,
@@ -60,6 +62,7 @@ func (t *AccessToken) getDBAttributes(atID uint64) (attrs []AccessTokenAttribute
 	return
 }
 
+// Store stores the AccessToken in the database as well as the relevant attributes
 func (t *AccessToken) Store() error {
 	return db.Transact(func(tx *sqlx.Tx) error {
 		store := t.toDBObject()
@@ -76,7 +79,7 @@ func (t *AccessToken) Store() error {
 			if err != nil {
 				return err
 			}
-			if _, err := tx.NamedExec(`INSERT INTO AT_Attributes (AT_id, attribute_id, attribute) VALUES (:AT_id, :attribute_id, :attribute)`, attrs); err != nil {
+			if _, err = tx.NamedExec(`INSERT INTO AT_Attributes (AT_id, attribute_id, attribute) VALUES (:AT_id, :attribute_id, :attribute)`, attrs); err != nil {
 				return err
 			}
 		}

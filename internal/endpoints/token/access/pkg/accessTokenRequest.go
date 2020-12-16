@@ -4,6 +4,7 @@ import (
 	"github.com/zachmann/mytoken/internal/model"
 )
 
+// AccessTokenRequest holds an request for an access token
 type AccessTokenRequest struct {
 	Issuer     string          `json:"oidc_issuer"`
 	GrantType  model.GrantType `json:"grant_type"`

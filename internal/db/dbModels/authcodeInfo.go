@@ -5,12 +5,14 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 )
 
+// AuthFlowInfo holds database information about a started authorization flow
 type AuthFlowInfo struct {
 	State                string
 	Issuer               string
@@ -57,6 +59,7 @@ func (i *authFlowInfo) toAuthFlowInfo() *AuthFlowInfo {
 	}
 }
 
+// Store stores the AuthFlowInfo in the database as well as the linked polling code if it exists
 func (i *AuthFlowInfo) Store() error {
 	log.Debug("Storing auth flow info")
 	store := i.toAuthFlowInfo()
@@ -78,7 +81,8 @@ func (i *AuthFlowInfo) Store() error {
 	})
 }
 
-func GetAuthCodeInfoByState(state string) (*AuthFlowInfo, error) {
+// GetAuthFlowInfoByState returns AuthFlowInfo by state
+func GetAuthFlowInfoByState(state string) (*AuthFlowInfo, error) {
 	info := authFlowInfo{}
 	if err := db.DB().Get(&info, `SELECT state, iss, restrictions, capabilities, subtoken_capabilities, name, polling_code FROM AuthInfoV WHERE state=? AND expires_at >= CURRENT_TIMESTAMP()`, state); err != nil {
 		return nil, err
