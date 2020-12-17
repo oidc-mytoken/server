@@ -7,22 +7,24 @@ import (
 	"github.com/zachmann/mytoken/internal/endpoints/revocation"
 	"github.com/zachmann/mytoken/internal/endpoints/token/access"
 	"github.com/zachmann/mytoken/internal/endpoints/token/super"
+	"github.com/zachmann/mytoken/internal/model/version"
+	"github.com/zachmann/mytoken/internal/server/routes"
 )
 
 func addAPIRoutes(s fiber.Router) {
-	api := s.Group("/api")
-	addAPIv0Routes(api)
+	for v := config.Get().API.MinVersion; v <= version.MAJOR; v++ {
+		addAPIvXRoutes(s, v)
+	}
 }
 
-func addAPIv0Routes(s fiber.Router) {
-	api := s.Group("/v0")
-	tokens := api.Group("/token")
-	tokens.Post("/super", super.HandleSuperTokenEndpoint)
-	tokens.Post("/access", access.HandleAccessTokenEndpoint)
+func addAPIvXRoutes(s fiber.Router, version int) {
+	apiPaths := routes.GetAPIPaths(version)
+	s.Post(apiPaths.SuperTokenEndpoint, super.HandleSuperTokenEndpoint)
+	s.Post(apiPaths.AccessTokenEndpoint, access.HandleAccessTokenEndpoint)
 	if config.Get().Features.TokenRevocation.Enabled {
-		tokens.Post("/revoke", revocation.HandleRevoke)
+		s.Post(apiPaths.RevocationEndpoint, revocation.HandleRevoke)
 	}
 	if config.Get().Features.TransferCodes.Enabled {
-		tokens.Post("/transfer", super.HandleCreateTransferCodeForExistingSuperToken)
+		s.Post(apiPaths.TokenTransferEndpoint, super.HandleCreateTransferCodeForExistingSuperToken)
 	}
 }

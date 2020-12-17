@@ -1,9 +1,15 @@
 # The issuer url to be used. MUST point to this server
 issuer: "https://mytoken.example.com"
+
 # Configuration for the mytoken server
 server:
   hostname: "mytoken.example.com"
   # port: 443
+
+# Configuration of the mytoken API
+api:
+  # Mytoken can support multiple api versions at the same time; this is the minimal version that is supported; older version won't be supported. Currently only 0 is supported.
+  min_supported_version: 0
 
 # Configuration for the database
 database:

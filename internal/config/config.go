@@ -66,12 +66,16 @@ var defaultConfig = config{
 		SignedJWTGrant:   onlyEnable{true},
 	},
 	ProviderByIssuer: make(map[string]*ProviderConf),
+	API: apiConf{
+		MinVersion: 0,
+	},
 }
 
 // config holds the server configuration
 type config struct {
 	IssuerURL            string                   `yaml:"issuer"`
 	Server               serverConf               `yaml:"server"`
+	API                  apiConf                  `yaml:"api"`
 	DB                   dbConf                   `yaml:"database"`
 	Signing              signingConf              `yaml:"signing"`
 	Logging              loggingConf              `yaml:"logging"`
@@ -79,6 +83,10 @@ type config struct {
 	Features             featuresConf             `yaml:"features"`
 	Providers            []*ProviderConf          `yaml:"providers"`
 	ProviderByIssuer     map[string]*ProviderConf `yaml:"-"`
+}
+
+type apiConf struct {
+	MinVersion int `yaml:"min_supported_version"`
 }
 
 type featuresConf struct {

@@ -6,7 +6,8 @@ import (
 	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/endpoints/configuration/pkg"
 	"github.com/zachmann/mytoken/internal/model"
-	"github.com/zachmann/mytoken/internal/server/apiPath"
+	"github.com/zachmann/mytoken/internal/model/version"
+	"github.com/zachmann/mytoken/internal/server/routes"
 	"github.com/zachmann/mytoken/internal/utils"
 )
 
@@ -33,13 +34,15 @@ func getProvidersFromConfig() (providers []pkg.SupportedProviderConfig) {
 
 // Init initializes the configuration endpoint
 func Init() {
+	apiPaths := routes.GetCurrentAPIPaths()
+	otherPaths := routes.GetGeneralPaths()
 	mytokenConfig = &pkg.MytokenConfiguration{
 		Issuer:                                 config.Get().IssuerURL,
-		AccessTokenEndpoint:                    utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/token/access"),
-		SuperTokenEndpoint:                     utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/token/super"),
-		TokeninfoEndpoint:                      utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/tokeninfo"),
-		UserSettingsEndpoint:                   utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/user"),
-		JWKSURI:                                utils.CombineURLPath(config.Get().IssuerURL, "/jwks"),
+		AccessTokenEndpoint:                    utils.CombineURLPath(config.Get().IssuerURL, apiPaths.AccessTokenEndpoint),
+		SuperTokenEndpoint:                     utils.CombineURLPath(config.Get().IssuerURL, apiPaths.SuperTokenEndpoint),
+		TokeninfoEndpoint:                      utils.CombineURLPath(config.Get().IssuerURL, apiPaths.TokenInfoEndpoint),
+		UserSettingsEndpoint:                   utils.CombineURLPath(config.Get().IssuerURL, apiPaths.UserSettingEndpoint),
+		JWKSURI:                                utils.CombineURLPath(config.Get().IssuerURL, otherPaths.JWKSEndpoint),
 		ProvidersSupported:                     getProvidersFromConfig(),
 		TokenSigningAlgValue:                   config.Get().Signing.Alg,
 		AccessTokenEndpointGrantTypesSupported: []model.GrantType{model.GrantTypeSuperToken},
@@ -47,16 +50,16 @@ func Init() {
 		SuperTokenEndpointOIDCFlowsSupported:   config.Get().Features.EnabledOIDCFlows,
 		ResponseTypesSupported:                 []model.ResponseType{model.ResponseTypeToken},
 		ServiceDocumentation:                   config.Get().ServiceDocumentation,
-		Version:                                model.VERSION,
+		Version:                                version.VERSION,
 	}
 	if config.Get().Features.TokenRevocation.Enabled {
-		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/token/revoke")
+		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(config.Get().IssuerURL, apiPaths.RevocationEndpoint)
 	}
 	if config.Get().Features.TransferCodes.Enabled {
 		model.ResponseTypeShortToken.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
 	}
 	if config.Get().Features.TransferCodes.Enabled {
-		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(config.Get().IssuerURL, apiPath.CURRENT, "/token/transfer")
+		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(config.Get().IssuerURL, apiPaths.TokenTransferEndpoint)
 		model.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
 		model.ResponseTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
 	}

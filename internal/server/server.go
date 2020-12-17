@@ -11,6 +11,7 @@ import (
 	"github.com/zachmann/mytoken/internal/endpoints"
 	"github.com/zachmann/mytoken/internal/endpoints/configuration"
 	"github.com/zachmann/mytoken/internal/endpoints/redirect"
+	"github.com/zachmann/mytoken/internal/server/routes"
 )
 
 var server *fiber.App
@@ -30,12 +31,12 @@ func Init() {
 
 func addRoutes(s fiber.Router) {
 	s.Get("/", handleTest)
-	s.Get("/.well-known/mytoken-configuration", configuration.HandleConfiguration)
+	s.Get(routes.GetGeneralPaths().ConfigurationEndpoint, configuration.HandleConfiguration)
 	s.Get("/.well-known/openid-configuration", func(ctx *fiber.Ctx) error {
-		return ctx.Redirect("/.well-known/mytoken-configuration")
+		return ctx.Redirect(routes.GetGeneralPaths().ConfigurationEndpoint)
 	})
-	s.Get("/jwks", endpoints.HandleJWKS)
-	s.Get("/redirect", redirect.HandleOIDCRedirect)
+	s.Get(routes.GetGeneralPaths().JWKSEndpoint, endpoints.HandleJWKS)
+	s.Get(routes.GetGeneralPaths().OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
 	addAPIRoutes(s)
 }
 

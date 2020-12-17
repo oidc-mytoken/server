@@ -21,6 +21,7 @@ import (
 	response "github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/oidc/issuer"
+	"github.com/zachmann/mytoken/internal/server/routes"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 	"github.com/zachmann/mytoken/internal/utils"
 	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
@@ -31,7 +32,7 @@ var redirectURL string
 
 // Init initializes the authcode component
 func Init() {
-	redirectURL = utils.CombineURLPath(config.Get().IssuerURL, "/redirect")
+	redirectURL = utils.CombineURLPath(config.Get().IssuerURL, routes.GetGeneralPaths().OIDCRedirectEndpoint)
 }
 
 const stateLen = 16
