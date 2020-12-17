@@ -90,10 +90,9 @@ func CheckTokenRevoked(token string) (string, bool, error) {
 	}
 	var superToken string
 	if err := db.DB().Get(&superToken, `SELECT token FROM ShortSuperTokensV WHERE short_token=?`, token); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			err = nil
+		if !errors.Is(err, sql.ErrNoRows) {
+			return token, true, err
 		}
-		return token, true, err
 	}
-	return superToken, true, nil
+	return superToken, false, nil
 }
