@@ -64,7 +64,7 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 		}
 	}
 	log.Trace("Checked super token capabilities")
-	if ok := st.Restrictions.VerifyForOther(ctx.IP(), st.ID); !ok {
+	if ok := st.Restrictions.VerifyForOther(nil, ctx.IP(), st.ID); !ok {
 		return &model.Response{
 			Status:   fiber.StatusForbidden,
 			Response: model.APIErrorUsageRestricted,
@@ -92,13 +92,20 @@ func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response
 	if errorResponse != nil {
 		return errorResponse
 	}
-	if err := parent.Restrictions.GetValidForOther(networkData.IP, parent.ID)[0].UsedOther(parent.ID); err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
-	}
-	if err := ste.Store("Used grant_type super_token"); err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
-	}
-	if err := eventService.LogEvent(event.FromNumber(event.STEventInheritedRT, "Got RT from parent"), ste.ID, *networkData); err != nil {
+	if err := db.Transact(func(tx *sqlx.Tx) error {
+		if len(parent.Restrictions) > 0 {
+			if err := parent.Restrictions.GetValidForOther(tx, networkData.IP, parent.ID)[0].UsedOther(tx, parent.ID); err != nil {
+				return err
+			}
+		}
+		if err := ste.Store(tx, "Used grant_type super_token"); err != nil {
+			return err
+		}
+		if err := eventService.LogEvent(tx, event.FromNumber(event.STEventInheritedRT, "Got RT from parent"), ste.ID, *networkData); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 

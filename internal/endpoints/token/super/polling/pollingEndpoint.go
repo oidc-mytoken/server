@@ -30,7 +30,7 @@ func HandlePollingCode(ctx *fiber.Ctx) error {
 func handlePollingCode(req response.PollingCodeRequest, networkData model.ClientMetaData) *model.Response {
 	pollingCode := req.PollingCode
 	log.WithField("polling_code", pollingCode).Debug("Handle polling code")
-	pollingCodeStatus, err := dbModels.CheckPollingCode(pollingCode)
+	pollingCodeStatus, err := dbModels.CheckPollingCode(nil, pollingCode)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}

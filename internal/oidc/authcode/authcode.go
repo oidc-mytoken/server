@@ -151,7 +151,7 @@ func StartAuthCodeFlow(body []byte) *model.Response {
 		res.PollingCodeExpiresIn = config.Get().Features.Polling.PollingCodeExpiresAfter
 		res.PollingInterval = config.Get().Features.Polling.PollingInterval
 	}
-	if err := authFlowInfo.Store(); err != nil {
+	if err := authFlowInfo.Store(nil); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	return &model.Response{
@@ -223,22 +223,23 @@ func CodeExchange(state, code string, networkData model.ClientMetaData) *model.R
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	ste, err := createSuperTokenEntry(authInfo, token, oidcSub, networkData)
-	if err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
-	}
-	at := dbModels.AccessToken{
-		Token:     token.AccessToken,
-		IP:        networkData.IP,
-		Comment:   "Initial Access Token from authorization code flow",
-		STID:      ste.ID,
-		Scopes:    scopes,
-		Audiences: audiences,
-	}
-	if err = at.Store(); err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
-	}
+	var ste *dbModels.SuperTokenEntry
 	if err = db.Transact(func(tx *sqlx.Tx) error {
+		ste, err = createSuperTokenEntry(tx, authInfo, token, oidcSub, networkData)
+		if err != nil {
+			return err
+		}
+		at := dbModels.AccessToken{
+			Token:     token.AccessToken,
+			IP:        networkData.IP,
+			Comment:   "Initial Access Token from authorization code flow",
+			STID:      ste.ID,
+			Scopes:    scopes,
+			Audiences: audiences,
+		}
+		if err = at.Store(tx); err != nil {
+			return err
+		}
 		if authInfo.PollingCode != "" {
 			if _, err = tx.Exec(`INSERT INTO TmpST (polling_code_id, ST_id) VALUES((SELECT id FROM PollingCodes WHERE polling_code = ?), ?)`, authInfo.PollingCode, ste.ID); err != nil {
 				return err
@@ -286,10 +287,10 @@ func CodeExchange(state, code string, networkData model.ClientMetaData) *model.R
 	}
 }
 
-func createSuperTokenEntry(authFlowInfo *dbModels.AuthFlowInfo, token *oauth2.Token, oidcSub string, networkData model.ClientMetaData) (*dbModels.SuperTokenEntry, error) {
+func createSuperTokenEntry(tx *sqlx.Tx, authFlowInfo *dbModels.AuthFlowInfo, token *oauth2.Token, oidcSub string, networkData model.ClientMetaData) (*dbModels.SuperTokenEntry, error) {
 	ste := dbModels.NewSuperTokenEntry(authFlowInfo.Name, oidcSub, authFlowInfo.Issuer, authFlowInfo.Restrictions, authFlowInfo.Capabilities, authFlowInfo.SubtokenCapabilities, networkData)
 	ste.RefreshToken = token.RefreshToken
-	err := ste.Store("Used grant_type oidc_flow authorization_code")
+	err := ste.Store(tx, "Used grant_type oidc_flow authorization_code")
 	if err != nil {
 		return nil, err
 	}

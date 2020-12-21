@@ -60,10 +60,10 @@ func (i *authFlowInfo) toAuthFlowInfo() *AuthFlowInfo {
 }
 
 // Store stores the AuthFlowInfo in the database as well as the linked polling code if it exists
-func (i *AuthFlowInfo) Store() error {
+func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 	log.Debug("Storing auth flow info")
 	store := i.toAuthFlowInfo()
-	return db.Transact(func(tx *sqlx.Tx) error {
+	storeFnc := func(tx *sqlx.Tx) error {
 		if i.PollingCode != "" {
 			res, err := tx.Exec(`INSERT INTO PollingCodes (polling_code, expires_in) VALUES(?, ?)`, i.PollingCode, config.Get().Features.Polling.PollingCodeExpiresAfter)
 			if err != nil {
@@ -78,7 +78,8 @@ func (i *AuthFlowInfo) Store() error {
 		}
 		_, err := tx.NamedExec(`INSERT INTO AuthInfo (state, iss, restrictions, capabilities, subtoken_capabilities, name, expires_in, polling_code_id) VALUES(:state, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name, :expires_in, :polling_code_id)`, store)
 		return err
-	})
+	}
+	return db.RunWithinTransaction(tx, storeFnc)
 }
 
 // GetAuthFlowInfoByState returns AuthFlowInfo by state

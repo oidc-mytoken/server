@@ -61,3 +61,12 @@ func Transact(fn func(*sqlx.Tx) error) error {
 	}
 	return tx.Commit()
 }
+
+// RunWithinTransaction runs the passed function using the passed transaction; if nil is passed as tx a new transaction is created. This is basically a wrapper function, that works with a possible nil-tx
+func RunWithinTransaction(tx *sqlx.Tx, fn func(*sqlx.Tx) error) error {
+	if tx == nil {
+		return Transact(fn)
+	} else {
+		return fn(tx)
+	}
+}

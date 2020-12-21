@@ -5,9 +5,11 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/zachmann/mytoken/internal/config"
+	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/db/dbModels"
 	request "github.com/zachmann/mytoken/internal/endpoints/token/access/pkg"
 	"github.com/zachmann/mytoken/internal/model"
@@ -64,7 +66,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		return res.Send(ctx)
 	}
 	log.Trace("Parsed super token")
-	if ok := st.Restrictions.VerifyForAT(ctx.IP(), st.ID); !ok {
+	if ok := st.Restrictions.VerifyForAT(nil, ctx.IP(), st.ID); !ok {
 		res := model.Response{
 			Status:   fiber.StatusForbidden,
 			Response: model.APIErrorUsageRestricted,
@@ -105,7 +107,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 	auds := ""                                   // default if no restrictions apply
 	var usedRestriction *restrictions.Restriction
 	if len(st.Restrictions) > 0 {
-		possibleRestrictions := st.Restrictions.GetValidForAT(networkData.IP, st.ID).WithScopes(utils.SplitIgnoreEmpty(req.Scope, " ")).WithAudiences(utils.SplitIgnoreEmpty(req.Audience, " "))
+		possibleRestrictions := st.Restrictions.GetValidForAT(nil, networkData.IP, st.ID).WithScopes(utils.SplitIgnoreEmpty(req.Scope, " ")).WithAudiences(utils.SplitIgnoreEmpty(req.Audience, " "))
 		if len(possibleRestrictions) == 0 {
 			return &model.Response{
 				Status:   fiber.StatusBadRequest,
@@ -158,16 +160,21 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 		Scopes:    utils.SplitIgnoreEmpty(retScopes, " "),
 		Audiences: retAudiences,
 	}
-	if err = at.Store(); err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
-	}
-	if err = eventService.LogEvent(event.FromNumber(event.STEventATCreated, "Used grant_type super_token"), st.ID, networkData); err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
-	}
-	if usedRestriction != nil {
-		if err = usedRestriction.UsedAT(st.ID); err != nil {
-			return model.ErrorToInternalServerErrorResponse(err)
+	if err = db.Transact(func(tx *sqlx.Tx) error {
+		if err = at.Store(tx); err != nil {
+			return err
 		}
+		if err = eventService.LogEvent(tx, event.FromNumber(event.STEventATCreated, "Used grant_type super_token"), st.ID, networkData); err != nil {
+			return err
+		}
+		if usedRestriction != nil {
+			if err = usedRestriction.UsedAT(tx, st.ID); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	return &model.Response{
 		Status: fiber.StatusOK,

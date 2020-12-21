@@ -54,7 +54,7 @@ func (ste *SuperTokenEntry) Root() bool {
 }
 
 // Store stores the SuperTokenEntry in the database
-func (ste *SuperTokenEntry) Store(comment string) error {
+func (ste *SuperTokenEntry) Store(tx *sqlx.Tx, comment string) error {
 	steStore := superTokenEntryStore{
 		ID:           ste.ID,
 		ParentID:     db.NewNullString(ste.ParentID),
@@ -66,11 +66,13 @@ func (ste *SuperTokenEntry) Store(comment string) error {
 		Iss:          ste.Token.OIDCIssuer,
 		Sub:          ste.Token.OIDCSubject,
 	}
-	err := steStore.Store()
-	if err != nil {
-		return err
-	}
-	return eventService.LogEvent(event.FromNumber(event.STEventSTCreated, comment), ste.ID, ste.networkData)
+	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		err := steStore.Store(tx)
+		if err != nil {
+			return err
+		}
+		return eventService.LogEvent(tx, event.FromNumber(event.STEventSTCreated, comment), ste.ID, ste.networkData)
+	})
 }
 
 type superTokenEntryStore struct {
@@ -86,12 +88,12 @@ type superTokenEntryStore struct {
 }
 
 // Store stores the superTokenEntryStore in the database; if this is the first token for this user, the user is also added to the db
-func (e *superTokenEntryStore) Store() error {
-	stmt, err := db.DB().PrepareNamed(`INSERT INTO SuperTokens (id, parent_id, root_id,  token, refresh_token, name, ip_created, user_id) VALUES(:id, :parent_id, :root_id, :token, :refresh_token, :name, :ip_created, (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
-	if err != nil {
-		return err
-	}
-	return db.Transact(func(tx *sqlx.Tx) error {
+func (e *superTokenEntryStore) Store(tx *sqlx.Tx) error {
+	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		stmt, err := tx.PrepareNamed(`INSERT INTO SuperTokens (id, parent_id, root_id,  token, refresh_token, name, ip_created, user_id) VALUES(:id, :parent_id, :root_id, :token, :refresh_token, :name, :ip_created, (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
+		if err != nil {
+			return err
+		}
 		txStmt := tx.NamedStmt(stmt)
 		if _, err = txStmt.Exec(e); err != nil {
 			var mysqlError *mysql.MySQLError

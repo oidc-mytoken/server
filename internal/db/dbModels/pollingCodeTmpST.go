@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/zachmann/mytoken/internal/model"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/zachmann/mytoken/internal/db"
+	"github.com/zachmann/mytoken/internal/model"
 )
 
 // PollingCodeStatus holds information about the status of a polling code
@@ -31,13 +32,18 @@ func (p *PollingCodeStatus) Scan(src interface{}) error {
 }
 
 // CheckPollingCode checks the passed polling code in the database
-func CheckPollingCode(pollingCode string) (p PollingCodeStatus, err error) {
-	if err = db.DB().Get(&p, `SELECT CURRENT_TIMESTAMP() <= expires_at AS valid FROM PollingCodes WHERE polling_code=?`, pollingCode); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			err = nil // polling code was not found, but this is fine
-			return    // p.Found is false
+func CheckPollingCode(tx *sqlx.Tx, pollingCode string) (PollingCodeStatus, error) {
+	var p PollingCodeStatus
+	checkFnc := func(tx *sqlx.Tx) error {
+		if err := tx.Get(&p, `SELECT CURRENT_TIMESTAMP() <= expires_at AS valid FROM PollingCodes WHERE polling_code=?`, pollingCode); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				err = nil  // polling code was not found, but this is fine
+				return err // p.Found is false
+			}
+			return err
 		}
-		return
+		return nil
 	}
-	return
+	err := db.RunWithinTransaction(tx, checkFnc)
+	return p, err
 }

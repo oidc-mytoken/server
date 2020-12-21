@@ -172,20 +172,18 @@ func CreateTransferCode(stid uuid.UUID, networkData model.ClientMetaData) (strin
 	transferCode := utils.RandASCIIString(config.Get().Features.TransferCodes.Len)
 	expiresIn := config.Get().Features.TransferCodes.ExpiresAfter
 	exp := uint64(expiresIn)
-	if err := db.Transact(func(tx *sqlx.Tx) error {
+	err := db.Transact(func(tx *sqlx.Tx) error {
 		if _, err := tx.Exec(`INSERT INTO TransferCodes (transfer_code, ST_id, expires_in, new_st) VALUES(?,?,?,0)`, transferCode, stid, expiresIn); err != nil {
 			return err
 		}
+		if err := event.LogEvent(tx, &pkg.Event{
+			Type: pkg.STEventTransferCodeCreated,
+		}, stid, networkData); err != nil {
+			return err
+		}
 		return nil
-	}); err != nil {
-		return transferCode, exp, err
-	}
-	if err := event.LogEvent(&pkg.Event{
-		Type: pkg.STEventTransferCodeCreated,
-	}, stid, networkData); err != nil {
-		return transferCode, exp, err
-	}
-	return transferCode, exp, nil
+	})
+	return transferCode, exp, err
 }
 
 // ToTokenResponse creates a SuperTokenResponse for this SuperToken according to the passed model.ResponseType

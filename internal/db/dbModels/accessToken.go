@@ -63,9 +63,9 @@ func (t *AccessToken) getDBAttributes(atID uint64) (attrs []accessTokenAttribute
 }
 
 // Store stores the AccessToken in the database as well as the relevant attributes
-func (t *AccessToken) Store() error {
-	return db.Transact(func(tx *sqlx.Tx) error {
-		store := t.toDBObject()
+func (t *AccessToken) Store(tx *sqlx.Tx) error {
+	store := t.toDBObject()
+	storeFnc := func(tx *sqlx.Tx) error {
 		res, err := tx.NamedExec(`INSERT INTO AccessTokens (token, ip_created, comment, ST_id) VALUES (:token, :ip_created, :comment, :ST_id)`, store)
 		if err != nil {
 			return err
@@ -84,5 +84,6 @@ func (t *AccessToken) Store() error {
 			}
 		}
 		return nil
-	})
+	}
+	return db.RunWithinTransaction(tx, storeFnc)
 }

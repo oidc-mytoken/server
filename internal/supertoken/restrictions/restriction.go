@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/copier"
+	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
@@ -79,7 +80,7 @@ func (r *Restriction) verifyGeoIPBlack(ip string) bool {
 	}
 	return !utils.StringInSlice(geoip.CountryCode(ip), black)
 }
-func (r *Restriction) verifyATUsageCounts(stid uuid.UUID) bool {
+func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, stid uuid.UUID) bool {
 	log.Trace("Verifying AT usage count")
 	if r.UsagesAT == nil {
 		return true
@@ -90,19 +91,41 @@ func (r *Restriction) verifyATUsageCounts(stid uuid.UUID) bool {
 		return false
 	}
 	var usages int64
-	if err = db.DB().Get(&usages, `SELECT usages_AT FROM TokenUsages WHERE restriction_hash=? AND ST_id=?`, string(hash), stid); err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
+	found := true
+	get := func(tx *sqlx.Tx) error {
+		if err = tx.Get(&usages, `SELECT usages_AT FROM TokenUsages WHERE restriction_hash=? AND ST_id=?`, string(hash), stid); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				// No usage entry -> was not used before
+				found = false
+				return nil
+			}
 			log.WithError(err).Error()
-			return false
+			return err
 		}
+		return nil
+	}
+
+	if err = db.RunWithinTransaction(tx, get); err != nil {
+		return false
+	}
+	if !found {
 		// No usage entry -> was not used before
-		log.WithField("stid", stid.String()).WithField("restriction_hash", string(hash)).Debug("Did not found restriction in database; it was not used before")
+		log.WithFields(map[string]interface{}{
+			"stid":             stid.String(),
+			"restriction_hash": string(hash),
+		}).Debug("Did not found restriction in database; it was not used before")
 		return *r.UsagesAT > 0
 	}
-	log.WithField("stid", stid.String()).WithField("restriction_hash", string(hash)).WithField("used", usages).WithField("usageLimit", *r.UsagesAT).Debug("Found in db.")
+	log.WithFields(map[string]interface{}{
+		"stid":             stid.String(),
+		"restriction_hash": string(hash),
+		"used":             usages,
+		"usageLimit":       *r.UsagesAT,
+	}).Debug("Found restriction usage in db.")
 	return usages < *r.UsagesAT
 }
-func (r *Restriction) verifyOtherUsageCounts(stid uuid.UUID) bool {
+func (r *Restriction) verifyOtherUsageCounts(tx *sqlx.Tx, stid uuid.UUID) bool {
+	log.Trace("Verifying other usage count")
 	if r.UsagesOther == nil {
 		return true
 	}
@@ -112,68 +135,95 @@ func (r *Restriction) verifyOtherUsageCounts(stid uuid.UUID) bool {
 		return false
 	}
 	var usages int64
-	if err = db.DB().Get(&usages, `SELECT usages_other FROM TokenUsages WHERE restriction_hash=? AND ST_id=?`, string(hash), stid); err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
+	found := true
+	get := func(tx *sqlx.Tx) error {
+		if err = tx.Get(&usages, `SELECT usages_other FROM TokenUsages WHERE restriction_hash=? AND ST_id=?`, string(hash), stid); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				// No usage entry -> was not used before
+				found = false
+				return nil
+			}
 			log.WithError(err).Error()
-			return false
+			return err
 		}
+		return nil
+	}
+
+	if err = db.RunWithinTransaction(tx, get); err != nil {
+		return false
+	}
+	if !found {
 		// No usage entry -> was not used before
+		log.WithFields(map[string]interface{}{
+			"stid":             stid.String(),
+			"restriction_hash": string(hash),
+		}).Debug("Did not found restriction in database; it was not used before")
 		return *r.UsagesOther > 0
 	}
+	log.WithFields(map[string]interface{}{
+		"stid":             stid.String(),
+		"restriction_hash": string(hash),
+		"used":             usages,
+		"usageLimit":       *r.UsagesAT,
+	}).Debug("Found restriction usage in db.")
 	return usages < *r.UsagesOther
 }
 func (r *Restriction) verify(ip string) bool {
 	return r.verifyTimeBased() &&
 		r.verifyIPBased(ip)
 }
-func (r *Restriction) verifyAT(ip string, stid uuid.UUID) bool {
-	return r.verify(ip) && r.verifyATUsageCounts(stid)
+func (r *Restriction) verifyAT(tx *sqlx.Tx, ip string, stid uuid.UUID) bool {
+	return r.verify(ip) && r.verifyATUsageCounts(tx, stid)
 }
-func (r *Restriction) verifyOther(ip string, stid uuid.UUID) bool {
+func (r *Restriction) verifyOther(tx *sqlx.Tx, ip string, stid uuid.UUID) bool {
 	return r.verify(ip) &&
-		r.verifyOtherUsageCounts(stid)
+		r.verifyOtherUsageCounts(tx, stid)
 }
 
 // UsedAT will update the usages_AT value for this restriction; it should be called after this restriction was used to obtain an access token;
-func (r *Restriction) UsedAT(stid uuid.UUID) error {
+func (r *Restriction) UsedAT(tx *sqlx.Tx, stid uuid.UUID) error {
 	js, err := json.Marshal(r)
 	if err != nil {
 		return err
 	}
-	_, err = db.DB().Exec(`INSERT INTO TokenUsages (ST_id, restriction, usages_AT) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE usages_AT = usages_AT + 1`, stid, js)
-	return err
+	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		_, err = tx.Exec(`INSERT INTO TokenUsages (ST_id, restriction, usages_AT) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE usages_AT = usages_AT + 1`, stid, js)
+		return err
+	})
 }
 
 // UsedOther will update the usages_other value for this restriction; it should be called after this restriction was used for other reasons than obtaining an access token;
-func (r *Restriction) UsedOther(stid uuid.UUID) error {
+func (r *Restriction) UsedOther(tx *sqlx.Tx, stid uuid.UUID) error {
 	js, err := json.Marshal(r)
 	if err != nil {
 		return err
 	}
-	_, err = db.DB().Exec(`INSERT INTO TokenUsages (ST_id, restriction, usages_other) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE usages_other = usages_other + 1`, stid, js)
-	return err
+	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		_, err = tx.Exec(`INSERT INTO TokenUsages (ST_id, restriction, usages_other) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE usages_other = usages_other + 1`, stid, js)
+		return err
+	})
 }
 
 // VerifyForAT verifies if this restrictions can be used to obtain an access token
-func (r Restrictions) VerifyForAT(ip string, stid uuid.UUID) bool {
+func (r Restrictions) VerifyForAT(tx *sqlx.Tx, ip string, stid uuid.UUID) bool {
 	if len(r) == 0 {
 		return true
 	}
-	return len(r.GetValidForAT(ip, stid)) > 0
+	return len(r.GetValidForAT(tx, ip, stid)) > 0
 }
 
 // VerifyForOther verifies if this restrictions can be used for other actions than obtaining an access token
-func (r Restrictions) VerifyForOther(ip string, stid uuid.UUID) bool {
+func (r Restrictions) VerifyForOther(tx *sqlx.Tx, ip string, stid uuid.UUID) bool {
 	if len(r) == 0 {
 		return true
 	}
-	return len(r.GetValidForOther(ip, stid)) > 0
+	return len(r.GetValidForOther(tx, ip, stid)) > 0
 }
 
 // GetValidForAT returns the subset of Restrictions that can be used to obtain an access token
-func (r Restrictions) GetValidForAT(ip string, stid uuid.UUID) (ret Restrictions) {
+func (r Restrictions) GetValidForAT(tx *sqlx.Tx, ip string, stid uuid.UUID) (ret Restrictions) {
 	for _, rr := range r {
-		if rr.verifyAT(ip, stid) {
+		if rr.verifyAT(tx, ip, stid) {
 			log.Trace("Found a valid restriction")
 			ret = append(ret, rr)
 		}
@@ -182,9 +232,9 @@ func (r Restrictions) GetValidForAT(ip string, stid uuid.UUID) (ret Restrictions
 }
 
 // GetValidForOther returns the subset of Restrictions that can be used for other actions than obtaining an access token
-func (r Restrictions) GetValidForOther(ip string, stid uuid.UUID) (ret Restrictions) {
+func (r Restrictions) GetValidForOther(tx *sqlx.Tx, ip string, stid uuid.UUID) (ret Restrictions) {
 	for _, rr := range r {
-		if rr.verifyOther(ip, stid) {
+		if rr.verifyOther(tx, ip, stid) {
 			ret = append(ret, rr)
 		}
 	}
