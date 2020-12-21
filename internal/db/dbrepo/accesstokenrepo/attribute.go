@@ -1,4 +1,4 @@
-package dbModels
+package accesstokenrepo
 
 // accessTokenAttribute holds database information about an access token attribute
 type accessTokenAttribute struct {

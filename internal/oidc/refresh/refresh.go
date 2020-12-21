@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/zachmann/mytoken/internal/config"
-	"github.com/zachmann/mytoken/internal/db"
+	dbhelper "github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	"github.com/zachmann/mytoken/internal/httpClient"
 	"github.com/zachmann/mytoken/internal/oidc/oidcReqRes"
 )
@@ -51,6 +51,5 @@ func RefreshFlowAndUpdateDB(provider *config.ProviderConf, rt string, scopes, au
 }
 
 func updateChangedRTInDB(oldRT, newRT string) error {
-	_, err := db.DB().Exec(`UPDATE SuperTokens SET refresh_token=? WHERE refresh_token=?`, newRT, oldRT)
-	return err
+	return dbhelper.UpdateRefreshToken(nil, oldRT, newRT)
 }

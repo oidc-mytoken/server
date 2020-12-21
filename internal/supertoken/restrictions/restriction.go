@@ -1,10 +1,8 @@
 package restrictions
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"errors"
 	"math"
 	"strings"
 	"time"
@@ -14,7 +12,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/db"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	"github.com/zachmann/mytoken/internal/utils"
 	"github.com/zachmann/mytoken/internal/utils/geoip"
 	"github.com/zachmann/mytoken/internal/utils/hashUtils"
@@ -90,26 +88,12 @@ func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, stid uuid.UUID) bool {
 		log.WithError(err).Error()
 		return false
 	}
-	var usages int64
-	found := true
-	get := func(tx *sqlx.Tx) error {
-		if err = tx.Get(&usages, `SELECT usages_AT FROM TokenUsages WHERE restriction_hash=? AND ST_id=?`, string(hash), stid); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				// No usage entry -> was not used before
-				found = false
-				return nil
-			}
-			log.WithError(err).Error()
-			return err
-		}
-		return nil
-	}
-
-	if err = db.RunWithinTransaction(tx, get); err != nil {
+	usages, err := supertokenrepohelper.GetTokenUsagesAT(tx, stid, string(hash))
+	if err != nil {
 		return false
 	}
-	if !found {
-		// No usage entry -> was not used before
+	if usages == nil {
+		//  was not used before
 		log.WithFields(map[string]interface{}{
 			"stid":             stid.String(),
 			"restriction_hash": string(hash),
@@ -119,10 +103,10 @@ func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, stid uuid.UUID) bool {
 	log.WithFields(map[string]interface{}{
 		"stid":             stid.String(),
 		"restriction_hash": string(hash),
-		"used":             usages,
+		"used":             *usages,
 		"usageLimit":       *r.UsagesAT,
 	}).Debug("Found restriction usage in db.")
-	return usages < *r.UsagesAT
+	return *usages < *r.UsagesAT
 }
 func (r *Restriction) verifyOtherUsageCounts(tx *sqlx.Tx, stid uuid.UUID) bool {
 	log.Trace("Verifying other usage count")
@@ -134,26 +118,12 @@ func (r *Restriction) verifyOtherUsageCounts(tx *sqlx.Tx, stid uuid.UUID) bool {
 		log.WithError(err).Error()
 		return false
 	}
-	var usages int64
-	found := true
-	get := func(tx *sqlx.Tx) error {
-		if err = tx.Get(&usages, `SELECT usages_other FROM TokenUsages WHERE restriction_hash=? AND ST_id=?`, string(hash), stid); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				// No usage entry -> was not used before
-				found = false
-				return nil
-			}
-			log.WithError(err).Error()
-			return err
-		}
-		return nil
-	}
-
-	if err = db.RunWithinTransaction(tx, get); err != nil {
+	usages, err := supertokenrepohelper.GetTokenUsagesOther(tx, stid, string(hash))
+	if err != nil {
 		return false
 	}
-	if !found {
-		// No usage entry -> was not used before
+	if usages == nil {
+		// was not used before
 		log.WithFields(map[string]interface{}{
 			"stid":             stid.String(),
 			"restriction_hash": string(hash),
@@ -163,10 +133,10 @@ func (r *Restriction) verifyOtherUsageCounts(tx *sqlx.Tx, stid uuid.UUID) bool {
 	log.WithFields(map[string]interface{}{
 		"stid":             stid.String(),
 		"restriction_hash": string(hash),
-		"used":             usages,
+		"used":             *usages,
 		"usageLimit":       *r.UsagesAT,
 	}).Debug("Found restriction usage in db.")
-	return usages < *r.UsagesOther
+	return *usages < *r.UsagesOther
 }
 func (r *Restriction) verify(ip string) bool {
 	return r.verifyTimeBased() &&
@@ -186,10 +156,7 @@ func (r *Restriction) UsedAT(tx *sqlx.Tx, stid uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err = tx.Exec(`INSERT INTO TokenUsages (ST_id, restriction, usages_AT) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE usages_AT = usages_AT + 1`, stid, js)
-		return err
-	})
+	return supertokenrepohelper.IncreaseTokenUsageAT(tx, stid, js)
 }
 
 // UsedOther will update the usages_other value for this restriction; it should be called after this restriction was used for other reasons than obtaining an access token;
@@ -198,10 +165,7 @@ func (r *Restriction) UsedOther(tx *sqlx.Tx, stid uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err = tx.Exec(`INSERT INTO TokenUsages (ST_id, restriction, usages_other) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE usages_other = usages_other + 1`, stid, js)
-		return err
-	})
+	return supertokenrepohelper.IncreaseTokenUsageOther(tx, stid, js)
 }
 
 // VerifyForAT verifies if this restrictions can be used to obtain an access token

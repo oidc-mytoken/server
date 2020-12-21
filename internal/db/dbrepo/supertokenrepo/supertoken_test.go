@@ -1,4 +1,4 @@
-package dbModels
+package supertokenrepo
 
 import "testing"
 

@@ -1,4 +1,4 @@
-package dbModels
+package authcodeinforepo
 
 import (
 	"database/sql"
@@ -89,4 +89,12 @@ func GetAuthFlowInfoByState(state string) (*AuthFlowInfo, error) {
 		return nil, err
 	}
 	return info.toAuthFlowInfo(), nil
+}
+
+// DeleteAuthFlowInfoByState deletes the AuthFlowInfo for a given state
+func DeleteAuthFlowInfoByState(tx *sqlx.Tx, state string) error {
+	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		_, err := tx.Exec(`DELETE FROM AuthInfo WHERE state = ?`, state)
+		return err
+	})
 }

@@ -6,17 +6,15 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/zachmann/mytoken/internal/config"
-	"github.com/zachmann/mytoken/internal/db"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/transfercoderepo"
 	response "github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/jws"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
-	"github.com/zachmann/mytoken/internal/supertoken/event"
-	pkg "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 	"github.com/zachmann/mytoken/internal/utils"
 	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
@@ -149,7 +147,7 @@ func (st *SuperToken) toSuperTokenResponse(jwt string) response.SuperTokenRespon
 
 func (st *SuperToken) toShortSuperTokenResponse() (response.SuperTokenResponse, error) {
 	shortToken := utils.RandASCIIString(config.Get().Features.ShortTokens.Len)
-	if _, err := db.DB().Exec(`INSERT INTO ShortSuperTokens (short_token, ST_id) VALUES(?,?)`, shortToken, st.ID); err != nil {
+	if err := supertokenrepohelper.StoreShortSuperToken(nil, shortToken, st.ID); err != nil {
 		return response.SuperTokenResponse{}, err
 	}
 	res := st.toTokenResponse()
@@ -168,22 +166,11 @@ func (st *SuperToken) toTokenResponse() response.SuperTokenResponse {
 }
 
 // CreateTransferCode creates a transfer code for the passed super token
-func CreateTransferCode(stid uuid.UUID, networkData model.ClientMetaData) (string, uint64, error) {
-	transferCode := utils.RandASCIIString(config.Get().Features.TransferCodes.Len)
-	expiresIn := config.Get().Features.TransferCodes.ExpiresAfter
-	exp := uint64(expiresIn)
-	err := db.Transact(func(tx *sqlx.Tx) error {
-		if _, err := tx.Exec(`INSERT INTO TransferCodes (transfer_code, ST_id, expires_in, new_st) VALUES(?,?,?,0)`, transferCode, stid, expiresIn); err != nil {
-			return err
-		}
-		if err := event.LogEvent(tx, &pkg.Event{
-			Type: pkg.STEventTransferCodeCreated,
-		}, stid, networkData); err != nil {
-			return err
-		}
-		return nil
-	})
-	return transferCode, exp, err
+func CreateTransferCode(stid uuid.UUID, clientMetaData model.ClientMetaData) (string, uint64, error) {
+	transferCode := transfercoderepo.NewTransferCode(stid, clientMetaData, false)
+	expiresIn := uint64(config.Get().Features.TransferCodes.ExpiresAfter)
+	err := transferCode.Store(nil)
+	return transferCode.Code, expiresIn, err
 }
 
 // ToTokenResponse creates a SuperTokenResponse for this SuperToken according to the passed model.ResponseType

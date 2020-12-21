@@ -17,11 +17,15 @@ import (
 	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/context"
 	"github.com/zachmann/mytoken/internal/db"
-	"github.com/zachmann/mytoken/internal/db/dbModels"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/accesstokenrepo"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/authcodeinforepo"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/pollingcoderepo"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo"
 	response "github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/oidc/issuer"
 	"github.com/zachmann/mytoken/internal/server/routes"
+	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 	"github.com/zachmann/mytoken/internal/utils"
 	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
@@ -134,7 +138,7 @@ func StartAuthCodeFlow(body []byte) *model.Response {
 	}
 
 	authURL, state := authorizationURL(provider, req.Restrictions, req.Native())
-	authFlowInfo := dbModels.AuthFlowInfo{
+	authFlowInfo := authcodeinforepo.AuthFlowInfo{
 		State:                state,
 		Issuer:               provider.Issuer,
 		Restrictions:         req.Restrictions,
@@ -163,7 +167,7 @@ func StartAuthCodeFlow(body []byte) *model.Response {
 // CodeExchange performs an oidc code exchange it creates the super token and stores it in the database
 func CodeExchange(state, code string, networkData model.ClientMetaData) *model.Response {
 	log.Debug("Handle code exchange")
-	authInfo, err := dbModels.GetAuthFlowInfoByState(state)
+	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(state)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &model.Response{
@@ -223,13 +227,13 @@ func CodeExchange(state, code string, networkData model.ClientMetaData) *model.R
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	var ste *dbModels.SuperTokenEntry
+	var ste *supertokenrepo.SuperTokenEntry
 	if err = db.Transact(func(tx *sqlx.Tx) error {
 		ste, err = createSuperTokenEntry(tx, authInfo, token, oidcSub, networkData)
 		if err != nil {
 			return err
 		}
-		at := dbModels.AccessToken{
+		at := accesstokenrepo.AccessToken{
 			Token:     token.AccessToken,
 			IP:        networkData.IP,
 			Comment:   "Initial Access Token from authorization code flow",
@@ -241,11 +245,11 @@ func CodeExchange(state, code string, networkData model.ClientMetaData) *model.R
 			return err
 		}
 		if authInfo.PollingCode != "" {
-			if _, err = tx.Exec(`INSERT INTO TmpST (polling_code_id, ST_id) VALUES((SELECT id FROM PollingCodes WHERE polling_code = ?), ?)`, authInfo.PollingCode, ste.ID); err != nil {
+			if err = pollingcoderepo.LinkPollingCodeToST(tx, authInfo.PollingCode, ste.ID); err != nil {
 				return err
 			}
 		}
-		if _, err = tx.Exec(`DELETE FROM AuthInfo WHERE state = ?`, authInfo.State); err != nil {
+		if err = authcodeinforepo.DeleteAuthFlowInfoByState(tx, authInfo.State); err != nil {
 			return err
 		}
 		return nil
@@ -287,8 +291,15 @@ func CodeExchange(state, code string, networkData model.ClientMetaData) *model.R
 	}
 }
 
-func createSuperTokenEntry(tx *sqlx.Tx, authFlowInfo *dbModels.AuthFlowInfo, token *oauth2.Token, oidcSub string, networkData model.ClientMetaData) (*dbModels.SuperTokenEntry, error) {
-	ste := dbModels.NewSuperTokenEntry(authFlowInfo.Name, oidcSub, authFlowInfo.Issuer, authFlowInfo.Restrictions, authFlowInfo.Capabilities, authFlowInfo.SubtokenCapabilities, networkData)
+func createSuperTokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfo, token *oauth2.Token, oidcSub string, networkData model.ClientMetaData) (*supertokenrepo.SuperTokenEntry, error) {
+	ste := supertokenrepo.NewSuperTokenEntry(
+		supertoken.NewSuperToken(
+			oidcSub,
+			authFlowInfo.Issuer,
+			authFlowInfo.Restrictions,
+			authFlowInfo.Capabilities,
+			authFlowInfo.SubtokenCapabilities),
+		authFlowInfo.Name, networkData)
 	ste.RefreshToken = token.RefreshToken
 	err := ste.Store(tx, "Used grant_type oidc_flow authorization_code")
 	if err != nil {

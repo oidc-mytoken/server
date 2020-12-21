@@ -1,4 +1,4 @@
-package dbModels
+package accesstokenrepo
 
 import (
 	"database/sql"
@@ -36,13 +36,13 @@ func (t *AccessToken) toDBObject() accessToken {
 	}
 }
 
-func (t *AccessToken) getDBAttributes(atID uint64) (attrs []accessTokenAttribute, err error) {
+func (t *AccessToken) getDBAttributes(tx *sqlx.Tx, atID uint64) (attrs []accessTokenAttribute, err error) {
 	var scopeAttrID uint64
 	var audAttrID uint64
-	if err = db.DB().QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, "scope").Scan(&scopeAttrID); err != nil {
+	if err = tx.QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, "scope").Scan(&scopeAttrID); err != nil {
 		return
 	}
-	if err = db.DB().QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, "audience").Scan(&audAttrID); err != nil {
+	if err = tx.QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, "audience").Scan(&audAttrID); err != nil {
 		return
 	}
 	for _, s := range t.Scopes {
@@ -75,7 +75,7 @@ func (t *AccessToken) Store(tx *sqlx.Tx) error {
 			if err != nil {
 				return err
 			}
-			attrs, err := t.getDBAttributes(uint64(atID))
+			attrs, err := t.getDBAttributes(tx, uint64(atID))
 			if err != nil {
 				return err
 			}

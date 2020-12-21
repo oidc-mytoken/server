@@ -10,7 +10,8 @@ import (
 
 	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/db"
-	"github.com/zachmann/mytoken/internal/db/dbModels"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/accesstokenrepo"
+	dbhelper "github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	request "github.com/zachmann/mytoken/internal/endpoints/token/access/pkg"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/oidc/refresh"
@@ -21,7 +22,6 @@ import (
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 	"github.com/zachmann/mytoken/internal/utils"
 	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
-	"github.com/zachmann/mytoken/internal/utils/dbUtils"
 	"github.com/zachmann/mytoken/internal/utils/oidcUtils"
 )
 
@@ -43,7 +43,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	}
 	log.Trace("Checked grant type")
 
-	token, revoked, dbErr := dbUtils.CheckTokenRevoked(req.SuperToken)
+	token, revoked, dbErr := dbhelper.CheckTokenRevoked(req.SuperToken)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
 	}
@@ -59,19 +59,17 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 
 	st, err := supertoken.ParseJWT(req.SuperToken)
 	if err != nil {
-		res := model.Response{
+		return (&model.Response{
 			Status:   fiber.StatusUnauthorized,
 			Response: model.InvalidTokenError(err.Error()),
-		}
-		return res.Send(ctx)
+		}).Send(ctx)
 	}
 	log.Trace("Parsed super token")
 	if ok := st.Restrictions.VerifyForAT(nil, ctx.IP(), st.ID); !ok {
-		res := model.Response{
+		return (&model.Response{
 			Status:   fiber.StatusForbidden,
 			Response: model.APIErrorUsageRestricted,
-		}
-		return res.Send(ctx)
+		}).Send(ctx)
 	}
 	log.Trace("Checked super token restrictions")
 	if ok := st.VerifyCapabilities(capabilities.CapabilityAT); !ok {
@@ -126,7 +124,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 			auds = strings.Join(usedRestriction.Audiences, " ")
 		}
 	}
-	rt, rtFound, dbErr := dbUtils.GetRefreshToken(st.ID)
+	rt, rtFound, dbErr := dbhelper.GetRefreshToken(st.ID)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -152,7 +150,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 		retScopes = oidcRes.Scopes
 	}
 	retAudiences, _ := oidcUtils.GetAudiencesFromJWT(oidcRes.AccessToken)
-	at := dbModels.AccessToken{
+	at := accesstokenrepo.AccessToken{
 		Token:     oidcRes.AccessToken,
 		IP:        networkData.IP,
 		Comment:   req.Comment,

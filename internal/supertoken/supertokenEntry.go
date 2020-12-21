@@ -3,12 +3,12 @@ package supertoken
 import (
 	"fmt"
 
-	"github.com/zachmann/mytoken/internal/db/dbModels"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo"
 )
 
 // SuperTokenEntryTree is a tree of SuperTokenEntry
 type SuperTokenEntryTree struct {
-	Token    dbModels.SuperTokenEntry
+	Token    supertokenrepo.SuperTokenEntry
 	Children []SuperTokenEntryTree
 }
 

@@ -3,18 +3,12 @@ package super
 import (
 	"encoding/json"
 
-	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
-
-	uuid "github.com/satori/go.uuid"
-
-	"github.com/zachmann/mytoken/internal/utils/dbUtils"
-
-	"github.com/zachmann/mytoken/internal/db"
-
 	"github.com/gofiber/fiber/v2"
 
+	dbhelper "github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	"github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/model"
+	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
 	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
 )
 
@@ -40,7 +34,7 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 		}
 	}
 
-	superToken, revoked, dbErr := dbUtils.CheckTokenRevoked(token)
+	superToken, revoked, dbErr := dbhelper.CheckTokenRevoked(token)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
 	}
@@ -52,11 +46,14 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 		return res.Send(ctx)
 	}
 
-	var stid uuid.UUID
-	if err := db.DB().Get(&stid, `SELECT id FROM SuperTokens WHERE token=?`, superToken); err != nil {
-		return err
+	st, err := supertoken.ParseJWT(superToken)
+	if err != nil {
+		return (&model.Response{
+			Status:   fiber.StatusUnauthorized,
+			Response: model.InvalidTokenError(err.Error()),
+		}).Send(ctx)
 	}
-	transferCode, expiresIn, err := supertoken.CreateTransferCode(stid, *ctxUtils.ClientMetaData(ctx))
+	transferCode, expiresIn, err := supertoken.CreateTransferCode(st.ID, *ctxUtils.ClientMetaData(ctx))
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}

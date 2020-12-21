@@ -1,4 +1,4 @@
-package dbModels
+package supertokenrepo
 
 import (
 	"database/sql"
@@ -12,11 +12,9 @@ import (
 
 	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/model"
-	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
 	eventService "github.com/zachmann/mytoken/internal/supertoken/event"
 	event "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
 	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
-	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 )
 
 // SuperTokenEntry holds the information of a SuperTokenEntry as stored in the
@@ -34,8 +32,7 @@ type SuperTokenEntry struct {
 }
 
 // NewSuperTokenEntry creates a new SuperTokenEntry
-func NewSuperTokenEntry(name, oidcSub, oidcIss string, r restrictions.Restrictions, c, sc capabilities.Capabilities, networkData model.ClientMetaData) *SuperTokenEntry {
-	st := supertoken.NewSuperToken(oidcSub, oidcIss, r, c, sc)
+func NewSuperTokenEntry(st *supertoken.SuperToken, name string, networkData model.ClientMetaData) *SuperTokenEntry {
 	return &SuperTokenEntry{
 		ID:          st.ID,
 		Token:       st,

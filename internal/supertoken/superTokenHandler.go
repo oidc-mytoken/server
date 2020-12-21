@@ -11,7 +11,8 @@ import (
 
 	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/db"
-	"github.com/zachmann/mytoken/internal/db/dbModels"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo"
+	dbhelper "github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	response "github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/oidc/revoke"
@@ -22,7 +23,6 @@ import (
 	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
-	"github.com/zachmann/mytoken/internal/utils/dbUtils"
 )
 
 // HandleSuperTokenFromSuperToken handles requests to create a super token from an existing super token
@@ -36,7 +36,7 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 
 	// GrantType already checked
 
-	token, revoked, dbErr := dbUtils.CheckTokenRevoked(req.SuperToken)
+	token, revoked, dbErr := dbhelper.CheckTokenRevoked(req.SuperToken)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -119,8 +119,8 @@ func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response
 	}
 }
 
-func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTokenFromSuperTokenRequest, networkData model.ClientMetaData) (*dbModels.SuperTokenEntry, *model.Response) {
-	rt, rtFound, dbErr := dbUtils.GetRefreshToken(parent.ID)
+func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTokenFromSuperTokenRequest, networkData model.ClientMetaData) (*supertokenrepo.SuperTokenEntry, *model.Response) {
+	rt, rtFound, dbErr := dbhelper.GetRefreshToken(parent.ID)
 	if dbErr != nil {
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -130,7 +130,7 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 			Response: model.InvalidTokenError("token unknown"),
 		}
 	}
-	rootID, rootFound, dbErr := dbUtils.GetSTRootID(parent.ID)
+	rootID, rootFound, dbErr := dbhelper.GetSTRootID(parent.ID)
 	if dbErr != nil {
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -153,7 +153,9 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 	if c.Has(capabilities.CapabilityCreateST) {
 		sc = capabilities.Tighten(capsFromParent, req.SubtokenCapabilities)
 	}
-	ste := dbModels.NewSuperTokenEntry(req.Name, parent.OIDCSubject, parent.OIDCIssuer, r, c, sc, networkData)
+	ste := supertokenrepo.NewSuperTokenEntry(
+		supertoken.NewSuperToken(parent.OIDCSubject, parent.OIDCIssuer, r, c, sc),
+		req.Name, networkData)
 	ste.RefreshToken = rt
 	ste.ParentID = parent.ID.String()
 	ste.RootID = rootID
@@ -162,7 +164,7 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 
 // RevokeSuperToken revokes a super token
 func RevokeSuperToken(token string, recursive bool, issuer string) *model.Response {
-	rt, rtFound, dbErr := dbUtils.GetRefreshTokenByTokenString(token)
+	rt, rtFound, dbErr := dbhelper.GetRefreshTokenByTokenString(token)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -177,23 +179,17 @@ func RevokeSuperToken(token string, recursive bool, issuer string) *model.Respon
 		}
 	}
 	if err := db.Transact(func(tx *sqlx.Tx) error {
-		if recursive {
-			if err := dbUtils.RecursiveRevokeSTByTokenString(token, tx); err != nil {
-				return err
-			}
-		} else {
-			if _, err := tx.Exec(`DELETE FROM SuperTokens WHERE token=?`, token); err != nil {
-				return err
-			}
+		if err := dbhelper.RevokeSTByToken(tx, token, recursive); err != nil {
+			return err
 		}
-		var count int
-		if err := tx.Get(&count, `SELECT COUNT(1) FROM SuperTokens WHERE refresh_token=?`, rt); err != nil {
+		count, err := dbhelper.CountRTOccurrences(tx, rt)
+		if err != nil {
 			return err
 		}
 		if count == 0 {
-			if err := revoke.RefreshToken(provider, rt); err != nil {
-				e := err.Response.(model.APIError)
-				return fmt.Errorf("%s: %s", e.Error, e.ErrorDescription)
+			if e := revoke.RefreshToken(provider, rt); e != nil {
+				apiError := e.Response.(model.APIError)
+				return fmt.Errorf("%s: %s", apiError.Error, apiError.ErrorDescription)
 			}
 		}
 		return nil
