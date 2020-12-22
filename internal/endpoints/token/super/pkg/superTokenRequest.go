@@ -6,13 +6,14 @@ import (
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
+	"github.com/zachmann/mytoken/internal/supertoken/token"
 )
 
 // SuperTokenFromSuperTokenRequest is a request to create a new supertoken from an existing supertoken
 type SuperTokenFromSuperTokenRequest struct {
 	Issuer               string                    `json:"oidc_issuer"`
 	GrantType            model.GrantType           `json:"grant_type"`
-	SuperToken           string                    `json:"super_token"`
+	SuperToken           token.Token               `json:"super_token"`
 	Restrictions         restrictions.Restrictions `json:"restrictions"`
 	Capabilities         capabilities.Capabilities `json:"capabilities"`
 	SubtokenCapabilities capabilities.Capabilities `json:"subtoken_capabilities"`

@@ -8,47 +8,47 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/zachmann/mytoken/internal/db"
+	"github.com/zachmann/mytoken/internal/supertoken/token"
+	"github.com/zachmann/mytoken/internal/utils/cryptUtils"
+	"github.com/zachmann/mytoken/internal/utils/hashUtils"
 )
 
 // UpdateRefreshToken updates a refresh token in the database, all occurrences of the RT are updated.
-func UpdateRefreshToken(tx *sqlx.Tx, oldRT, newRT string) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`UPDATE SuperTokens SET refresh_token=? WHERE refresh_token=?`, newRT, oldRT)
+func UpdateRefreshToken(tx *sqlx.Tx, oldRT, newRT, jwt string) error {
+	oldRTCrypt, err := cryptUtils.AES256Encrypt(oldRT, jwt)
+	if err != nil {
 		return err
-	})
-}
-
-// StoreShortSuperToken stores a short super token linked to the id of a SuperToken
-func StoreShortSuperToken(tx *sqlx.Tx, shortToken string, stid uuid.UUID) error {
+	}
+	newRTCrypt, err := cryptUtils.AES256Encrypt(newRT, jwt)
+	if err != nil {
+		return err
+	}
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`INSERT INTO ShortSuperTokens (short_token, ST_id) VALUES(?,?)`, shortToken, stid)
+		_, err := tx.Exec(`UPDATE SuperTokens SET refresh_token=? WHERE refresh_token=?`, newRTCrypt, oldRTCrypt)
 		return err
 	})
 }
 
 // GetRefreshToken returns the refresh token for a super token id
-func GetRefreshToken(stid uuid.UUID) (string, bool, error) {
-	var rt string
-	err := db.DB().Get(&rt, `SELECT refresh_token FROM SuperTokens WHERE id=?`, stid)
-	return parseStringResult(rt, err)
+func GetRefreshToken(stid uuid.UUID, token token.Token) (string, bool, error) {
+	var rtCrypt string
+	found, err := parseError(db.DB().Get(&rtCrypt, `SELECT refresh_token FROM SuperTokens WHERE id=?`, stid))
+	if !found {
+		return "", found, err
+	}
+	rt, err := cryptUtils.AES256Decrypt(rtCrypt, string(token))
+	return rt, true, err
 }
 
-// GetRefreshTokenByTokenString returns the refresh token for a super token jwt string
-func GetRefreshTokenByTokenString(token string) (string, bool, error) {
-	var rt string
-	err := db.DB().Get(&rt, `SELECT refresh_token FROM SuperTokens WHERE token=?`, token)
-	return parseStringResult(rt, err)
-}
-
-func parseStringResult(res string, err error) (string, bool, error) {
+func parseError(err error) (bool, error) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", false, nil
+			return false, nil
 		} else {
-			return "", false, err
+			return false, err
 		}
 	}
-	return res, true, nil
+	return true, nil
 }
 
 // GetSTParentID returns the id of the parent super token of the passed super token id
@@ -77,65 +77,60 @@ func GetSTRootID(stid uuid.UUID) (string, bool, error) {
 	return rootID.String, true, nil
 }
 
-// RecursiveRevokeSTByTokenString revokes the passed super token as well as all children
-func RecursiveRevokeSTByTokenString(tx *sqlx.Tx, token string) error {
+// recursiveRevokeST revokes the passed super token as well as all children
+func recursiveRevokeST(tx *sqlx.Tx, id uuid.UUID) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`
 			DELETE FROM SuperTokens WHERE id=ANY(
 			WITH Recursive childs
 			AS
 			(
-				SELECT id, parent_id FROM SuperTokens WHERE token=?
+				SELECT id, parent_id FROM SuperTokens WHERE id=?
 				UNION ALL
 				SELECT st.id, st.parent_id FROM SuperTokens st INNER JOIN childs c WHERE st.parent_id=c.id
 			)
 			SELECT id
 			FROM   childs
-			)`, token)
+			)`, id)
 		return err
 	})
 }
 
-// CheckTokenRevoked takes a short super token or a normal super token and checks if it was revoked. If the token is found in the db, the super token string will be returned.
-// Therefore, this function can also be used to exchange a short super token into a normal one.
-func CheckTokenRevoked(token string) (string, bool, error) {
+// CheckTokenRevoked checks if a SuperToken has been revoked.
+func CheckTokenRevoked(id uuid.UUID) (bool, error) {
 	var count int
-	if err := db.DB().Get(&count, `SELECT COUNT(1) FROM SuperTokens WHERE token=?`, token); err != nil {
-		return token, true, err
+	if err := db.DB().Get(&count, `SELECT COUNT(1) FROM SuperTokens WHERE id=?`, id); err != nil {
+		return true, err
 	}
 	if count > 0 { // token was found as SuperToken
-		return token, false, nil
+		return false, nil
 	}
-	var superToken string
-	if err := db.DB().Get(&superToken, `SELECT token FROM ShortSuperTokensV WHERE short_token=?`, token); err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			return token, true, err
-		}
-	}
-	return superToken, false, nil
+	return true, nil
 }
 
-// RevokeSTByTokenString revokes the passed super token but no children
-func RevokeSTByTokenString(tx *sqlx.Tx, token string) error {
+// revokeST revokes the passed super token but no children
+func revokeST(tx *sqlx.Tx, id uuid.UUID) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`DELETE FROM SuperTokens WHERE token=?`, token)
+		_, err := tx.Exec(`DELETE FROM SuperTokens WHERE id=?`, id)
 		return err
 	})
 }
 
-// RevokeSTByToken revokes the passed super token and depending on the recursive parameter also its children
-func RevokeSTByToken(tx *sqlx.Tx, token string, recursive bool) error {
+// RevokeST revokes the passed super token and depending on the recursive parameter also its children
+func RevokeST(tx *sqlx.Tx, id uuid.UUID, recursive bool) error {
 	if recursive {
-		return RecursiveRevokeSTByTokenString(tx, token)
+		return recursiveRevokeST(tx, id)
 	} else {
-		return RevokeSTByTokenString(tx, token)
+		return revokeST(tx, id)
 	}
 }
 
 // CountRTOccurrences counts how many SuperTokens use the passed refresh token
 func CountRTOccurrences(tx *sqlx.Tx, rt string) (count int, err error) {
+	var rtHash string
+	rtHash, err = hashUtils.SHA512Str([]byte(rt))
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		err = tx.Get(&count, `SELECT COUNT(1) FROM SuperTokens WHERE refresh_token=?`, rt)
+		err = tx.Get(&count, `SELECT COUNT(1) FROM SuperTokens WHERE rt_hash=?`, rtHash)
 		return err
 	})
 	return

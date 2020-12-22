@@ -9,14 +9,13 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/zachmann/mytoken/internal/config"
-	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/shorttokenrepo"
 	"github.com/zachmann/mytoken/internal/db/dbrepo/transfercoderepo"
 	response "github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/jws"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
-	"github.com/zachmann/mytoken/internal/utils"
 	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
 )
 
@@ -136,22 +135,22 @@ func (st *SuperToken) Valid() error {
 
 // ToSuperTokenResponse returns a SuperTokenResponse for this token. It requires that jwt is set or that the jwt is passed as argument; if not passed as argument toJWT must have been called earlier on this token to set jwt. This is always the case, if the token has been stored.
 func (st *SuperToken) toSuperTokenResponse(jwt string) response.SuperTokenResponse {
-	if jwt == "" {
-		jwt = st.jwt
-	}
 	res := st.toTokenResponse()
 	res.SuperToken = jwt
 	res.SuperTokenType = model.ResponseTypeToken
 	return res
 }
 
-func (st *SuperToken) toShortSuperTokenResponse() (response.SuperTokenResponse, error) {
-	shortToken := utils.RandASCIIString(config.Get().Features.ShortTokens.Len)
-	if err := supertokenrepohelper.StoreShortSuperToken(nil, shortToken, st.ID); err != nil {
+func (st *SuperToken) toShortSuperTokenResponse(jwt string) (response.SuperTokenResponse, error) {
+	shortToken, err := shorttokenrepo.NewShortToken(jwt)
+	if err != nil {
+		return response.SuperTokenResponse{}, err
+	}
+	if err = shortToken.Store(nil); err != nil {
 		return response.SuperTokenResponse{}, err
 	}
 	res := st.toTokenResponse()
-	res.SuperToken = shortToken
+	res.SuperToken = shortToken.String()
 	res.SuperTokenType = model.ResponseTypeShortToken
 	return res, nil
 }
@@ -175,10 +174,13 @@ func CreateTransferCode(stid uuid.UUID, clientMetaData model.ClientMetaData) (st
 
 // ToTokenResponse creates a SuperTokenResponse for this SuperToken according to the passed model.ResponseType
 func (st *SuperToken) ToTokenResponse(responseType model.ResponseType, networkData model.ClientMetaData, jwt string) (response.SuperTokenResponse, error) {
+	if len(jwt) == 0 {
+		jwt = st.jwt
+	}
 	switch responseType {
 	case model.ResponseTypeShortToken:
 		if config.Get().Features.ShortTokens.Enabled {
-			return st.toShortSuperTokenResponse()
+			return st.toShortSuperTokenResponse(jwt)
 		}
 	case model.ResponseTypeTransferCode:
 		transferCode, expiresIn, err := CreateTransferCode(st.ID, networkData)

@@ -15,6 +15,8 @@ import (
 	eventService "github.com/zachmann/mytoken/internal/supertoken/event"
 	event "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
 	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
+	"github.com/zachmann/mytoken/internal/utils/cryptUtils"
+	"github.com/zachmann/mytoken/internal/utils/hashUtils"
 )
 
 // SuperTokenEntry holds the information of a SuperTokenEntry as stored in the
@@ -52,19 +54,32 @@ func (ste *SuperTokenEntry) Root() bool {
 
 // Store stores the SuperTokenEntry in the database
 func (ste *SuperTokenEntry) Store(tx *sqlx.Tx, comment string) error {
+	rtHash, err := hashUtils.SHA512Str([]byte(ste.RefreshToken))
+	if err != nil {
+		return err
+	}
+	jwt, err := ste.Token.Value()
+	if err != nil {
+		return err
+	}
+	jwtStr := jwt.(string)
+	rtCrypt, err := cryptUtils.AES256Encrypt(ste.RefreshToken, jwtStr)
+	if err != nil {
+		return err
+	}
 	steStore := superTokenEntryStore{
-		ID:           ste.ID,
-		ParentID:     db.NewNullString(ste.ParentID),
-		RootID:       db.NewNullString(ste.RootID),
-		Token:        ste.Token,
-		RefreshToken: db.NewNullString(ste.RefreshToken),
-		Name:         db.NewNullString(ste.Name),
-		IP:           ste.IP,
-		Iss:          ste.Token.OIDCIssuer,
-		Sub:          ste.Token.OIDCSubject,
+		ID:               ste.ID,
+		ParentID:         db.NewNullString(ste.ParentID),
+		RootID:           db.NewNullString(ste.RootID),
+		RefreshToken:     rtCrypt,
+		RefreshTokenHash: rtHash,
+		Name:             db.NewNullString(ste.Name),
+		IP:               ste.IP,
+		Iss:              ste.Token.OIDCIssuer,
+		Sub:              ste.Token.OIDCSubject,
 	}
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		err := steStore.Store(tx)
+		err = steStore.Store(tx)
 		if err != nil {
 			return err
 		}
@@ -73,15 +88,15 @@ func (ste *SuperTokenEntry) Store(tx *sqlx.Tx, comment string) error {
 }
 
 type superTokenEntryStore struct {
-	ID           uuid.UUID
-	ParentID     sql.NullString `db:"parent_id"`
-	RootID       sql.NullString `db:"root_id"`
-	Token        *supertoken.SuperToken
-	RefreshToken sql.NullString `db:"refresh_token"`
-	Name         sql.NullString
-	IP           string `db:"ip_created"`
-	Iss          string
-	Sub          string
+	ID               uuid.UUID
+	ParentID         sql.NullString `db:"parent_id"`
+	RootID           sql.NullString `db:"root_id"`
+	RefreshToken     string         `db:"refresh_token"`
+	RefreshTokenHash string         `db:"rt_hash"`
+	Name             sql.NullString
+	IP               string `db:"ip_created"`
+	Iss              string
+	Sub              string
 }
 
 // Store stores the superTokenEntryStore in the database; if this is the first token for this user, the user is also added to the db

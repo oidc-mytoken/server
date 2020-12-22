@@ -16,7 +16,7 @@ type Response struct {
 }
 
 // Send sends this response using the passed fiber.Ctx
-func (r *Response) Send(ctx *fiber.Ctx) error {
+func (r Response) Send(ctx *fiber.Ctx) error {
 	if r.Cookies != nil && len(r.Cookies) > 0 {
 		for _, c := range r.Cookies {
 			ctx.Cookie(c)

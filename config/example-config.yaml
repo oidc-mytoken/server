@@ -61,7 +61,7 @@ features:
   # Support for short super tokens
   short_tokens:
     enabled: true
-    len: 64 # Default 64, max 256
+    len: 64 # Default 64, min 32
 
   # Support for transfer codes for super tokens
   transfer_codes:

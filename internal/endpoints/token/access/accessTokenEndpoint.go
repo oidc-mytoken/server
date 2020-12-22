@@ -43,21 +43,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	}
 	log.Trace("Checked grant type")
 
-	token, revoked, dbErr := dbhelper.CheckTokenRevoked(req.SuperToken)
-	if dbErr != nil {
-		return model.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
-	}
-	if revoked {
-		res := &model.Response{
-			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError("not a valid token"),
-		}
-		return res.Send(ctx)
-	}
-	log.Trace("Checked token not revoked")
-	req.SuperToken = token
-
-	st, err := supertoken.ParseJWT(req.SuperToken)
+	st, err := supertoken.ParseJWT(string(req.SuperToken))
 	if err != nil {
 		return (&model.Response{
 			Status:   fiber.StatusUnauthorized,
@@ -65,6 +51,19 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		}).Send(ctx)
 	}
 	log.Trace("Parsed super token")
+
+	revoked, dbErr := dbhelper.CheckTokenRevoked(st.ID)
+	if dbErr != nil {
+		return model.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
+	}
+	if revoked {
+		return (&model.Response{
+			Status:   fiber.StatusUnauthorized,
+			Response: model.InvalidTokenError("not a valid token"),
+		}).Send(ctx)
+	}
+	log.Trace("Checked token not revoked")
+
 	if ok := st.Restrictions.VerifyForAT(nil, ctx.IP(), st.ID); !ok {
 		return (&model.Response{
 			Status:   fiber.StatusForbidden,
@@ -124,7 +123,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 			auds = strings.Join(usedRestriction.Audiences, " ")
 		}
 	}
-	rt, rtFound, dbErr := dbhelper.GetRefreshToken(st.ID)
+	rt, rtFound, dbErr := dbhelper.GetRefreshToken(st.ID, req.SuperToken)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -135,7 +134,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 		}
 	}
 
-	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, rt, scopes, auds)
+	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, string(req.SuperToken), rt, scopes, auds)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}

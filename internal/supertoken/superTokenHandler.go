@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/zachmann/mytoken/internal/config"
@@ -22,6 +23,7 @@ import (
 	event "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
 	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
+	"github.com/zachmann/mytoken/internal/supertoken/token"
 	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
 )
 
@@ -36,7 +38,16 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 
 	// GrantType already checked
 
-	token, revoked, dbErr := dbhelper.CheckTokenRevoked(req.SuperToken)
+	st, err := supertoken.ParseJWT(string(req.SuperToken))
+	if err != nil {
+		return &model.Response{
+			Status:   fiber.StatusUnauthorized,
+			Response: model.InvalidTokenError(err.Error()),
+		}
+	}
+	log.Trace("Parsed super token")
+
+	revoked, dbErr := dbhelper.CheckTokenRevoked(st.ID)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -47,16 +58,7 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 		}
 	}
 	log.Trace("Checked token not revoked")
-	req.SuperToken = token
 
-	st, err := supertoken.ParseJWT(req.SuperToken)
-	if err != nil {
-		return &model.Response{
-			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError(err.Error()),
-		}
-	}
-	log.Trace("Parsed super token")
 	if ok := st.VerifyCapabilities(capabilities.CapabilityCreateST); !ok {
 		return &model.Response{
 			Status:   fiber.StatusForbidden,
@@ -120,7 +122,7 @@ func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response
 }
 
 func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTokenFromSuperTokenRequest, networkData model.ClientMetaData) (*supertokenrepo.SuperTokenEntry, *model.Response) {
-	rt, rtFound, dbErr := dbhelper.GetRefreshToken(parent.ID)
+	rt, rtFound, dbErr := dbhelper.GetRefreshToken(parent.ID, req.SuperToken)
 	if dbErr != nil {
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -163,8 +165,8 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 }
 
 // RevokeSuperToken revokes a super token
-func RevokeSuperToken(token string, recursive bool, issuer string) *model.Response {
-	rt, rtFound, dbErr := dbhelper.GetRefreshTokenByTokenString(token)
+func RevokeSuperToken(id uuid.UUID, token token.Token, recursive bool, issuer string) *model.Response {
+	rt, rtFound, dbErr := dbhelper.GetRefreshToken(id, token)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -179,7 +181,7 @@ func RevokeSuperToken(token string, recursive bool, issuer string) *model.Respon
 		}
 	}
 	if err := db.Transact(func(tx *sqlx.Tx) error {
-		if err := dbhelper.RevokeSTByToken(tx, token, recursive); err != nil {
+		if err := dbhelper.RevokeST(tx, id, recursive); err != nil {
 			return err
 		}
 		count, err := dbhelper.CountRTOccurrences(tx, rt)

@@ -5,10 +5,12 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/shorttokenrepo"
 	dbhelper "github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	"github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/model"
 	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
+	"github.com/zachmann/mytoken/internal/utils"
 	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
 )
 
@@ -18,42 +20,62 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 	if len(token) == 0 {
 		var req pkg.CreateTransferCodeRequest
 		if err := json.Unmarshal(ctx.Body(), &req); err != nil {
-			res := &model.Response{
+			return model.Response{
 				Status:   fiber.StatusBadRequest,
 				Response: model.BadRequestError(err.Error()),
-			}
-			return res.Send(ctx)
+			}.Send(ctx)
 		}
 		token = req.SuperToken
 		if len(token) == 0 {
-			res := &model.Response{
+			return model.Response{
 				Status:   fiber.StatusUnauthorized,
 				Response: model.BadRequestError("required parameter 'super_token' missing"),
-			}
-			return res.Send(ctx)
+			}.Send(ctx)
 		}
 	}
 
-	superToken, revoked, dbErr := dbhelper.CheckTokenRevoked(token)
+	var jwt string
+	if utils.IsJWT(token) {
+		jwt = token
+	} else {
+		shortToken, found, err := shorttokenrepo.ParseShortToken(nil, token)
+		if err != nil {
+			return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		}
+		if !found {
+			return model.Response{
+				Status:   fiber.StatusUnauthorized,
+				Response: model.InvalidTokenError("invalid token"),
+			}.Send(ctx)
+		}
+		jwt, err = shortToken.JWT()
+		if err != nil {
+			return model.Response{
+				Status:   fiber.StatusUnauthorized,
+				Response: model.InvalidTokenError(err.Error()),
+			}.Send(ctx)
+		}
+	}
+	superToken, err := supertoken.ParseJWT(jwt)
+	if err != nil {
+		return model.Response{
+			Status:   fiber.StatusUnauthorized,
+			Response: model.InvalidTokenError(err.Error()),
+		}.Send(ctx)
+	}
+
+	revoked, dbErr := dbhelper.CheckTokenRevoked(superToken.ID)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
 	}
 	if revoked {
-		res := &model.Response{
+		return model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError("token not valid"),
-		}
-		return res.Send(ctx)
+			Response: model.InvalidTokenError("invalid token"),
+		}.Send(ctx)
 	}
 
-	st, err := supertoken.ParseJWT(superToken)
-	if err != nil {
-		return (&model.Response{
-			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError(err.Error()),
-		}).Send(ctx)
-	}
-	transferCode, expiresIn, err := supertoken.CreateTransferCode(st.ID, *ctxUtils.ClientMetaData(ctx))
+	transferCode, expiresIn, err := supertoken.CreateTransferCode(superToken.ID, *ctxUtils.ClientMetaData(ctx))
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}

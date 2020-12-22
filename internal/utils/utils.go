@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/base64"
 	"fmt"
 	"math/rand"
 	"net"
@@ -215,4 +216,42 @@ func StructToStringMap(st interface{}, tag string) map[string]string {
 // StructToStringMapUsingJSONTags creates a string map from an interface{} using json tags
 func StructToStringMapUsingJSONTags(st interface{}) map[string]string {
 	return StructToStringMap(st, "json")
+}
+
+// MinInt returns the smallest of the passed integers
+func MinInt(a int, ints ...int) int {
+	min := a
+	for _, i := range ints {
+		if i < min {
+			min = i
+		}
+	}
+	return min
+}
+
+// MinInt64 returns the smallest of the passed integers
+func MinInt64(a int64, ints ...int64) int64 {
+	min := a
+	for _, i := range ints {
+		if i < min {
+			min = i
+		}
+	}
+	return min
+}
+
+// IsJWT checks if a string is a jwt
+func IsJWT(token string) bool {
+	arr := strings.Split(token, ".")
+	if len(arr) < 3 {
+		return false
+	}
+	for i, segment := range arr {
+		if len(segment) > 0 || i < 2 { // first two segments must not be empty
+			if _, err := base64.URLEncoding.DecodeString(arr[2]); err != nil {
+				return false
+			}
+		}
+	}
+	return true
 }
