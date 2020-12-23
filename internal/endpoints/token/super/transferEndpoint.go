@@ -5,8 +5,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/shorttokenrepo"
 	dbhelper "github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/transfercoderepo"
 	"github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/model"
 	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
@@ -35,20 +35,21 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 	}
 
 	var jwt string
+	var tokenType model.ResponseType
 	if utils.IsJWT(token) {
 		jwt = token
+		tokenType = model.ResponseTypeToken
 	} else {
-		shortToken, found, err := shorttokenrepo.ParseShortToken(nil, token)
-		if err != nil {
-			return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
-		}
-		if !found {
+		tokenType = model.ResponseTypeShortToken
+		shortToken := transfercoderepo.ParseShortToken(token)
+		tmp, valid, err := shortToken.JWT(nil)
+		jwt = tmp
+		if !valid {
 			return model.Response{
 				Status:   fiber.StatusUnauthorized,
 				Response: model.InvalidTokenError("invalid token"),
 			}.Send(ctx)
 		}
-		jwt, err = shortToken.JWT()
 		if err != nil {
 			return model.Response{
 				Status:   fiber.StatusUnauthorized,
@@ -75,7 +76,7 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 		}.Send(ctx)
 	}
 
-	transferCode, expiresIn, err := supertoken.CreateTransferCode(superToken.ID, *ctxUtils.ClientMetaData(ctx))
+	transferCode, expiresIn, err := supertoken.CreateTransferCode(superToken.ID, token, false, tokenType, *ctxUtils.ClientMetaData(ctx))
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}

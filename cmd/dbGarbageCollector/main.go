@@ -14,12 +14,12 @@ func main() {
 	if err := db.Connect(); err != nil {
 		log.WithError(err).Fatal()
 	}
-	deleteExpiredPollingCodes()
+	deleteExpiredTransferCodes()
 	deleteExpiredAuthInfo()
 }
 
-func deleteExpiredPollingCodes() {
-	if _, err := db.DB().Exec(`DELETE FROM PollingCodes WHERE expires_at < CURRENT_TIMESTAMP()`); err != nil {
+func deleteExpiredTransferCodes() {
+	if _, err := db.DB().Exec(`DELETE FROM ProxyTokens WHERE id = ANY(SELECT id FROM TransferCodesAttributes WHERE expires_at < CURRENT_TIMESTAMP())`); err != nil {
 		log.WithError(err).Error()
 	}
 }

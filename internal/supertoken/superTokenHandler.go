@@ -165,7 +165,7 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 }
 
 // RevokeSuperToken revokes a super token
-func RevokeSuperToken(id uuid.UUID, token token.Token, recursive bool, issuer string) *model.Response {
+func RevokeSuperToken(tx *sqlx.Tx, id uuid.UUID, token token.Token, recursive bool, issuer string) *model.Response {
 	rt, rtFound, dbErr := dbhelper.GetRefreshToken(id, token)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr)
@@ -180,7 +180,7 @@ func RevokeSuperToken(id uuid.UUID, token token.Token, recursive bool, issuer st
 			Response: model.APIErrorUnknownIssuer,
 		}
 	}
-	if err := db.Transact(func(tx *sqlx.Tx) error {
+	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		if err := dbhelper.RevokeST(tx, id, recursive); err != nil {
 			return err
 		}

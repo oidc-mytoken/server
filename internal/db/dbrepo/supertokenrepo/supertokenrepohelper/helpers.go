@@ -128,7 +128,7 @@ func RevokeST(tx *sqlx.Tx, id uuid.UUID, recursive bool) error {
 // CountRTOccurrences counts how many SuperTokens use the passed refresh token
 func CountRTOccurrences(tx *sqlx.Tx, rt string) (count int, err error) {
 	var rtHash string
-	rtHash, err = hashUtils.SHA512Str([]byte(rt))
+	rtHash = hashUtils.SHA512Str([]byte(rt))
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		err = tx.Get(&count, `SELECT COUNT(1) FROM SuperTokens WHERE rt_hash=?`, rtHash)
 		return err
@@ -173,7 +173,7 @@ func GetTokenUsagesOther(tx *sqlx.Tx, stid uuid.UUID, restrictionHash string) (u
 // IncreaseTokenUsageAT increases the usage count for obtaining ATs with a SuperToken and the given restriction
 func IncreaseTokenUsageAT(tx *sqlx.Tx, stid uuid.UUID, jsonRestriction []byte) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`INSERT INTO TokenUsages (ST_id, restriction, usages_AT) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE usages_AT = usages_AT + 1`, stid, jsonRestriction)
+		_, err := tx.Exec(`INSERT INTO TokenUsages (ST_id, restriction, restriction_hash, usages_AT) VALUES (?, ?, ?, 1) ON DUPLICATE KEY UPDATE usages_AT = usages_AT + 1`, stid, jsonRestriction, hashUtils.SHA512Str(jsonRestriction))
 		return err
 	})
 }
@@ -181,7 +181,7 @@ func IncreaseTokenUsageAT(tx *sqlx.Tx, stid uuid.UUID, jsonRestriction []byte) e
 // IncreaseTokenUsageOther increases the usage count for other usages with a SuperToken and the given restriction
 func IncreaseTokenUsageOther(tx *sqlx.Tx, stid uuid.UUID, jsonRestriction []byte) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`INSERT INTO TokenUsages (ST_id, restriction, usages_other) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE usages_other = usages_other + 1`, stid, jsonRestriction)
+		_, err := tx.Exec(`INSERT INTO TokenUsages (ST_id, restriction, restriction_hash, usages_other) VALUES (?, ?, ?, 1) ON DUPLICATE KEY UPDATE usages_other = usages_other + 1`, stid, jsonRestriction, hashUtils.SHA512Str(jsonRestriction))
 		return err
 	})
 }

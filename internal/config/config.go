@@ -52,13 +52,10 @@ var defaultConfig = config{
 			Enabled: true,
 			Len:     64,
 		},
-		TransferCodes: transferCodeConfig{
-			Enabled:      true,
-			Len:          8,
-			ExpiresAfter: 300,
-		},
+		TransferCodes: onlyEnable{true},
 		Polling: pollingConf{
 			Enabled:                 true,
+			Len:                     8,
 			PollingCodeExpiresAfter: 300,
 			PollingInterval:         5,
 		},
@@ -90,24 +87,18 @@ type apiConf struct {
 }
 
 type featuresConf struct {
-	EnabledOIDCFlows []model.OIDCFlow   `yaml:"enabled_oidc_flows"`
-	TokenRevocation  onlyEnable         `yaml:"token_revocation"`
-	ShortTokens      shortTokenConfig   `yaml:"short_tokens"`
-	TransferCodes    transferCodeConfig `yaml:"transfer_codes"`
-	Polling          pollingConf        `yaml:"polling_codes"`
-	AccessTokenGrant onlyEnable         `yaml:"access_token_grant"`
-	SignedJWTGrant   onlyEnable         `yaml:"signed_jwt_grant"`
+	EnabledOIDCFlows []model.OIDCFlow `yaml:"enabled_oidc_flows"`
+	TokenRevocation  onlyEnable       `yaml:"token_revocation"`
+	ShortTokens      shortTokenConfig `yaml:"short_tokens"`
+	TransferCodes    onlyEnable       `yaml:"transfer_codes"`
+	Polling          pollingConf      `yaml:"polling_codes"`
+	AccessTokenGrant onlyEnable       `yaml:"access_token_grant"`
+	SignedJWTGrant   onlyEnable       `yaml:"signed_jwt_grant"`
 }
 
 type shortTokenConfig struct {
 	Enabled bool `yaml:"enabled"`
 	Len     int  `yaml:"len"`
-}
-
-type transferCodeConfig struct {
-	Enabled      bool `yaml:"enabled"`
-	Len          int  `yaml:"len"`
-	ExpiresAfter int  `yaml:"expires_after"`
 }
 
 type onlyEnable struct {
@@ -128,6 +119,7 @@ type LoggerConf struct {
 
 type pollingConf struct {
 	Enabled                 bool  `yaml:"enabled"`
+	Len                     int   `yaml:"len"`
 	PollingCodeExpiresAfter int64 `yaml:"expires_after"`
 	PollingInterval         int64 `yaml:"polling_interval"`
 }

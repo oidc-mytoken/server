@@ -255,3 +255,13 @@ func IsJWT(token string) bool {
 	}
 	return true
 }
+
+// ORErrors returns the first passed error that is not nil
+func ORErrors(errs ...error) error {
+	for _, err := range errs {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/shorttokenrepo"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/transfercoderepo"
 	"github.com/zachmann/mytoken/internal/utils"
 )
 
@@ -21,14 +21,12 @@ func (t *Token) UnmarshalJSON(data []byte) error {
 		*t = Token(token)
 		return nil
 	}
-	shortToken, valid, err := shorttokenrepo.ParseShortToken(nil, token)
-	if err != nil {
-		return err
-	}
+	shortToken := transfercoderepo.ParseShortToken(token)
+	token, valid, dbErr := shortToken.JWT(nil)
+	var validErr error
 	if !valid {
-		return fmt.Errorf("token not valid")
+		validErr = fmt.Errorf("token not valid")
 	}
-	token, err = shortToken.JWT()
 	*t = Token(token)
-	return err
+	return utils.ORErrors(dbErr, validErr)
 }

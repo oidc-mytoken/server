@@ -6,15 +6,18 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/zachmann/mytoken/internal/config"
-	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/shorttokenrepo"
-	"github.com/zachmann/mytoken/internal/db/dbrepo/transfercoderepo"
+	"github.com/zachmann/mytoken/internal/db"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/transfercoderepo"
 	response "github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/jws"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
+	eventService "github.com/zachmann/mytoken/internal/supertoken/event"
+	event "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
 )
@@ -142,7 +145,7 @@ func (st *SuperToken) toSuperTokenResponse(jwt string) response.SuperTokenRespon
 }
 
 func (st *SuperToken) toShortSuperTokenResponse(jwt string) (response.SuperTokenResponse, error) {
-	shortToken, err := shorttokenrepo.NewShortToken(jwt)
+	shortToken, err := transfercoderepo.NewShortToken(jwt)
 	if err != nil {
 		return response.SuperTokenResponse{}, err
 	}
@@ -165,11 +168,22 @@ func (st *SuperToken) toTokenResponse() response.SuperTokenResponse {
 }
 
 // CreateTransferCode creates a transfer code for the passed super token
-func CreateTransferCode(stid uuid.UUID, clientMetaData model.ClientMetaData) (string, uint64, error) {
-	transferCode := transfercoderepo.NewTransferCode(stid, clientMetaData, false)
-	expiresIn := uint64(config.Get().Features.TransferCodes.ExpiresAfter)
-	err := transferCode.Store(nil)
-	return transferCode.Code, expiresIn, err
+func CreateTransferCode(stid uuid.UUID, jwt string, newST bool, responseType model.ResponseType, clientMetaData model.ClientMetaData) (string, uint64, error) {
+	transferCode, err := transfercoderepo.NewTransferCode(jwt, newST, responseType)
+	if err != nil {
+		return "", 0, err
+	}
+	err = db.Transact(func(tx *sqlx.Tx) error {
+		if err = transferCode.Store(tx); err != nil {
+			return err
+		}
+		return eventService.LogEvent(tx, &event.Event{
+			Type:    event.STEventTransferCodeCreated,
+			Comment: fmt.Sprintf("token type: %s", responseType.String()),
+		}, stid, clientMetaData)
+	})
+	expiresIn := uint64(config.Get().Features.Polling.PollingCodeExpiresAfter)
+	return transferCode.String(), expiresIn, err
 }
 
 // ToTokenResponse creates a SuperTokenResponse for this SuperToken according to the passed model.ResponseType
@@ -183,7 +197,7 @@ func (st *SuperToken) ToTokenResponse(responseType model.ResponseType, networkDa
 			return st.toShortSuperTokenResponse(jwt)
 		}
 	case model.ResponseTypeTransferCode:
-		transferCode, expiresIn, err := CreateTransferCode(st.ID, networkData)
+		transferCode, expiresIn, err := CreateTransferCode(st.ID, jwt, true, model.ResponseTypeToken, networkData)
 		res := st.toTokenResponse()
 		res.TransferCode = transferCode
 		res.SuperTokenType = model.ResponseTypeTransferCode

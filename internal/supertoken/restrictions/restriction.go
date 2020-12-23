@@ -41,7 +41,7 @@ func (r *Restriction) hash() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return hashUtils.SHA512(j)
+	return hashUtils.SHA512(j), nil
 }
 
 func (r *Restriction) verifyTimeBased() bool {

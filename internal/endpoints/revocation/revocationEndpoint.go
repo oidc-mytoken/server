@@ -2,12 +2,15 @@ package revocation
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/zachmann/mytoken/internal/config"
-	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/shorttokenrepo"
+	"github.com/zachmann/mytoken/internal/db"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/transfercoderepo"
 	request "github.com/zachmann/mytoken/internal/endpoints/revocation/pkg"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/supertoken"
@@ -30,45 +33,82 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 			Response: model.BadRequestError("required parameter 'oidc_issuer' is missing"),
 		}.Send(ctx)
 	}
-	if utils.IsJWT(req.Token) { // normal SuperToken
-		return revokeSuperToken(ctx, req)
-	} else if len(req.Token) == config.Get().Features.TransferCodes.Len { // Transfer Code
-		return model.ResponseNYI.Send(ctx) //TODO
+	errRes := revokeAnyToken(nil, req.Token, req.OIDCIssuer, req.Recursive)
+	if errRes != nil {
+		return errRes.Send(ctx)
+	}
+	return ctx.SendStatus(fiber.StatusNoContent)
+}
+
+func revokeAnyToken(tx *sqlx.Tx, token, issuer string, recursive bool) (errRes *model.Response) {
+	if utils.IsJWT(token) { // normal SuperToken
+		return revokeSuperToken(tx, token, issuer, recursive)
+	} else if len(token) == config.Get().Features.Polling.Len { // Transfer Code
+		return revokeTransferCode(tx, token)
 	} else { // Short Token
-		shortToken, found, err := shorttokenrepo.ParseShortToken(nil, req.Token)
-		if err != nil {
-			return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		shortToken := transfercoderepo.ParseShortToken(token)
+		var valid bool
+		if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+			jwt, v, err := shortToken.JWT(tx)
+			valid = v
+			if err != nil {
+				return err
+			}
+			token = jwt
+			if err = shortToken.Delete(tx); err != nil {
+				return err
+			}
+			return nil
+		}); err != nil {
+			return model.ErrorToInternalServerErrorResponse(err)
 		}
-		if !found {
-			return ctx.SendStatus(fiber.StatusNoContent)
+		if !valid {
+			return &model.Response{
+				Status:   fiber.StatusUnauthorized,
+				Response: model.InvalidTokenError("invalid token"),
+			}
 		}
-		if err = shortToken.Delete(nil); err != nil {
-			return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
-		}
-		jwt, err := shortToken.JWT()
-		if err != nil {
-			return ctx.SendStatus(fiber.StatusNoContent)
-		}
-		req.Token = jwt
-		return revokeSuperToken(ctx, req)
+		return revokeSuperToken(tx, token, issuer, recursive)
 	}
 }
 
-func revokeSuperToken(ctx *fiber.Ctx, req request.RevocationRequest) error {
-	st, err := supertokenPkg.ParseJWT(req.Token)
+func revokeSuperToken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *model.Response) {
+	st, err := supertokenPkg.ParseJWT(jwt)
 	if err != nil {
-		return ctx.SendStatus(fiber.StatusNoContent)
+		return nil
 	}
-	if st.OIDCIssuer != req.OIDCIssuer {
-		res := &model.Response{
+	if len(issuer) > 0 && st.OIDCIssuer != issuer {
+		return &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.BadRequestError("token not for specified issuer"),
 		}
-		return res.Send(ctx)
 	}
-	errorRes := supertoken.RevokeSuperToken(st.ID, token.Token(req.Token), req.Recursive, req.OIDCIssuer)
-	if errorRes != nil {
-		return errorRes.Send(ctx)
+	return supertoken.RevokeSuperToken(tx, st.ID, token.Token(jwt), recursive, issuer)
+}
+
+func revokeTransferCode(tx *sqlx.Tx, token string) (errRes *model.Response) {
+	transferCode := transfercoderepo.ParseTransferCode(token)
+	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		revokeST, err := transferCode.GetRevokeJWT(tx)
+		if err != nil {
+			return err
+		}
+		if revokeST {
+			jwt, valid, err := transferCode.JWT(tx)
+			if err != nil {
+				return err
+			}
+			if valid { // if !valid the jwt field could not decrypted correctly, so we can skip that, but still delete the TransferCode
+				errRes = revokeAnyToken(tx, jwt, "", true)
+				if errRes != nil {
+					return fmt.Errorf("placeholder")
+				}
+			}
+		}
+		return transferCode.Delete(tx)
+	})
+	if err != nil && errRes != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	return ctx.SendStatus(fiber.StatusNoContent)
+	return
 }

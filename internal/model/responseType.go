@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 
@@ -81,4 +82,15 @@ func (r ResponseType) AddToSliceIfNotFound(s *[]ResponseType) {
 		}
 	}
 	*s = append(*s, r)
+}
+
+// Value implements the driver.Valuer interface.
+func (r *ResponseType) Value() (driver.Value, error) {
+	return r.String(), nil
+}
+
+// Scan implements the sql.Scanner interface.
+func (r *ResponseType) Scan(src interface{}) error {
+	*r = NewResponseType(src.(string))
+	return nil
 }

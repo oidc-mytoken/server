@@ -54,10 +54,7 @@ func (ste *SuperTokenEntry) Root() bool {
 
 // Store stores the SuperTokenEntry in the database
 func (ste *SuperTokenEntry) Store(tx *sqlx.Tx, comment string) error {
-	rtHash, err := hashUtils.SHA512Str([]byte(ste.RefreshToken))
-	if err != nil {
-		return err
-	}
+	rtHash := hashUtils.SHA512Str([]byte(ste.RefreshToken))
 	jwt, err := ste.Token.Value()
 	if err != nil {
 		return err
@@ -102,7 +99,7 @@ type superTokenEntryStore struct {
 // Store stores the superTokenEntryStore in the database; if this is the first token for this user, the user is also added to the db
 func (e *superTokenEntryStore) Store(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		stmt, err := tx.PrepareNamed(`INSERT INTO SuperTokens (id, parent_id, root_id,  token, refresh_token, name, ip_created, user_id) VALUES(:id, :parent_id, :root_id, :token, :refresh_token, :name, :ip_created, (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
+		stmt, err := tx.PrepareNamed(`INSERT INTO SuperTokens (id, parent_id, root_id, refresh_token, rt_hash, name, ip_created, user_id) VALUES(:id, :parent_id, :root_id, :refresh_token, :rt_hash, :name, :ip_created, (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
 		if err != nil {
 			return err
 		}
