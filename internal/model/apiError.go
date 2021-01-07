@@ -22,8 +22,8 @@ var (
 	APIErrorStateMismatch            = APIError{ErrorInvalidRequest, "State mismatched"}
 	APIErrorUnsupportedOIDCFlow      = APIError{ErrorInvalidGrant, "Unsupported oidc_flow"}
 	APIErrorUnsupportedGrantType     = APIError{ErrorInvalidGrant, "Unsupported grant_type"}
-	APIErrorBadPollingCode           = APIError{ErrorAccessDenied, "Bad polling_code"}
-	APIErrorPollingCodeExpired       = APIError{ErrorExpiredToken, "polling_code is expired"}
+	APIErrorBadTransferCode          = APIError{ErrorInvalidToken, "Bad polling or transfer code"}
+	APIErrorTransferCodeExpired      = APIError{ErrorExpiredToken, "polling or transfer code is expired"}
 	APIErrorAuthorizationPending     = ErrorWithoutDescription(ErrorAuthorizationPending)
 	APIErrorNoRefreshToken           = APIError{ErrorOIDC, "Did not receive a refresh token"}
 	APIErrorInsufficientCapabilities = APIError{ErrorInsufficientCapabilities, "The provided token does not have the required capability for this operation"}

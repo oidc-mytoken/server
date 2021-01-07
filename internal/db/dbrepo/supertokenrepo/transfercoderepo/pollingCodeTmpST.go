@@ -19,8 +19,8 @@ type TransferCodeStatus struct {
 	ResponseType model.ResponseType `db:"response_type"`
 }
 
-// CheckPollingCode checks the passed polling code in the database
-func CheckPollingCode(tx *sqlx.Tx, pollingCode string) (TransferCodeStatus, error) {
+// CheckTransferCode checks the passed polling code in the database
+func CheckTransferCode(tx *sqlx.Tx, pollingCode string) (TransferCodeStatus, error) {
 	pt := createProxyToken(pollingCode)
 	var p TransferCodeStatus
 	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
@@ -36,8 +36,8 @@ func CheckPollingCode(tx *sqlx.Tx, pollingCode string) (TransferCodeStatus, erro
 	return p, err
 }
 
-// PopTokenForPollingCode returns the decrypted token for a polling code and then deletes the entry
-func PopTokenForPollingCode(tx *sqlx.Tx, pollingCode string) (jwt string, err error) {
+// PopTokenForTransferCode returns the decrypted token for a polling code and then deletes the entry
+func PopTokenForTransferCode(tx *sqlx.Tx, pollingCode string) (jwt string, err error) {
 	pt := createProxyToken(pollingCode)
 	var valid bool
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {

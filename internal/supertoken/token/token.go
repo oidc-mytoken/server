@@ -12,14 +12,19 @@ import (
 type Token string
 
 // UnmarshalJSON implements the json.Unmarshaler interface
-func (t *Token) UnmarshalJSON(data []byte) error {
+func (t *Token) UnmarshalJSON(data []byte) (err error) {
 	var token string
-	if err := json.Unmarshal(data, &token); err != nil {
-		return err
+	if err = json.Unmarshal(data, &token); err != nil {
+		return
 	}
+	*t, err = GetLongSuperToken(token)
+	return
+}
+
+// GetLongSuperToken returns the long / jwt of a super token; the passed token can be a jwt or a short token
+func GetLongSuperToken(token string) (Token, error) {
 	if utils.IsJWT(token) {
-		*t = Token(token)
-		return nil
+		return Token(token), nil
 	}
 	shortToken := transfercoderepo.ParseShortToken(token)
 	token, valid, dbErr := shortToken.JWT(nil)
@@ -27,6 +32,5 @@ func (t *Token) UnmarshalJSON(data []byte) error {
 	if !valid {
 		validErr = fmt.Errorf("token not valid")
 	}
-	*t = Token(token)
-	return utils.ORErrors(dbErr, validErr)
+	return Token(token), utils.ORErrors(dbErr, validErr)
 }

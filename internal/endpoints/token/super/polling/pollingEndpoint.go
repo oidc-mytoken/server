@@ -25,7 +25,7 @@ func HandlePollingCode(ctx *fiber.Ctx) error {
 func handlePollingCode(req response.PollingCodeRequest, networkData model.ClientMetaData) *model.Response {
 	pollingCode := req.PollingCode
 	log.WithField("polling_code", pollingCode).Debug("Handle polling code")
-	pollingCodeStatus, err := transfercoderepo.CheckPollingCode(nil, pollingCode)
+	pollingCodeStatus, err := transfercoderepo.CheckTransferCode(nil, pollingCode)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
@@ -33,17 +33,17 @@ func handlePollingCode(req response.PollingCodeRequest, networkData model.Client
 		log.WithField("polling_code", pollingCode).Debug("Polling code not known")
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model.APIErrorBadPollingCode,
+			Response: model.APIErrorBadTransferCode,
 		}
 	}
 	if pollingCodeStatus.Expired {
 		log.WithField("polling_code", pollingCode).Debug("Polling code expired")
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model.APIErrorPollingCodeExpired,
+			Response: model.APIErrorTransferCodeExpired,
 		}
 	}
-	token, err := transfercoderepo.PopTokenForPollingCode(nil, pollingCode)
+	token, err := transfercoderepo.PopTokenForTransferCode(nil, pollingCode)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}

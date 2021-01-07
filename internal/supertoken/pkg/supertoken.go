@@ -98,7 +98,8 @@ func NewSuperToken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc c
 	return st
 }
 
-func (st *SuperToken) expiresIn() uint64 {
+// ExpiresIn returns the amount of seconds in which this token expires
+func (st *SuperToken) ExpiresIn() uint64 {
 	now := time.Now().Unix()
 	expAt := st.ExpiresAt
 	if expAt > 0 && expAt > now {
@@ -160,7 +161,7 @@ func (st *SuperToken) toShortSuperTokenResponse(jwt string) (response.SuperToken
 
 func (st *SuperToken) toTokenResponse() response.SuperTokenResponse {
 	return response.SuperTokenResponse{
-		ExpiresIn:            st.expiresIn(),
+		ExpiresIn:            st.ExpiresIn(),
 		Restrictions:         st.Restrictions,
 		Capabilities:         st.Capabilities,
 		SubtokenCapabilities: st.SubtokenCapabilities,

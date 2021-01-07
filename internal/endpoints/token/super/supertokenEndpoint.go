@@ -38,7 +38,7 @@ func HandleSuperTokenEndpoint(ctx *fiber.Ctx) error {
 		}
 	case model.GrantTypeTransferCode:
 		if config.Get().Features.TransferCodes.Enabled {
-			return model.ResponseNYI.Send(ctx)
+			return supertoken.HandleSuperTokenFromTransferCode(ctx).Send(ctx)
 		}
 	}
 	res := model.Response{

@@ -59,12 +59,6 @@ func CreatePollingCode(pollingCode string, responseType model.ResponseType) *Tra
 // Store stores the TransferCode in the database
 func (tc TransferCode) Store(tx *sqlx.Tx) error {
 	log.Debug("Storing transfer code")
-	log.WithFields(log.Fields{
-		"id":    tc.ID(),
-		"token": tc.Token(),
-		"djwt":  tc.decryptedJWT,
-		"ejwt":  tc.encryptedJWT,
-	}).Trace("TransferCode")
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		if err := tc.proxyToken.Store(tx); err != nil {
 			return err

@@ -14,6 +14,7 @@ import (
 	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo"
 	dbhelper "github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/transfercoderepo"
 	response "github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/oidc/revoke"
@@ -24,8 +25,73 @@ import (
 	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
 	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
 	"github.com/zachmann/mytoken/internal/supertoken/token"
+	"github.com/zachmann/mytoken/internal/utils"
 	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
 )
+
+// HandleSuperTokenFromTransferCode handles requests to return the super token for a transfer code
+func HandleSuperTokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
+	log.Debug("Handle supertoken from transfercode")
+	req := response.ExchangeTransferCodeRequest{}
+	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
+		return model.ErrorToBadRequestErrorResponse(err)
+	}
+	log.Trace("Parsed request")
+	var errorRes *model.Response = nil
+	var tokenStr string
+	if err := db.Transact(func(tx *sqlx.Tx) error {
+		status, err := transfercoderepo.CheckTransferCode(tx, req.TransferCode)
+		if err != nil {
+			return err
+		}
+		if !status.Found {
+			errorRes = &model.Response{
+				Status:   fiber.StatusUnauthorized,
+				Response: model.APIErrorBadTransferCode,
+			}
+			return fmt.Errorf("error_res")
+		}
+		if status.Expired {
+			errorRes = &model.Response{
+				Status:   fiber.StatusUnauthorized,
+				Response: model.APIErrorTransferCodeExpired,
+			}
+			return fmt.Errorf("error_res")
+		}
+		tokenStr, err = transfercoderepo.PopTokenForTransferCode(tx, req.TransferCode)
+		return err
+	}); err != nil {
+		if errorRes != nil {
+			return errorRes
+		}
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+
+	tokenType := model.ResponseTypeToken
+	if !utils.IsJWT(tokenStr) {
+		tokenType = model.ResponseTypeShortToken
+	}
+	jwt, err := token.GetLongSuperToken(tokenStr)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	st, err := supertoken.ParseJWT(string(jwt))
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	return &model.Response{
+		Status: fiber.StatusOK,
+		Response: response.SuperTokenResponse{
+			SuperToken:           tokenStr,
+			SuperTokenType:       tokenType,
+			ExpiresIn:            st.ExpiresIn(),
+			Restrictions:         st.Restrictions,
+			Capabilities:         st.Capabilities,
+			SubtokenCapabilities: st.SubtokenCapabilities,
+		},
+	}
+
+}
 
 // HandleSuperTokenFromSuperToken handles requests to create a super token from an existing super token
 func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
