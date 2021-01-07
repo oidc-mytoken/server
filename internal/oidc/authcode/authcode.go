@@ -31,6 +31,7 @@ import (
 	"github.com/zachmann/mytoken/internal/utils"
 	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
 	"github.com/zachmann/mytoken/internal/utils/oidcUtils"
+	"github.com/zachmann/mytoken/internal/utils/singleasciiencode"
 )
 
 var redirectURL string
@@ -48,29 +49,29 @@ type stateInfo struct {
 	ResponseType model.ResponseType
 }
 
-type pollingInfo struct {
-	ResponseType model.ResponseType
-}
-
 const stateFmt = "%d:%d:%s"
+
+// StateInfoFlags
+const (
+	flagNative = 0x01
+)
 
 func createState(info stateInfo) *state.State {
 	r := utils.RandASCIIString(stateLen)
-	native := 0
-	if info.Native {
-		native = 1
-	}
-	return state.NewState(fmt.Sprintf(stateFmt, native, info.ResponseType, r))
+	fe := singleasciiencode.NewFlagEncoder()
+	fe.Set("native", info.Native)
+	flags := fe.Encode()
+	responseType := singleasciiencode.EncodeNumber64(byte(info.ResponseType))
+	s := string(append([]byte(r), flags, responseType))
+	return state.NewState(s)
 }
 
 func parseState(state *state.State) stateInfo {
 	info := stateInfo{}
-	native := 0
-	var r string
-	fmt.Sscanf(state.State(), stateFmt, &native, &info.ResponseType, &r)
-	if native != 0 {
-		info.Native = true
-	}
+	responseType, _ := singleasciiencode.DecodeNumber64(state.State()[len(state.State())-1])
+	flags := singleasciiencode.Decode(state.State()[len(state.State())-2], "native")
+	info.ResponseType = model.ResponseType(responseType)
+	info.Native, _ = flags.Get("native")
 	return info
 }
 
