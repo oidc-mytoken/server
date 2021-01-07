@@ -83,7 +83,7 @@ func revokeSuperToken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *
 			Response: model.BadRequestError("token not for specified issuer"),
 		}
 	}
-	return supertoken.RevokeSuperToken(tx, st.ID, token.Token(jwt), recursive, issuer)
+	return supertoken.RevokeSuperToken(tx, st.ID, token.Token(jwt), recursive, st.OIDCIssuer)
 }
 
 func revokeTransferCode(tx *sqlx.Tx, token string) (errRes *model.Response) {
@@ -107,7 +107,7 @@ func revokeTransferCode(tx *sqlx.Tx, token string) (errRes *model.Response) {
 		}
 		return transferCode.Delete(tx)
 	})
-	if err != nil && errRes != nil {
+	if err != nil && errRes == nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	return
