@@ -207,8 +207,8 @@ func (st *SuperToken) ToTokenResponse(responseType model.ResponseType, networkDa
 	return st.toSuperTokenResponse(jwt), nil
 }
 
-// toJWT returns the SuperToken as JWT
-func (st *SuperToken) toJWT() (string, error) {
+// ToJWT returns the SuperToken as JWT
+func (st *SuperToken) ToJWT() (string, error) {
 	if st.jwt != "" {
 		return st.jwt, nil
 	}
@@ -219,7 +219,7 @@ func (st *SuperToken) toJWT() (string, error) {
 
 // Value implements the driver.Valuer interface.
 func (st *SuperToken) Value() (driver.Value, error) {
-	return st.toJWT()
+	return st.ToJWT()
 }
 
 // Scan implements the sql.Scanner interface.

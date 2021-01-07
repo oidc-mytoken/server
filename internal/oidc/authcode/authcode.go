@@ -19,8 +19,9 @@ import (
 	"github.com/zachmann/mytoken/internal/db"
 	"github.com/zachmann/mytoken/internal/db/dbrepo/accesstokenrepo"
 	"github.com/zachmann/mytoken/internal/db/dbrepo/authcodeinforepo"
-	"github.com/zachmann/mytoken/internal/db/dbrepo/pollingcoderepo"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/authcodeinforepo/state"
 	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo"
+	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/transfercoderepo"
 	response "github.com/zachmann/mytoken/internal/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/oidc/issuer"
@@ -52,42 +53,28 @@ type pollingInfo struct {
 }
 
 const stateFmt = "%d:%d:%s"
-const pollingFmt = "%d:%s"
 
-func createPollingCode(info pollingInfo) string {
-	r := utils.RandASCIIString(pollingCodeLen)
-	return fmt.Sprintf(pollingFmt, info.ResponseType, r)
-}
-
-// ParsePollingCode parses a polling code string into pollingInfo
-func ParsePollingCode(pollingCode string) pollingInfo {
-	info := pollingInfo{}
-	var r string
-	fmt.Sscanf(pollingCode, pollingFmt, &info.ResponseType, &r)
-	return info
-}
-
-func createState(info stateInfo) string {
+func createState(info stateInfo) *state.State {
 	r := utils.RandASCIIString(stateLen)
 	native := 0
 	if info.Native {
 		native = 1
 	}
-	return fmt.Sprintf(stateFmt, native, info.ResponseType, r)
+	return state.NewState(fmt.Sprintf(stateFmt, native, info.ResponseType, r))
 }
 
-func parseState(state string) stateInfo {
+func parseState(state *state.State) stateInfo {
 	info := stateInfo{}
 	native := 0
 	var r string
-	fmt.Sscanf(state, stateFmt, &native, &info.ResponseType, &r)
+	fmt.Sscanf(state.State(), stateFmt, &native, &info.ResponseType, &r)
 	if native != 0 {
 		info.Native = true
 	}
 	return info
 }
 
-func authorizationURL(provider *config.ProviderConf, restrictions restrictions.Restrictions, native bool) (string, string) {
+func authorizationURL(provider *config.ProviderConf, restrictions restrictions.Restrictions, native bool) (string, *state.State) {
 	log.Debug("Generating authorization url")
 	scopes := restrictions.GetScopes()
 	if len(scopes) <= 0 {
@@ -112,7 +99,7 @@ func authorizationURL(provider *config.ProviderConf, restrictions restrictions.R
 		additionalParams = append(additionalParams, oauth2.SetAuthURLParam("audience", strings.Join(auds, " ")))
 	}
 
-	return oauth2Config.AuthCodeURL(state, additionalParams...), state
+	return oauth2Config.AuthCodeURL(state.State(), additionalParams...), state
 }
 
 // StartAuthCodeFlow starts an authorization code flow
@@ -138,7 +125,7 @@ func StartAuthCodeFlow(body []byte) *model.Response {
 	}
 
 	authURL, state := authorizationURL(provider, req.Restrictions, req.Native())
-	authFlowInfo := authcodeinforepo.AuthFlowInfo{
+	authFlowInfoO := authcodeinforepo.AuthFlowInfoOut{
 		State:                state,
 		Issuer:               provider.Issuer,
 		Restrictions:         req.Restrictions,
@@ -146,12 +133,15 @@ func StartAuthCodeFlow(body []byte) *model.Response {
 		SubtokenCapabilities: req.SubtokenCapabilities,
 		Name:                 req.Name,
 	}
+	authFlowInfo := authcodeinforepo.AuthFlowInfo{
+		AuthFlowInfoOut: authFlowInfoO,
+	}
 	res := response.AuthCodeFlowResponse{
 		AuthorizationURL: authURL,
 	}
 	if req.Native() && config.Get().Features.Polling.Enabled {
-		authFlowInfo.PollingCode = createPollingCode(pollingInfo{ResponseType: req.ResponseType})
-		res.PollingCode = authFlowInfo.PollingCode
+		authFlowInfo.PollingCode = transfercoderepo.CreatePollingCode(authFlowInfo.State.PollingCode(), req.ResponseType)
+		res.PollingCode = authFlowInfo.State.PollingCode()
 		res.PollingCodeExpiresIn = config.Get().Features.Polling.PollingCodeExpiresAfter
 		res.PollingInterval = config.Get().Features.Polling.PollingInterval
 	}
@@ -165,7 +155,7 @@ func StartAuthCodeFlow(body []byte) *model.Response {
 }
 
 // CodeExchange performs an oidc code exchange it creates the super token and stores it in the database
-func CodeExchange(state, code string, networkData model.ClientMetaData) *model.Response {
+func CodeExchange(state *state.State, code string, networkData model.ClientMetaData) *model.Response {
 	log.Debug("Handle code exchange")
 	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(state)
 	if err != nil {
@@ -244,12 +234,16 @@ func CodeExchange(state, code string, networkData model.ClientMetaData) *model.R
 		if err = at.Store(tx); err != nil {
 			return err
 		}
-		if authInfo.PollingCode != "" {
-			if err = pollingcoderepo.LinkPollingCodeToST(tx, authInfo.PollingCode, ste.ID); err != nil {
+		if authInfo.PollingCode {
+			jwt, err := ste.Token.ToJWT()
+			if err != nil {
+				return err
+			}
+			if err = transfercoderepo.LinkPollingCodeToST(tx, state.PollingCode(), jwt); err != nil {
 				return err
 			}
 		}
-		if err = authcodeinforepo.DeleteAuthFlowInfoByState(tx, authInfo.State); err != nil {
+		if err = authcodeinforepo.DeleteAuthFlowInfoByState(tx, state); err != nil {
 			return err
 		}
 		return nil
@@ -257,7 +251,7 @@ func CodeExchange(state, code string, networkData model.ClientMetaData) *model.R
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	//TODO on the response the idea was to redirect to a correct side, that has the response
-	if authInfo.PollingCode != "" {
+	if authInfo.PollingCode {
 		return &model.Response{
 			Status:   fiber.StatusOK,
 			Response: "ok", // TODO
@@ -291,7 +285,7 @@ func CodeExchange(state, code string, networkData model.ClientMetaData) *model.R
 	}
 }
 
-func createSuperTokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfo, token *oauth2.Token, oidcSub string, networkData model.ClientMetaData) (*supertokenrepo.SuperTokenEntry, error) {
+func createSuperTokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut, token *oauth2.Token, oidcSub string, networkData model.ClientMetaData) (*supertokenrepo.SuperTokenEntry, error) {
 	ste := supertokenrepo.NewSuperTokenEntry(
 		supertoken.NewSuperToken(
 			oidcSub,

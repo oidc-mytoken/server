@@ -24,6 +24,10 @@ type proxyToken struct {
 // newProxyToken creates a new proxyToken of the given length
 func newProxyToken(len int) *proxyToken {
 	token := utils.RandASCIIString(len)
+	return createProxyToken(token)
+}
+
+func createProxyToken(token string) *proxyToken {
 	id := hashUtils.SHA512Str([]byte(token))
 	return &proxyToken{
 		id:    id,
@@ -33,7 +37,10 @@ func newProxyToken(len int) *proxyToken {
 
 // parseProxyToken parses the proxy token string into a proxyToken
 func parseProxyToken(token string) *proxyToken {
-	id := hashUtils.SHA512Str([]byte(token))
+	var id string
+	if len(token) > 0 {
+		id = hashUtils.SHA512Str([]byte(token))
+	}
 	return &proxyToken{
 		id:    id,
 		token: token,
@@ -92,6 +99,14 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 func (pt proxyToken) Store(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`INSERT INTO ProxyTokens (id, jwt) VALUES (?,?)`, pt.id, pt.encryptedJWT)
+		return err
+	})
+}
+
+// Update updates the jwt of the proxyToken
+func (pt proxyToken) Update(tx *sqlx.Tx) error {
+	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		_, err := tx.Exec(`UPDATE ProxyTokens SET jwt=? WHERE id=?`, pt.encryptedJWT, pt.id)
 		return err
 	})
 }

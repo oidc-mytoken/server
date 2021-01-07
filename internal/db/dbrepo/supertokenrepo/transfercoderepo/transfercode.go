@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jmoiron/sqlx"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/zachmann/mytoken/internal/config"
 	"github.com/zachmann/mytoken/internal/db"
@@ -43,13 +44,27 @@ func ParseTransferCode(token string) *TransferCode {
 	return &TransferCode{proxyToken: *parseProxyToken(token)}
 }
 
-// NewPollingCode creates a new polling code
-func NewPollingCode(jwt string, responseType model.ResponseType) (*TransferCode, error) {
-	return NewTransferCode(jwt, true, responseType)
+// CreatePollingCode creates a polling code
+func CreatePollingCode(pollingCode string, responseType model.ResponseType) *TransferCode {
+	pt := createProxyToken(pollingCode)
+	return &TransferCode{
+		proxyToken: *pt,
+		Attributes: transferCodeAttributes{
+			NewST:        true,
+			ResponseType: responseType,
+		},
+	}
 }
 
 // Store stores the TransferCode in the database
 func (tc TransferCode) Store(tx *sqlx.Tx) error {
+	log.Debug("Storing transfer code")
+	log.WithFields(log.Fields{
+		"id":    tc.ID(),
+		"token": tc.Token(),
+		"djwt":  tc.decryptedJWT,
+		"ejwt":  tc.encryptedJWT,
+	}).Trace("TransferCode")
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		if err := tc.proxyToken.Store(tx); err != nil {
 			return err
