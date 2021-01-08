@@ -30,8 +30,21 @@ jobs:
             dep ensure
         fi
 
-    - name: Build
-      run: go build -v github.com/zachmann/mytoken/cmd/mytoken
 
-    - name: Test
-      run: go test -v github.com/zachmann/mytoken/cmd/mytoken
+    - name: Build Server Setup
+      run: go build -v github.com/zachmann/mytoken/cmd/server/setup
+      
+    - name: Build Server DB-GC
+      run: go build -v github.com/zachmann/mytoken/cmd/server/dbGarbageCollector
+      
+    - name: Build Server
+      run: go build -v github.com/zachmann/mytoken/cmd/server
+
+    - name: Test Server
+      run: go test -v github.com/zachmann/mytoken/cmd/server
+      
+    - name: Build Client
+      run: go build -v github.com/zachmann/mytoken/cmd/client
+
+    - name: Test Client
+      run: go test -v github.com/zachmann/mytoken/cmd/client
