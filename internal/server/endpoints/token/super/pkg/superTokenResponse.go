@@ -1,9 +1,9 @@
 package pkg
 
 import (
-	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/server/supertoken/capabilities"
 	"github.com/zachmann/mytoken/internal/server/supertoken/restrictions"
+	"github.com/zachmann/mytoken/pkg/model"
 )
 
 // SuperTokenResponse is a response to a super token request

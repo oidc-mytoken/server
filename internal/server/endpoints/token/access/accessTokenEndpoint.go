@@ -8,13 +8,12 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/server/config"
 	"github.com/zachmann/mytoken/internal/server/db"
 	"github.com/zachmann/mytoken/internal/server/db/dbrepo/accesstokenrepo"
 	dbhelper "github.com/zachmann/mytoken/internal/server/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	request "github.com/zachmann/mytoken/internal/server/endpoints/token/access/pkg"
+	serverModel "github.com/zachmann/mytoken/internal/server/model"
 	"github.com/zachmann/mytoken/internal/server/oidc/refresh"
 	"github.com/zachmann/mytoken/internal/server/supertoken/capabilities"
 	eventService "github.com/zachmann/mytoken/internal/server/supertoken/event"
@@ -24,6 +23,7 @@ import (
 	"github.com/zachmann/mytoken/internal/server/utils/ctxUtils"
 	"github.com/zachmann/mytoken/internal/server/utils/oidcUtils"
 	"github.com/zachmann/mytoken/internal/utils"
+	"github.com/zachmann/mytoken/pkg/model"
 )
 
 // HandleAccessTokenEndpoint handles request on the access token endpoint
@@ -31,12 +31,12 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	log.Debug("Handle access token request")
 	req := request.AccessTokenRequest{}
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	log.Trace("Parsed access token request")
 
 	if req.GrantType != model.GrantTypeSuperToken {
-		res := model.Response{
+		res := serverModel.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.APIErrorUnsupportedGrantType,
 		}
@@ -46,7 +46,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 
 	st, err := supertoken.ParseJWT(string(req.SuperToken))
 	if err != nil {
-		return (&model.Response{
+		return (&serverModel.Response{
 			Status:   fiber.StatusUnauthorized,
 			Response: model.InvalidTokenError(err.Error()),
 		}).Send(ctx)
@@ -55,10 +55,10 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 
 	revoked, dbErr := dbhelper.CheckTokenRevoked(st.ID)
 	if dbErr != nil {
-		return model.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
+		return serverModel.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
 	}
 	if revoked {
-		return (&model.Response{
+		return (&serverModel.Response{
 			Status:   fiber.StatusUnauthorized,
 			Response: model.InvalidTokenError("not a valid token"),
 		}).Send(ctx)
@@ -66,22 +66,24 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	log.Trace("Checked token not revoked")
 
 	if ok := st.Restrictions.VerifyForAT(nil, ctx.IP(), st.ID); !ok {
-		return (&model.Response{
+		return (&serverModel.Response{
 			Status:   fiber.StatusForbidden,
 			Response: model.APIErrorUsageRestricted,
 		}).Send(ctx)
 	}
 	log.Trace("Checked super token restrictions")
 	if ok := st.VerifyCapabilities(capabilities.CapabilityAT); !ok {
-		res := model.Response{
+		res := serverModel.Response{
 			Status:   fiber.StatusForbidden,
 			Response: model.APIErrorInsufficientCapabilities,
 		}
 		return res.Send(ctx)
 	}
 	log.Trace("Checked super token capabilities")
-	if req.Issuer != st.OIDCIssuer {
-		res := model.Response{
+	if len(req.Issuer) == 0 {
+		req.Issuer = st.OIDCIssuer
+	} else if req.Issuer != st.OIDCIssuer {
+		res := serverModel.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.BadRequestError("token not for specified issuer"),
 		}
@@ -92,10 +94,10 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	return handleAccessTokenRefresh(st, req, *ctxUtils.ClientMetaData(ctx)).Send(ctx)
 }
 
-func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessTokenRequest, networkData model.ClientMetaData) *model.Response {
+func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessTokenRequest, networkData serverModel.ClientMetaData) *serverModel.Response {
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
 	if !ok {
-		return &model.Response{
+		return &serverModel.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.APIErrorUnknownIssuer,
 		}
@@ -107,7 +109,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 	if len(st.Restrictions) > 0 {
 		possibleRestrictions := st.Restrictions.GetValidForAT(nil, networkData.IP, st.ID).WithScopes(utils.SplitIgnoreEmpty(req.Scope, " ")).WithAudiences(utils.SplitIgnoreEmpty(req.Audience, " "))
 		if len(possibleRestrictions) == 0 {
-			return &model.Response{
+			return &serverModel.Response{
 				Status:   fiber.StatusBadRequest,
 				Response: model.APIErrorUsageRestricted,
 			}
@@ -126,10 +128,10 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 	}
 	rt, rtFound, dbErr := dbhelper.GetRefreshToken(st.ID, req.SuperToken)
 	if dbErr != nil {
-		return model.ErrorToInternalServerErrorResponse(dbErr)
+		return serverModel.ErrorToInternalServerErrorResponse(dbErr)
 	}
 	if !rtFound {
-		return &model.Response{
+		return &serverModel.Response{
 			Status:   fiber.StatusUnauthorized,
 			Response: model.InvalidTokenError("No refresh token attached"),
 		}
@@ -137,10 +139,10 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 
 	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, string(req.SuperToken), rt, scopes, auds)
 	if err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
+		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}
 	if oidcErrRes != nil {
-		return &model.Response{
+		return &serverModel.Response{
 			Status:   oidcErrRes.Status,
 			Response: model.OIDCError(oidcErrRes.Error, oidcErrRes.ErrorDescription),
 		}
@@ -172,9 +174,9 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 		}
 		return nil
 	}); err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
+		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}
-	return &model.Response{
+	return &serverModel.Response{
 		Status: fiber.StatusOK,
 		Response: request.AccessTokenResponse{
 			AccessToken: oidcRes.AccessToken,

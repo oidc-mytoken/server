@@ -8,16 +8,16 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/server/config"
 	"github.com/zachmann/mytoken/internal/server/db"
 	"github.com/zachmann/mytoken/internal/server/db/dbrepo/supertokenrepo/transfercoderepo"
 	request "github.com/zachmann/mytoken/internal/server/endpoints/revocation/pkg"
+	"github.com/zachmann/mytoken/internal/server/model"
 	"github.com/zachmann/mytoken/internal/server/supertoken"
 	supertokenPkg "github.com/zachmann/mytoken/internal/server/supertoken/pkg"
 	"github.com/zachmann/mytoken/internal/server/supertoken/token"
 	"github.com/zachmann/mytoken/internal/utils"
+	pkgModel "github.com/zachmann/mytoken/pkg/model"
 )
 
 // HandleRevoke handles requests to the revocation endpoint
@@ -31,7 +31,7 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 	if req.OIDCIssuer == "" {
 		return model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("required parameter 'oidc_issuer' is missing"),
+			Response: pkgModel.BadRequestError("required parameter 'oidc_issuer' is missing"),
 		}.Send(ctx)
 	}
 	errRes := revokeAnyToken(nil, req.Token, req.OIDCIssuer, req.Recursive)
@@ -66,7 +66,7 @@ func revokeAnyToken(tx *sqlx.Tx, token, issuer string, recursive bool) (errRes *
 		if !valid {
 			return &model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: model.InvalidTokenError("invalid token"),
+				Response: pkgModel.InvalidTokenError("invalid token"),
 			}
 		}
 		return revokeSuperToken(tx, token, issuer, recursive)
@@ -81,7 +81,7 @@ func revokeSuperToken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *
 	if len(issuer) > 0 && st.OIDCIssuer != issuer {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("token not for specified issuer"),
+			Response: pkgModel.BadRequestError("token not for specified issuer"),
 		}
 	}
 	return supertoken.RevokeSuperToken(tx, st.ID, token.Token(jwt), recursive, st.OIDCIssuer)

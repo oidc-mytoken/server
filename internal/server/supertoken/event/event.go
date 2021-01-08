@@ -4,9 +4,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/server/db/dbrepo/eventrepo"
+	"github.com/zachmann/mytoken/internal/server/model"
 	pkg "github.com/zachmann/mytoken/internal/server/supertoken/event/pkg"
 )
 

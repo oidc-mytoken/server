@@ -3,10 +3,9 @@ package pkg
 import (
 	"encoding/json"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/server/supertoken/capabilities"
 	"github.com/zachmann/mytoken/internal/server/supertoken/restrictions"
+	"github.com/zachmann/mytoken/pkg/model"
 )
 
 // Redirect types

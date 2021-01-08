@@ -3,13 +3,13 @@ package configuration
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/zachmann/mytoken/internal/model"
-	"github.com/zachmann/mytoken/internal/model/version"
-
 	"github.com/zachmann/mytoken/internal/server/config"
 	"github.com/zachmann/mytoken/internal/server/endpoints/configuration/pkg"
+	"github.com/zachmann/mytoken/internal/server/model"
+	"github.com/zachmann/mytoken/internal/server/model/version"
 	"github.com/zachmann/mytoken/internal/server/server/routes"
 	"github.com/zachmann/mytoken/internal/utils"
+	pkgModel "github.com/zachmann/mytoken/pkg/model"
 )
 
 // HandleConfiguration handles calls to the configuration endpoint
@@ -46,10 +46,10 @@ func Init() {
 		JWKSURI:                                utils.CombineURLPath(config.Get().IssuerURL, otherPaths.JWKSEndpoint),
 		ProvidersSupported:                     getProvidersFromConfig(),
 		TokenSigningAlgValue:                   config.Get().Signing.Alg,
-		AccessTokenEndpointGrantTypesSupported: []model.GrantType{model.GrantTypeSuperToken},
-		SuperTokenEndpointGrantTypesSupported:  []model.GrantType{model.GrantTypeOIDCFlow, model.GrantTypeSuperToken},
+		AccessTokenEndpointGrantTypesSupported: []pkgModel.GrantType{pkgModel.GrantTypeSuperToken},
+		SuperTokenEndpointGrantTypesSupported:  []pkgModel.GrantType{pkgModel.GrantTypeOIDCFlow, pkgModel.GrantTypeSuperToken},
 		SuperTokenEndpointOIDCFlowsSupported:   config.Get().Features.EnabledOIDCFlows,
-		ResponseTypesSupported:                 []model.ResponseType{model.ResponseTypeToken},
+		ResponseTypesSupported:                 []pkgModel.ResponseType{pkgModel.ResponseTypeToken},
 		ServiceDocumentation:                   config.Get().ServiceDocumentation,
 		Version:                                version.VERSION,
 	}
@@ -57,20 +57,20 @@ func Init() {
 		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(config.Get().IssuerURL, apiPaths.RevocationEndpoint)
 	}
 	if config.Get().Features.TransferCodes.Enabled {
-		model.ResponseTypeShortToken.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
+		pkgModel.ResponseTypeShortToken.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
 	}
 	if config.Get().Features.TransferCodes.Enabled {
 		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(config.Get().IssuerURL, apiPaths.TokenTransferEndpoint)
-		model.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
-		model.ResponseTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
+		pkgModel.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+		pkgModel.ResponseTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
 	}
 	if config.Get().Features.Polling.Enabled {
-		model.GrantTypePollingCode.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+		pkgModel.GrantTypePollingCode.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
 	}
 	if config.Get().Features.AccessTokenGrant.Enabled {
-		model.GrantTypeAccessToken.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+		pkgModel.GrantTypeAccessToken.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
 	}
 	if config.Get().Features.SignedJWTGrant.Enabled {
-		model.GrantTypePrivateKeyJWT.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+		pkgModel.GrantTypePrivateKeyJWT.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
 	}
 }

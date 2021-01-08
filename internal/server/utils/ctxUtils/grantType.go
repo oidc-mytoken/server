@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/zachmann/mytoken/internal/model"
+	"github.com/zachmann/mytoken/pkg/model"
 )
 
 type grantTypeReqObj struct {

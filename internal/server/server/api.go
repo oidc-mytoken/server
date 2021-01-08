@@ -3,12 +3,11 @@ package server
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/zachmann/mytoken/internal/model/version"
-
 	"github.com/zachmann/mytoken/internal/server/config"
 	"github.com/zachmann/mytoken/internal/server/endpoints/revocation"
 	"github.com/zachmann/mytoken/internal/server/endpoints/token/access"
 	"github.com/zachmann/mytoken/internal/server/endpoints/token/super"
+	"github.com/zachmann/mytoken/internal/server/model/version"
 	"github.com/zachmann/mytoken/internal/server/server/routes"
 )
 

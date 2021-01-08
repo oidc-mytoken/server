@@ -1,11 +1,11 @@
 package revoke
 
 import (
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/httpClient"
 	"github.com/zachmann/mytoken/internal/server/config"
+	"github.com/zachmann/mytoken/internal/server/model"
 	"github.com/zachmann/mytoken/internal/server/oidc/oidcReqRes"
+	pkgModel "github.com/zachmann/mytoken/pkg/model"
 )
 
 // RefreshToken revokes a refresh token
@@ -21,7 +21,7 @@ func RefreshToken(provider *config.ProviderConf, rt string) *model.Response {
 	if errRes, ok := httpRes.Error().(*oidcReqRes.OIDCErrorResponse); ok && errRes != nil && len(errRes.Error) > 0 {
 		return &model.Response{
 			Status:   httpRes.RawResponse.StatusCode,
-			Response: model.OIDCError(errRes.Error, errRes.ErrorDescription),
+			Response: pkgModel.OIDCError(errRes.Error, errRes.ErrorDescription),
 		}
 	}
 	return nil

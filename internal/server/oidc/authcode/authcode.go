@@ -14,8 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/context"
 	"github.com/zachmann/mytoken/internal/server/config"
 	"github.com/zachmann/mytoken/internal/server/db"
@@ -25,6 +23,7 @@ import (
 	"github.com/zachmann/mytoken/internal/server/db/dbrepo/supertokenrepo"
 	"github.com/zachmann/mytoken/internal/server/db/dbrepo/supertokenrepo/transfercoderepo"
 	response "github.com/zachmann/mytoken/internal/server/endpoints/token/super/pkg"
+	"github.com/zachmann/mytoken/internal/server/model"
 	"github.com/zachmann/mytoken/internal/server/oidc/issuer"
 	"github.com/zachmann/mytoken/internal/server/server/routes"
 	supertoken "github.com/zachmann/mytoken/internal/server/supertoken/pkg"
@@ -33,6 +32,7 @@ import (
 	"github.com/zachmann/mytoken/internal/server/utils/oidcUtils"
 	"github.com/zachmann/mytoken/internal/server/utils/singleasciiencode"
 	"github.com/zachmann/mytoken/internal/utils"
+	pkgModel "github.com/zachmann/mytoken/pkg/model"
 )
 
 var redirectURL string
@@ -47,7 +47,7 @@ const pollingCodeLen = 32
 
 type stateInfo struct {
 	Native       bool
-	ResponseType model.ResponseType
+	ResponseType pkgModel.ResponseType
 }
 
 const stateFmt = "%d:%d:%s"
@@ -71,7 +71,7 @@ func parseState(state *state.State) stateInfo {
 	info := stateInfo{}
 	responseType, _ := singleasciiencode.DecodeNumber64(state.State()[len(state.State())-1])
 	flags := singleasciiencode.Decode(state.State()[len(state.State())-2], "native")
-	info.ResponseType = model.ResponseType(responseType)
+	info.ResponseType = pkgModel.ResponseType(responseType)
 	info.Native, _ = flags.Get("native")
 	return info
 }
@@ -115,14 +115,14 @@ func StartAuthCodeFlow(body []byte) *model.Response {
 	if !ok {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model.APIErrorUnknownIssuer,
+			Response: pkgModel.APIErrorUnknownIssuer,
 		}
 	}
 	exp := req.Restrictions.GetExpires()
 	if exp > 0 && exp < time.Now().Unix() {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("token would already be expired"),
+			Response: pkgModel.BadRequestError("token would already be expired"),
 		}
 	}
 
@@ -164,7 +164,7 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 		if errors.Is(err, sql.ErrNoRows) {
 			return &model.Response{
 				Status:   fiber.StatusBadRequest,
-				Response: model.APIErrorStateMismatch,
+				Response: pkgModel.APIErrorStateMismatch,
 			}
 		}
 		return model.ErrorToInternalServerErrorResponse(err)
@@ -173,7 +173,7 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 	if !ok {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model.APIErrorUnknownIssuer,
+			Response: pkgModel.APIErrorUnknownIssuer,
 		}
 	}
 	oauth2Config := oauth2.Config{
@@ -186,9 +186,9 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 	if err != nil {
 		var e *oauth2.RetrieveError
 		if errors.As(err, &e) {
-			res, resOK := model.OIDCErrorFromBody(e.Body)
+			res, resOK := pkgModel.OIDCErrorFromBody(e.Body)
 			if !resOK {
-				res = model.OIDCError(e.Error(), "")
+				res = pkgModel.OIDCError(e.Error(), "")
 			}
 			return &model.Response{
 				Status:   e.Response.StatusCode,
@@ -200,7 +200,7 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 	if token.RefreshToken == "" {
 		return &model.Response{
 			Status:   fiber.StatusInternalServerError,
-			Response: model.APIErrorNoRefreshToken,
+			Response: pkgModel.APIErrorNoRefreshToken,
 		}
 	}
 	scopes := authInfo.Restrictions.GetScopes()
@@ -267,7 +267,7 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 	cookieName := "mytoken-supertoken"
 	cookieValue := res.SuperToken
 	cookieAge := 3600 //TODO from config
-	if stateInf.ResponseType == model.ResponseTypeTransferCode {
+	if stateInf.ResponseType == pkgModel.ResponseTypeTransferCode {
 		cookieName = "mytoken-transfercode"
 		cookieValue = res.TransferCode
 		cookieAge = int(res.ExpiresIn)

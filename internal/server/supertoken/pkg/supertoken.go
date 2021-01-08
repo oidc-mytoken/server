@@ -9,18 +9,18 @@ import (
 	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/server/config"
 	"github.com/zachmann/mytoken/internal/server/db"
 	"github.com/zachmann/mytoken/internal/server/db/dbrepo/supertokenrepo/transfercoderepo"
 	response "github.com/zachmann/mytoken/internal/server/endpoints/token/super/pkg"
 	"github.com/zachmann/mytoken/internal/server/jws"
+	serverModel "github.com/zachmann/mytoken/internal/server/model"
 	"github.com/zachmann/mytoken/internal/server/supertoken/capabilities"
 	eventService "github.com/zachmann/mytoken/internal/server/supertoken/event"
 	event "github.com/zachmann/mytoken/internal/server/supertoken/event/pkg"
 	"github.com/zachmann/mytoken/internal/server/supertoken/restrictions"
 	"github.com/zachmann/mytoken/internal/server/utils/issuerUtils"
+	"github.com/zachmann/mytoken/pkg/model"
 )
 
 // SuperToken is a mytoken SuperToken
@@ -170,7 +170,7 @@ func (st *SuperToken) toTokenResponse() response.SuperTokenResponse {
 }
 
 // CreateTransferCode creates a transfer code for the passed super token
-func CreateTransferCode(stid uuid.UUID, jwt string, newST bool, responseType model.ResponseType, clientMetaData model.ClientMetaData) (string, uint64, error) {
+func CreateTransferCode(stid uuid.UUID, jwt string, newST bool, responseType model.ResponseType, clientMetaData serverModel.ClientMetaData) (string, uint64, error) {
 	transferCode, err := transfercoderepo.NewTransferCode(jwt, newST, responseType)
 	if err != nil {
 		return "", 0, err
@@ -189,7 +189,7 @@ func CreateTransferCode(stid uuid.UUID, jwt string, newST bool, responseType mod
 }
 
 // ToTokenResponse creates a SuperTokenResponse for this SuperToken according to the passed model.ResponseType
-func (st *SuperToken) ToTokenResponse(responseType model.ResponseType, networkData model.ClientMetaData, jwt string) (response.SuperTokenResponse, error) {
+func (st *SuperToken) ToTokenResponse(responseType model.ResponseType, networkData serverModel.ClientMetaData, jwt string) (response.SuperTokenResponse, error) {
 	if len(jwt) == 0 {
 		jwt = st.jwt
 	}

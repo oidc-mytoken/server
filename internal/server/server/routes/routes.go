@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/zachmann/mytoken/internal/model/version"
+	"github.com/zachmann/mytoken/internal/server/model/version"
 	"github.com/zachmann/mytoken/internal/server/server/apiPath"
 	"github.com/zachmann/mytoken/internal/utils"
 )

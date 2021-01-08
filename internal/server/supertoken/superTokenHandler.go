@@ -10,14 +10,13 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/server/config"
 	"github.com/zachmann/mytoken/internal/server/db"
 	"github.com/zachmann/mytoken/internal/server/db/dbrepo/supertokenrepo"
 	dbhelper "github.com/zachmann/mytoken/internal/server/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	"github.com/zachmann/mytoken/internal/server/db/dbrepo/supertokenrepo/transfercoderepo"
 	response "github.com/zachmann/mytoken/internal/server/endpoints/token/super/pkg"
+	"github.com/zachmann/mytoken/internal/server/model"
 	"github.com/zachmann/mytoken/internal/server/oidc/revoke"
 	"github.com/zachmann/mytoken/internal/server/server/httpStatus"
 	"github.com/zachmann/mytoken/internal/server/supertoken/capabilities"
@@ -28,6 +27,7 @@ import (
 	"github.com/zachmann/mytoken/internal/server/supertoken/token"
 	"github.com/zachmann/mytoken/internal/server/utils/ctxUtils"
 	"github.com/zachmann/mytoken/internal/utils"
+	pkgModel "github.com/zachmann/mytoken/pkg/model"
 )
 
 // HandleSuperTokenFromTransferCode handles requests to return the super token for a transfer code
@@ -48,14 +48,14 @@ func HandleSuperTokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 		if !status.Found {
 			errorRes = &model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: model.APIErrorBadTransferCode,
+				Response: pkgModel.APIErrorBadTransferCode,
 			}
 			return fmt.Errorf("error_res")
 		}
 		if status.Expired {
 			errorRes = &model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: model.APIErrorTransferCodeExpired,
+				Response: pkgModel.APIErrorTransferCodeExpired,
 			}
 			return fmt.Errorf("error_res")
 		}
@@ -68,9 +68,9 @@ func HandleSuperTokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 
-	tokenType := model.ResponseTypeToken
+	tokenType := pkgModel.ResponseTypeToken
 	if !utils.IsJWT(tokenStr) {
-		tokenType = model.ResponseTypeShortToken
+		tokenType = pkgModel.ResponseTypeShortToken
 	}
 	jwt, err := token.GetLongSuperToken(tokenStr)
 	if err != nil {
@@ -109,7 +109,7 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 	if err != nil {
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError(err.Error()),
+			Response: pkgModel.InvalidTokenError(err.Error()),
 		}
 	}
 	log.Trace("Parsed super token")
@@ -121,7 +121,7 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 	if revoked {
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError("not a valid token"),
+			Response: pkgModel.InvalidTokenError("not a valid token"),
 		}
 	}
 	log.Trace("Checked token not revoked")
@@ -129,14 +129,14 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 	if ok := st.VerifyCapabilities(capabilities.CapabilityCreateST); !ok {
 		return &model.Response{
 			Status:   fiber.StatusForbidden,
-			Response: model.APIErrorInsufficientCapabilities,
+			Response: pkgModel.APIErrorInsufficientCapabilities,
 		}
 	}
 	log.Trace("Checked super token capabilities")
 	if ok := st.Restrictions.VerifyForOther(nil, ctx.IP(), st.ID); !ok {
 		return &model.Response{
 			Status:   fiber.StatusForbidden,
-			Response: model.APIErrorUsageRestricted,
+			Response: pkgModel.APIErrorUsageRestricted,
 		}
 	}
 	log.Trace("Checked super token restrictions")
@@ -147,7 +147,7 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 		if req.Issuer != st.OIDCIssuer {
 			return &model.Response{
 				Status:   fiber.StatusBadRequest,
-				Response: model.BadRequestError("token not for specified issuer"),
+				Response: pkgModel.BadRequestError("token not for specified issuer"),
 			}
 		}
 		log.Trace("Checked issuer")
@@ -156,7 +156,7 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 	return handleSuperTokenFromSuperToken(st, req, ctxUtils.ClientMetaData(ctx), req.ResponseType)
 }
 
-func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response.SuperTokenFromSuperTokenRequest, networkData *model.ClientMetaData, responseType model.ResponseType) *model.Response {
+func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response.SuperTokenFromSuperTokenRequest, networkData *model.ClientMetaData, responseType pkgModel.ResponseType) *model.Response {
 	ste, errorResponse := createSuperTokenEntry(parent, req, *networkData)
 	if errorResponse != nil {
 		return errorResponse
@@ -196,7 +196,7 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 	if !rtFound {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model.InvalidTokenError("token unknown"),
+			Response: pkgModel.InvalidTokenError("token unknown"),
 		}
 	}
 	rootID, rootFound, dbErr := dbhelper.GetSTRootID(parent.ID)
@@ -206,7 +206,7 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 	if !rootFound {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model.InvalidTokenError("token unknown"),
+			Response: pkgModel.InvalidTokenError("token unknown"),
 		}
 	}
 	if rootID == "" {
@@ -244,7 +244,7 @@ func RevokeSuperToken(tx *sqlx.Tx, id uuid.UUID, token token.Token, recursive bo
 	if !ok {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model.APIErrorUnknownIssuer,
+			Response: pkgModel.APIErrorUnknownIssuer,
 		}
 	}
 	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
@@ -257,7 +257,7 @@ func RevokeSuperToken(tx *sqlx.Tx, id uuid.UUID, token token.Token, recursive bo
 		}
 		if count == 0 {
 			if e := revoke.RefreshToken(provider, rt); e != nil {
-				apiError := e.Response.(model.APIError)
+				apiError := e.Response.(pkgModel.APIError)
 				return fmt.Errorf("%s: %s", apiError.Error, apiError.ErrorDescription)
 			}
 		}
@@ -266,7 +266,7 @@ func RevokeSuperToken(tx *sqlx.Tx, id uuid.UUID, token token.Token, recursive bo
 		if strings.HasPrefix(err.Error(), "oidc_error") {
 			return &model.Response{
 				Status:   httpStatus.StatusOIDPError,
-				Response: model.OIDCError(err.Error(), ""),
+				Response: pkgModel.OIDCError(err.Error(), ""),
 			}
 		} else {
 			return model.ErrorToInternalServerErrorResponse(err)

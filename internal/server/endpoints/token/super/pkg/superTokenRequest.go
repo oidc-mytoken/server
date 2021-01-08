@@ -3,11 +3,10 @@ package pkg
 import (
 	"encoding/json"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/server/supertoken/capabilities"
 	"github.com/zachmann/mytoken/internal/server/supertoken/restrictions"
 	"github.com/zachmann/mytoken/internal/server/supertoken/token"
+	"github.com/zachmann/mytoken/pkg/model"
 )
 
 // SuperTokenFromSuperTokenRequest is a request to create a new supertoken from an existing supertoken

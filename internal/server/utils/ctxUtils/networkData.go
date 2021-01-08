@@ -3,7 +3,7 @@ package ctxUtils
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/zachmann/mytoken/internal/model"
+	"github.com/zachmann/mytoken/internal/server/model"
 )
 
 // ClientMetaData returns the model.ClientMetaData for a given fiber.Ctx

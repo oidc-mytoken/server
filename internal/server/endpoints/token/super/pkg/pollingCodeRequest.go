@@ -1,7 +1,7 @@
 package pkg
 
 import (
-	"github.com/zachmann/mytoken/internal/model"
+	"github.com/zachmann/mytoken/pkg/model"
 )
 
 // PollingCodeRequest is a polling code request

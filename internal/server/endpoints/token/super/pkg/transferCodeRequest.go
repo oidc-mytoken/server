@@ -1,7 +1,7 @@
 package pkg
 
 import (
-	"github.com/zachmann/mytoken/internal/model"
+	"github.com/zachmann/mytoken/pkg/model"
 )
 
 // CreateTransferCodeRequest is a request to create a new transfer code from an existing super token

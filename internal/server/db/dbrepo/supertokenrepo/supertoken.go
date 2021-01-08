@@ -10,9 +10,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/server/db"
+	"github.com/zachmann/mytoken/internal/server/model"
 	eventService "github.com/zachmann/mytoken/internal/server/supertoken/event"
 	event "github.com/zachmann/mytoken/internal/server/supertoken/event/pkg"
 	supertoken "github.com/zachmann/mytoken/internal/server/supertoken/pkg"

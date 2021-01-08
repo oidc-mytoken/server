@@ -5,14 +5,14 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	dbhelper "github.com/zachmann/mytoken/internal/server/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	"github.com/zachmann/mytoken/internal/server/db/dbrepo/supertokenrepo/transfercoderepo"
 	"github.com/zachmann/mytoken/internal/server/endpoints/token/super/pkg"
+	"github.com/zachmann/mytoken/internal/server/model"
 	supertoken "github.com/zachmann/mytoken/internal/server/supertoken/pkg"
 	"github.com/zachmann/mytoken/internal/server/utils/ctxUtils"
 	"github.com/zachmann/mytoken/internal/utils"
+	pkgModel "github.com/zachmann/mytoken/pkg/model"
 )
 
 // HandleCreateTransferCodeForExistingSuperToken handles request to create a transfer code for an existing supertoken
@@ -23,38 +23,38 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 		if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 			return model.Response{
 				Status:   fiber.StatusBadRequest,
-				Response: model.BadRequestError(err.Error()),
+				Response: pkgModel.BadRequestError(err.Error()),
 			}.Send(ctx)
 		}
 		token = req.SuperToken
 		if len(token) == 0 {
 			return model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: model.BadRequestError("required parameter 'super_token' missing"),
+				Response: pkgModel.BadRequestError("required parameter 'super_token' missing"),
 			}.Send(ctx)
 		}
 	}
 
 	var jwt string
-	var tokenType model.ResponseType
+	var tokenType pkgModel.ResponseType
 	if utils.IsJWT(token) {
 		jwt = token
-		tokenType = model.ResponseTypeToken
+		tokenType = pkgModel.ResponseTypeToken
 	} else {
-		tokenType = model.ResponseTypeShortToken
+		tokenType = pkgModel.ResponseTypeShortToken
 		shortToken := transfercoderepo.ParseShortToken(token)
 		tmp, valid, err := shortToken.JWT(nil)
 		jwt = tmp
 		if !valid {
 			return model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: model.InvalidTokenError("invalid token"),
+				Response: pkgModel.InvalidTokenError("invalid token"),
 			}.Send(ctx)
 		}
 		if err != nil {
 			return model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: model.InvalidTokenError(err.Error()),
+				Response: pkgModel.InvalidTokenError(err.Error()),
 			}.Send(ctx)
 		}
 	}
@@ -62,7 +62,7 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 	if err != nil {
 		return model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError(err.Error()),
+			Response: pkgModel.InvalidTokenError(err.Error()),
 		}.Send(ctx)
 	}
 
@@ -73,7 +73,7 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 	if revoked {
 		return model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError("invalid token"),
+			Response: pkgModel.InvalidTokenError("invalid token"),
 		}.Send(ctx)
 	}
 
@@ -84,7 +84,7 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 	res := &model.Response{
 		Status: fiber.StatusOK,
 		Response: pkg.TransferCodeResponse{
-			SuperTokenType: model.ResponseTypeTransferCode,
+			SuperTokenType: pkgModel.ResponseTypeTransferCode,
 			TransferCode:   transferCode,
 			ExpiresIn:      expiresIn,
 		},

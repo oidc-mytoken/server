@@ -4,20 +4,20 @@ import (
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/server/config"
 	"github.com/zachmann/mytoken/internal/server/endpoints/token/super/polling"
+	serverModel "github.com/zachmann/mytoken/internal/server/model"
 	"github.com/zachmann/mytoken/internal/server/oidc/authcode"
 	"github.com/zachmann/mytoken/internal/server/supertoken"
 	"github.com/zachmann/mytoken/internal/server/utils/ctxUtils"
+	"github.com/zachmann/mytoken/pkg/model"
 )
 
 // HandleSuperTokenEndpoint handles requests on the super token endpoint
 func HandleSuperTokenEndpoint(ctx *fiber.Ctx) error {
 	grantType, err := ctxUtils.GetGrantType(ctx)
 	if err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	log.WithField("grant_type", grantType).Trace("Received super token request")
 	switch grantType {
@@ -31,18 +31,18 @@ func HandleSuperTokenEndpoint(ctx *fiber.Ctx) error {
 		}
 	case model.GrantTypeAccessToken:
 		if config.Get().Features.AccessTokenGrant.Enabled {
-			return model.ResponseNYI.Send(ctx)
+			return serverModel.ResponseNYI.Send(ctx)
 		}
 	case model.GrantTypePrivateKeyJWT:
 		if config.Get().Features.SignedJWTGrant.Enabled {
-			return model.ResponseNYI.Send(ctx)
+			return serverModel.ResponseNYI.Send(ctx)
 		}
 	case model.GrantTypeTransferCode:
 		if config.Get().Features.TransferCodes.Enabled {
 			return supertoken.HandleSuperTokenFromTransferCode(ctx).Send(ctx)
 		}
 	}
-	res := model.Response{
+	res := serverModel.Response{
 		Status:   fiber.StatusBadRequest,
 		Response: model.APIErrorUnsupportedGrantType,
 	}
@@ -55,9 +55,9 @@ func handleOIDCFlow(ctx *fiber.Ctx) error {
 	case model.OIDCFlowAuthorizationCode:
 		return authcode.StartAuthCodeFlow(ctx.Body()).Send(ctx)
 	case model.OIDCFlowDevice:
-		return model.ResponseNYI.Send(ctx)
+		return serverModel.ResponseNYI.Send(ctx)
 	default:
-		res := model.Response{
+		res := serverModel.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.APIErrorUnsupportedOIDCFlow,
 		}

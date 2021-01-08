@@ -6,12 +6,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/server/db/dbrepo/supertokenrepo/transfercoderepo"
 	response "github.com/zachmann/mytoken/internal/server/endpoints/token/super/pkg"
+	"github.com/zachmann/mytoken/internal/server/model"
 	supertoken "github.com/zachmann/mytoken/internal/server/supertoken/pkg"
 	"github.com/zachmann/mytoken/internal/server/utils/ctxUtils"
+	pkgModel "github.com/zachmann/mytoken/pkg/model"
 )
 
 // HandlePollingCode handles a request on the polling endpoint
@@ -34,14 +34,14 @@ func handlePollingCode(req response.PollingCodeRequest, networkData model.Client
 		log.WithField("polling_code", pollingCode).Debug("Polling code not known")
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model.APIErrorBadTransferCode,
+			Response: pkgModel.APIErrorBadTransferCode,
 		}
 	}
 	if pollingCodeStatus.Expired {
 		log.WithField("polling_code", pollingCode).Debug("Polling code expired")
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model.APIErrorTransferCodeExpired,
+			Response: pkgModel.APIErrorTransferCodeExpired,
 		}
 	}
 	token, err := transfercoderepo.PopTokenForTransferCode(nil, pollingCode)
@@ -51,7 +51,7 @@ func handlePollingCode(req response.PollingCodeRequest, networkData model.Client
 	if token == "" {
 		return &model.Response{
 			Status:   fiber.StatusPreconditionRequired,
-			Response: model.APIErrorAuthorizationPending,
+			Response: pkgModel.APIErrorAuthorizationPending,
 		}
 	}
 	st, err := supertoken.ParseJWT(token)

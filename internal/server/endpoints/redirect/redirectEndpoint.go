@@ -5,14 +5,14 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/server/db"
 	"github.com/zachmann/mytoken/internal/server/db/dbrepo/authcodeinforepo"
 	"github.com/zachmann/mytoken/internal/server/db/dbrepo/authcodeinforepo/state"
 	"github.com/zachmann/mytoken/internal/server/db/dbrepo/supertokenrepo/transfercoderepo"
+	"github.com/zachmann/mytoken/internal/server/model"
 	"github.com/zachmann/mytoken/internal/server/oidc/authcode"
 	"github.com/zachmann/mytoken/internal/server/utils/ctxUtils"
+	pkgModel "github.com/zachmann/mytoken/pkg/model"
 )
 
 // HandleOIDCRedirect handles redirects from the openid provider after an auth code flow
@@ -37,7 +37,7 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 		oidcErrorDescription := ctx.Query("error_description")
 		errorRes := model.Response{
 			Status:   fiber.StatusInternalServerError,
-			Response: model.OIDCError(oidcError, oidcErrorDescription),
+			Response: pkgModel.OIDCError(oidcError, oidcErrorDescription),
 		}
 		return errorRes.Send(ctx)
 	}
