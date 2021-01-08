@@ -225,12 +225,12 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 			return err
 		}
 		at := accesstokenrepo.AccessToken{
-			Token:     token.AccessToken,
-			IP:        networkData.IP,
-			Comment:   "Initial Access Token from authorization code flow",
-			STID:      ste.ID,
-			Scopes:    scopes,
-			Audiences: audiences,
+			Token:      token.AccessToken,
+			IP:         networkData.IP,
+			Comment:    "Initial Access Token from authorization code flow",
+			SuperToken: ste.Token,
+			Scopes:     scopes,
+			Audiences:  audiences,
 		}
 		if err = at.Store(tx); err != nil {
 			return err

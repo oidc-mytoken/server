@@ -150,12 +150,12 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 	}
 	retAudiences, _ := oidcUtils.GetAudiencesFromJWT(oidcRes.AccessToken)
 	at := accesstokenrepo.AccessToken{
-		Token:     oidcRes.AccessToken,
-		IP:        networkData.IP,
-		Comment:   req.Comment,
-		STID:      st.ID,
-		Scopes:    utils.SplitIgnoreEmpty(retScopes, " "),
-		Audiences: retAudiences,
+		Token:      oidcRes.AccessToken,
+		IP:         networkData.IP,
+		Comment:    req.Comment,
+		SuperToken: st,
+		Scopes:     utils.SplitIgnoreEmpty(retScopes, " "),
+		Audiences:  retAudiences,
 	}
 	if err = db.Transact(func(tx *sqlx.Tx) error {
 		if err = at.Store(tx); err != nil {

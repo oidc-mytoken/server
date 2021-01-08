@@ -7,14 +7,16 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/zachmann/mytoken/internal/db"
+	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
+	"github.com/zachmann/mytoken/internal/utils/cryptUtils"
 )
 
 // AccessToken holds database information about an access token
 type AccessToken struct {
-	Token   string
-	IP      string
-	Comment string
-	STID    uuid.UUID
+	Token      string
+	IP         string
+	Comment    string
+	SuperToken *supertoken.SuperToken
 
 	Scopes    []string
 	Audiences []string
@@ -27,13 +29,21 @@ type accessToken struct {
 	STID    uuid.UUID `db:"ST_id"`
 }
 
-func (t *AccessToken) toDBObject() accessToken {
-	return accessToken{
-		Token:   t.Token,
+func (t *AccessToken) toDBObject() (*accessToken, error) {
+	stJWT, err := t.SuperToken.ToJWT()
+	if err != nil {
+		return nil, err
+	}
+	token, err := cryptUtils.AES256Encrypt(t.Token, stJWT)
+	if err != nil {
+		return nil, err
+	}
+	return &accessToken{
+		Token:   token,
 		IP:      t.IP,
 		Comment: db.NewNullString(t.Comment),
-		STID:    t.STID,
-	}
+		STID:    t.SuperToken.ID,
+	}, nil
 }
 
 func (t *AccessToken) getDBAttributes(tx *sqlx.Tx, atID uint64) (attrs []accessTokenAttribute, err error) {
@@ -64,7 +74,10 @@ func (t *AccessToken) getDBAttributes(tx *sqlx.Tx, atID uint64) (attrs []accessT
 
 // Store stores the AccessToken in the database as well as the relevant attributes
 func (t *AccessToken) Store(tx *sqlx.Tx) error {
-	store := t.toDBObject()
+	store, err := t.toDBObject()
+	if err != nil {
+		return err
+	}
 	storeFnc := func(tx *sqlx.Tx) error {
 		res, err := tx.NamedExec(`INSERT INTO AccessTokens (token, ip_created, comment, ST_id) VALUES (:token, :ip_created, :comment, :ST_id)`, store)
 		if err != nil {
