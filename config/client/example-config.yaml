@@ -1,0 +1,24 @@
+instance: "http://localhost:8000"
+
+token_name_prefix: "<hostname>"
+default_oidc_flow: "auth"
+default_token_capabilities:
+  - "AT"
+  - "create_super_token"
+  - "tokeninfo_history"
+  - "tokeninfo_tree"
+#  - "settings"
+#  - "list_super_tokens"
+
+default_gpg_key: "id"
+
+default_provider:
+provider_names:
+  - url: "https://aai.egi.eu/oidc/"
+    name: "egi"
+    default_gpg_key:
+  - url: "https://wlcg.cloud.cnaf.infn.it/"
+    name: "wlcg"
+    default_gpg_key:
+
+tokens:

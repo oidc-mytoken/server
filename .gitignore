@@ -3,7 +3,7 @@
 /setup
 tags
 client.config
-config/config.yaml
-TODO.yaml
+config/server/config.yaml
+config/client/config.yaml
 IP2LOCATION-LITE-DB1.IPV6.BIN
 /cmd/test

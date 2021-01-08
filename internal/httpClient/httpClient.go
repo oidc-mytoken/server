@@ -3,12 +3,10 @@ package httpClient
 import (
 	"time"
 
-	"github.com/zachmann/mytoken/internal/context"
-
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/config"
+	"github.com/zachmann/mytoken/internal/context"
 )
 
 var client *resty.Client
@@ -25,8 +23,10 @@ func init() {
 }
 
 // Init initializes the http client
-func Init() {
-	client.SetHostURL(config.Get().IssuerURL)
+func Init(hostURL string) {
+	if len(hostURL) > 0 {
+		client.SetHostURL(hostURL)
+	}
 	if log.IsLevelEnabled(log.DebugLevel) {
 		client.SetDebug(true)
 	}
