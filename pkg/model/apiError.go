@@ -3,8 +3,6 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 // APIError is an error object that is returned on the api when an error occurs
@@ -12,9 +10,6 @@ type APIError struct {
 	Error            string `json:"error"`
 	ErrorDescription string `json:"error_description,omitempty"`
 }
-
-// ResponseNYI is the server response when something is not yet implemented
-var ResponseNYI = Response{Status: fiber.StatusNotImplemented, Response: APIErrorNYI}
 
 // Predefined errors
 var (

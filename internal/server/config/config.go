@@ -10,11 +10,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 
-	"github.com/zachmann/mytoken/internal/model"
-
 	"github.com/zachmann/mytoken/internal/context"
 	"github.com/zachmann/mytoken/internal/server/utils/issuerUtils"
 	"github.com/zachmann/mytoken/internal/utils/fileutil"
+	"github.com/zachmann/mytoken/pkg/model"
 	"github.com/zachmann/mytoken/pkg/oauth2x"
 )
 

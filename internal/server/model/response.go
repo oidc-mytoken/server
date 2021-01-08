@@ -3,6 +3,8 @@ package model
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/valyala/fasthttp"
+
+	"github.com/zachmann/mytoken/pkg/model"
 )
 
 // Response models a http server response
@@ -32,7 +34,7 @@ func (r Response) Send(ctx *fiber.Ctx) error {
 func ErrorToInternalServerErrorResponse(err error) *Response {
 	return &Response{
 		Status:   fiber.StatusInternalServerError,
-		Response: InternalServerError(err.Error()),
+		Response: model.InternalServerError(err.Error()),
 	}
 }
 
@@ -40,6 +42,9 @@ func ErrorToInternalServerErrorResponse(err error) *Response {
 func ErrorToBadRequestErrorResponse(err error) *Response {
 	return &Response{
 		Status:   fiber.StatusBadRequest,
-		Response: BadRequestError(err.Error()),
+		Response: model.BadRequestError(err.Error()),
 	}
 }
+
+// ResponseNYI is the server response when something is not yet implemented
+var ResponseNYI = Response{Status: fiber.StatusNotImplemented, Response: model.APIErrorNYI}

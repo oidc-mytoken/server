@@ -1,8 +1,8 @@
 package pkg
 
 import (
-	"github.com/zachmann/mytoken/internal/model"
 	"github.com/zachmann/mytoken/internal/server/supertoken/token"
+	"github.com/zachmann/mytoken/pkg/model"
 )
 
 // AccessTokenRequest holds an request for an access token

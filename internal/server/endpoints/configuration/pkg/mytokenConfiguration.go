@@ -1,6 +1,6 @@
 package pkg
 
-import "github.com/zachmann/mytoken/internal/model"
+import "github.com/zachmann/mytoken/pkg/model"
 
 // MytokenConfiguration holds information about a mytoken instance
 type MytokenConfiguration struct {
