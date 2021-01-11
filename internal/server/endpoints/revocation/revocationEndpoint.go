@@ -28,12 +28,7 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	log.Trace("Parsed super token request")
-	if req.OIDCIssuer == "" {
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.BadRequestError("required parameter 'oidc_issuer' is missing"),
-		}.Send(ctx)
-	}
+
 	errRes := revokeAnyToken(nil, req.Token, req.OIDCIssuer, req.Recursive)
 	if errRes != nil {
 		return errRes.Send(ctx)
@@ -45,7 +40,7 @@ func revokeAnyToken(tx *sqlx.Tx, token, issuer string, recursive bool) (errRes *
 	if utils.IsJWT(token) { // normal SuperToken
 		return revokeSuperToken(tx, token, issuer, recursive)
 	} else if len(token) == config.Get().Features.Polling.Len { // Transfer Code
-		return revokeTransferCode(tx, token)
+		return revokeTransferCode(tx, token, issuer)
 	} else { // Short Token
 		shortToken := transfercoderepo.ParseShortToken(token)
 		var valid bool
@@ -64,10 +59,7 @@ func revokeAnyToken(tx *sqlx.Tx, token, issuer string, recursive bool) (errRes *
 			return model.ErrorToInternalServerErrorResponse(err)
 		}
 		if !valid {
-			return &model.Response{
-				Status:   fiber.StatusUnauthorized,
-				Response: pkgModel.InvalidTokenError("invalid token"),
-			}
+			return nil
 		}
 		return revokeSuperToken(tx, token, issuer, recursive)
 	}
@@ -87,7 +79,7 @@ func revokeSuperToken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *
 	return supertoken.RevokeSuperToken(tx, st.ID, token.Token(jwt), recursive, st.OIDCIssuer)
 }
 
-func revokeTransferCode(tx *sqlx.Tx, token string) (errRes *model.Response) {
+func revokeTransferCode(tx *sqlx.Tx, token, issuer string) (errRes *model.Response) {
 	transferCode := transfercoderepo.ParseTransferCode(token)
 	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		revokeST, err := transferCode.GetRevokeJWT(tx)
@@ -100,7 +92,7 @@ func revokeTransferCode(tx *sqlx.Tx, token string) (errRes *model.Response) {
 				return err
 			}
 			if valid { // if !valid the jwt field could not decrypted correctly, so we can skip that, but still delete the TransferCode
-				errRes = revokeAnyToken(tx, jwt, "", true)
+				errRes = revokeAnyToken(tx, jwt, issuer, true)
 				if errRes != nil {
 					return fmt.Errorf("placeholder")
 				}

@@ -9,8 +9,9 @@ import (
 	"github.com/zachmann/mytoken/pkg/model"
 )
 
-func (my *Mytoken) GetAccessToken(superToken string, scopes []string, audiences []string, comment string) (string, error) {
+func (my *Mytoken) GetAccessToken(superToken, oidcIssuer string, scopes []string, audiences []string, comment string) (string, error) {
 	req := pkg.AccessTokenRequest{
+		Issuer:     oidcIssuer,
 		GrantType:  model.GrantTypeSuperToken,
 		SuperToken: token.Token(superToken),
 		Scope:      strings.Join(scopes, " "),
