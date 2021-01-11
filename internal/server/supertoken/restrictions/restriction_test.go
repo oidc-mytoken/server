@@ -604,7 +604,7 @@ func TestRestriction_Hash(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	expected := "052dd67c76c735489553cb09f85e3d1fdfbaf479c5b5f543cb69b6daf06fe7cf276749066e554dc5911cad337ee4d52246433b5bcd0de15a4f83011905997ede"
+	expected := "BS3WfHbHNUiVU8sJ+F49H9+69HnFtfVDy2m22vBv588nZ0kGblVNxZEcrTN+5NUiRkM7W80N4VpPgwEZBZl+3g=="
 	if string(hash) != expected {
 		t.Errorf("hash '%s' does not match expected hash '%s'", hash, expected)
 	}
