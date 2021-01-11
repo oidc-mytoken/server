@@ -4,6 +4,8 @@ package fileutil
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -32,4 +34,27 @@ func MustReadFile(filename string) []byte {
 	}
 	log.WithField("filepath", filename).Info("Read config file")
 	return file
+}
+
+// ReadConfigFile checks if a file exists in one of the configuration
+// directories and returns the content. If no file is found, mytoken exists.
+func ReadConfigFile(filename string, locations []string) []byte {
+	for _, dir := range locations {
+		filep := filepath.Join(dir, filename)
+		filep = filepath.Clean(filep)
+		if strings.HasPrefix(filep, "~") {
+			homeDir := os.Getenv("HOME")
+			filep = filepath.Join(homeDir, filep[1:])
+		}
+		log.WithField("filepath", filep).Debug("Looking for config file")
+		if FileExists(filep) {
+			return MustReadFile(filep)
+		}
+	}
+	errMsg := "Could not find config file"
+	if len(locations) > 1 {
+		errMsg += " in any of the possible directories"
+	}
+	log.WithField("filepath", filename).Fatal(errMsg)
+	return nil
 }

@@ -2,9 +2,6 @@ package config
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	log "github.com/sirupsen/logrus"
@@ -216,24 +213,6 @@ var possibleConfigLocations = []string{
 	"/etc/mytoken",
 }
 
-// readConfigFile checks if a file exists in one of the configuration
-// directories and returns the content. If no file is found, mytoken exists.
-func readConfigFile(filename string) []byte {
-	for _, dir := range possibleConfigLocations {
-		filep := filepath.Join(dir, filename)
-		if strings.HasPrefix(filep, "~") {
-			homeDir := os.Getenv("HOME")
-			filep = filepath.Join(homeDir, filep[1:])
-		}
-		log.WithField("filepath", filep).Debug("Looking for config file")
-		if fileutil.FileExists(filep) {
-			return fileutil.MustReadFile(filep)
-		}
-	}
-	log.WithField("filepath", filename).Fatal("Could not find config file in any of the possible directories")
-	return nil
-}
-
 // Load reads the config file and populates the config struct; then validates the config
 func Load() {
 	load()
@@ -243,7 +222,7 @@ func Load() {
 }
 
 func load() {
-	data := readConfigFile("config.yaml")
+	data := fileutil.ReadConfigFile("config.yaml", possibleConfigLocations)
 	conf = &defaultConfig
 	err := yaml.Unmarshal(data, conf)
 	if err != nil {
