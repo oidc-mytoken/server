@@ -46,6 +46,7 @@ func handlePollingCode(req response.PollingCodeRequest, networkData model.Client
 	}
 	token, err := transfercoderepo.PopTokenForTransferCode(nil, pollingCode)
 	if err != nil {
+		log.WithError(err).Error()
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if token == "" {

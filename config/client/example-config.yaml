@@ -1,6 +1,8 @@
+
 instance: "http://localhost:8000"
 
 token_name_prefix: "<hostname>"
+
 default_oidc_flow: "auth"
 default_token_capabilities:
   - "AT"
@@ -9,16 +11,18 @@ default_token_capabilities:
   - "tokeninfo_tree"
 #  - "settings"
 #  - "list_super_tokens"
-
-default_gpg_key: "id"
-
+default_gpg_key:
 default_provider:
-provider_names:
+
+providers:
   - url: "https://aai.egi.eu/oidc/"
     name: "egi"
+    default_token:
     default_gpg_key:
   - url: "https://wlcg.cloud.cnaf.infn.it/"
     name: "wlcg"
+    default_token:
     default_gpg_key:
 
-tokens:
+# The file where the super tokens are stored by the client. Default is 'tokens.json' in the same directory as this config file. If a relative path is given it is interpreted relative to this directory.
+tokens_file: "tokens.json"

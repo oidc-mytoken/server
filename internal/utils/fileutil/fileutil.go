@@ -38,17 +38,16 @@ func MustReadFile(filename string) []byte {
 
 // ReadConfigFile checks if a file exists in one of the configuration
 // directories and returns the content. If no file is found, mytoken exists.
-func ReadConfigFile(filename string, locations []string) []byte {
+func ReadConfigFile(filename string, locations []string) ([]byte, string) {
 	for _, dir := range locations {
-		filep := filepath.Join(dir, filename)
-		filep = filepath.Clean(filep)
-		if strings.HasPrefix(filep, "~") {
+		if strings.HasPrefix(dir, "~") {
 			homeDir := os.Getenv("HOME")
-			filep = filepath.Join(homeDir, filep[1:])
+			dir = filepath.Join(homeDir, dir[1:])
 		}
+		filep := filepath.Join(dir, filename)
 		log.WithField("filepath", filep).Debug("Looking for config file")
 		if FileExists(filep) {
-			return MustReadFile(filep)
+			return MustReadFile(filep), dir
 		}
 	}
 	errMsg := "Could not find config file"
@@ -56,5 +55,5 @@ func ReadConfigFile(filename string, locations []string) []byte {
 		errMsg += " in any of the possible directories"
 	}
 	log.WithField("filepath", filename).Fatal(errMsg)
-	return nil
+	return nil, ""
 }

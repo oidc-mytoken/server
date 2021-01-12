@@ -222,7 +222,7 @@ func Load() {
 }
 
 func load() {
-	data := fileutil.ReadConfigFile("config.yaml", possibleConfigLocations)
+	data, _ := fileutil.ReadConfigFile("config.yaml", possibleConfigLocations)
 	conf = &defaultConfig
 	err := yaml.Unmarshal(data, conf)
 	if err != nil {

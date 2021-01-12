@@ -7,9 +7,10 @@ import (
 )
 
 type Provider struct {
-	Name   string `yaml:"name"`
-	Issuer string `yaml:"url"`
-	GPGKey string `yaml:"default_gpg_key"`
+	Name         string `yaml:"name"`
+	Issuer       string `yaml:"url"`
+	GPGKey       string `yaml:"default_gpg_key"`
+	DefaultToken string `yaml:"default_token"`
 }
 
 func NewProviderFromString(provider string) *Provider {
@@ -22,7 +23,7 @@ func NewProviderFromString(provider string) *Provider {
 	return p
 }
 
-type Providers []Provider
+type Providers []*Provider
 
 func (p Provider) Equals(b Provider, compUrl bool) bool {
 	if compUrl {
@@ -37,15 +38,15 @@ func (p Provider) Compare(b string, compUrl bool) bool {
 	return p.Name == b
 }
 
-func (p Providers) Find(provider string) (Provider, bool) {
+func (p Providers) Find(provider string) (*Provider, bool) {
 	isURL := strings.HasPrefix(provider, "https://")
 	return p.FindBy(provider, isURL)
 }
 
-func (p Providers) FindBy(provider string, compURL bool) (Provider, bool) {
-	key := *NewProviderFromString(provider)
+func (p Providers) FindBy(provider string, compURL bool) (*Provider, bool) {
+	key := NewProviderFromString(provider)
 	for _, pp := range p {
-		if pp.Equals(key, compURL) {
+		if pp.Equals(*key, compURL) {
 			return pp, true
 		}
 	}

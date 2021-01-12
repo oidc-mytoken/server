@@ -2,8 +2,14 @@ package cryptutils
 
 import (
 	"encoding/base64"
+	"fmt"
 	"os/exec"
 	"strings"
+	"syscall"
+
+	"golang.org/x/crypto/ssh/terminal"
+
+	"github.com/zachmann/mytoken/internal/utils/cryptUtils"
 )
 
 // EncryptGPG encrypts the given string using the gpg key with the given id
@@ -31,4 +37,24 @@ func DecryptGPG(ciph, id string) (string, error) {
 		return "", err
 	}
 	return string(out), nil
+}
+
+func EncryptPassword(str string) (string, error) {
+	fmt.Printf("Enter encryption password: ")
+	password, err := terminal.ReadPassword(syscall.Stdin)
+	fmt.Println()
+	if err != nil {
+		return "", err
+	}
+	return cryptUtils.AES256Encrypt(str, string(password))
+}
+
+func DecryptPassword(ciph string) (string, error) {
+	fmt.Printf("Enter decryption password: ")
+	password, err := terminal.ReadPassword(syscall.Stdin)
+	fmt.Println()
+	if err != nil {
+		return "", err
+	}
+	return cryptUtils.AES256Decrypt(ciph, string(password))
 }

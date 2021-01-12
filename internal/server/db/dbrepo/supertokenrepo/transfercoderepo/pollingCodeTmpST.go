@@ -3,7 +3,6 @@ package transfercoderepo
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/jmoiron/sqlx"
 
@@ -45,8 +44,8 @@ func PopTokenForTransferCode(tx *sqlx.Tx, pollingCode string) (jwt string, err e
 		if err != nil {
 			return err
 		}
-		if !valid {
-			return fmt.Errorf("polling_code not valid")
+		if !valid || len(jwt) == 0 {
+			return nil
 		}
 		return pt.Delete(tx)
 	})

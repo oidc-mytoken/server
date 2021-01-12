@@ -19,7 +19,7 @@ type generalOptions struct {
 
 type providerOpt string
 
-func (g *generalOptions) Check() (model.Provider, string) {
+func (g *generalOptions) Check() (*model.Provider, string) {
 	p, pErr := g.checkProvider()
 	if len(g.SuperToken) > 0 {
 		return p, g.SuperToken
@@ -34,7 +34,14 @@ func (g *generalOptions) Check() (model.Provider, string) {
 	return p, token
 }
 
-func (g *generalOptions) checkProvider() (p model.Provider, err error) {
+func (g *generalOptions) checkToken(issuer string) (string, error) {
+	if len(g.SuperToken) > 0 {
+		return g.SuperToken, nil
+	}
+	return config.Get().GetToken(issuer, g.Name)
+}
+
+func (g *generalOptions) checkProvider() (p *model.Provider, err error) {
 	provider := g.Provider
 	if len(provider) == 0 {
 		provider = config.Get().DefaultProvider

@@ -90,6 +90,9 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 		}
 	}
 	valid = true
+	if len(pt.encryptedJWT) == 0 {
+		return
+	}
 	jwt, err = cryptUtils.AES256Decrypt(pt.encryptedJWT, pt.token)
 	pt.decryptedJWT = jwt
 	return
