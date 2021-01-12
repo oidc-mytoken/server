@@ -280,7 +280,7 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 			Value:    cookieValue,
 			Path:     "/api",
 			MaxAge:   cookieAge,
-			Secure:   false, //TODO depending on TLS
+			Secure:   config.Get().Server.TLS.Enabled,
 			HTTPOnly: true,
 			SameSite: "Strict",
 		}},

@@ -16,7 +16,11 @@ import (
 
 var defaultConfig = config{
 	Server: serverConf{
-		Port: 443,
+		Port: 8000,
+		TLS: tlsConf{
+			Enabled:      true, // The default is that TLS is enabled if cert and key are given, this is checked later; we must set true here, because otherwise we cannot distinct this from a false set by the user
+			RedirectHTTP: true,
+		},
 	},
 	DB: dbConf{
 		Host:     "localhost",
@@ -129,8 +133,16 @@ type dbConf struct {
 }
 
 type serverConf struct {
-	Hostname string `yaml:"hostname"`
-	Port     int    `yaml:"port"`
+	Hostname string  `yaml:"hostname"`
+	Port     int     `yaml:"port"`
+	TLS      tlsConf `yaml:"tls"`
+}
+
+type tlsConf struct {
+	Enabled      bool   `yaml:"enabled"`
+	RedirectHTTP bool   `yaml:"redirect_http"`
+	Cert         string `yaml:"cert"`
+	Key          string `yaml:"key"`
 }
 
 type signingConf struct {
@@ -162,6 +174,13 @@ func validate() error {
 	}
 	if conf.Server.Hostname == "" {
 		return fmt.Errorf("invalid config: server.hostname not set")
+	}
+	if conf.Server.TLS.Enabled {
+		if len(conf.Server.TLS.Key) > 0 && len(conf.Server.TLS.Cert) > 0 {
+			conf.Server.Port = 443
+		} else {
+			conf.Server.TLS.Enabled = false
+		}
 	}
 	if len(conf.Providers) <= 0 {
 		return fmt.Errorf("invalid config: providers must have at least one entry")
