@@ -12,10 +12,10 @@ type Event struct {
 }
 
 func (e *Event) String() string {
-	if e.Type < 0 || e.Type >= len(allEvents) {
+	if e.Type < 0 || e.Type >= len(AllEvents) {
 		return ""
 	}
-	return allEvents[e.Type]
+	return AllEvents[e.Type]
 }
 
 // Valid checks that Event is a defined Event
@@ -53,7 +53,7 @@ func FromNumber(number int, comment string) *Event {
 }
 
 func eventStringToInt(str string) int {
-	for i, e := range allEvents {
+	for i, e := range AllEvents {
 		if str == e {
 			return i
 		}
@@ -62,7 +62,7 @@ func eventStringToInt(str string) int {
 }
 
 // AllEvents hold all possible Events
-var allEvents = [...]string{"unknown", "AT_created", "ST_created", "tokeninfo_history", "tokeninfo_tree", "tokeninfo_list_super_tokens", "mng_enabled_AT_grant", "mng_disabled_AT_grant", "mng_enabled_JWT_grant", "mng_disabled_JWT_grant", "mng_linked_grant", "mng_unlinked_grant", "mng_enabled_tracing", "mng_disabled_tracing", "inherited_RT", "transfer_code_created", "transfer_code_used"}
+var AllEvents = [...]string{"unknown", "AT_created", "ST_created", "tokeninfo_history", "tokeninfo_tree", "tokeninfo_list_super_tokens", "mng_enabled_AT_grant", "mng_disabled_AT_grant", "mng_enabled_JWT_grant", "mng_disabled_JWT_grant", "mng_linked_grant", "mng_unlinked_grant", "mng_enabled_tracing", "mng_disabled_tracing", "inherited_RT", "transfer_code_created", "transfer_code_used"}
 
 // Events for SuperTokens
 const (

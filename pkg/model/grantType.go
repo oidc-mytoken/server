@@ -10,7 +10,8 @@ import (
 // GrantType is an enum like type for grant types
 type GrantType int
 
-var grantTypes = [...]string{"super_token", "oidc_flow", "polling_code", "access_token", "private_key_jwt", "transfer_code"}
+// AllGrantTypes holds all defined GrantType strings
+var AllGrantTypes = [...]string{"super_token", "oidc_flow", "polling_code", "access_token", "private_key_jwt", "transfer_code"}
 
 // GrantTypes
 const (
@@ -25,7 +26,7 @@ const (
 
 // NewGrantType creates a new GrantType from the grant type string
 func NewGrantType(s string) GrantType {
-	for i, f := range grantTypes {
+	for i, f := range AllGrantTypes {
 		if f == s {
 			return GrantType(i)
 		}
@@ -34,10 +35,10 @@ func NewGrantType(s string) GrantType {
 }
 
 func (g *GrantType) String() string {
-	if *g < 0 || int(*g) >= len(grantTypes) {
+	if *g < 0 || int(*g) >= len(AllGrantTypes) {
 		return ""
 	}
-	return grantTypes[*g]
+	return AllGrantTypes[*g]
 }
 
 // Valid checks that GrantType is a defined grant type

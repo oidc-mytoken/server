@@ -3,6 +3,7 @@ module github.com/zachmann/mytoken
 go 1.14
 
 require (
+	github.com/Songmu/prompter v0.4.0
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/coreos/go-oidc/v3 v3.0.0-alpha.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible

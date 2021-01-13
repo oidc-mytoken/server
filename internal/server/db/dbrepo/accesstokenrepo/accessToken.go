@@ -7,6 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/zachmann/mytoken/internal/server/db"
+	"github.com/zachmann/mytoken/internal/server/model"
 	supertoken "github.com/zachmann/mytoken/internal/server/supertoken/pkg"
 	"github.com/zachmann/mytoken/internal/utils/cryptUtils"
 )
@@ -49,10 +50,10 @@ func (t *AccessToken) toDBObject() (*accessToken, error) {
 func (t *AccessToken) getDBAttributes(tx *sqlx.Tx, atID uint64) (attrs []accessTokenAttribute, err error) {
 	var scopeAttrID uint64
 	var audAttrID uint64
-	if err = tx.QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, "scope").Scan(&scopeAttrID); err != nil {
+	if err = tx.QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, model.AttrScope).Scan(&scopeAttrID); err != nil {
 		return
 	}
-	if err = tx.QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, "audience").Scan(&audAttrID); err != nil {
+	if err = tx.QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, model.AttrAud).Scan(&audAttrID); err != nil {
 		return
 	}
 	for _, s := range t.Scopes {

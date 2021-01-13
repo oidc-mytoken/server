@@ -20,6 +20,11 @@ var dbCon *sqlx.DB
 // Connect connects to the database using the mytoken config
 func Connect() error {
 	dsn := fmt.Sprintf("%s:%s@%s(%s)/%s", config.Get().DB.User, config.Get().DB.Password, "tcp", config.Get().DB.Host, config.Get().DB.DB)
+	return ConnectDSN(dsn)
+}
+
+// ConnectDSN connects to a database using the dsn string
+func ConnectDSN(dsn string) error {
 	dbTmp, err := sqlx.Connect("mysql", dsn)
 	if err != nil {
 		return err
