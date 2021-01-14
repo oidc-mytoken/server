@@ -1,13 +1,20 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/zachmann/mytoken/internal/client/config"
 	"github.com/zachmann/mytoken/internal/client/utils/cryptutils"
+	"github.com/zachmann/mytoken/internal/client/utils/duration"
 	"github.com/zachmann/mytoken/internal/server/supertoken/capabilities"
 	restrictions "github.com/zachmann/mytoken/internal/server/supertoken/restrictions"
+	"github.com/zachmann/mytoken/internal/utils"
 	"github.com/zachmann/mytoken/pkg/model"
 )
 
@@ -39,11 +46,19 @@ type CommonSTOptions struct {
 	TransferCode string `long:"TC" description:"Use the passed transfer code to exchange it into a super token"`
 	OIDCFlow     string `long:"oidc" choice:"auth" choice:"device" choice:"default" optional:"true" optional-value:"default" description:"Use the passed OpenID Connect flow to create a super token"`
 
-	Scopes               []string `long:"scope" description:"Request the passed scope. Can be used multiple times"`
-	Audiences            []string `long:"aud" description:"Request the passed audience. Can be used multiple times"`
 	Capabilities         []string `long:"capability" default:"default" description:"Request the passed capabilities. Can be used multiple times"` //TODO
 	SubtokenCapabilities []string `long:"subtoken-capability" description:"Request the passed subtoken capabilities. Can be used multiple times"` //TODO
-	Restrictions         string
+	Restrictions         string   `long:"restrictions" description:"The restrictions that restrict the requested super token. Can be a json object or array or '@<filepath>' where <filepath> is the path to a json file.'"`
+
+	RestrictScopes      []string `long:"scope" description:"Restrict the supertoken so that it can only be used to request ATs with these scopes. Can be used multiple times. Overwritten by --restriction."`
+	RestrictAudiences   []string `long:"aud" description:"Restrict the supertoken so that it can only be used to request ATs with these audiences. Can be used multiple times. Overwritten by --restriction."`
+	RestrictExp         string   `long:"exp" description:"Restrict the supertoken so that it cannot be used after this time. The time given can be an absolute time given as a unix timestamp, a relative time string starting with '+' or an absolute time string."`
+	RestrictNbf         string   `long:"nbf" description:"Restrict the supertoken so that it cannot be used before this time. The time given can be an absolute time given as a unix timestamp, a relative time string starting with '+' or an absolute time string."`
+	RestrictIP          []string `long:"ip" description:"Restrict the supertoken so that it can only be used from these ips. Can be a network address block or a single ip. Can be given multiple times."`
+	RestrictGeoIPWhite  []string `long:"geo-ip-white" description:"Restrict the supertoken so that it can be only used from these countries. Must be a short country code, e.g. 'us'. Can be given multiple times."`
+	RestrictGeoIPBlack  []string `long:"geo-ip-black" description:"Restrict the supertoken so that it cannot be used from these countries. Must be a short country code, e.g. 'us'. Can be given multiple times."`
+	RestrictUsagesOther *int64   `long:"usages-other" description:"Restrict how often the supertoken can be used for actions other than requesting an access token."`
+	RestrictUsagesAT    *int64   `long:"usages-at" description:"Restrict how often the supertoken can be used for requesting an access token."`
 }
 
 type stStoreCommand struct {
@@ -82,7 +97,35 @@ func obtainST(args *CommonSTOptions, name string, responseType model.ResponseTyp
 	if len(name) > 0 && len(prefix) > 0 {
 		tokenName = fmt.Sprintf("%s:%s", prefix, name)
 	}
-	var r restrictions.Restrictions = nil
+	var r restrictions.Restrictions
+	if len(args.Restrictions) > 0 {
+		r, err = parseRestrictionOption(args.Restrictions)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		nbf, err := parseTime(args.RestrictNbf)
+		if err != nil {
+			return "", err
+		}
+		exp, err := parseTime(args.RestrictExp)
+		if err != nil {
+			return "", err
+		}
+		r = restrictions.Restrictions{
+			restrictions.Restriction{
+				NotBefore:   nbf,
+				ExpiresAt:   exp,
+				Scope:       strings.Join(args.RestrictScopes, " "),
+				Audiences:   args.RestrictAudiences,
+				IPs:         args.RestrictIP,
+				GeoIPWhite:  args.RestrictGeoIPWhite,
+				GeoIPBlack:  args.RestrictGeoIPBlack,
+				UsagesAT:    args.RestrictUsagesAT,
+				UsagesOther: args.RestrictUsagesOther,
+			},
+		}
+	}
 	c := capabilities.NewCapabilities(args.Capabilities)
 	sc := capabilities.NewCapabilities(args.SubtokenCapabilities)
 	if len(args.OIDCFlow) > 0 {
@@ -175,4 +218,88 @@ func saveEncryptedToken(token, issuer, name, gpgKey string) error {
 		GPGKey: gpgKey,
 	})
 	return config.SaveTokens(tokens)
+}
+
+type pRestriction struct {
+	restrictions.Restriction
+	NotBefore string `json:"nbf,omitempty"`
+	ExpiresAt string `json:"exp,omitempty"`
+}
+
+type restriction restrictions.Restriction
+
+func parseRestrictionOption(arg string) (restrictions.Restrictions, error) {
+	if len(arg) == 0 {
+		return nil, nil
+	}
+	if arg[0] == '@' {
+		data, err := ioutil.ReadFile(arg[1:])
+		if err != nil {
+			return nil, err
+		}
+		return parseRestrictions(string(data))
+	}
+	return parseRestrictions(arg)
+}
+
+func parseRestrictions(str string) (restrictions.Restrictions, error) {
+	str = strings.TrimSpace(str)
+	switch str[0] {
+	case '[': // multiple restrictions
+		var rs []restriction
+		err := json.Unmarshal([]byte(str), &rs)
+		r := restrictions.Restrictions{}
+		for _, rr := range rs {
+			r = append(r, restrictions.Restriction(rr))
+		}
+		return r, err
+	case '{': // single restriction
+		var r restriction
+		err := json.Unmarshal([]byte(str), &r)
+		return restrictions.Restrictions{restrictions.Restriction(r)}, err
+	default:
+		return nil, fmt.Errorf("malformed restriction")
+	}
+}
+
+func (r *restriction) UnmarshalJSON(data []byte) error {
+	rr := pRestriction{}
+	if err := json.Unmarshal(data, &rr); err != nil {
+		return err
+	}
+	fmt.Println(rr)
+	t, err := parseTime(rr.ExpiresAt)
+	if err != nil {
+		return err
+	}
+	rr.Restriction.ExpiresAt = t
+	fmt.Println(rr)
+	t, err = parseTime(rr.NotBefore)
+	if err != nil {
+		return err
+	}
+	rr.Restriction.NotBefore = t
+	fmt.Println(rr)
+	*r = restriction(rr.Restriction)
+	fmt.Println(*r)
+	return nil
+}
+
+func parseTime(t string) (int64, error) {
+	if len(t) == 0 {
+		return 0, nil
+	}
+	i, err := strconv.ParseInt(t, 10, 64)
+	if err == nil {
+		if t[0] == '+' {
+			return utils.GetUnixTimeIn(i), nil
+		}
+		return i, nil
+	}
+	if t[0] == '+' {
+		d, err := duration.ParseDuration(t[1:])
+		return time.Now().Add(d).Unix(), err
+	}
+	tt, err := time.Parse("", t) //TODO
+	return tt.Unix(), err
 }
