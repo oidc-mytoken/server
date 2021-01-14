@@ -4,13 +4,19 @@ instance: "http://localhost:8000"
 token_name_prefix: "<hostname>"
 
 default_oidc_flow: "auth"
+# The default capabilities for super tokens
 default_token_capabilities:
-  - "AT"
-  - "create_super_token"
-  - "tokeninfo_history"
-  - "tokeninfo_tree"
-#  - "settings"
-#  - "list_super_tokens"
+  # The default capabilities for super tokens are stored by the client
+  stored:
+    - "AT"
+    - "create_super_token"
+    - "tokeninfo_history"
+    - "tokeninfo_tree"
+  #  - "settings"
+  #  - "list_super_tokens"
+  # The default capabilities for super tokens are returned for other usage
+  returned:
+    - "AT"
 default_gpg_key:
 default_provider:
 

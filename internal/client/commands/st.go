@@ -16,6 +16,14 @@ func init() {
 	options.ST.Store.CommonSTOptions = options.ST.CommonSTOptions
 	st, _ := parser.AddCommand("ST", "Obtain super token", "Obtain a new mytoken super token", &options.ST)
 	st.SubcommandsOptional = true
+	for _, o := range st.Options() {
+		if o.LongName == "capability" {
+			o.Choices = capabilities.AllCapabilities.Strings()
+		}
+		if o.LongName == "subtoken-capability" {
+			o.Choices = capabilities.AllCapabilities.Strings()
+		}
+	}
 }
 
 type stCommand struct {
@@ -33,8 +41,8 @@ type CommonSTOptions struct {
 
 	Scopes               []string `long:"scope" description:"Request the passed scope. Can be used multiple times"`
 	Audiences            []string `long:"aud" description:"Request the passed audience. Can be used multiple times"`
-	Capabilities         []string `long:"capability" choice:"AT" choice:"create_supertoken" description:"Request the passed capabilities. Can be used multiple times"`                   //TODO
-	SubtokenCapabilities []string `long:"subtoken-capability" choice:"AT" choice:"create_supertoken" description:"Request the passed subtoken capabilities. Can be used multiple times"` //TODO
+	Capabilities         []string `long:"capability" default:"default" description:"Request the passed capabilities. Can be used multiple times"` //TODO
+	SubtokenCapabilities []string `long:"subtoken-capability" description:"Request the passed subtoken capabilities. Can be used multiple times"` //TODO
 	Restrictions         string
 }
 
@@ -49,6 +57,9 @@ type stStoreCommand struct {
 
 // Execute implements the flags.Commander interface
 func (stc *stCommand) Execute(args []string) error {
+	if len(stc.Capabilities) > 0 && stc.Capabilities[0] == "default" {
+		stc.Capabilities = config.Get().DefaultTokenCapabilities.Returned
+	}
 	st, err := obtainST(stc.CommonSTOptions, "", model.NewResponseType(stc.TokenType))
 	if err != nil {
 		return err
@@ -72,8 +83,8 @@ func obtainST(args *CommonSTOptions, name string, responseType model.ResponseTyp
 		tokenName = fmt.Sprintf("%s:%s", prefix, name)
 	}
 	var r restrictions.Restrictions = nil
-	var c capabilities.Capabilities = nil
-	var sc capabilities.Capabilities = nil
+	c := capabilities.NewCapabilities(args.Capabilities)
+	sc := capabilities.NewCapabilities(args.SubtokenCapabilities)
 	if len(args.OIDCFlow) > 0 {
 		if args.OIDCFlow == "default" {
 			args.OIDCFlow = config.Get().DefaultOIDCFlow
@@ -114,6 +125,9 @@ func obtainST(args *CommonSTOptions, name string, responseType model.ResponseTyp
 
 // Execute implements the flags.Commander interface
 func (sstc *stStoreCommand) Execute(args []string) error {
+	if len(sstc.Capabilities) > 0 && sstc.Capabilities[0] == "default" {
+		sstc.Capabilities = config.Get().DefaultTokenCapabilities.Stored
+	}
 	provider, err := sstc.CommonSTOptions.generalOptions.checkProvider()
 	if err != nil {
 		return err

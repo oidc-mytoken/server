@@ -13,6 +13,7 @@ import (
 
 	"github.com/zachmann/mytoken/internal/client/model"
 	"github.com/zachmann/mytoken/internal/client/utils/cryptutils"
+	"github.com/zachmann/mytoken/internal/server/supertoken/capabilities"
 	"github.com/zachmann/mytoken/internal/utils/fileutil"
 	"github.com/zachmann/mytoken/pkg/mytokenlib"
 )
@@ -21,9 +22,13 @@ type config struct {
 	URL     string              `yaml:"instance"`
 	Mytoken *mytokenlib.Mytoken `yaml:"-"`
 
-	DefaultGPGKey   string `yaml:"default_gpg_key"`
-	DefaultProvider string `yaml:"default_provider"`
-	DefaultOIDCFlow string `yaml:"default_oidc_flow"`
+	DefaultGPGKey            string `yaml:"default_gpg_key"`
+	DefaultProvider          string `yaml:"default_provider"`
+	DefaultOIDCFlow          string `yaml:"default_oidc_flow"`
+	DefaultTokenCapabilities struct {
+		Stored   []string `yaml:"stored"`
+		Returned []string `yaml:"returned"`
+	} `yaml:"default_token_capabilities"`
 
 	TokenNamePrefix string `yaml:"token_name_prefix"`
 
@@ -68,9 +73,16 @@ func (c *config) GetToken(issuer, name string) (string, error) {
 }
 
 var defaultConfig = config{
-	TokensFile:      "tokens.json",
-	TokenNamePrefix: "<hostname>",
 	DefaultOIDCFlow: "auth",
+	DefaultTokenCapabilities: struct {
+		Stored   []string `yaml:"stored"`
+		Returned []string `yaml:"returned"`
+	}{
+		Stored:   capabilities.Capabilities{capabilities.CapabilityAT, capabilities.CapabilityCreateST, capabilities.CapabilityTokeninfoHistory, capabilities.CapabilityTokeninfoTree}.Strings(),
+		Returned: capabilities.Capabilities{capabilities.CapabilityAT}.Strings(),
+	},
+	TokenNamePrefix: "<hostname>",
+	TokensFile:      "tokens.json",
 }
 
 var conf *config

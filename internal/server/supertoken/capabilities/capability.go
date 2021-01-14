@@ -8,12 +8,38 @@ import (
 // Constants for capabilities
 const (
 	CapabilityAT               Capability = "AT"
-	CapabilityCreateST                    = "create_super_token"
-	CapabilitySettings                    = "settings"
-	CapabilityTokeninfoHistory            = "tokeninfo_history"
-	CapabilityTokeninfoTree               = "tokeninfo_tree"
-	CapabilityListST                      = "list_super_tokens"
+	CapabilityCreateST         Capability = "create_super_token"
+	CapabilitySettings         Capability = "settings"
+	CapabilityTokeninfoHistory Capability = "tokeninfo_history"
+	CapabilityTokeninfoTree    Capability = "tokeninfo_tree"
+	CapabilityListST           Capability = "list_super_tokens"
 )
+
+// AllCapabilities holds all defined capabilities
+var AllCapabilities = Capabilities{
+	CapabilityAT,
+	CapabilityCreateST,
+	CapabilitySettings,
+	CapabilityTokeninfoHistory,
+	CapabilityTokeninfoTree,
+	CapabilityListST,
+}
+
+// NewCapabilities casts a []string into Capabilities
+func NewCapabilities(caps []string) (c Capabilities) {
+	for _, cc := range caps {
+		c = append(c, Capability(cc))
+	}
+	return
+}
+
+// Strings returns a slice of strings for these capabilities
+func (c Capabilities) Strings() (s []string) {
+	for _, cc := range c {
+		s = append(s, string(cc))
+	}
+	return
+}
 
 // Capabilities is a slice of Capability
 type Capabilities []Capability
