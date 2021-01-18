@@ -44,5 +44,5 @@ jobs:
       run: go build -v github.com/zachmann/mytoken/cmd/mytoken
 
     - name: Test
-      run: go test -v ./
+      run: go test -v ./...
       
