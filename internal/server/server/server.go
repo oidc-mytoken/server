@@ -11,8 +11,10 @@ import (
 	"github.com/zachmann/mytoken/internal/server/config"
 	"github.com/zachmann/mytoken/internal/server/endpoints"
 	"github.com/zachmann/mytoken/internal/server/endpoints/configuration"
+	"github.com/zachmann/mytoken/internal/server/endpoints/nativeredirect"
 	"github.com/zachmann/mytoken/internal/server/endpoints/redirect"
 	"github.com/zachmann/mytoken/internal/server/server/routes"
+	"github.com/zachmann/mytoken/internal/utils"
 )
 
 var server *fiber.App
@@ -40,6 +42,7 @@ func addRoutes(s fiber.Router) {
 	})
 	s.Get(routes.GetGeneralPaths().JWKSEndpoint, endpoints.HandleJWKS)
 	s.Get(routes.GetGeneralPaths().OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
+	s.Get(utils.CombineURLPath(routes.GetGeneralPaths().NativeRedirectEndpoint, ":poll"), nativeredirect.HandleNativeRedirect)
 	addAPIRoutes(s)
 }
 

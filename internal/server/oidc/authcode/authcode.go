@@ -36,10 +36,13 @@ import (
 )
 
 var redirectURL string
+var nativeRedirectEndpoint string
 
 // Init initializes the authcode component
 func Init() {
-	redirectURL = utils.CombineURLPath(config.Get().IssuerURL, routes.GetGeneralPaths().OIDCRedirectEndpoint)
+	generalPaths := routes.GetGeneralPaths()
+	redirectURL = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.OIDCRedirectEndpoint)
+	nativeRedirectEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.NativeRedirectEndpoint)
 }
 
 const stateLen = 16
@@ -142,10 +145,16 @@ func StartAuthCodeFlow(body []byte) *model.Response {
 		AuthorizationURL: authURL,
 	}
 	if req.Native() && config.Get().Features.Polling.Enabled {
-		authFlowInfo.PollingCode = transfercoderepo.CreatePollingCode(authFlowInfo.State.PollingCode(), req.ResponseType)
-		res.PollingCode = authFlowInfo.State.PollingCode()
-		res.PollingCodeExpiresIn = config.Get().Features.Polling.PollingCodeExpiresAfter
-		res.PollingInterval = config.Get().Features.Polling.PollingInterval
+		poll := authFlowInfo.State.PollingCode()
+		authFlowInfo.PollingCode = transfercoderepo.CreatePollingCode(poll, req.ResponseType, authURL)
+		res = response.AuthCodeFlowResponse{
+			AuthorizationURL: utils.CombineURLPath(nativeRedirectEndpoint, poll),
+			PollingInfo: response.PollingInfo{
+				PollingCode:          poll,
+				PollingCodeExpiresIn: config.Get().Features.Polling.PollingCodeExpiresAfter,
+				PollingInterval:      config.Get().Features.Polling.PollingInterval,
+			},
+		}
 	}
 	if err := authFlowInfo.Store(nil); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
@@ -256,7 +265,7 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 	if authInfo.PollingCode {
 		return &model.Response{
 			Status:   fiber.StatusOK,
-			Response: "ok", // TODO
+			Response: "Success! Please go back to the application that started this flow.", // TODO
 		}
 	}
 	stateInf := parseState(state)
