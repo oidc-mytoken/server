@@ -216,7 +216,8 @@ var DDL = []string {
   "  `expires_in` tinyint NOT NULL,"+
   "  `expires_at` tinyint NOT NULL,"+
   "  `revoke_ST` tinyint NOT NULL,"+
-  "  `response_type` tinyint NOT NULL"+
+  "  `response_type` tinyint NOT NULL,"+
+  "  `redirect` tinyint NOT NULL"+
   ") ENGINE=MyISAM */;",
   "SET character_set_client = @saved_cs_client;",
   ""+
@@ -234,6 +235,7 @@ var DDL = []string {
   "  `expires_at` datetime NOT NULL DEFAULT (current_timestamp() + interval `expires_in` second),"+
   "  `revoke_ST` bit(1) NOT NULL DEFAULT b'0',"+
   "  `response_type` varchar(128) NOT NULL DEFAULT 'token',"+
+  "  `redirect` text DEFAULT NULL,"+
   "  PRIMARY KEY (`id`),"+
   "  CONSTRAINT `TransferCodesAttributes_FK` FOREIGN KEY (`id`) REFERENCES `ProxyTokens` (`id`) ON DELETE CASCADE ON UPDATE CASCADE"+
   ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
@@ -287,12 +289,12 @@ var DDL = []string {
   "/*!40101 SET character_set_client = utf8 */;",
   "CREATE TABLE `Users` ("+
   "  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,"+
-  "  `sub` varchar(1024) NOT NULL,"+
-  "  `iss` varchar(512) NOT NULL,"+
+  "  `sub` varchar(512) NOT NULL,"+
+  "  `iss` varchar(256) NOT NULL,"+
   "  `token_tracing` tinyint(1) NOT NULL DEFAULT 1,"+
   "  `jwt_pk` text DEFAULT NULL,"+
   "  PRIMARY KEY (`id`),"+
-  "  UNIQUE KEY `Users_UN` (`sub`,`iss`) USING HASH"+
+  "  UNIQUE KEY `Users_UN` (`sub`,`iss`)"+
   ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;",
   "/*!40101 SET character_set_client = @saved_cs_client */;",
   ""+
@@ -309,7 +311,7 @@ var DDL = []string {
   "/*!50001 SET character_set_results     = utf8mb4 */;",
   "/*!50001 SET collation_connection      = utf8mb4_general_ci */;",
   "/*!50001 CREATE ALGORITHM=UNDEFINED */"+
-  "/*!50001 VIEW `TransferCodes` AS select `pt`.`id` AS `id`,`pt`.`jwt` AS `jwt`,`tca`.`created` AS `created`,`tca`.`expires_in` AS `expires_in`,`tca`.`expires_at` AS `expires_at`,`tca`.`revoke_ST` AS `revoke_ST`,`tca`.`response_type` AS `response_type` from (`ProxyTokens` `pt` join `TransferCodesAttributes` `tca` on(`pt`.`id` = `tca`.`id`)) */;",
+  "/*!50001 VIEW `TransferCodes` AS select `pt`.`id` AS `id`,`pt`.`jwt` AS `jwt`,`tca`.`created` AS `created`,`tca`.`expires_in` AS `expires_in`,`tca`.`expires_at` AS `expires_at`,`tca`.`revoke_ST` AS `revoke_ST`,`tca`.`response_type` AS `response_type`,`tca`.`redirect` AS `redirect` from (`ProxyTokens` `pt` join `TransferCodesAttributes` `tca` on(`pt`.`id` = `tca`.`id`)) */;",
   "/*!50001 SET character_set_client      = @saved_cs_client */;",
   "/*!50001 SET character_set_results     = @saved_cs_results */;",
   "/*!50001 SET collation_connection      = @saved_col_connection */;",
