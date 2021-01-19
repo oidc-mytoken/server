@@ -19,11 +19,15 @@ import (
 	"github.com/zachmann/mytoken/internal/server/model"
 	event "github.com/zachmann/mytoken/internal/server/supertoken/event/pkg"
 	loggerUtils "github.com/zachmann/mytoken/internal/server/utils/logger"
+	"github.com/zachmann/mytoken/internal/server/utils/zipdownload"
 	model2 "github.com/zachmann/mytoken/pkg/model"
 )
 
 var genSigningKeyComm commandGenSigningKey
 var createDBComm commandCreateDB
+var installComm struct {
+	GeoIP commandInstallGeoIPDB `command:"geoip-db" description:"Installs the ip geolocation database."`
+}
 
 func main() {
 	config.LoadForSetup()
@@ -32,6 +36,7 @@ func main() {
 	parser := flags.NewNamedParser("mytoken", flags.HelpFlag|flags.PassDoubleDash)
 	parser.AddCommand("signing-key", "Generates a new signing key", "Generates a new signing key according to the properties specified in the config file and stores it.", &genSigningKeyComm)
 	parser.AddCommand("db", "Setups the database", "Setups the database as needed and specified in the config file.", &createDBComm)
+	parser.AddCommand("install", "Installs needed dependencies", "", &installComm)
 	_, err := parser.Parse()
 	if err != nil {
 		var flagError *flags.Error
@@ -51,6 +56,16 @@ type commandGenSigningKey struct{}
 type commandCreateDB struct {
 	Username string `short:"u" long:"user" default:"root" description:"This username is used to connect to the database to create a new database, database user, and tables."`
 	Password string `short:"p" long:"password" description:"The password for the database user"`
+}
+type commandInstallGeoIPDB struct{}
+
+// Execute implements the flags.Commander interface
+func (c *commandInstallGeoIPDB) Execute(args []string) error {
+	archive, err := zipdownload.DownloadZipped("https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.IPV6.BIN.ZIP")
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(config.Get().GeoIPDBFile, archive["IP2LOCATION-LITE-DB1.IPV6.BIN"], 0644)
 }
 
 // Execute implements the flags.Commander interface

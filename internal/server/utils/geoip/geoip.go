@@ -3,12 +3,15 @@ package geoip
 import (
 	"github.com/ip2location/ip2location-go"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/zachmann/mytoken/internal/server/config"
 )
 
 var geoDB *ip2location.DB
 
-func init() {
-	db, err := ip2location.OpenDB("./IP2LOCATION-LITE-DB1.IPV6.BIN")
+// Init initializes the geo ip db
+func Init() {
+	db, err := ip2location.OpenDB(config.Get().GeoIPDBFile)
 	if err != nil {
 		log.WithError(err).Error()
 	}

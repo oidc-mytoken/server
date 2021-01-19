@@ -1,7 +1,7 @@
-/mytoken
 /.idea/
-/setup
-/client
+/mytoken
+/mytoken-setup
+/mytoken-server
 tags
 client.config
 config/server/config.yaml

@@ -73,6 +73,7 @@ var defaultConfig = config{
 type config struct {
 	IssuerURL            string                   `yaml:"issuer"`
 	Server               serverConf               `yaml:"server"`
+	GeoIPDBFile          string                   `yaml:"geo_ip_db_file"`
 	API                  apiConf                  `yaml:"api"`
 	DB                   dbConf                   `yaml:"database"`
 	Signing              signingConf              `yaml:"signing"`

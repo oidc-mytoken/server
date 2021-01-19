@@ -7,14 +7,15 @@ import (
 	configurationEndpoint "github.com/zachmann/mytoken/internal/server/endpoints/configuration"
 	"github.com/zachmann/mytoken/internal/server/jws"
 	"github.com/zachmann/mytoken/internal/server/oidc/authcode"
-	server2 "github.com/zachmann/mytoken/internal/server/server"
+	"github.com/zachmann/mytoken/internal/server/server"
+	"github.com/zachmann/mytoken/internal/server/utils/geoip"
 	loggerUtils "github.com/zachmann/mytoken/internal/server/utils/logger"
 )
 
 func main() {
 	config.Load()
 	loggerUtils.Init()
-	server2.Init()
+	server.Init()
 	configurationEndpoint.Init()
 	authcode.Init()
 	if err := db.Connect(); err != nil {
@@ -22,6 +23,7 @@ func main() {
 	}
 	jws.LoadKey()
 	httpClient.Init(config.Get().IssuerURL)
+	geoip.Init()
 
-	server2.Start()
+	server.Start()
 }

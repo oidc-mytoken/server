@@ -16,6 +16,9 @@ server:
     # The TLS certificate key file
     key:
 
+# The database file for ip geo location. Will be installed by setup to this location.
+geo_ip_db_file: "/IP2LOCATION-LITE-DB1.IPV6.BIN"
+
 # Configuration of the mytoken API
 api:
   # Mytoken can support multiple api versions at the same time; this is the minimal version that is supported; older version won't be supported. Currently only 0 is supported.
