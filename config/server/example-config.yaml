@@ -38,7 +38,7 @@ signing:
   # The file with the signing key
   key_file: "/mytoken.key"
   # If an RSA-based algorithm is used, this is the key len. Only needed when generating a new rsa key.
-  # rsa_key_len: 2048
+   rsa_key_len: 2048
 
 # Configuration for logging
 logging:
@@ -58,7 +58,7 @@ logging:
     level: "error"
 
 # URL with documentation about the service
-service_documentation: "https://github.com/zachmann/mytoken"
+service_documentation: "https://docs-sdm.scc.kit.edu/mytoken/"
 
 # Configuration and enabling/disabling for different features
 features:
