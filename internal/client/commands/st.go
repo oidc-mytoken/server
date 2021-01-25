@@ -136,7 +136,10 @@ func obtainST(args *CommonSTOptions, name string, responseType model.ResponseTyp
 		case "auth":
 			return mytoken.GetSuperTokenByAuthorizationFlow(provider.Issuer, r, c, sc, responseType, tokenName,
 				func(authorizationURL string) error {
-					fmt.Println(authorizationURL)
+					fmt.Fprintln(os.Stderr, "Using any device please visit the following url to continue:")
+					fmt.Fprintln(os.Stderr)
+					fmt.Fprintln(os.Stderr, authorizationURL)
+					fmt.Fprintln(os.Stderr)
 					return nil
 				},
 				func(interval int64, iteration int) {
@@ -196,7 +199,10 @@ func (sstc *stStoreCommand) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	saveEncryptedToken(encryptedToken, provider.Issuer, sstc.PositionalArgs.StoreName, gpgKey)
+	if err = saveEncryptedToken(encryptedToken, provider.Issuer, sstc.PositionalArgs.StoreName, gpgKey); err != nil {
+		return err
+	}
+	fmt.Printf("Saved super token '%s'\n", sstc.PositionalArgs.StoreName)
 	return nil
 }
 
@@ -267,21 +273,17 @@ func (r *restriction) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &rr); err != nil {
 		return err
 	}
-	fmt.Println(rr)
 	t, err := parseTime(rr.ExpiresAt)
 	if err != nil {
 		return err
 	}
 	rr.Restriction.ExpiresAt = t
-	fmt.Println(rr)
 	t, err = parseTime(rr.NotBefore)
 	if err != nil {
 		return err
 	}
 	rr.Restriction.NotBefore = t
-	fmt.Println(rr)
 	*r = restriction(rr.Restriction)
-	fmt.Println(*r)
 	return nil
 }
 
