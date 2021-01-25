@@ -211,10 +211,12 @@ func saveEncryptedToken(token, issuer, name, gpgKey string) error {
 	if err != nil {
 		return err
 	}
-	for _, t := range tokens[issuer] {
+	tokensForIssuer := tokens[issuer]
+	for i, t := range tokensForIssuer {
 		if t.Name == name {
 			t.Token = token
 			t.GPGKey = gpgKey
+			tokensForIssuer[i] = t
 			return config.SaveTokens(tokens)
 		}
 	}
