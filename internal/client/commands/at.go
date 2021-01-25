@@ -9,7 +9,7 @@ import (
 // atCommand is a type for holding and handling the AT command
 type atCommand struct {
 	generalOptions
-	Scopes    []string `long:"scope" description:"Request the passed scope. Can be used multiple times"`
+	Scopes    []string `long:"scope" short:"s" description:"Request the passed scope. Can be used multiple times"`
 	Audiences []string `long:"aud" description:"Request the passed audience. Can be used multiple times"`
 }
 

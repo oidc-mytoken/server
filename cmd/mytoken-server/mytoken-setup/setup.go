@@ -54,8 +54,8 @@ func main() {
 
 type commandGenSigningKey struct{}
 type commandCreateDB struct {
-	Username string `short:"u" long:"user" default:"root" description:"This username is used to connect to the database to create a new database, database user, and tables."`
-	Password string `short:"p" long:"password" description:"The password for the database user"`
+	Username string  `short:"u" long:"user" default:"root" description:"This username is used to connect to the database to create a new database, database user, and tables."`
+	Password *string `short:"p" optional:"true" optional-value:"" long:"password" description:"The password for the database user"`
 }
 type commandInstallGeoIPDB struct{}
 
@@ -85,7 +85,13 @@ func (c *commandGenSigningKey) Execute(args []string) error {
 
 // Execute implements the flags.Commander interface
 func (c *commandCreateDB) Execute(args []string) error {
-	dsn := fmt.Sprintf("%s:%s@%s(%s)/", c.Username, c.Password, "tcp", config.Get().DB.Host)
+	password := ""
+	if c.Password != nil && len(*c.Password) == 0 { // -p specified without argument
+		password = prompter.Password("Database Password")
+	}
+	fmt.Printf("%s:%s\n", c.Username, password)
+	os.Exit(0)
+	dsn := fmt.Sprintf("%s:%s@%s(%s)/", c.Username, password, "tcp", config.Get().DB.Host)
 	if err := db.ConnectDSN(dsn); err != nil {
 		return err
 	}
