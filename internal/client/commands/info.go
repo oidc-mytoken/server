@@ -24,7 +24,7 @@ func (ic *infoCommand) Execute(args []string) error {
 		return fmt.Errorf("The token is not a JWT.")
 	}
 	payload := strings.Split(superToken, ".")[1]
-	decodedPayload, err := base64.StdEncoding.DecodeString(payload)
+	decodedPayload, err := base64.URLEncoding.WithPadding(base64.NoPadding).DecodeString(payload)
 	if err != nil {
 		return err
 	}
