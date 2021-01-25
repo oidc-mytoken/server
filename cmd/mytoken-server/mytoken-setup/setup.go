@@ -20,6 +20,7 @@ import (
 	event "github.com/zachmann/mytoken/internal/server/supertoken/event/pkg"
 	loggerUtils "github.com/zachmann/mytoken/internal/server/utils/logger"
 	"github.com/zachmann/mytoken/internal/server/utils/zipdownload"
+	"github.com/zachmann/mytoken/internal/utils/fileutil"
 	model2 "github.com/zachmann/mytoken/pkg/model"
 )
 
@@ -76,6 +77,11 @@ func (c *commandGenSigningKey) Execute(args []string) error {
 	}
 	str := jws.ExportPrivateKeyAsPemStr(sk)
 	filepath := config.Get().Signing.KeyFile
+	if fileutil.FileExists(filepath) {
+		if !prompter.YesNo(fmt.Sprintf("File '%s' already exists. Do you  want to overwrite it?", filepath), false) {
+			os.Exit(1)
+		}
+	}
 	if err = ioutil.WriteFile(filepath, []byte(str), 0600); err != nil {
 		return err
 	}
