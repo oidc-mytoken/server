@@ -18,6 +18,7 @@ var options struct {
 	ST            stCommand
 	AT            atCommand
 	Revoke        revokeCommand
+	Info          infoCommand
 }
 
 var parser *flags.Parser
@@ -35,6 +36,8 @@ func init() {
 	parser.AddGroup("Config Options", "", &options.ConfigOptions)
 	parser.AddCommand("AT", "Obtain access token", "Obtain a new OpenID Connect access token", &options.AT)
 	parser.AddCommand("revoke", "Revoke super token", "Revoke a mytoken super token", &options.Revoke)
+	info, _ := parser.AddCommand("info", "Get information about a super token", "Get information about a super token", &options.Info)
+	info.SubcommandsOptional = true
 }
 
 // Parse parses the command line options and calls the specified command

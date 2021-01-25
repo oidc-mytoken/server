@@ -17,8 +17,6 @@ type generalOptions struct {
 	SuperToken string `long:"ST" description:"The passed super token is used instead of a stored one"`
 }
 
-type providerOpt string
-
 func (g *generalOptions) Check() (*model.Provider, string) {
 	p, pErr := g.checkProvider()
 	if len(g.SuperToken) > 0 {
