@@ -52,8 +52,8 @@ type CommonSTOptions struct {
 
 	RestrictScopes      []string `long:"scope" short:"s" description:"Restrict the supertoken so that it can only be used to request ATs with these scopes. Can be used multiple times. Overwritten by --restriction."`
 	RestrictAudiences   []string `long:"aud" description:"Restrict the supertoken so that it can only be used to request ATs with these audiences. Can be used multiple times. Overwritten by --restriction."`
-	RestrictExp         string   `long:"exp" description:"Restrict the supertoken so that it cannot be used after this time. The time given can be an absolute time given as a unix timestamp, a relative time string starting with '+' or an absolute time string."`
-	RestrictNbf         string   `long:"nbf" description:"Restrict the supertoken so that it cannot be used before this time. The time given can be an absolute time given as a unix timestamp, a relative time string starting with '+' or an absolute time string."`
+	RestrictExp         string   `long:"exp" description:"Restrict the supertoken so that it cannot be used after this time. The time given can be an absolute time given as a unix timestamp, a relative time string starting with '+' or an absolute time string '2006-01-02 15:04'."`
+	RestrictNbf         string   `long:"nbf" description:"Restrict the supertoken so that it cannot be used before this time. The time given can be an absolute time given as a unix timestamp, a relative time string starting with '+' or an absolute time string '2006-01-02 15:04'."`
 	RestrictIP          []string `long:"ip" description:"Restrict the supertoken so that it can only be used from these ips. Can be a network address block or a single ip. Can be given multiple times."`
 	RestrictGeoIPWhite  []string `long:"geo-ip-white" description:"Restrict the supertoken so that it can be only used from these countries. Must be a short country code, e.g. 'us'. Can be given multiple times."`
 	RestrictGeoIPBlack  []string `long:"geo-ip-black" description:"Restrict the supertoken so that it cannot be used from these countries. Must be a short country code, e.g. 'us'. Can be given multiple times."`
@@ -302,6 +302,6 @@ func parseTime(t string) (int64, error) {
 		d, err := duration.ParseDuration(t[1:])
 		return time.Now().Add(d).Unix(), err
 	}
-	tt, err := time.Parse("", t) //TODO
+	tt, err := time.ParseInLocation("2006-01-02 15:04", t, time.Local) //TODO
 	return tt.Unix(), err
 }
