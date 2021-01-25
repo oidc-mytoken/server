@@ -66,7 +66,13 @@ func (c *commandInstallGeoIPDB) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(config.Get().GeoIPDBFile, archive["IP2LOCATION-LITE-DB1.IPV6.BIN"], 0644)
+	log.Debug("Downloaded zip file")
+	err = ioutil.WriteFile(config.Get().GeoIPDBFile, archive["IP2LOCATION-LITE-DB1.IPV6.BIN"], 0644)
+	if err == nil {
+		log.WithField("file", config.Get().GeoIPDBFile).Debug("Installed geo ip database")
+		fmt.Printf("Installed geo ip database file to '%s'.\n", config.Get().GeoIPDBFile)
+	}
+	return err
 }
 
 // Execute implements the flags.Commander interface
@@ -78,6 +84,7 @@ func (c *commandGenSigningKey) Execute(args []string) error {
 	str := jws.ExportPrivateKeyAsPemStr(sk)
 	filepath := config.Get().Signing.KeyFile
 	if fileutil.FileExists(filepath) {
+		log.WithField("filepath", filepath).Debug("File already exists")
 		if !prompter.YesNo(fmt.Sprintf("File '%s' already exists. Do you  want to overwrite it?", filepath), false) {
 			os.Exit(1)
 		}
@@ -85,7 +92,8 @@ func (c *commandGenSigningKey) Execute(args []string) error {
 	if err = ioutil.WriteFile(filepath, []byte(str), 0600); err != nil {
 		return err
 	}
-	log.WithField("filepath", filepath).Info("Wrote key to file.")
+	log.WithField("filepath", filepath).Debug("Wrote key to file")
+	fmt.Printf("Wrote key to file '%s'.\n", filepath)
 	return nil
 }
 
@@ -95,8 +103,6 @@ func (c *commandCreateDB) Execute(args []string) error {
 	if c.Password != nil && len(*c.Password) == 0 { // -p specified without argument
 		password = prompter.Password("Database Password")
 	}
-	fmt.Printf("%s:%s\n", c.Username, password)
-	os.Exit(0)
 	dsn := fmt.Sprintf("%s:%s@%s(%s)/", c.Username, password, "tcp", config.Get().DB.Host)
 	if err := db.ConnectDSN(dsn); err != nil {
 		return err
@@ -105,7 +111,7 @@ func (c *commandCreateDB) Execute(args []string) error {
 	if err := checkDB(); err != nil {
 		return err
 	}
-	return db.Transact(func(tx *sqlx.Tx) error {
+	err := db.Transact(func(tx *sqlx.Tx) error {
 		if err := createDB(tx); err != nil {
 			return err
 		}
@@ -120,6 +126,10 @@ func (c *commandCreateDB) Execute(args []string) error {
 		}
 		return nil
 	})
+	if err == nil {
+		fmt.Println("Prepared database.")
+	}
+	return err
 }
 
 func addPredefinedValues(tx *sqlx.Tx) error {
