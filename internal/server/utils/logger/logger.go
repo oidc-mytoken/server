@@ -18,9 +18,32 @@ func mustGetFile(path string) io.Writer {
 	panic(err)
 }
 
+var accessLogger *exchangeableWriter
+
 // MustGetAccessLogger open the server access logger; on failure the program exits
 func MustGetAccessLogger() io.Writer {
+	accessLogger = &exchangeableWriter{
+		Writer: mustGetAccessLogger(),
+	}
+	return accessLogger
+}
+
+// MustUpdateAccessLogger updates the writer of the access logger
+func MustUpdateAccessLogger() {
+	accessLogger.SetOutput(mustGetAccessLogger())
+}
+
+func mustGetAccessLogger() io.Writer {
 	return mustGetLogWriter(config.Get().Logging.Access, "access.log")
+}
+
+type exchangeableWriter struct {
+	io.Writer
+}
+
+// SetOutput updates the internal writer
+func (w *exchangeableWriter) SetOutput(out io.Writer) {
+	w.Writer = out
 }
 
 func mustGetLogWriter(logConf config.LoggerConf, logfileName string) io.Writer {
@@ -57,5 +80,15 @@ func Init() {
 	if log.IsLevelEnabled(log.DebugLevel) {
 		log.SetReportCaller(true)
 	}
+	SetOutput()
+}
+
+// SetOutput sets the logging output
+func SetOutput() {
+	log.SetFormatter(&log.TextFormatter{
+		DisableColors: true,
+		ForceQuote:    true,
+		FullTimestamp: true,
+	})
 	log.SetOutput(mustGetLogWriter(config.Get().Logging.Internal, "mytoken.log"))
 }

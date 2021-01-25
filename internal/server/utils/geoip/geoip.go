@@ -16,6 +16,9 @@ func Init() {
 		log.WithError(err).Error()
 	}
 	log.Debug("Loaded geo ip data")
+	if geoDB != nil {
+		geoDB.Close()
+	}
 	geoDB = db
 }
 

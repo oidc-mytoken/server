@@ -32,6 +32,11 @@ func ConnectDSN(dsn string) error {
 	dbTmp.SetConnMaxLifetime(time.Minute * 4)
 	dbTmp.SetMaxOpenConns(10)
 	dbTmp.SetMaxIdleConns(10)
+	if dbCon != nil {
+		if err = dbCon.Close(); err != nil {
+			log.WithError(err).Error()
+		}
+	}
 	dbCon = dbTmp
 	return nil
 }
