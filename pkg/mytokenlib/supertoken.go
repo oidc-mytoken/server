@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/oidc-mytoken/server/internal/server/endpoints/token/super/pkg"
+	"github.com/oidc-mytoken/server/internal/endpoints/token/super/pkg"
 	"github.com/oidc-mytoken/server/internal/supertoken/capabilities"
 	"github.com/oidc-mytoken/server/internal/supertoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/supertoken/token"

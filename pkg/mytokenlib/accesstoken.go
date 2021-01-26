@@ -3,7 +3,7 @@ package mytokenlib
 import (
 	"strings"
 
-	"github.com/oidc-mytoken/server/internal/server/endpoints/token/access/pkg"
+	"github.com/oidc-mytoken/server/internal/endpoints/token/access/pkg"
 	"github.com/oidc-mytoken/server/internal/supertoken/token"
 	"github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/httpClient"

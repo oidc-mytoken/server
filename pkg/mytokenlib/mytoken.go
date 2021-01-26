@@ -1,7 +1,7 @@
 package mytokenlib
 
 import (
-	"github.com/oidc-mytoken/server/internal/server/endpoints/configuration/pkg"
+	"github.com/oidc-mytoken/server/internal/endpoints/configuration/pkg"
 	"github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/httpClient"
 	"github.com/oidc-mytoken/server/shared/utils"
