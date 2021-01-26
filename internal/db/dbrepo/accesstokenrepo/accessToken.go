@@ -8,7 +8,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model"
-	supertoken "github.com/oidc-mytoken/server/internal/supertoken/pkg"
+	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 

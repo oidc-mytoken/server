@@ -1,8 +1,8 @@
 package pkg
 
 import (
-	"github.com/oidc-mytoken/server/internal/supertoken/token"
 	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/shared/supertoken/token"
 )
 
 // AccessTokenRequest holds an request for an access token

@@ -6,7 +6,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model"
-	event "github.com/oidc-mytoken/server/internal/supertoken/event/pkg"
+	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
 )
 
 // EventDBObject holds information needed for storing an event in the database

@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/oidc-mytoken/server/internal/endpoints/token/super/pkg"
-	"github.com/oidc-mytoken/server/internal/supertoken/capabilities"
-	"github.com/oidc-mytoken/server/internal/supertoken/restrictions"
-	"github.com/oidc-mytoken/server/internal/supertoken/token"
 	"github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/httpClient"
+	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
+	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
+	"github.com/oidc-mytoken/server/shared/supertoken/token"
 )
 
 func (my *Mytoken) GetSuperToken(req interface{}) (string, error) {

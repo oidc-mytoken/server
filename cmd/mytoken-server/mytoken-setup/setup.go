@@ -17,10 +17,10 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbdefinition"
 	"github.com/oidc-mytoken/server/internal/jws"
 	"github.com/oidc-mytoken/server/internal/model"
-	event "github.com/oidc-mytoken/server/internal/supertoken/event/pkg"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/internal/utils/zipdownload"
 	model2 "github.com/oidc-mytoken/server/pkg/model"
+	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 )
 

@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"github.com/oidc-mytoken/server/internal/endpoints/token/access/pkg"
-	"github.com/oidc-mytoken/server/internal/supertoken/token"
 	"github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/httpClient"
+	"github.com/oidc-mytoken/server/shared/supertoken/token"
 )
 
 func (my *Mytoken) GetAccessToken(superToken, oidcIssuer string, scopes []string, audiences []string, comment string) (string, error) {

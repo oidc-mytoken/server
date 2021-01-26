@@ -8,8 +8,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/internal/supertoken/token"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/shared/supertoken/token"
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 

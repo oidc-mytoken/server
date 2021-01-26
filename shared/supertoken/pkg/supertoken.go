@@ -15,11 +15,11 @@ import (
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/super/pkg"
 	"github.com/oidc-mytoken/server/internal/jws"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/internal/supertoken/capabilities"
-	eventService "github.com/oidc-mytoken/server/internal/supertoken/event"
-	event "github.com/oidc-mytoken/server/internal/supertoken/event/pkg"
-	"github.com/oidc-mytoken/server/internal/supertoken/restrictions"
 	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
+	eventService "github.com/oidc-mytoken/server/shared/supertoken/event"
+	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
+	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 )
 

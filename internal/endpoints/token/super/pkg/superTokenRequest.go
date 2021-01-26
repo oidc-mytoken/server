@@ -3,10 +3,10 @@ package pkg
 import (
 	"encoding/json"
 
-	"github.com/oidc-mytoken/server/internal/supertoken/capabilities"
-	"github.com/oidc-mytoken/server/internal/supertoken/restrictions"
-	"github.com/oidc-mytoken/server/internal/supertoken/token"
 	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
+	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
+	"github.com/oidc-mytoken/server/shared/supertoken/token"
 )
 
 // SuperTokenFromSuperTokenRequest is a request to create a new supertoken from an existing supertoken

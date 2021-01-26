@@ -6,7 +6,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/eventrepo"
 	"github.com/oidc-mytoken/server/internal/model"
-	pkg "github.com/oidc-mytoken/server/internal/supertoken/event/pkg"
+	pkg "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
 )
 
 // LogEvent logs an event to the database

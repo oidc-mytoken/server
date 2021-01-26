@@ -12,10 +12,10 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model"
-	eventService "github.com/oidc-mytoken/server/internal/supertoken/event"
-	event "github.com/oidc-mytoken/server/internal/supertoken/event/pkg"
-	supertoken "github.com/oidc-mytoken/server/internal/supertoken/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	eventService "github.com/oidc-mytoken/server/shared/supertoken/event"
+	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
+	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 

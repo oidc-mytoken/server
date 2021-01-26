@@ -8,9 +8,9 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/token/super/polling"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
-	"github.com/oidc-mytoken/server/internal/supertoken"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
 	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/shared/supertoken"
 )
 
 // HandleSuperTokenEndpoint handles requests on the super token endpoint

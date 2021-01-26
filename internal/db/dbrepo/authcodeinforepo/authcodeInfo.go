@@ -10,8 +10,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/transfercoderepo"
-	"github.com/oidc-mytoken/server/internal/supertoken/capabilities"
-	"github.com/oidc-mytoken/server/internal/supertoken/restrictions"
+	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
+	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
 )
 
 // AuthFlowInfo holds database information about a started authorization flow
