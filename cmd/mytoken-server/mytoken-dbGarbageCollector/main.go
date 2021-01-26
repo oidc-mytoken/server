@@ -3,8 +3,8 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 
-	"github.com/oidc-mytoken/server/internal/server/config"
-	"github.com/oidc-mytoken/server/internal/server/db"
+	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/db"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 )
 
