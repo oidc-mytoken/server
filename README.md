@@ -1,6 +1,7 @@
 ![mytoken logo](https://git.scc.kit.edu/oidc/mytoken/-/raw/master/docs/img/mytoken.png)
 
 [![License](https://img.shields.io/github/license/oidc-mytoken/server.svg)](https://github.com/oidc-mytoken/server/blob/master/LICENSE)
+[![Go Report](https://goreportcard.com/badge/github.com/oidc-mytoken/server)](https://goreportcard.com/report/github.com/oidc-mytoken/server)
 [![Release date](https://img.shields.io/github/release-date/oidc-mytoken/server.svg)](https://github.com/oidc-mytoken/server/releases/latest)
 [![Release version](https://img.shields.io/github/release/oidc-mytoken/server.svg)](https://github.com/oidc-mytoken/server/releases/latest)
 
