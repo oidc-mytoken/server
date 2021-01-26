@@ -598,6 +598,9 @@ func TestRestriction_Hash(t *testing.T) {
 	}
 
 	j, err := json.Marshal(r)
+	if err != nil {
+		t.Error(err)
+	}
 	fmt.Printf("%s\n", j)
 
 	hash, err := r.hash()
