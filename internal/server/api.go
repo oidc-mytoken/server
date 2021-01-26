@@ -3,9 +3,8 @@ package server
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/oidc-mytoken/server/internal/server/config"
-	"github.com/oidc-mytoken/server/internal/server/endpoints/revocation"
-
+	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/endpoints/revocation"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/access"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/super"
 	"github.com/oidc-mytoken/server/internal/model/version"

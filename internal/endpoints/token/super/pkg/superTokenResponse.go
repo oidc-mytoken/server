@@ -1,8 +1,8 @@
 package pkg
 
 import (
-	"github.com/oidc-mytoken/server/internal/server/supertoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/supertoken/capabilities"
+	"github.com/oidc-mytoken/server/internal/supertoken/restrictions"
 	"github.com/oidc-mytoken/server/pkg/model"
 )
 

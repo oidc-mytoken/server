@@ -1,8 +1,7 @@
 package routes
 
 import (
-	"github.com/oidc-mytoken/server/internal/server/model/version"
-
+	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/apiPath"
 	"github.com/oidc-mytoken/server/shared/utils"
 )

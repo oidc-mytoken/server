@@ -4,8 +4,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
 
+	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/internal/server/db"
 	event "github.com/oidc-mytoken/server/internal/supertoken/event/pkg"
 )
 

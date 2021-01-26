@@ -2,8 +2,8 @@ package revoke
 
 import (
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcReqRes"
-	"github.com/oidc-mytoken/server/internal/server/model"
 	pkgModel "github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/httpClient"
 )

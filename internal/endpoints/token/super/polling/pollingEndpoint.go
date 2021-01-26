@@ -6,9 +6,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/transfercoderepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/super/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/internal/server/db/dbrepo/supertokenrepo/transfercoderepo"
 	supertoken "github.com/oidc-mytoken/server/internal/supertoken/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
 	pkgModel "github.com/oidc-mytoken/server/pkg/model"

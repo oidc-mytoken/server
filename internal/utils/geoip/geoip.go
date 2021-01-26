@@ -4,7 +4,7 @@ import (
 	"github.com/ip2location/ip2location-go"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/oidc-mytoken/server/internal/server/config"
+	"github.com/oidc-mytoken/server/internal/config"
 )
 
 var geoDB *ip2location.DB

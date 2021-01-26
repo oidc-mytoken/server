@@ -6,8 +6,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
+	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
-	"github.com/oidc-mytoken/server/internal/server/db"
 	"github.com/oidc-mytoken/server/pkg/model"
 )
 

@@ -1,4 +1,4 @@
-module github.com/zachmann/mytoken
+module github.com/oidc-mytoken/server
 
 go 1.14
 

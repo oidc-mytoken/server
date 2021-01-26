@@ -5,9 +5,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/server/internal/config"
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcReqRes"
-	"github.com/oidc-mytoken/server/internal/server/config"
 	"github.com/oidc-mytoken/server/shared/httpClient"
 )
 

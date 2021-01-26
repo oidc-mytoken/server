@@ -3,7 +3,7 @@ package endpoints
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/oidc-mytoken/server/internal/server/jws"
+	"github.com/oidc-mytoken/server/internal/jws"
 )
 
 // HandleJWKS handles request for the jwks, returning the jwks

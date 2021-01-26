@@ -3,7 +3,7 @@ package supertoken
 import (
 	"fmt"
 
-	"github.com/oidc-mytoken/server/internal/server/db/dbrepo/supertokenrepo"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo"
 )
 
 // SuperTokenEntryTree is a tree of SuperTokenEntry

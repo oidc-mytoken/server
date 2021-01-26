@@ -5,10 +5,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/super/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
-	dbhelper "github.com/oidc-mytoken/server/internal/server/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	supertoken "github.com/oidc-mytoken/server/internal/supertoken/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
 	pkgModel "github.com/oidc-mytoken/server/pkg/model"
