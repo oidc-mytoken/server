@@ -27,12 +27,12 @@ import (
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	supertoken "github.com/oidc-mytoken/server/internal/supertoken/pkg"
 	"github.com/oidc-mytoken/server/internal/supertoken/restrictions"
-	"github.com/oidc-mytoken/server/internal/utils/issuerUtils"
 	"github.com/oidc-mytoken/server/internal/utils/oidcUtils"
 	"github.com/oidc-mytoken/server/internal/utils/singleasciiencode"
 	pkgModel "github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/context"
 	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 )
 
 var redirectURL string

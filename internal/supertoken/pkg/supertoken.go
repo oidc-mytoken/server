@@ -19,8 +19,8 @@ import (
 	eventService "github.com/oidc-mytoken/server/internal/supertoken/event"
 	event "github.com/oidc-mytoken/server/internal/supertoken/event/pkg"
 	"github.com/oidc-mytoken/server/internal/supertoken/restrictions"
-	"github.com/oidc-mytoken/server/internal/utils/issuerUtils"
 	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 )
 
 // SuperToken is a mytoken SuperToken

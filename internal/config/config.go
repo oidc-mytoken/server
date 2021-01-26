@@ -7,11 +7,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 
-	"github.com/oidc-mytoken/server/internal/utils/issuerUtils"
 	"github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
 	"github.com/oidc-mytoken/server/shared/context"
 	"github.com/oidc-mytoken/server/shared/utils/fileutil"
+	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 )
 
 var defaultConfig = config{
