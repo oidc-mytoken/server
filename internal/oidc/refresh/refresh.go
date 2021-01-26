@@ -5,10 +5,10 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	dbhelper "github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
-	"github.com/zachmann/mytoken/internal/oidc/oidcReqRes"
-	"github.com/zachmann/mytoken/internal/server/config"
-	"github.com/zachmann/mytoken/shared/httpClient"
+	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
+	"github.com/oidc-mytoken/server/internal/oidc/oidcReqRes"
+	"github.com/oidc-mytoken/server/internal/server/config"
+	"github.com/oidc-mytoken/server/shared/httpClient"
 )
 
 // UpdateChangedRT is a function that should update a refresh token, it takes the old value as well as the new one

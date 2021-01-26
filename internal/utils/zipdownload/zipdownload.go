@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"io/ioutil"
 
-	"github.com/zachmann/mytoken/shared/httpClient"
+	"github.com/oidc-mytoken/server/shared/httpClient"
 )
 
 // DownloadZipped downloads a zip archive and returns all contained files

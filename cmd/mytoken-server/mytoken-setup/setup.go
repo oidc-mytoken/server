@@ -12,16 +12,16 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/config"
-	"github.com/zachmann/mytoken/internal/db"
-	"github.com/zachmann/mytoken/internal/db/dbdefinition"
-	"github.com/zachmann/mytoken/internal/jws"
-	"github.com/zachmann/mytoken/internal/model"
-	event "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
-	loggerUtils "github.com/zachmann/mytoken/internal/utils/logger"
-	"github.com/zachmann/mytoken/internal/utils/zipdownload"
-	model2 "github.com/zachmann/mytoken/pkg/model"
-	"github.com/zachmann/mytoken/shared/utils/fileutil"
+	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/dbdefinition"
+	"github.com/oidc-mytoken/server/internal/jws"
+	"github.com/oidc-mytoken/server/internal/model"
+	event "github.com/oidc-mytoken/server/internal/supertoken/event/pkg"
+	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
+	"github.com/oidc-mytoken/server/internal/utils/zipdownload"
+	model2 "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 )
 
 var genSigningKeyComm commandGenSigningKey

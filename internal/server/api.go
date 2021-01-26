@@ -3,13 +3,13 @@ package server
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/zachmann/mytoken/internal/server/config"
-	"github.com/zachmann/mytoken/internal/server/endpoints/revocation"
+	"github.com/oidc-mytoken/server/internal/server/config"
+	"github.com/oidc-mytoken/server/internal/server/endpoints/revocation"
 
-	"github.com/zachmann/mytoken/internal/endpoints/token/access"
-	"github.com/zachmann/mytoken/internal/endpoints/token/super"
-	"github.com/zachmann/mytoken/internal/model/version"
-	"github.com/zachmann/mytoken/internal/server/routes"
+	"github.com/oidc-mytoken/server/internal/endpoints/token/access"
+	"github.com/oidc-mytoken/server/internal/endpoints/token/super"
+	"github.com/oidc-mytoken/server/internal/model/version"
+	"github.com/oidc-mytoken/server/internal/server/routes"
 )
 
 func addAPIRoutes(s fiber.Router) {

@@ -1,10 +1,10 @@
 package routes
 
 import (
-	"github.com/zachmann/mytoken/internal/server/model/version"
+	"github.com/oidc-mytoken/server/internal/server/model/version"
 
-	"github.com/zachmann/mytoken/internal/server/apiPath"
-	"github.com/zachmann/mytoken/shared/utils"
+	"github.com/oidc-mytoken/server/internal/server/apiPath"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 var routes *paths

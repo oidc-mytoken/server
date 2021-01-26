@@ -1,7 +1,7 @@
 package transfercoderepo
 
 import (
-	"github.com/zachmann/mytoken/internal/config"
+	"github.com/oidc-mytoken/server/internal/config"
 )
 
 // ShortToken holds database information of a short token

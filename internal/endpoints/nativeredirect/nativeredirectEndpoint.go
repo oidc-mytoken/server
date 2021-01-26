@@ -3,8 +3,8 @@ package nativeredirect
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/zachmann/mytoken/internal/model"
-	"github.com/zachmann/mytoken/internal/server/db/dbrepo/supertokenrepo/transfercoderepo"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/server/db/dbrepo/supertokenrepo/transfercoderepo"
 )
 
 func HandleNativeRedirect(ctx *fiber.Ctx) error {

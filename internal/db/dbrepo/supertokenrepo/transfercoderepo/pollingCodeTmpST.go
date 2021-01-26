@@ -6,9 +6,9 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/zachmann/mytoken/internal/db/dbrepo/authcodeinforepo/state"
-	"github.com/zachmann/mytoken/internal/server/db"
-	"github.com/zachmann/mytoken/pkg/model"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
+	"github.com/oidc-mytoken/server/internal/server/db"
+	"github.com/oidc-mytoken/server/pkg/model"
 )
 
 // TransferCodeStatus holds information about the status of a polling code

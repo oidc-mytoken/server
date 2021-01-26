@@ -12,10 +12,10 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
-	"github.com/zachmann/mytoken/internal/utils/geoip"
-	"github.com/zachmann/mytoken/internal/utils/hashUtils"
-	"github.com/zachmann/mytoken/shared/utils"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
+	"github.com/oidc-mytoken/server/internal/utils/geoip"
+	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 // Restrictions is a slice of Restriction

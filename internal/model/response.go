@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/valyala/fasthttp"
 
-	"github.com/zachmann/mytoken/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/model"
 )
 
 // Response models a http server response

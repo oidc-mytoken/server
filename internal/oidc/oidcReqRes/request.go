@@ -1,6 +1,6 @@
 package oidcReqRes
 
-import "github.com/zachmann/mytoken/shared/utils"
+import "github.com/oidc-mytoken/server/shared/utils"
 
 // RefreshRequest is the oidc request for an refresh flow
 type RefreshRequest struct {

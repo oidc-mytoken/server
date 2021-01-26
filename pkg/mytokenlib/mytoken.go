@@ -1,10 +1,10 @@
 package mytokenlib
 
 import (
-	"github.com/zachmann/mytoken/internal/server/endpoints/configuration/pkg"
-	"github.com/zachmann/mytoken/pkg/model"
-	"github.com/zachmann/mytoken/shared/httpClient"
-	"github.com/zachmann/mytoken/shared/utils"
+	"github.com/oidc-mytoken/server/internal/server/endpoints/configuration/pkg"
+	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/shared/httpClient"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 type Mytoken struct {

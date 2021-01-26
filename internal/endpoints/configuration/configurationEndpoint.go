@@ -3,14 +3,14 @@ package configuration
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/zachmann/mytoken/internal/server/config"
+	"github.com/oidc-mytoken/server/internal/server/config"
 
-	"github.com/zachmann/mytoken/internal/endpoints/configuration/pkg"
-	"github.com/zachmann/mytoken/internal/model"
-	"github.com/zachmann/mytoken/internal/model/version"
-	"github.com/zachmann/mytoken/internal/server/routes"
-	pkgModel "github.com/zachmann/mytoken/pkg/model"
-	"github.com/zachmann/mytoken/shared/utils"
+	"github.com/oidc-mytoken/server/internal/endpoints/configuration/pkg"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/model/version"
+	"github.com/oidc-mytoken/server/internal/server/routes"
+	pkgModel "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 // HandleConfiguration handles calls to the configuration endpoint

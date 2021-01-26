@@ -11,7 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/helmet/v2"
 
-	loggerUtils "github.com/zachmann/mytoken/internal/utils/logger"
+	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 )
 
 func addMiddlewares(s fiber.Router) {

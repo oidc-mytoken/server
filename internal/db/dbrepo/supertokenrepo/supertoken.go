@@ -10,13 +10,13 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/db"
-	"github.com/zachmann/mytoken/internal/model"
-	eventService "github.com/zachmann/mytoken/internal/supertoken/event"
-	event "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
-	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
-	"github.com/zachmann/mytoken/internal/utils/hashUtils"
-	"github.com/zachmann/mytoken/shared/utils/cryptUtils"
+	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/model"
+	eventService "github.com/oidc-mytoken/server/internal/supertoken/event"
+	event "github.com/oidc-mytoken/server/internal/supertoken/event/pkg"
+	supertoken "github.com/oidc-mytoken/server/internal/supertoken/pkg"
+	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 
 // SuperTokenEntry holds the information of a SuperTokenEntry as stored in the

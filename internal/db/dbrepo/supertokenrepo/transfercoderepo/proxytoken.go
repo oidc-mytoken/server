@@ -6,10 +6,10 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/zachmann/mytoken/internal/server/db"
-	"github.com/zachmann/mytoken/internal/utils/hashUtils"
-	"github.com/zachmann/mytoken/shared/utils"
-	"github.com/zachmann/mytoken/shared/utils/cryptUtils"
+	"github.com/oidc-mytoken/server/internal/server/db"
+	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 
 // proxyToken holds information for proxy tokens, i.e. tokens that proxy another token, e.g. a short token

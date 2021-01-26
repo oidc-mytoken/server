@@ -7,9 +7,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/config"
-	"github.com/zachmann/mytoken/internal/db"
-	"github.com/zachmann/mytoken/pkg/model"
+	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/pkg/model"
 )
 
 // TransferCode is a type used to transfer a token

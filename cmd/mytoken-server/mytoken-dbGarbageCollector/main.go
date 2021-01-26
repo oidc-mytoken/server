@@ -3,9 +3,9 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/server/config"
-	"github.com/zachmann/mytoken/internal/server/db"
-	loggerUtils "github.com/zachmann/mytoken/internal/utils/logger"
+	"github.com/oidc-mytoken/server/internal/server/config"
+	"github.com/oidc-mytoken/server/internal/server/db"
+	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 )
 
 func main() {

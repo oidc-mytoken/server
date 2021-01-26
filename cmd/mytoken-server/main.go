@@ -7,23 +7,22 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/server/config"
-
-	"github.com/zachmann/mytoken/internal/db"
-	configurationEndpoint "github.com/zachmann/mytoken/internal/endpoints/configuration"
-	"github.com/zachmann/mytoken/internal/jws"
-	"github.com/zachmann/mytoken/internal/oidc/authcode"
-	server2 "github.com/zachmann/mytoken/internal/server"
-	"github.com/zachmann/mytoken/internal/utils/geoip"
-	loggerUtils "github.com/zachmann/mytoken/internal/utils/logger"
-	"github.com/zachmann/mytoken/shared/httpClient"
+	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/db"
+	configurationEndpoint "github.com/oidc-mytoken/server/internal/endpoints/configuration"
+	"github.com/oidc-mytoken/server/internal/jws"
+	"github.com/oidc-mytoken/server/internal/oidc/authcode"
+	"github.com/oidc-mytoken/server/internal/server"
+	"github.com/oidc-mytoken/server/internal/utils/geoip"
+	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
+	"github.com/oidc-mytoken/server/shared/httpClient"
 )
 
 func main() {
 	handleSignals()
 	config.Load()
 	loggerUtils.Init()
-	server2.Init()
+	server.Init()
 	configurationEndpoint.Init()
 	authcode.Init()
 	if err := db.Connect(); err != nil {
@@ -33,7 +32,7 @@ func main() {
 	httpClient.Init(config.Get().IssuerURL)
 	geoip.Init()
 
-	server2.Start()
+	server.Start()
 }
 
 func handleSignals() {

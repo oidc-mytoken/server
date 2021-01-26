@@ -7,11 +7,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 
-	"github.com/zachmann/mytoken/internal/utils/issuerUtils"
-	"github.com/zachmann/mytoken/pkg/model"
-	"github.com/zachmann/mytoken/pkg/oauth2x"
-	"github.com/zachmann/mytoken/shared/context"
-	"github.com/zachmann/mytoken/shared/utils/fileutil"
+	"github.com/oidc-mytoken/server/internal/utils/issuerUtils"
+	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/oauth2x"
+	"github.com/oidc-mytoken/server/shared/context"
+	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 )
 
 var defaultConfig = config{
@@ -43,7 +43,7 @@ var defaultConfig = config{
 			Level:  "error",
 		},
 	},
-	ServiceDocumentation: "https://github.com/zachmann/mytoken",
+	ServiceDocumentation: "https://github.com/oidc-mytoken/server",
 	Features: featuresConf{
 		EnabledOIDCFlows: []model.OIDCFlow{
 			model.OIDCFlowAuthorizationCode,

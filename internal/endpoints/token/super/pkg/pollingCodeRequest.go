@@ -1,7 +1,7 @@
 package pkg
 
 import (
-	"github.com/zachmann/mytoken/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/model"
 )
 
 // PollingCodeRequest is a polling code request

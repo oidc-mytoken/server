@@ -7,10 +7,10 @@ import (
 	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/zachmann/mytoken/internal/db"
-	"github.com/zachmann/mytoken/internal/supertoken/token"
-	"github.com/zachmann/mytoken/internal/utils/hashUtils"
-	"github.com/zachmann/mytoken/shared/utils/cryptUtils"
+	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/supertoken/token"
+	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 
 // UpdateRefreshToken updates a refresh token in the database, all occurrences of the RT are updated.

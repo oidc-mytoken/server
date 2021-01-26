@@ -8,16 +8,16 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/config"
-	"github.com/zachmann/mytoken/internal/db"
-	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/transfercoderepo"
-	request "github.com/zachmann/mytoken/internal/endpoints/revocation/pkg"
-	"github.com/zachmann/mytoken/internal/model"
-	"github.com/zachmann/mytoken/internal/supertoken"
-	supertokenPkg "github.com/zachmann/mytoken/internal/supertoken/pkg"
-	"github.com/zachmann/mytoken/internal/supertoken/token"
-	pkgModel "github.com/zachmann/mytoken/pkg/model"
-	"github.com/zachmann/mytoken/shared/utils"
+	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/transfercoderepo"
+	request "github.com/oidc-mytoken/server/internal/endpoints/revocation/pkg"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/supertoken"
+	supertokenPkg "github.com/oidc-mytoken/server/internal/supertoken/pkg"
+	"github.com/oidc-mytoken/server/internal/supertoken/token"
+	pkgModel "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 // HandleRevoke handles requests to the revocation endpoint

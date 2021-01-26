@@ -6,12 +6,12 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/config"
-	"github.com/zachmann/mytoken/internal/db"
-	"github.com/zachmann/mytoken/internal/db/dbrepo/authcodeinforepo/state"
-	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/transfercoderepo"
-	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
-	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/transfercoderepo"
+	"github.com/oidc-mytoken/server/internal/supertoken/capabilities"
+	"github.com/oidc-mytoken/server/internal/supertoken/restrictions"
 )
 
 // AuthFlowInfo holds database information about a started authorization flow

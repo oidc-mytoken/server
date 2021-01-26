@@ -3,7 +3,7 @@ package authcode
 import (
 	"testing"
 
-	"github.com/zachmann/mytoken/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/model"
 )
 
 func TestParseState(t *testing.T) {

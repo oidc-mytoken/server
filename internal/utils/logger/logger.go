@@ -7,7 +7,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/server/config"
+	"github.com/oidc-mytoken/server/internal/server/config"
 )
 
 func mustGetFile(path string) io.Writer {

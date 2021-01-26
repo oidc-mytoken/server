@@ -3,7 +3,7 @@ package singleasciiencode
 import (
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/shared/utils"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 const maxFlags = 6

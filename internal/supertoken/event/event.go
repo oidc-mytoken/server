@@ -4,9 +4,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/zachmann/mytoken/internal/model"
-	"github.com/zachmann/mytoken/internal/server/db/dbrepo/eventrepo"
-	pkg "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/server/db/dbrepo/eventrepo"
+	pkg "github.com/oidc-mytoken/server/internal/supertoken/event/pkg"
 )
 
 // LogEvent logs an event to the database

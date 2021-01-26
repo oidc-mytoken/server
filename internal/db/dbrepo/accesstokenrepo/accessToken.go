@@ -6,10 +6,10 @@ import (
 	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/zachmann/mytoken/internal/model"
-	"github.com/zachmann/mytoken/internal/server/db"
-	supertoken "github.com/zachmann/mytoken/internal/supertoken/pkg"
-	"github.com/zachmann/mytoken/shared/utils/cryptUtils"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/server/db"
+	supertoken "github.com/oidc-mytoken/server/internal/supertoken/pkg"
+	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 
 // AccessToken holds database information about an access token

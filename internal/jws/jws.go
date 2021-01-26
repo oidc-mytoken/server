@@ -14,7 +14,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/lestrrat-go/jwx/jwk"
 
-	"github.com/zachmann/mytoken/internal/config"
+	"github.com/oidc-mytoken/server/internal/config"
 )
 
 // GenerateKeyPair generates a cryptographic key pair for the algorithm specified in the mytoken config.

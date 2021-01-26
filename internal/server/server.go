@@ -8,13 +8,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/config"
-	"github.com/zachmann/mytoken/internal/endpoints"
-	"github.com/zachmann/mytoken/internal/endpoints/configuration"
-	"github.com/zachmann/mytoken/internal/endpoints/nativeredirect"
-	"github.com/zachmann/mytoken/internal/endpoints/redirect"
-	"github.com/zachmann/mytoken/internal/server/routes"
-	"github.com/zachmann/mytoken/shared/utils"
+	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/endpoints"
+	"github.com/oidc-mytoken/server/internal/endpoints/configuration"
+	"github.com/oidc-mytoken/server/internal/endpoints/nativeredirect"
+	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
+	"github.com/oidc-mytoken/server/internal/server/routes"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 var server *fiber.App

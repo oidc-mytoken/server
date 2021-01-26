@@ -4,13 +4,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/endpoints/token/super/polling"
-	serverModel "github.com/zachmann/mytoken/internal/model"
-	"github.com/zachmann/mytoken/internal/oidc/authcode"
-	"github.com/zachmann/mytoken/internal/server/config"
-	"github.com/zachmann/mytoken/internal/supertoken"
-	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
-	"github.com/zachmann/mytoken/pkg/model"
+	"github.com/oidc-mytoken/server/internal/endpoints/token/super/polling"
+	serverModel "github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/oidc/authcode"
+	"github.com/oidc-mytoken/server/internal/server/config"
+	"github.com/oidc-mytoken/server/internal/supertoken"
+	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/pkg/model"
 )
 
 // HandleSuperTokenEndpoint handles requests on the super token endpoint

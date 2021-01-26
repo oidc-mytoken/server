@@ -4,9 +4,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/zachmann/mytoken/internal/model"
-	"github.com/zachmann/mytoken/internal/server/db"
-	event "github.com/zachmann/mytoken/internal/supertoken/event/pkg"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/server/db"
+	event "github.com/oidc-mytoken/server/internal/supertoken/event/pkg"
 )
 
 // EventDBObject holds information needed for storing an event in the database

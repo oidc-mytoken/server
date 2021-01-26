@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/zachmann/mytoken/shared/utils"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 func checkRestrictions(t *testing.T, exp, a Restrictions) {

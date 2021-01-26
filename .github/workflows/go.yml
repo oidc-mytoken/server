@@ -32,13 +32,13 @@ jobs:
 
 
     - name: Build Server Setup
-      run: go build -v github.com/zachmann/mytoken/cmd/mytoken-server/mytoken-setup
+      run: go build -v github.com/oidc-mytoken/server/cmd/mytoken-server/mytoken-setup
       
     - name: Build Server DB-GC
-      run: go build -v github.com/zachmann/mytoken/cmd/mytoken-server/mytoken-dbGarbageCollector
+      run: go build -v github.com/oidc-mytoken/server/cmd/mytoken-server/mytoken-dbGarbageCollector
       
     - name: Build Server
-      run: go build -v github.com/zachmann/mytoken/cmd/mytoken-server
+      run: go build -v github.com/oidc-mytoken/server/cmd/mytoken-server
 
     - name: Test
       run: go test -v ./...

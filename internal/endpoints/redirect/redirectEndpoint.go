@@ -5,14 +5,14 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/db"
-	"github.com/zachmann/mytoken/internal/db/dbrepo/authcodeinforepo"
-	"github.com/zachmann/mytoken/internal/db/dbrepo/authcodeinforepo/state"
-	"github.com/zachmann/mytoken/internal/db/dbrepo/supertokenrepo/transfercoderepo"
-	"github.com/zachmann/mytoken/internal/model"
-	"github.com/zachmann/mytoken/internal/oidc/authcode"
-	"github.com/zachmann/mytoken/internal/utils/ctxUtils"
-	pkgModel "github.com/zachmann/mytoken/pkg/model"
+	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/transfercoderepo"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/oidc/authcode"
+	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	pkgModel "github.com/oidc-mytoken/server/pkg/model"
 )
 
 // HandleOIDCRedirect handles redirects from the openid provider after an auth code flow

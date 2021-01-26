@@ -10,7 +10,7 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
-	"github.com/zachmann/mytoken/shared/utils"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 const (

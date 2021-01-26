@@ -1,11 +1,11 @@
 package revoke
 
 import (
-	"github.com/zachmann/mytoken/internal/config"
-	"github.com/zachmann/mytoken/internal/oidc/oidcReqRes"
-	"github.com/zachmann/mytoken/internal/server/model"
-	pkgModel "github.com/zachmann/mytoken/pkg/model"
-	"github.com/zachmann/mytoken/shared/httpClient"
+	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/oidc/oidcReqRes"
+	"github.com/oidc-mytoken/server/internal/server/model"
+	pkgModel "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/shared/httpClient"
 )
 
 // RefreshToken revokes a refresh token

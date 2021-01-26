@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/zachmann/mytoken/internal/server/db/dbrepo/supertokenrepo/transfercoderepo"
-	"github.com/zachmann/mytoken/shared/utils"
+	"github.com/oidc-mytoken/server/internal/server/db/dbrepo/supertokenrepo/transfercoderepo"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 // Token is a type used for tokens passed in http requests; these can be normal SuperTokens or a short token. This type will unmarshal always into a jwt of the (long) SuperToken

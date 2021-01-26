@@ -6,9 +6,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/internal/db"
-	"github.com/zachmann/mytoken/internal/server/config"
-	"github.com/zachmann/mytoken/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/server/config"
+	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
 )
 
 type State struct {

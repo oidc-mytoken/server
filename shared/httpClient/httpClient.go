@@ -6,7 +6,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/zachmann/mytoken/shared/context"
+	"github.com/oidc-mytoken/server/shared/context"
 )
 
 var client *resty.Client
