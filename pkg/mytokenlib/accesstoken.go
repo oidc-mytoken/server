@@ -3,10 +3,10 @@ package mytokenlib
 import (
 	"strings"
 
-	"github.com/zachmann/mytoken/internal/httpClient"
 	"github.com/zachmann/mytoken/internal/server/endpoints/token/access/pkg"
-	"github.com/zachmann/mytoken/internal/server/supertoken/token"
+	"github.com/zachmann/mytoken/internal/supertoken/token"
 	"github.com/zachmann/mytoken/pkg/model"
+	"github.com/zachmann/mytoken/shared/httpClient"
 )
 
 func (my *Mytoken) GetAccessToken(superToken, oidcIssuer string, scopes []string, audiences []string, comment string) (string, error) {

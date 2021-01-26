@@ -1,9 +1,9 @@
 package mytokenlib
 
 import (
-	"github.com/zachmann/mytoken/internal/httpClient"
 	"github.com/zachmann/mytoken/internal/server/endpoints/revocation/pkg"
 	"github.com/zachmann/mytoken/pkg/model"
+	"github.com/zachmann/mytoken/shared/httpClient"
 )
 
 func (my *Mytoken) Revoke(superToken, oidcIssuer string, recursive bool) error {

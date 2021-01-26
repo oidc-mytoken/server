@@ -40,9 +40,6 @@ jobs:
     - name: Build Server
       run: go build -v github.com/zachmann/mytoken/cmd/mytoken-server
 
-    - name: Build Client
-      run: go build -v github.com/zachmann/mytoken/cmd/mytoken
-
     - name: Test
       run: go test -v ./...
       

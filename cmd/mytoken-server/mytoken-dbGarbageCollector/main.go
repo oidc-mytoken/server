@@ -5,7 +5,7 @@ import (
 
 	"github.com/zachmann/mytoken/internal/server/config"
 	"github.com/zachmann/mytoken/internal/server/db"
-	loggerUtils "github.com/zachmann/mytoken/internal/server/utils/logger"
+	loggerUtils "github.com/zachmann/mytoken/internal/utils/logger"
 )
 
 func main() {

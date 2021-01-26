@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/zachmann/mytoken/internal/httpClient"
 	"github.com/zachmann/mytoken/internal/server/endpoints/token/super/pkg"
-	"github.com/zachmann/mytoken/internal/server/supertoken/capabilities"
-	"github.com/zachmann/mytoken/internal/server/supertoken/restrictions"
-	"github.com/zachmann/mytoken/internal/server/supertoken/token"
+	"github.com/zachmann/mytoken/internal/supertoken/capabilities"
+	"github.com/zachmann/mytoken/internal/supertoken/restrictions"
+	"github.com/zachmann/mytoken/internal/supertoken/token"
 	"github.com/zachmann/mytoken/pkg/model"
+	"github.com/zachmann/mytoken/shared/httpClient"
 )
 
 func (my *Mytoken) GetSuperToken(req interface{}) (string, error) {
