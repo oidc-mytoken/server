@@ -73,11 +73,12 @@ func (f OIDCFlow) MarshalJSON() ([]byte, error) {
 }
 
 // AddToSliceIfNotFound adds the OIDCFlow to a slice s if it is not already there
-func (f OIDCFlow) AddToSliceIfNotFound(s []OIDCFlow) {
-	if OIDCFlowIsInSlice(f, s) {
+func (f OIDCFlow) AddToSliceIfNotFound(s *[]OIDCFlow) {
+	if OIDCFlowIsInSlice(f, *s) {
 		return
 	}
-	s = append(s, f)
+	*s = append(*s, f)
+	return
 }
 
 // OIDCFlowIsInSlice checks if a OIDCFlow is present in a slice of OIDCFlows
