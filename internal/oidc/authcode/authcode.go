@@ -108,8 +108,9 @@ func authorizationURL(provider *config.ProviderConf, restrictions restrictions.R
 }
 
 // StartAuthCodeFlow starts an authorization code flow
-func StartAuthCodeFlow(body []byte) *model.Response {
+func StartAuthCodeFlow(ctx *fiber.Ctx) *model.Response {
 	log.Debug("Handle authcode")
+	body := ctx.Body()
 	req := response.NewAuthCodeFlowRequest()
 	if err := json.Unmarshal(body, &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
@@ -129,6 +130,7 @@ func StartAuthCodeFlow(body []byte) *model.Response {
 		}
 	}
 
+	req.Restrictions.ReplaceThisIp(ctx.IP())
 	authURL, state := authorizationURL(provider, req.Restrictions, req.Native())
 	authFlowInfoO := authcodeinforepo.AuthFlowInfoOut{
 		State:                state,
@@ -261,11 +263,10 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 	}); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	//TODO on the response the idea was to redirect to a correct side, that has the response
 	if authInfo.PollingCode {
 		return &model.Response{
-			Status:   fiber.StatusOK,
-			Response: "Success! Please go back to the application that started this flow.", // TODO
+			Status:   fiber.StatusSeeOther,
+			Response: "/native",
 		}
 	}
 	stateInf := parseState(state)
@@ -275,7 +276,7 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 	}
 	cookieName := "mytoken-supertoken"
 	cookieValue := res.SuperToken
-	cookieAge := 3600 //TODO from config
+	cookieAge := 3600 * 24 //TODO from config, same as in js
 	if stateInf.ResponseType == pkgModel.ResponseTypeTransferCode {
 		cookieName = "mytoken-transfercode"
 		cookieValue = res.TransferCode
@@ -283,7 +284,7 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 	}
 	return &model.Response{
 		Status:   fiber.StatusSeeOther,
-		Response: "/", //TODO redirect
+		Response: "/home",
 		Cookies: []*fiber.Cookie{{
 			Name:     cookieName,
 			Value:    cookieValue,

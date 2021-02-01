@@ -92,7 +92,6 @@ func aesD(cipher, nonce, key []byte) (string, error) {
 	}
 	plain, err := gcm.Open(nil, nonce, cipher, nil)
 	if err != nil {
-		//TODO
 		return "", err
 	}
 	return string(plain), nil

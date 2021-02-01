@@ -27,4 +27,5 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 	if config.Get().Features.TransferCodes.Enabled {
 		s.Post(apiPaths.TokenTransferEndpoint, super.HandleCreateTransferCodeForExistingSuperToken)
 	}
+	s.Post("/api/v0/test", handleTestTokenInfo) //TODO
 }

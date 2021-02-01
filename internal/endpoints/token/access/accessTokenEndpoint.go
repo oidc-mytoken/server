@@ -23,6 +23,7 @@ import (
 	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
 	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
 	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
+	"github.com/oidc-mytoken/server/shared/supertoken/token"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
@@ -43,6 +44,16 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		return res.Send(ctx)
 	}
 	log.Trace("Checked grant type")
+	if len(req.SuperToken) == 0 {
+		var err error
+		req.SuperToken, err = token.GetLongSuperToken(ctx.Cookies("mytoken-supertoken"))
+		if err != nil {
+			return serverModel.Response{
+				Status:   fiber.StatusUnauthorized,
+				Response: model.InvalidTokenError(err.Error()),
+			}.Send(ctx)
+		}
+	}
 
 	st, err := supertoken.ParseJWT(string(req.SuperToken))
 	if err != nil {

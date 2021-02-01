@@ -1,4 +1,4 @@
-package oidcUtils
+package jwtutils
 
 import (
 	"github.com/dgrijalva/jwt-go"

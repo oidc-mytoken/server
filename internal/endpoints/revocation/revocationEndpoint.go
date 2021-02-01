@@ -3,6 +3,7 @@ package revocation
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
@@ -28,10 +29,28 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	log.Trace("Parsed super token request")
-
+	clearCookie := false
+	if len(req.Token) == 0 {
+		req.Token = ctx.Cookies("mytoken-supertoken")
+		clearCookie = true
+	}
 	errRes := revokeAnyToken(nil, req.Token, req.OIDCIssuer, req.Recursive)
 	if errRes != nil {
 		return errRes.Send(ctx)
+	}
+	if clearCookie {
+		return model.Response{
+			Status: fiber.StatusNoContent,
+			Cookies: []*fiber.Cookie{{
+				Name:     "mytoken-supertoken",
+				Value:    "",
+				Path:     "/api",
+				Expires:  time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC),
+				Secure:   config.Get().Server.TLS.Enabled,
+				HTTPOnly: true,
+				SameSite: "Strict",
+			}},
+		}.Send(ctx)
 	}
 	return ctx.SendStatus(fiber.StatusNoContent)
 }

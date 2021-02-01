@@ -355,6 +355,13 @@ func Tighten(old, wanted Restrictions) (res Restrictions) {
 	return
 }
 
+// ReplaceThisIp replaces the special value 'this' with the given ip.
+func (r *Restrictions) ReplaceThisIp(ip string) {
+	for _, rr := range *r {
+		utils.ReplaceStringInSlice(&rr.IPs, "this", ip, false)
+	}
+}
+
 func (r *Restrictions) removeIndex(i int) {
 	copy((*r)[i:], (*r)[i+1:]) // Shift r[i+1:] left one index.
 	// r[len(r)-1] = ""     // Erase last element (write zero value).

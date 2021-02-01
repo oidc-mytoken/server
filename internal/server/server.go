@@ -5,7 +5,9 @@ import (
 	"strings"
 	"time"
 
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/template/mustache"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -13,7 +15,9 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration"
 	"github.com/oidc-mytoken/server/internal/endpoints/nativeredirect"
 	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
+	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/server/routes"
+	model2 "github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
@@ -25,17 +29,39 @@ var serverConfig = fiber.Config{
 	IdleTimeout:    150 * time.Second,
 	ReadBufferSize: 8192,
 	// WriteBufferSize: 4096,
+	// ErrorHandler: handleError,
+}
+
+func initTemplateEngine() {
+	engine := mustache.NewFileSystem(rice.MustFindBox("../../web").HTTPBox(), ".mustache")
+	//TODO remove
+	engine.Reload(true)
+	serverConfig.Views = engine
 }
 
 // Init initializes the server
 func Init() {
+	initTemplateEngine()
 	server = fiber.New(serverConfig)
 	addMiddlewares(server)
 	addRoutes(server)
+	server.Use(func(ctx *fiber.Ctx) error {
+		if len(ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8)) > 0 {
+			return ctx.Render("sites/404", map[string]interface{}{
+				"empty-navbar": true,
+			}, "layouts/main")
+		}
+		return model.Response{
+			Status: fiber.StatusNotFound,
+			Response: model2.APIError{
+				Error: "not_found",
+			},
+		}.Send(ctx)
+	})
 }
 
 func addRoutes(s fiber.Router) {
-	s.Get("/", handleTest)
+	addWebRoutes(s)
 	s.Get(routes.GetGeneralPaths().ConfigurationEndpoint, configuration.HandleConfiguration)
 	s.Get("/.well-known/openid-configuration", func(ctx *fiber.Ctx) error {
 		return ctx.Redirect(routes.GetGeneralPaths().ConfigurationEndpoint)
@@ -44,6 +70,12 @@ func addRoutes(s fiber.Router) {
 	s.Get(routes.GetGeneralPaths().OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
 	s.Get(utils.CombineURLPath(routes.GetGeneralPaths().NativeRedirectEndpoint, ":poll"), nativeredirect.HandleNativeRedirect)
 	addAPIRoutes(s)
+}
+
+func addWebRoutes(s fiber.Router) {
+	s.Get("/", handleIndex)
+	s.Get("/home", handleHome)
+	s.Get("/native", handleNativeCallback)
 }
 
 func start(s *fiber.App) {

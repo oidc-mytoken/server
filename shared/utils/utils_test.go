@@ -237,6 +237,51 @@ func TestStringInSliceNotFound(t *testing.T) {
 	}
 }
 
+func TestReplaceStringInSlice_Normal(t *testing.T) {
+	strs := []string{"a", "b", "c"}
+	old := "a"
+	new := "b"
+	exp := []string{"b", "b", "c"}
+	ReplaceStringInSlice(&strs, old, new, true)
+	checkSlice(t, strs, exp)
+}
+func TestReplaceStringInSlice_Multiple(t *testing.T) {
+	strs := []string{"a", "b", "d", "a", "c"}
+	old := "a"
+	new := "b"
+	exp := []string{"b", "b", "d", "b", "c"}
+	ReplaceStringInSlice(&strs, old, new, true)
+	checkSlice(t, strs, exp)
+}
+func TestReplaceStringInSlice_CaseSensitivity(t *testing.T) {
+	strs := []string{"a", "b", "A", "b"}
+	old := "a"
+	new := "c"
+	exp := []string{"c", "b", "A", "b"}
+	ReplaceStringInSlice(&strs, old, new, true)
+	checkSlice(t, strs, exp)
+	strs = []string{"a", "b", "A", "b"}
+	exp = []string{"c", "b", "c", "b"}
+	ReplaceStringInSlice(&strs, old, new, false)
+	checkSlice(t, strs, exp)
+}
+func TestReplaceStringInSlice_Empty(t *testing.T) {
+	strs := []string{}
+	old := "a"
+	new := "b"
+	exp := []string{}
+	ReplaceStringInSlice(&strs, old, new, true)
+	checkSlice(t, strs, exp)
+}
+func TestReplaceStringInSlice_NotFound(t *testing.T) {
+	strs := []string{"a", "b", "c"}
+	old := "d"
+	new := "b"
+	exp := []string{"a", "b", "c"}
+	ReplaceStringInSlice(&strs, old, new, true)
+	checkSlice(t, strs, exp)
+}
+
 func failSlice(t *testing.T, a, exp []string) {
 	t.Errorf("Expected '%+v', but go '%+v'", exp, a)
 }

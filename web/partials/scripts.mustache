@@ -1,0 +1,15 @@
+
+<script src="/static/js/storage.js"></script>
+<script src="/static/js/discovery.js"></script>
+<script src="/static/js/utils.js"></script>
+<script src="/static/js/login-check.js"></script>
+
+
+{{^logged-in}}
+<script src="/static/js/login.js"></script>
+{{/logged-in}}
+{{#logged-in}}
+<script src="/static/js/clipboard.min.js"></script>
+<script src="/static/js/tokens.js"></script>
+<script src="/static/js/logout.js"></script>
+{{/logged-in}}

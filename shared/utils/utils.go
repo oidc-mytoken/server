@@ -64,6 +64,21 @@ func StringInSlice(key string, slice []string) bool {
 	return false
 }
 
+// ReplaceStringInSlice replaces all occurrences of a string in a slice with another string
+func ReplaceStringInSlice(s *[]string, old, new string, caseSensitive bool) {
+	if !caseSensitive {
+		old = strings.ToLower(old)
+	}
+	for i, ss := range *s {
+		if !caseSensitive {
+			ss = strings.ToLower(ss)
+		}
+		if old == ss {
+			(*s)[i] = new
+		}
+	}
+}
+
 // IsSubSet checks if all strings of a slice 'a' are contained in the slice 'b'
 func IsSubSet(a, b []string) bool {
 	for _, aa := range a {

@@ -1,0 +1,39 @@
+<h1>Welcome {{name}}</h1>
+
+<p>
+    This is a demo instance of the mytoken service. This service is currently under active development.<br>
+    For more information refer to: <a href="https://github.com/oidc-mytoken/server">https://github.com/oidc-mytoken/server</a>
+</p>
+
+
+
+<div class="card border-primary">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs">
+            <li class="nav-item">
+                <a class="nav-link active" id="at-tab" data-toggle="tab" href="#at" role="tab" aria-controls="at" aria-selected="true">Access Token</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="st-tab" data-toggle="tab" href="#st" role="tab" aria-controls="st" aria-selected="false">Super Token</a>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body tab-content">
+        <div class="tab-pane show active" id="at" role="tabpanel" aria-labelledby="at-tab">
+            <!--        <h5 class="card-title">Get an Access Token</h5>-->
+            <button class="btn btn-copy d-none" id="at-copy" data-toggle="tooltip" data-placement="bottom" title="Copy to clipboard" data-clipboard-target="#at-msg">
+                <i class="far fa-copy"></i>
+            </button>
+            <p class="card-text" id="at-msg"></p>
+            <a href="#" class="btn btn-primary" id="get-at">Get new Access Token</a>
+        </div>
+        <div class="tab-pane" id="st" role="tabpanel" aria-labelledby="st-tab">
+            <!--        <h5 class="card-title">Get an Super Token</h5>-->
+            <button class="btn btn-copy d-none" id="st-copy" data-toggle="tooltip" data-placement="bottom" title="Copy to clipboard" data-clipboard-target="#st-msg">
+                <i class="far fa-copy"></i>
+            </button>
+            <p class="card-text" id="st-msg"></p>
+            <a href="#" class="btn btn-primary" id="get-st">Get new Super Token</a>
+        </div>
+    </div>
+</div>

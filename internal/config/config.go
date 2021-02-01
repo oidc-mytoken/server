@@ -43,7 +43,7 @@ var defaultConfig = config{
 			Level:  "error",
 		},
 	},
-	ServiceDocumentation: "https://github.com/oidc-mytoken/server",
+	ServiceDocumentation: "https://docs-sdm.scc.kit.edu/mytoken/",
 	Features: featuresConf{
 		EnabledOIDCFlows: []model.OIDCFlow{
 			model.OIDCFlowAuthorizationCode,

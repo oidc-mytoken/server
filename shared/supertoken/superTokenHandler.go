@@ -105,6 +105,17 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 
 	// GrantType already checked
 
+	if len(req.SuperToken) == 0 {
+		var err error
+		req.SuperToken, err = token.GetLongSuperToken(ctx.Cookies("mytoken-supertoken"))
+		if err != nil {
+			return &model.Response{
+				Status:   fiber.StatusUnauthorized,
+				Response: pkgModel.InvalidTokenError(err.Error()),
+			}
+		}
+	}
+
 	st, err := supertoken.ParseJWT(string(req.SuperToken))
 	if err != nil {
 		return &model.Response{
@@ -152,7 +163,7 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 		}
 		log.Trace("Checked issuer")
 	}
-
+	req.Restrictions.ReplaceThisIp(ctx.IP())
 	return handleSuperTokenFromSuperToken(st, req, ctxUtils.ClientMetaData(ctx), req.ResponseType)
 }
 
