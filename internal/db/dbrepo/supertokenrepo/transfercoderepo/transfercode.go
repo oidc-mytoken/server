@@ -21,7 +21,6 @@ type TransferCode struct {
 type transferCodeAttributes struct {
 	NewST db.BitBool
 	model.ResponseType
-	RedirectLink string
 }
 
 // NewTransferCode creates a new TransferCode for the passed jwt
@@ -46,14 +45,13 @@ func ParseTransferCode(token string) *TransferCode {
 }
 
 // CreatePollingCode creates a polling code
-func CreatePollingCode(pollingCode string, responseType model.ResponseType, redirectLink string) *TransferCode {
+func CreatePollingCode(pollingCode string, responseType model.ResponseType) *TransferCode {
 	pt := createProxyToken(pollingCode)
 	return &TransferCode{
 		proxyToken: *pt,
 		Attributes: transferCodeAttributes{
 			NewST:        true,
 			ResponseType: responseType,
-			RedirectLink: redirectLink,
 		},
 	}
 }
@@ -65,7 +63,7 @@ func (tc TransferCode) Store(tx *sqlx.Tx) error {
 		if err := tc.proxyToken.Store(tx); err != nil {
 			return err
 		}
-		_, err := tx.Exec(`INSERT INTO TransferCodesAttributes (id, expires_in,  revoke_ST, response_type, redirect) VALUES(?,?,?,?,?)`, tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewST, tc.Attributes.ResponseType, db.NewNullString(tc.Attributes.RedirectLink))
+		_, err := tx.Exec(`INSERT INTO TransferCodesAttributes (id, expires_in,  revoke_ST, response_type) VALUES(?,?,?,?,?)`, tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewST, tc.Attributes.ResponseType)
 		return err
 	})
 }

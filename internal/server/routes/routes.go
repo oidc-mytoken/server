@@ -22,10 +22,10 @@ func init() {
 			},
 		},
 		other: GeneralPaths{
-			ConfigurationEndpoint:  "/.well-known/mytoken-configuration",
-			OIDCRedirectEndpoint:   "/redirect",
-			JWKSEndpoint:           "/jwks",
-			NativeRedirectEndpoint: "/n",
+			ConfigurationEndpoint: "/.well-known/mytoken-configuration",
+			OIDCRedirectEndpoint:  "/redirect",
+			JWKSEndpoint:          "/jwks",
+			ConsentEndpoint:       "/c",
 		},
 	}
 }
@@ -37,10 +37,10 @@ type paths struct {
 
 // GeneralPaths holds all non-api route paths
 type GeneralPaths struct {
-	ConfigurationEndpoint  string
-	OIDCRedirectEndpoint   string
-	JWKSEndpoint           string
-	NativeRedirectEndpoint string
+	ConfigurationEndpoint string
+	OIDCRedirectEndpoint  string
+	JWKSEndpoint          string
+	ConsentEndpoint       string
 }
 
 // APIPaths holds all api route paths

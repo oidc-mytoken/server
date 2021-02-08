@@ -3,40 +3,81 @@ package capabilities
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"strings"
 )
 
-// Constants for capabilities
-const (
-	CapabilityAT               Capability = "AT"
-	CapabilityCreateST         Capability = "create_super_token"
-	CapabilitySettings         Capability = "settings"
-	CapabilityTokeninfoHistory Capability = "tokeninfo_history"
-	CapabilityTokeninfoTree    Capability = "tokeninfo_tree"
-	CapabilityListST           Capability = "list_super_tokens"
+// Defined Capabilities
+var (
+	CapabilityAT = Capability{
+		Name:        "AT",
+		Description: "Allows obtaining OpenID Connect Access Tokens.",
+	}
+	CapabilityCreateST = Capability{
+		Name:        "create_super_token",
+		Description: "Allows to create a new Super Token.",
+	}
+	CapabilitySettings = Capability{
+		Name:        "settings",
+		Description: "Allows to modify user settings.",
+	}
+	CapabilityTokeninfoIntrospect = Capability{
+		Name:        "tokeninfo_introspect",
+		Description: "Allows to obtain basic information about this token.",
+	}
+	CapabilityTokeninfoHistory = Capability{
+		Name:        "tokeninfo_history",
+		Description: "Allows to obtain the event history for this token.",
+	}
+	CapabilityTokeninfoTree = Capability{
+		Name:        "tokeninfo_tree",
+		Description: "Allows to list a subtoken-tree for this token.",
+	}
+	CapabilityListST = Capability{
+		Name:        "list_super_tokens",
+		Description: "Allows to list all super tokens.",
+	}
 )
 
-// AllCapabilities holds all defined capabilities
+// AllCapabilities holds all defined Capabilities
 var AllCapabilities = Capabilities{
 	CapabilityAT,
 	CapabilityCreateST,
 	CapabilitySettings,
+	CapabilityTokeninfoIntrospect,
 	CapabilityTokeninfoHistory,
 	CapabilityTokeninfoTree,
 	CapabilityListST,
 }
 
+func descriptionFor(name string) string {
+	for _, c := range AllCapabilities {
+		if strings.ToLower(c.Name) == strings.ToLower(name) {
+			return c.Description
+		}
+	}
+	return ""
+}
+
 // NewCapabilities casts a []string into Capabilities
 func NewCapabilities(caps []string) (c Capabilities) {
 	for _, cc := range caps {
-		c = append(c, Capability(cc))
+		c = append(c, NewCapability(cc))
 	}
 	return
+}
+
+// NewCapability casts a string into a Capability
+func NewCapability(name string) Capability {
+	return Capability{
+		Name:        name,
+		Description: descriptionFor(name),
+	}
 }
 
 // Strings returns a slice of strings for these capabilities
 func (c Capabilities) Strings() (s []string) {
 	for _, cc := range c {
-		s = append(s, string(cc))
+		s = append(s, cc.Name)
 	}
 	return
 }
@@ -45,7 +86,25 @@ func (c Capabilities) Strings() (s []string) {
 type Capabilities []Capability
 
 // Capability is a capability string
-type Capability string
+type Capability struct {
+	Name        string
+	Description string
+}
+
+// MarshalJSON implements the json.Marshaler interface
+func (c Capability) MarshalJSON() ([]byte, error) {
+	return json.Marshal(c.Name)
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface
+func (c *Capability) UnmarshalJSON(data []byte) error {
+	var name string
+	if err := json.Unmarshal(data, &name); err != nil {
+		return err
+	}
+	*c = NewCapability(name)
+	return nil
+}
 
 // Scan implements the sql.Scanner interface.
 func (c *Capabilities) Scan(src interface{}) error {

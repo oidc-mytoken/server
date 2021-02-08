@@ -13,12 +13,11 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints"
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration"
-	"github.com/oidc-mytoken/server/internal/endpoints/nativeredirect"
+	"github.com/oidc-mytoken/server/internal/endpoints/consent"
 	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	model2 "github.com/oidc-mytoken/server/pkg/model"
-	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 var server *fiber.App
@@ -29,7 +28,7 @@ var serverConfig = fiber.Config{
 	IdleTimeout:    150 * time.Second,
 	ReadBufferSize: 8192,
 	// WriteBufferSize: 4096,
-	// ErrorHandler: handleError,
+	ErrorHandler: handleError,
 }
 
 func initTemplateEngine() {
@@ -68,7 +67,8 @@ func addRoutes(s fiber.Router) {
 	})
 	s.Get(routes.GetGeneralPaths().JWKSEndpoint, endpoints.HandleJWKS)
 	s.Get(routes.GetGeneralPaths().OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
-	s.Get(utils.CombineURLPath(routes.GetGeneralPaths().NativeRedirectEndpoint, ":poll"), nativeredirect.HandleNativeRedirect)
+	s.Get("/c/:consent_code", consent.HandleConsent)
+	s.Post("/c/:consent_code", consent.HandleConsentPost)
 	addAPIRoutes(s)
 }
 

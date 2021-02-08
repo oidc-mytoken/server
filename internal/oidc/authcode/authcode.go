@@ -25,61 +25,28 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/issuer"
 	"github.com/oidc-mytoken/server/internal/server/routes"
-	"github.com/oidc-mytoken/server/internal/utils/oidcUtils"
-	"github.com/oidc-mytoken/server/internal/utils/singleasciiencode"
 	pkgModel "github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/context"
 	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
 	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
+	"github.com/oidc-mytoken/server/shared/utils/jwtutils"
 )
 
 var redirectURL string
-var nativeRedirectEndpoint string
+var consentEndpoint string
+
+const StatePlaceHolder = "STATE_PLACEHOLDER"
 
 // Init initializes the authcode component
 func Init() {
 	generalPaths := routes.GetGeneralPaths()
 	redirectURL = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.OIDCRedirectEndpoint)
-	nativeRedirectEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.NativeRedirectEndpoint)
+	consentEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.ConsentEndpoint)
 }
 
-const stateLen = 16
-const pollingCodeLen = 32
-
-type stateInfo struct {
-	Native       bool
-	ResponseType pkgModel.ResponseType
-}
-
-const stateFmt = "%d:%d:%s"
-
-// StateInfoFlags
-const (
-	flagNative = 0x01
-)
-
-func createState(info stateInfo) *state.State {
-	r := utils.RandASCIIString(stateLen)
-	fe := singleasciiencode.NewFlagEncoder()
-	fe.Set("native", info.Native)
-	flags := fe.Encode()
-	responseType := singleasciiencode.EncodeNumber64(byte(info.ResponseType))
-	s := string(append([]byte(r), flags, responseType))
-	return state.NewState(s)
-}
-
-func parseState(state *state.State) stateInfo {
-	info := stateInfo{}
-	responseType, _ := singleasciiencode.DecodeNumber64(state.State()[len(state.State())-1])
-	flags := singleasciiencode.Decode(state.State()[len(state.State())-2], "native")
-	info.ResponseType = pkgModel.ResponseType(responseType)
-	info.Native, _ = flags.Get("native")
-	return info
-}
-
-func authorizationURL(provider *config.ProviderConf, restrictions restrictions.Restrictions, native bool) (string, *state.State) {
+func authorizationURL(provider *config.ProviderConf, restrictions restrictions.Restrictions) string {
 	log.Debug("Generating authorization url")
 	scopes := restrictions.GetScopes()
 	if len(scopes) <= 0 {
@@ -92,7 +59,6 @@ func authorizationURL(provider *config.ProviderConf, restrictions restrictions.R
 		RedirectURL:  redirectURL,
 		Scopes:       scopes,
 	}
-	state := createState(stateInfo{Native: native})
 	additionalParams := []oauth2.AuthCodeOption{oauth2.ApprovalForce}
 	if issuerUtils.CompareIssuerURLs(provider.Issuer, issuer.GOOGLE) {
 		additionalParams = append(additionalParams, oauth2.AccessTypeOffline)
@@ -104,7 +70,7 @@ func authorizationURL(provider *config.ProviderConf, restrictions restrictions.R
 		additionalParams = append(additionalParams, oauth2.SetAuthURLParam("audience", strings.Join(auds, " ")))
 	}
 
-	return oauth2Config.AuthCodeURL(state.State(), additionalParams...), state
+	return oauth2Config.AuthCodeURL(StatePlaceHolder, additionalParams...)
 }
 
 // StartAuthCodeFlow starts an authorization code flow
@@ -131,31 +97,30 @@ func StartAuthCodeFlow(ctx *fiber.Ctx) *model.Response {
 	}
 
 	req.Restrictions.ReplaceThisIp(ctx.IP())
-	authURL, state := authorizationURL(provider, req.Restrictions, req.Native())
+	authURL := authorizationURL(provider, req.Restrictions)
+	oState, consentCode := state.CreateState(state.Info{Native: req.Native()})
 	authFlowInfoO := authcodeinforepo.AuthFlowInfoOut{
-		State:                state,
+		State:                oState,
 		Issuer:               provider.Issuer,
 		Restrictions:         req.Restrictions,
 		Capabilities:         req.Capabilities,
 		SubtokenCapabilities: req.SubtokenCapabilities,
 		Name:                 req.Name,
+		AuthorizationURL:     authURL,
 	}
 	authFlowInfo := authcodeinforepo.AuthFlowInfo{
 		AuthFlowInfoOut: authFlowInfoO,
 	}
 	res := response.AuthCodeFlowResponse{
-		AuthorizationURL: authURL,
+		AuthorizationURL: utils.CombineURLPath(consentEndpoint, consentCode.String()),
 	}
 	if req.Native() && config.Get().Features.Polling.Enabled {
 		poll := authFlowInfo.State.PollingCode()
-		authFlowInfo.PollingCode = transfercoderepo.CreatePollingCode(poll, req.ResponseType, authURL)
-		res = response.AuthCodeFlowResponse{
-			AuthorizationURL: utils.CombineURLPath(nativeRedirectEndpoint, poll),
-			PollingInfo: response.PollingInfo{
-				PollingCode:          poll,
-				PollingCodeExpiresIn: config.Get().Features.Polling.PollingCodeExpiresAfter,
-				PollingInterval:      config.Get().Features.Polling.PollingInterval,
-			},
+		authFlowInfo.PollingCode = transfercoderepo.CreatePollingCode(poll, req.ResponseType)
+		res.PollingInfo = response.PollingInfo{
+			PollingCode:          poll,
+			PollingCodeExpiresIn: config.Get().Features.Polling.PollingCodeExpiresAfter,
+			PollingInterval:      config.Get().Features.Polling.PollingInterval,
 		}
 	}
 	if err := authFlowInfo.Store(nil); err != nil {
@@ -168,9 +133,9 @@ func StartAuthCodeFlow(ctx *fiber.Ctx) *model.Response {
 }
 
 // CodeExchange performs an oidc code exchange it creates the super token and stores it in the database
-func CodeExchange(state *state.State, code string, networkData model.ClientMetaData) *model.Response {
+func CodeExchange(oState *state.State, code string, networkData model.ClientMetaData) *model.Response {
 	log.Debug("Handle code exchange")
-	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(state)
+	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(oState)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &model.Response{
@@ -221,7 +186,7 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 		authInfo.Restrictions.SetMaxScopes(scopes) // Update restrictions with correct scopes
 	}
 	audiences := authInfo.Restrictions.GetAudiences()
-	if tmp, ok := oidcUtils.GetAudiencesFromJWT(token.AccessToken); ok {
+	if tmp, ok := jwtutils.GetAudiencesFromJWT(token.AccessToken); ok {
 		audiences = tmp
 	}
 	authInfo.Restrictions.SetMaxAudiences(audiences) // Update restrictions with correct audiences
@@ -252,11 +217,11 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 			if err != nil {
 				return err
 			}
-			if err = transfercoderepo.LinkPollingCodeToST(tx, state.PollingCode(), jwt); err != nil {
+			if err = transfercoderepo.LinkPollingCodeToST(tx, oState.PollingCode(), jwt); err != nil {
 				return err
 			}
 		}
-		if err = authcodeinforepo.DeleteAuthFlowInfoByState(tx, state); err != nil {
+		if err = authcodeinforepo.DeleteAuthFlowInfoByState(tx, oState); err != nil {
 			return err
 		}
 		return nil
@@ -269,7 +234,7 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 			Response: "/native",
 		}
 	}
-	stateInf := parseState(state)
+	stateInf := oState.Parse()
 	res, err := ste.Token.ToTokenResponse(stateInf.ResponseType, networkData, "")
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)

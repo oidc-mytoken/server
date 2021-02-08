@@ -1,0 +1,69 @@
+<h3 class="text-center">Approval Required</h3>
+<p class="text-center lead">
+    Do you want to create a mytoken super token with the following properties?
+</p>
+
+<div class="row">
+    <div class="col-md">
+        <h4 class="text-center">Capabilities</h4>
+<table class="table table-hover table-bordered col-md table-secondary">
+    <tbody>
+    {{#capabilities}}
+        <tr>
+            <td>
+            <div class="d-flex justify-content-between">
+                <h5>{{Name}}</h5>
+                <i class="fas fa-exclamation-circle {{ColorClass}}" data-toggle="tooltip" data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
+            </div>
+            <div>{{Description}}</div>
+
+        {{#IsCreateST}}
+                <div class="mt-2 row" style="margin-bottom: -1rem;">
+                    <div class="col-1"></div>
+                    <div class="col">
+                        <p style="font-size: 1.0rem;">The new super token can have the following capabilities:</p>
+                        <table class="table table-hover table-grey">
+                            <tbody>
+                            {{#subtoken-capabilities}}
+                            <tr><td>
+                                <div class="d-flex justify-content-between">
+                                    <h5>{{Name}}</h5>
+                                    <i class="fas fa-exclamation-circle {{ColorClass}}" data-toggle="tooltip" data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
+                                </div>
+                                <div>{{Description}}</div>
+                            </td></tr>
+                            {{/subtoken-capabilities}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {{/IsCreateST}}
+            </td>
+        </tr>
+    {{/capabilities}}
+    </tbody>
+</table>
+
+    </div>
+    <div class="col-1"></div>
+        <div class="col-md">
+            <h4 class="pb-2 text-center">Restrictions</h4>
+            <div class="d-flex justify-content-between">
+                <i id="r-icon-time" class="fas fa-clock fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
+                <i id="r-icon-ip" class="fas fa-network-wired fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
+                <i id="r-icon-scope" class="fas fa-shield-alt fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
+                <i id="r-icon-aud" class="fas fa-server fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
+                <i id="r-icon-usages" class="fas fa-less-than-equal fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
+            </div>
+            <div class="d-flex justify-content-center">
+            <textarea class="mt-5 form-control" id="restrictions" autocomplete="off" cols=50 rows=20 onkeyup="updateIcons()"></textarea>
+            </div>
+               <script>let restrictions = {{&restrictions.Text}};</script>
+    </div>
+</div>
+
+<div class="text-center">
+    <h4>Do you want to approve this super token?</h4>
+    <button class="btn btn-primary" role="button" onclick="approve()">Continue</button>
+    <button class="btn btn-secondary" role="button" onclick="cancel()">Cancel</button>
+</div>

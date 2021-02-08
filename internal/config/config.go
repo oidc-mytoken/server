@@ -160,6 +160,7 @@ type ProviderConf struct {
 	Scopes       []string           `yaml:"scopes"`
 	Endpoints    *oauth2x.Endpoints `yaml:"-"`
 	Provider     *oidc.Provider     `yaml:"-"`
+	Name         string             `yaml:"name"`
 }
 
 var conf *config

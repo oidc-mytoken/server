@@ -16,7 +16,6 @@ import (
 	serverModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/refresh"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
-	"github.com/oidc-mytoken/server/internal/utils/oidcUtils"
 	"github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
 	eventService "github.com/oidc-mytoken/server/shared/supertoken/event"
@@ -25,6 +24,7 @@ import (
 	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/supertoken/token"
 	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/shared/utils/jwtutils"
 )
 
 // HandleAccessTokenEndpoint handles request on the access token endpoint
@@ -162,7 +162,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 	if len(oidcRes.Scopes) > 0 {
 		retScopes = oidcRes.Scopes
 	}
-	retAudiences, _ := oidcUtils.GetAudiencesFromJWT(oidcRes.AccessToken)
+	retAudiences, _ := jwtutils.GetAudiencesFromJWT(oidcRes.AccessToken)
 	at := accesstokenrepo.AccessToken{
 		Token:      oidcRes.AccessToken,
 		IP:         networkData.IP,

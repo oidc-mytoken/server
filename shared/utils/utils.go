@@ -199,6 +199,11 @@ func NewInt64(i int64) *int64 {
 	return &i
 }
 
+// NewInt creates a new *int
+func NewInt(i int) *int {
+	return &i
+}
+
 // SplitIgnoreEmpty splits a string at the specified delimiter without generating empty parts
 func SplitIgnoreEmpty(s, del string) (ret []string) {
 	tmp := strings.Split(s, del)

@@ -42,10 +42,12 @@
             <form class="form-inline" id="login-form" method="post" role="form">
                 <input type="hidden" name="grant_type" value="oidc_flow"/>
                 <input type="hidden" name="oidc_flow" value="authorization_code"/>
-                <select class="form-control" name="oidc_issuer">
-                    <!--                    TODO-->
-                    <option value="https://wlcg.cloud.cnaf.infn.it/">WLCG IAM</option>
-                    <option value="https://aai-dev.egi.eu/oidc/">EGI DEV</option>
+                <select class="form-control custom-select" name="oidc_issuer">
+                    {{#providers}}
+                    <option value="{{issuer}}">{{name}}</option>
+<!--                    <option value="https://wlcg.cloud.cnaf.infn.it/">WLCG IAM</option>-->
+<!--                    <option value="https://aai-dev.egi.eu/oidc/">EGI DEV</option>-->
+                    {{/providers}}
                 </select>
                 <button class="btn btn-secondary" type="submit">Sign in</button>
             </form>

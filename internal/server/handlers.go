@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/oidc-mytoken/server/internal/config"
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
@@ -13,6 +14,14 @@ func handleIndex(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
 		"logged-in": false,
 	}
+	providers := []map[string]string{}
+	for _, p := range config.Get().Providers {
+		pp := make(map[string]string, 2)
+		pp["issuer"] = p.Issuer
+		pp["name"] = p.Name
+		providers = append(providers, pp)
+	}
+	binding["providers"] = providers
 	return ctx.Render("sites/index", binding, "layouts/main")
 }
 
@@ -25,7 +34,7 @@ func handleHome(ctx *fiber.Ctx) error {
 
 func handleNativeCallback(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
-		"empty-navbar": true, //TODO implement
+		"empty-navbar": true,
 	}
 	return ctx.Render("sites/native", binding, "layouts/main")
 }

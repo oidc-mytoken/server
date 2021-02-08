@@ -98,6 +98,7 @@ features:
 # The list of supported providers
 providers:
   - issuer: "https://example.provider.com/"
+    name: "Example provider"
     client_id: "clientid"
     client_secret: "clientsecret"
     scopes:

@@ -1,7 +1,4 @@
 
-$(function () {
-    $('[data-toggle="tooltip"]').tooltip();
-})
 
 $.fn.serializeObject = function() {
     var o = {};

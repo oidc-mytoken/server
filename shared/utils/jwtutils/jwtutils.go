@@ -5,32 +5,67 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// GetAudiencesFromJWT parses the passed jwt token and returns the aud claim as a slice of strings
-func GetAudiencesFromJWT(token string) ([]string, bool) {
-	log.Trace("Getting auds from token")
+// ResultSet is a slice of values with an additional value indicating if it was set
+type ResultSet []struct {
+	Value interface{}
+	Set   bool
+}
+
+func GetFromJWT(token string, key ...string) (values ResultSet) {
 	if atJWT, _ := jwt.Parse(token, nil); atJWT != nil {
 		log.Trace("Parsed token")
 		if claims, ok := atJWT.Claims.(jwt.MapClaims); ok {
-			auds := claims["aud"]
-			switch auds.(type) {
-			case string:
-				return []string{auds.(string)}, true
-			case []string:
-				return auds.([]string), true
-			case []interface{}:
-				strs := []string{}
-				for _, s := range auds.([]interface{}) {
-					str, ok := s.(string)
-					if !ok {
-						return nil, false
-					}
-					strs = append(strs, str)
-				}
-				return strs, true
-			default:
-				return nil, false
+			for _, k := range key {
+				v, set := claims[k]
+				values = append(values, struct {
+					Value interface{}
+					Set   bool
+				}{Value: v, Set: set})
 			}
 		}
 	}
-	return nil, false
+	return values
+}
+
+func GetStringFromJWT(token, key string) (string, bool) {
+	res := GetFromJWT(token, key)
+	if len(res) != 1 {
+		return "", false
+	}
+	if !res[0].Set {
+		return "", false
+	}
+	v, ok := res[0].Value.(string)
+	return v, ok
+}
+
+// GetAudiencesFromJWT parses the passed jwt token and returns the aud claim as a slice of strings
+func GetAudiencesFromJWT(token string) ([]string, bool) {
+	log.Trace("Getting auds from token")
+	res := GetFromJWT(token, "aud")
+	if len(res) != 1 {
+		return nil, false
+	}
+	if !res[0].Set {
+		return nil, false
+	}
+	auds := res[0].Value
+	switch auds.(type) {
+	case string:
+		return []string{auds.(string)}, true
+	case []string:
+		return auds.([]string), true
+	case []interface{}:
+		strs := []string{}
+		for _, s := range auds.([]interface{}) {
+			str, ok := s.(string)
+			if !ok {
+				return nil, false
+			}
+			strs = append(strs, str)
+		}
+		return strs, true
+	default:
+		return nil, false
+	}
 }

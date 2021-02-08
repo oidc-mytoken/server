@@ -51,7 +51,7 @@ func Init() {
 		SuperTokenEndpointOIDCFlowsSupported:   config.Get().Features.EnabledOIDCFlows,
 		ResponseTypesSupported:                 []pkgModel.ResponseType{pkgModel.ResponseTypeToken},
 		ServiceDocumentation:                   config.Get().ServiceDocumentation,
-		Version:                                version.VERSION,
+		Version:                                version.VERSION(),
 	}
 	if config.Get().Features.TokenRevocation.Enabled {
 		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(config.Get().IssuerURL, apiPaths.RevocationEndpoint)
