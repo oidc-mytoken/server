@@ -6,28 +6,27 @@ function parseRestriction() {
     let howManyClausesRestrictUsages = 0;
     let expires = 0;
     let doesNotExpire = false;
-    console.log(restrictions);
     restrictions.forEach(function (r) {
-        if (r['scope'] != undefined) {
+        if (r['scope'] !== undefined) {
             howManyClausesRestrictScope++;
         }
         let aud = r['audience'];
-        if (aud != undefined && aud.length > 0) {
+        if (aud !== undefined && aud.length > 0) {
             howManyClausesRestrictAud++;
         }
         let ip = r['ip'];
         let ipW = r['geoip_white'];
         let ipB = r['geoip_black'];
-        if ((ip != undefined && ip.length > 0) ||
-            (ipW != undefined && ipW.length > 0) ||
-            (ipB != undefined && ipB.length > 0)) {
+        if ((ip !== undefined && ip.length > 0) ||
+            (ipW !== undefined && ipW.length > 0) ||
+            (ipB !== undefined && ipB.length > 0)) {
             howManyClausesRestrictIP++;
         }
-        if (r['usages_other']!=undefined || r['usages_AT']!=undefined) {
+        if (r['usages_other']!==undefined || r['usages_AT']!==undefined) {
             howManyClausesRestrictUsages++;
         }
         let exp = r['exp'];
-        if (exp==undefined || exp==0) {
+        if (exp===undefined || exp===0) {
            doesNotExpire = true
         } else if (exp>expires) {
             expires=exp;
@@ -36,65 +35,70 @@ function parseRestriction() {
     if (doesNotExpire) {
         expires = 0;
     }
-    if (howManyClausesRestrictIP==restrictions.length) {
-        $('#r-icon-ip').addClass( 'text-success');
-        $('#r-icon-ip').removeClass( 'text-warning');
-        $('#r-icon-ip').removeClass( 'text-danger');
-        $('#r-icon-ip').attr('data-original-title', "The IPs from which this token can be used are restricted.");
+    let iconTime = $('#r-icon-time');
+    let iconIP = $('#r-icon-ip');
+    let iconScope = $('#r-icon-scope');
+    let iconAud = $('#r-icon-aud');
+    let iconUsages = $('#r-icon-usages');
+    if (howManyClausesRestrictIP===restrictions.length) {
+        iconIP.addClass( 'text-success');
+        iconIP.removeClass( 'text-warning');
+        iconIP.removeClass( 'text-danger');
+        iconIP.attr('data-original-title', "The IPs from which this token can be used are restricted.");
     } else {
-        $('#r-icon-ip').addClass( 'text-warning');
-        $('#r-icon-ip').removeClass( 'text-success');
-        $('#r-icon-ip').removeClass( 'text-danger');
-        $('#r-icon-ip').attr('data-original-title', "This token can be used from any IP.");
+        iconIP.addClass( 'text-warning');
+        iconIP.removeClass( 'text-success');
+        iconIP.removeClass( 'text-danger');
+        iconIP.attr('data-original-title', "This token can be used from any IP.");
     }
-    if (howManyClausesRestrictScope==restrictions.length) {
-        $('#r-icon-scope').addClass( 'text-success');
-        $('#r-icon-scope').removeClass( 'text-warning');
-        $('#r-icon-scope').removeClass( 'text-danger');
-        $('#r-icon-scope').attr('data-original-title', "This token has restrictions for scopes.");
+    if (howManyClausesRestrictScope===restrictions.length) {
+        iconScope.addClass( 'text-success');
+       iconScope.removeClass( 'text-warning');
+       iconScope.removeClass( 'text-danger');
+       iconScope.attr('data-original-title', "This token has restrictions for scopes.");
     } else {
-        $('#r-icon-scope').addClass( 'text-warning');
-        $('#r-icon-scope').removeClass( 'text-success');
-        $('#r-icon-scope').removeClass( 'text-danger');
-        $('#r-icon-scope').attr('data-original-title', "This token can use all configured scopes.");
+       iconScope.addClass( 'text-warning');
+       iconScope.removeClass( 'text-success');
+       iconScope.removeClass( 'text-danger');
+       iconScope.attr('data-original-title', "This token can use all configured scopes.");
     }
-    if (howManyClausesRestrictAud==restrictions.length) {
-        $('#r-icon-aud').addClass( 'text-success');
-        $('#r-icon-aud').removeClass( 'text-warning');
-        $('#r-icon-aud').removeClass( 'text-danger');
-        $('#r-icon-aud').attr('data-original-title', "This token can only obtain access tokens with restricted audiences.");
+    if (howManyClausesRestrictAud===restrictions.length) {
+        iconAud.addClass( 'text-success');
+      iconAud.removeClass( 'text-warning');
+      iconAud.removeClass( 'text-danger');
+       iconAud.attr('data-original-title', "This token can only obtain access tokens with restricted audiences.");
     } else {
-        $('#r-icon-aud').addClass( 'text-warning');
-        $('#r-icon-aud').removeClass( 'text-success');
-        $('#r-icon-aud').removeClass( 'text-danger');
-        $('#r-icon-aud').attr('data-original-title', "This token can obtain access tokens with any audiences.");
+      iconAud.addClass( 'text-warning');
+       iconAud.removeClass( 'text-success');
+       iconAud.removeClass( 'text-danger');
+       iconAud.attr('data-original-title', "This token can obtain access tokens with any audiences.");
     }
-    if (howManyClausesRestrictUsages==restrictions.length) {
-        $('#r-icon-usages').addClass( 'text-success');
-        $('#r-icon-usages').removeClass( 'text-warning');
-        $('#r-icon-usages').removeClass( 'text-danger');
-        $('#r-icon-usages').attr('data-original-title', "This token can only be used a limited number of times.");
+    if (howManyClausesRestrictUsages===restrictions.length) {
+       iconUsages.addClass( 'text-success');
+       iconUsages.removeClass( 'text-warning');
+       iconUsages.removeClass( 'text-danger');
+       iconUsages.attr('data-original-title', "This token can only be used a limited number of times.");
     } else {
-        $('#r-icon-usages').addClass( 'text-warning');
-        $('#r-icon-usages').removeClass( 'text-success');
-        $('#r-icon-usages').removeClass( 'text-danger');
-        $('#r-icon-usages').attr('data-original-title', "This token can be used an infinite number of times.");
+      iconUsages.addClass( 'text-warning');
+      iconUsages.removeClass( 'text-success');
+      iconUsages.removeClass( 'text-danger');
+      iconUsages.attr('data-original-title', "This token can be used an infinite number of times.");
     }
-    if (expires==0) {
-        $('#r-icon-time').addClass( 'text-danger');
-        $('#r-icon-time').removeClass( 'text-success');
-        $('#r-icon-time').removeClass( 'text-warning');
-        $('#r-icon-time').attr('data-original-title', "This token does not expire!");
+    if (expires===0) {
+       iconTime.addClass( 'text-danger');
+      iconTime.removeClass( 'text-success');
+       iconTime.removeClass( 'text-warning');
+       iconTime.attr('data-original-title', "This token does not expire!");
     } else if ((expires - Date.now()/1000)> 3*24*3600) {
-        $('#r-icon-time').addClass( 'text-warning');
-        $('#r-icon-time').removeClass( 'text-success');
-        $('#r-icon-time').removeClass( 'text-danger');
-        $('#r-icon-time').attr('data-original-title', "This token is long-lived.");
+       iconTime.addClass( 'text-warning');
+       iconTime.removeClass( 'text-success');
+       iconTime.removeClass( 'text-danger');
+       iconTime.attr('data-original-title', "This token is long-lived.");
     } else {
-        $('#r-icon-time').addClass( 'text-success');
-        $('#r-icon-time').removeClass( 'text-warning');
-        $('#r-icon-time').removeClass( 'text-danger');
-        $('#r-icon-time').attr('data-original-title', "This token expires within 3 days.");
+       iconTime.addClass( 'text-success');
+       iconTime.removeClass( 'text-warning');
+       iconTime.removeClass( 'text-danger');
+       iconTime.attr('data-original-title', "This token expires within 3 days.");
     }
 }
 
@@ -117,13 +121,14 @@ $('#restrictions').text(JSON.stringify(restrictions, null, 4));
 
 function updateIcons() {
     let r = [];
+    let res = $('#restrictions');
     try {
-        r = JSON.parse($('#restrictions').val());
-        $('#restrictions').removeClass('is-invalid');
-        $('#restrictions').addClass('is-valid');
+        r = JSON.parse(res.val());
+        res.removeClass('is-invalid');
+        res.addClass('is-valid');
     } catch (e) {
-        $('#restrictions').removeClass('is-valid');
-        $('#restrictions').addClass('is-invalid');
+        res.removeClass('is-valid');
+        res.addClass('is-invalid');
        return;
     }
     restrictions = r;
@@ -131,15 +136,23 @@ function updateIcons() {
 }
 
 function approve() {
-    fetch()
+    let data = {
+        "restrictions": restrictions,
+        "capabilities": capabilities,
+        "subtoken_capabilities": subtoken_capabilities
+    };
+    data = JSON.stringify(data);
     $.ajax({
         type: "POST",
         url: window.location.href,
-        // data: data,
+        data: data,
         success: function (data){
             window.location.href = data['authorization_url'];
         },
-        error: function(){alert('error');},
+        error: function(errRes){
+            let errMsg = getErrorMessage(errRes);
+            console.log(errMsg);
+        },
         dataType: "json",
         contentType : "application/json"
     });
