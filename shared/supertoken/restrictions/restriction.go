@@ -23,15 +23,15 @@ type Restrictions []Restriction
 
 // Restriction describes a token usage restriction
 type Restriction struct {
-	NotBefore   int64    `json:"nbf,omitempty"`
-	ExpiresAt   int64    `json:"exp,omitempty"`
-	Scope       string   `json:"scope,omitempty"`
-	Audiences   []string `json:"audience,omitempty"`
-	IPs         []string `json:"ip,omitempty"`
-	GeoIPWhite  []string `json:"geoip_white,omitempty"`
-	GeoIPBlack  []string `json:"geoip_black,omitempty"`
-	UsagesAT    *int64   `json:"usages_AT,omitempty"`
-	UsagesOther *int64   `json:"usages_other,omitempty"`
+	NotBefore     int64    `json:"nbf,omitempty"`
+	ExpiresAt     int64    `json:"exp,omitempty"`
+	Scope         string   `json:"scope,omitempty"`
+	Audiences     []string `json:"audience,omitempty"`
+	IPs           []string `json:"ip,omitempty"`
+	GeoIPAllow    []string `json:"geoip_allow,omitempty"`
+	GeoIPDisallow []string `json:"geoip_disallow,omitempty"`
+	UsagesAT      *int64   `json:"usages_AT,omitempty"`
+	UsagesOther   *int64   `json:"usages_other,omitempty"`
 	// Usages    *int64   `json:"usages,omitempty"`
 }
 
@@ -60,23 +60,23 @@ func (r *Restriction) verifyIPs(ip string) bool {
 }
 func (r *Restriction) verifyGeoIP(ip string) bool {
 	log.Trace("Verifying ip geo location")
-	return r.verifyGeoIPBlack(ip) && r.verifyGeoIPWhite(ip)
+	return r.verifyGeoIPDisallow(ip) && r.verifyGeoIPAllow(ip)
 }
-func (r *Restriction) verifyGeoIPWhite(ip string) bool {
-	log.Trace("Verifying ip geo location white list")
-	white := r.GeoIPWhite
-	if len(white) == 0 {
+func (r *Restriction) verifyGeoIPAllow(ip string) bool {
+	log.Trace("Verifying ip geo location allow list")
+	allow := r.GeoIPAllow
+	if len(allow) == 0 {
 		return true
 	}
-	return utils.StringInSlice(geoip.CountryCode(ip), white)
+	return utils.StringInSlice(geoip.CountryCode(ip), allow)
 }
-func (r *Restriction) verifyGeoIPBlack(ip string) bool {
-	log.Trace("Verifying ip geo location black list")
-	black := r.GeoIPBlack
-	if len(black) == 0 {
+func (r *Restriction) verifyGeoIPDisallow(ip string) bool {
+	log.Trace("Verifying ip geo location disallow list")
+	disallow := r.GeoIPDisallow
+	if len(disallow) == 0 {
 		return true
 	}
-	return !utils.StringInSlice(geoip.CountryCode(ip), black)
+	return !utils.StringInSlice(geoip.CountryCode(ip), disallow)
 }
 func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, stid uuid.UUID) bool {
 	log.Trace("Verifying AT usage count")
@@ -392,10 +392,10 @@ func (r *Restriction) isTighterThan(b Restriction) bool {
 	if len(r.IPs) == 0 && len(b.IPs) > 0 || !utils.IPsAreSubSet(r.IPs, b.IPs) && len(b.IPs) != 0 {
 		return false
 	}
-	if len(r.GeoIPWhite) == 0 && len(b.GeoIPWhite) > 0 || !utils.IsSubSet(r.GeoIPWhite, b.GeoIPWhite) && len(b.GeoIPWhite) != 0 {
+	if len(r.GeoIPAllow) == 0 && len(b.GeoIPAllow) > 0 || !utils.IsSubSet(r.GeoIPAllow, b.GeoIPAllow) && len(b.GeoIPAllow) != 0 {
 		return false
 	}
-	if !utils.IsSubSet(b.GeoIPBlack, r.GeoIPBlack) { // for Blacklist r must have all the values from b to be tighter
+	if !utils.IsSubSet(b.GeoIPDisallow, r.GeoIPDisallow) { // for Disallow-list r must have all the values from b to be tighter
 		return false
 	}
 	if utils.CompareNullableIntsWithNilAsInfinity(r.UsagesAT, b.UsagesAT) > 0 {

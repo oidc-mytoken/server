@@ -262,11 +262,11 @@ func TestIsTighterThanIPOneEmpty(t *testing.T) {
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
-func TestIsTighterThanGeoIPWhite(t *testing.T) {
-	a := Restriction{GeoIPWhite: []string{"Germany", "USA"}}
-	b := Restriction{GeoIPWhite: []string{"Germany"}}
-	c := Restriction{GeoIPWhite: []string{"France", "Germany"}}
-	d := Restriction{GeoIPWhite: []string{"Japan", "China"}}
+func TestIsTighterThanGeoIPAllow(t *testing.T) {
+	a := Restriction{GeoIPAllow: []string{"Germany", "USA"}}
+	b := Restriction{GeoIPAllow: []string{"Germany"}}
+	c := Restriction{GeoIPAllow: []string{"France", "Germany"}}
+	d := Restriction{GeoIPAllow: []string{"Japan", "China"}}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 	testIsTighter(t, a, c, false)
@@ -276,17 +276,17 @@ func TestIsTighterThanGeoIPWhite(t *testing.T) {
 	testIsTighter(t, a, d, false)
 	testIsTighter(t, d, a, false)
 }
-func TestIsTighterThanGeoIPWhiteOneEmpty(t *testing.T) {
+func TestIsTighterThanGeoIPAllowOneEmpty(t *testing.T) {
 	a := Restriction{}
-	b := Restriction{GeoIPWhite: []string{"Germany", "USA"}}
+	b := Restriction{GeoIPAllow: []string{"Germany", "USA"}}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
-func TestIsTighterThanGeoIPBlack(t *testing.T) {
-	a := Restriction{GeoIPBlack: []string{"Germany", "USA"}}
-	b := Restriction{GeoIPBlack: []string{"Germany"}}
-	c := Restriction{GeoIPBlack: []string{"France", "Germany"}}
-	d := Restriction{GeoIPBlack: []string{"Japan", "China"}}
+func TestIsTighterThanGeoIPDisallow(t *testing.T) {
+	a := Restriction{GeoIPDisallow: []string{"Germany", "USA"}}
+	b := Restriction{GeoIPDisallow: []string{"Germany"}}
+	c := Restriction{GeoIPDisallow: []string{"France", "Germany"}}
+	d := Restriction{GeoIPDisallow: []string{"Japan", "China"}}
 	testIsTighter(t, a, b, true)
 	testIsTighter(t, b, a, false)
 	testIsTighter(t, a, c, false)
@@ -296,9 +296,9 @@ func TestIsTighterThanGeoIPBlack(t *testing.T) {
 	testIsTighter(t, a, d, false)
 	testIsTighter(t, d, a, false)
 }
-func TestIsTighterThanGeoIPBlackOneEmpty(t *testing.T) {
+func TestIsTighterThanGeoIPDisallowOneEmpty(t *testing.T) {
 	a := Restriction{}
-	b := Restriction{GeoIPBlack: []string{"Germany", "USA"}}
+	b := Restriction{GeoIPDisallow: []string{"Germany", "USA"}}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
@@ -388,15 +388,15 @@ func TestIsTighterThanMultipleE(t *testing.T) {
 }
 func TestIsTighterThanAll1(t *testing.T) {
 	a := Restriction{
-		NotBefore:   500,
-		ExpiresAt:   1000,
-		Scope:       "a b c",
-		Audiences:   []string{"a", "b", "c"},
-		IPs:         []string{"a", "b", "c"},
-		GeoIPWhite:  []string{"a", "b", "c"},
-		GeoIPBlack:  []string{"a", "b", "c"},
-		UsagesAT:    utils.NewInt64(20),
-		UsagesOther: utils.NewInt64(20),
+		NotBefore:     500,
+		ExpiresAt:     1000,
+		Scope:         "a b c",
+		Audiences:     []string{"a", "b", "c"},
+		IPs:           []string{"a", "b", "c"},
+		GeoIPAllow:    []string{"a", "b", "c"},
+		GeoIPDisallow: []string{"a", "b", "c"},
+		UsagesAT:      utils.NewInt64(20),
+		UsagesOther:   utils.NewInt64(20),
 	}
 	b := a
 	testIsTighter(t, a, b, true)
@@ -404,78 +404,78 @@ func TestIsTighterThanAll1(t *testing.T) {
 }
 func TestIsTighterThanAll2(t *testing.T) {
 	a := Restriction{
-		NotBefore:   500,
-		ExpiresAt:   1000,
-		Scope:       "a b c",
-		Audiences:   []string{"a", "b", "c"},
-		IPs:         []string{"a", "b", "c"},
-		GeoIPWhite:  []string{"a", "b", "c"},
-		GeoIPBlack:  []string{"a", "b", "c"},
-		UsagesAT:    utils.NewInt64(20),
-		UsagesOther: utils.NewInt64(20),
+		NotBefore:     500,
+		ExpiresAt:     1000,
+		Scope:         "a b c",
+		Audiences:     []string{"a", "b", "c"},
+		IPs:           []string{"a", "b", "c"},
+		GeoIPAllow:    []string{"a", "b", "c"},
+		GeoIPDisallow: []string{"a", "b", "c"},
+		UsagesAT:      utils.NewInt64(20),
+		UsagesOther:   utils.NewInt64(20),
 	}
 	b := Restriction{
-		NotBefore:   700,
-		ExpiresAt:   1000,
-		Scope:       "a b c",
-		Audiences:   []string{"a", "b", "c"},
-		IPs:         []string{"a", "b", "c"},
-		GeoIPWhite:  []string{"a", "b", "c"},
-		GeoIPBlack:  []string{"a", "b", "c"},
-		UsagesAT:    utils.NewInt64(20),
-		UsagesOther: utils.NewInt64(20),
+		NotBefore:     700,
+		ExpiresAt:     1000,
+		Scope:         "a b c",
+		Audiences:     []string{"a", "b", "c"},
+		IPs:           []string{"a", "b", "c"},
+		GeoIPAllow:    []string{"a", "b", "c"},
+		GeoIPDisallow: []string{"a", "b", "c"},
+		UsagesAT:      utils.NewInt64(20),
+		UsagesOther:   utils.NewInt64(20),
 	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanAll3(t *testing.T) {
 	a := Restriction{
-		NotBefore:   500,
-		ExpiresAt:   1000,
-		Scope:       "a c",
-		Audiences:   []string{"a", "b", "c"},
-		IPs:         []string{"a", "b", "c"},
-		GeoIPWhite:  []string{"a", "b", "c"},
-		GeoIPBlack:  []string{"a", "b", "c"},
-		UsagesAT:    utils.NewInt64(20),
-		UsagesOther: utils.NewInt64(20),
+		NotBefore:     500,
+		ExpiresAt:     1000,
+		Scope:         "a c",
+		Audiences:     []string{"a", "b", "c"},
+		IPs:           []string{"a", "b", "c"},
+		GeoIPAllow:    []string{"a", "b", "c"},
+		GeoIPDisallow: []string{"a", "b", "c"},
+		UsagesAT:      utils.NewInt64(20),
+		UsagesOther:   utils.NewInt64(20),
 	}
 	b := Restriction{
-		NotBefore:   700,
-		ExpiresAt:   1000,
-		Scope:       "a b c",
-		Audiences:   []string{"a", "b", "c"},
-		IPs:         []string{"a", "b", "c"},
-		GeoIPWhite:  []string{"a", "b", "c"},
-		GeoIPBlack:  []string{"a", "b", "c"},
-		UsagesAT:    utils.NewInt64(20),
-		UsagesOther: utils.NewInt64(20),
+		NotBefore:     700,
+		ExpiresAt:     1000,
+		Scope:         "a b c",
+		Audiences:     []string{"a", "b", "c"},
+		IPs:           []string{"a", "b", "c"},
+		GeoIPAllow:    []string{"a", "b", "c"},
+		GeoIPDisallow: []string{"a", "b", "c"},
+		UsagesAT:      utils.NewInt64(20),
+		UsagesOther:   utils.NewInt64(20),
 	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, false)
 }
 func TestIsTighterThanAll4(t *testing.T) {
 	a := Restriction{
-		NotBefore:   500,
-		ExpiresAt:   1000,
-		Scope:       "a b c",
-		Audiences:   []string{"a", "b", "c"},
-		IPs:         []string{"a", "b", "c"},
-		GeoIPWhite:  []string{"a", "b", "c"},
-		GeoIPBlack:  []string{"a", "b", "c"},
-		UsagesAT:    utils.NewInt64(20),
-		UsagesOther: utils.NewInt64(20),
+		NotBefore:     500,
+		ExpiresAt:     1000,
+		Scope:         "a b c",
+		Audiences:     []string{"a", "b", "c"},
+		IPs:           []string{"a", "b", "c"},
+		GeoIPAllow:    []string{"a", "b", "c"},
+		GeoIPDisallow: []string{"a", "b", "c"},
+		UsagesAT:      utils.NewInt64(20),
+		UsagesOther:   utils.NewInt64(20),
 	}
 	b := Restriction{
-		NotBefore:   700,
-		ExpiresAt:   900,
-		Scope:       "b c",
-		Audiences:   []string{"a", "c"},
-		IPs:         []string{"b", "c"},
-		GeoIPWhite:  []string{"a"},
-		GeoIPBlack:  []string{"a", "b"},
-		UsagesAT:    utils.NewInt64(10),
-		UsagesOther: utils.NewInt64(0),
+		NotBefore:     700,
+		ExpiresAt:     900,
+		Scope:         "b c",
+		Audiences:     []string{"a", "c"},
+		IPs:           []string{"b", "c"},
+		GeoIPAllow:    []string{"a"},
+		GeoIPDisallow: []string{"a", "b"},
+		UsagesAT:      utils.NewInt64(10),
+		UsagesOther:   utils.NewInt64(0),
 	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, false)

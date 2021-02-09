@@ -65,11 +65,11 @@ func (r WebRestrictions) getIPClass() bool {
 			ip = true
 			break
 		}
-		if len(rr.GeoIPWhite) > 0 {
+		if len(rr.GeoIPAllow) > 0 {
 			ip = true
 			break
 		}
-		if len(rr.GeoIPBlack) > 0 {
+		if len(rr.GeoIPDisallow) > 0 {
 			ip = true
 			break
 		}
