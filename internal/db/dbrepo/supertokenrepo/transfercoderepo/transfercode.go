@@ -63,7 +63,7 @@ func (tc TransferCode) Store(tx *sqlx.Tx) error {
 		if err := tc.proxyToken.Store(tx); err != nil {
 			return err
 		}
-		_, err := tx.Exec(`INSERT INTO TransferCodesAttributes (id, expires_in,  revoke_ST, response_type) VALUES(?,?,?,?,?)`, tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewST, tc.Attributes.ResponseType)
+		_, err := tx.Exec(`INSERT INTO TransferCodesAttributes (id, expires_in,  revoke_ST, response_type) VALUES(?,?,?,?)`, tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewST, tc.Attributes.ResponseType)
 		return err
 	})
 }

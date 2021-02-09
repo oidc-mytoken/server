@@ -8,15 +8,16 @@
         <h4 class="text-center">Capabilities</h4>
 <table class="table table-hover table-bordered col-md table-secondary">
     <tbody>
-    <script>
-        let capabilities = [];
-        let subtoken_capabilities = [];
-    </script>
     {{#capabilities}}
         <tr>
+            <td class="text-center">
+                <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input capability-check" value="{{Name}}" checked id="cp-{{Name}}">
+                <label class="custom-control-label" for="cp-{{Name}}"><span class="sr-only"></span></label>
+                </div>
+            </td>
             <td>
             <div class="d-flex justify-content-between">
-                <script>capabilities.push("{{Name}}");</script>
                 <h5>{{Name}}</h5>
                 <i class="fas fa-exclamation-circle {{ColorClass}}" data-toggle="tooltip" data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
             </div>
@@ -30,14 +31,21 @@
                         <table class="table table-hover table-grey">
                             <tbody>
                             {{#subtoken-capabilities}}
-                            <tr><td>
+                            <tr>
+                                <td class="text-center">
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" class="custom-control-input subtoken-capability-check" value="{{Name}}" checked id="scp-{{Name}}">
+                                        <label class="custom-control-label" for="scp-{{Name}}"><span class="sr-only"></span></label>
+                                    </div>
+                                </td>
+                                <td>
                                 <div class="d-flex justify-content-between">
-                                    <script>subtoken_capabilities.push("{{Name}}");</script>
                                     <h5>{{Name}}</h5>
                                     <i class="fas fa-exclamation-circle {{ColorClass}}" data-toggle="tooltip" data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
                                 </div>
                                 <div>{{Description}}</div>
-                            </td></tr>
+                                </td>
+                            </tr>
                             {{/subtoken-capabilities}}
                             </tbody>
                         </table>

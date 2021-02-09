@@ -28,6 +28,9 @@ func handleConsent(ctx *fiber.Ctx, r restrictions.Restrictions, c capabilities.C
 		"capabilities": pkg.WebCapabilities(c),
 	}
 	if c.Has(capabilities.CapabilityCreateST) {
+		if len(sc) == 0 {
+			sc = c
+		}
 		binding["subtoken-capabilities"] = pkg.WebCapabilities(sc)
 	}
 	return ctx.Render("sites/consent", binding, "layouts/main")

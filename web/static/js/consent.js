@@ -138,10 +138,15 @@ function updateIcons() {
 function approve() {
     let data = {
         "restrictions": restrictions,
-        "capabilities": capabilities,
-        "subtoken_capabilities": subtoken_capabilities
+        "capabilities": $('.capability-check:checked').map(function(_, el) {
+            return $(el).val();
+        }).get(),
+        "subtoken_capabilities": $('.subtoken-capability-check:checked').map(function(_, el) {
+            return $(el).val();
+        }).get()
     };
     data = JSON.stringify(data);
+    console.log(data);
     $.ajax({
         type: "POST",
         url: window.location.href,
@@ -162,3 +167,9 @@ function cancel() {
     //TODO POST cancel
     window.location.href = "/";
 }
+
+$('#cp-create_super_token').click(function() {
+    let enabled = $(this).prop("checked");
+    $('.subtoken-capability-check').prop("checked", enabled);
+    $('.subtoken-capability-check').prop("disabled", !enabled);
+});
