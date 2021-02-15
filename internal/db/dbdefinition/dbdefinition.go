@@ -45,7 +45,7 @@ var DDL = []string {
   "  `created` datetime NOT NULL DEFAULT current_timestamp(),"+
   "  `ip_created` varchar(32) NOT NULL,"+
   "  `comment` text DEFAULT NULL,"+
-  "  `ST_id` varchar(64) NOT NULL,"+
+  "  `ST_id` varchar(128) NOT NULL,"+
   "  PRIMARY KEY (`id`),"+
   "  KEY `AccessTokens_FK` (`ST_id`),"+
   "  CONSTRAINT `AccessTokens_FK` FOREIGN KEY (`ST_id`) REFERENCES `SuperTokens` (`id`) ON DELETE CASCADE ON UPDATE CASCADE"+
@@ -85,6 +85,7 @@ var DDL = []string {
   "  `expires_in` int(11) NOT NULL,"+
   "  `expires_at` datetime NOT NULL DEFAULT (current_timestamp() + interval `expires_in` second),"+
   "  `subtoken_capabilities` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`subtoken_capabilities`)),"+
+  "  `auth_url` text NOT NULL,"+
   "  PRIMARY KEY (`state_h`)"+
   ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
   "/*!40101 SET character_set_client = @saved_cs_client */;",
@@ -142,7 +143,7 @@ var DDL = []string {
   "/*!40101 SET character_set_client = utf8 */;",
   "CREATE TABLE `ST_Events` ("+
   "  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,"+
-  "  `ST_id` varchar(64) NOT NULL,"+
+  "  `ST_id` varchar(128) NOT NULL,"+
   "  `time` datetime NOT NULL DEFAULT current_timestamp(),"+
   "  `event_id` int(10) unsigned NOT NULL DEFAULT 0,"+
   "  `comment` varchar(100) DEFAULT NULL,"+
@@ -164,15 +165,16 @@ var DDL = []string {
   "/*!40101 SET @saved_cs_client     = @@character_set_client */;",
   "/*!40101 SET character_set_client = utf8 */;",
   "CREATE TABLE `SuperTokens` ("+
-  "  `id` varchar(64) NOT NULL,"+
-  "  `parent_id` varchar(64) DEFAULT NULL,"+
-  "  `root_id` varchar(64) DEFAULT NULL,"+
+  "  `id` varchar(128) NOT NULL,"+
+  "  `parent_id` varchar(128) DEFAULT NULL,"+
+  "  `root_id` varchar(128) DEFAULT NULL,"+
   "  `refresh_token` text NOT NULL,"+
   "  `name` varchar(100) DEFAULT NULL,"+
   "  `created` datetime NOT NULL DEFAULT current_timestamp(),"+
   "  `ip_created` varchar(32) NOT NULL,"+
   "  `user_id` bigint(20) unsigned NOT NULL,"+
   "  `rt_hash` char(128) NOT NULL,"+
+  "  `seqno` bigint(20) unsigned NOT NULL DEFAULT 1,"+
   "  PRIMARY KEY (`id`),"+
   "  KEY `SessionTokens_parent_id_IDX` (`parent_id`) USING BTREE,"+
   "  KEY `SessionTokens_root_id_IDX` (`root_id`) USING BTREE,"+
@@ -191,7 +193,7 @@ var DDL = []string {
   "/*!40101 SET @saved_cs_client     = @@character_set_client */;",
   "/*!40101 SET character_set_client = utf8 */;",
   "CREATE TABLE `TokenUsages` ("+
-  "  `ST_id` varchar(64) NOT NULL,"+
+  "  `ST_id` varchar(128) NOT NULL,"+
   "  `restriction` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`restriction`)),"+
   "  `usages_AT` int(10) unsigned NOT NULL DEFAULT 0,"+
   "  `usages_other` int(10) unsigned NOT NULL DEFAULT 0,"+
@@ -216,8 +218,7 @@ var DDL = []string {
   "  `expires_in` tinyint NOT NULL,"+
   "  `expires_at` tinyint NOT NULL,"+
   "  `revoke_ST` tinyint NOT NULL,"+
-  "  `response_type` tinyint NOT NULL,"+
-  "  `redirect` tinyint NOT NULL"+
+  "  `response_type` tinyint NOT NULL"+
   ") ENGINE=MyISAM */;",
   "SET character_set_client = @saved_cs_client;",
   ""+
@@ -235,7 +236,6 @@ var DDL = []string {
   "  `expires_at` datetime NOT NULL DEFAULT (current_timestamp() + interval `expires_in` second),"+
   "  `revoke_ST` bit(1) NOT NULL DEFAULT b'0',"+
   "  `response_type` varchar(128) NOT NULL DEFAULT 'token',"+
-  "  `redirect` text DEFAULT NULL,"+
   "  PRIMARY KEY (`id`),"+
   "  CONSTRAINT `TransferCodesAttributes_FK` FOREIGN KEY (`id`) REFERENCES `ProxyTokens` (`id`) ON DELETE CASCADE ON UPDATE CASCADE"+
   ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
@@ -311,7 +311,7 @@ var DDL = []string {
   "/*!50001 SET character_set_results     = utf8mb4 */;",
   "/*!50001 SET collation_connection      = utf8mb4_general_ci */;",
   "/*!50001 CREATE ALGORITHM=UNDEFINED */"+
-  "/*!50001 VIEW `TransferCodes` AS select `pt`.`id` AS `id`,`pt`.`jwt` AS `jwt`,`tca`.`created` AS `created`,`tca`.`expires_in` AS `expires_in`,`tca`.`expires_at` AS `expires_at`,`tca`.`revoke_ST` AS `revoke_ST`,`tca`.`response_type` AS `response_type`,`tca`.`redirect` AS `redirect` from (`ProxyTokens` `pt` join `TransferCodesAttributes` `tca` on(`pt`.`id` = `tca`.`id`)) */;",
+  "/*!50001 VIEW `TransferCodes` AS select `pt`.`id` AS `id`,`pt`.`jwt` AS `jwt`,`tca`.`created` AS `created`,`tca`.`expires_in` AS `expires_in`,`tca`.`expires_at` AS `expires_at`,`tca`.`revoke_ST` AS `revoke_ST`,`tca`.`response_type` AS `response_type` from (`ProxyTokens` `pt` join `TransferCodesAttributes` `tca` on(`pt`.`id` = `tca`.`id`)) */;",
   "/*!50001 SET character_set_client      = @saved_cs_client */;",
   "/*!50001 SET character_set_results     = @saved_cs_results */;",
   "/*!50001 SET collation_connection      = @saved_col_connection */;",
