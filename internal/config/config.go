@@ -22,11 +22,12 @@ var defaultConfig = config{
 			RedirectHTTP: true,
 		},
 	},
-	DB: dbConf{
-		Host:     "localhost",
-		User:     "mytoken",
-		Password: "mytoken",
-		DB:       "mytoken",
+	DB: DBConf{
+		Hosts:             []string{"localhost"},
+		User:              "mytoken",
+		Password:          "mytoken",
+		DB:                "mytoken",
+		ReconnectInterval: 60,
 	},
 	Signing: signingConf{
 		Alg:       oidc.ES512,
@@ -75,7 +76,7 @@ type config struct {
 	Server               serverConf               `yaml:"server"`
 	GeoIPDBFile          string                   `yaml:"geo_ip_db_file"`
 	API                  apiConf                  `yaml:"api"`
-	DB                   dbConf                   `yaml:"database"`
+	DB                   DBConf                   `yaml:"database"`
 	Signing              signingConf              `yaml:"signing"`
 	Logging              loggingConf              `yaml:"logging"`
 	ServiceDocumentation string                   `yaml:"service_documentation"`
@@ -126,11 +127,12 @@ type pollingConf struct {
 	PollingInterval         int64 `yaml:"polling_interval"`
 }
 
-type dbConf struct {
-	Host     string `yaml:"host"`
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	DB       string `yaml:"db"`
+type DBConf struct {
+	Hosts             []string `yaml:"hosts"`
+	User              string   `yaml:"user"`
+	Password          string   `yaml:"password"`
+	DB                string   `yaml:"db"`
+	ReconnectInterval int64    `yaml:"try_reconnect_interval"`
 }
 
 type serverConf struct {

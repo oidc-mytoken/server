@@ -9,12 +9,12 @@ import (
 
 	"github.com/jinzhu/copier"
 	"github.com/jmoiron/sqlx"
-	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/utils/geoip"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
@@ -78,7 +78,7 @@ func (r *Restriction) verifyGeoIPDisallow(ip string) bool {
 	}
 	return !utils.StringInSlice(geoip.CountryCode(ip), disallow)
 }
-func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, stid uuid.UUID) bool {
+func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, stid stid.STID) bool {
 	log.Trace("Verifying AT usage count")
 	if r.UsagesAT == nil {
 		return true
@@ -108,7 +108,7 @@ func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, stid uuid.UUID) bool {
 	}).Debug("Found restriction usage in db.")
 	return *usages < *r.UsagesAT
 }
-func (r *Restriction) verifyOtherUsageCounts(tx *sqlx.Tx, stid uuid.UUID) bool {
+func (r *Restriction) verifyOtherUsageCounts(tx *sqlx.Tx, id stid.STID) bool {
 	log.Trace("Verifying other usage count")
 	if r.UsagesOther == nil {
 		return true
@@ -118,20 +118,20 @@ func (r *Restriction) verifyOtherUsageCounts(tx *sqlx.Tx, stid uuid.UUID) bool {
 		log.WithError(err).Error()
 		return false
 	}
-	usages, err := supertokenrepohelper.GetTokenUsagesOther(tx, stid, string(hash))
+	usages, err := supertokenrepohelper.GetTokenUsagesOther(tx, id, string(hash))
 	if err != nil {
 		return false
 	}
 	if usages == nil {
 		// was not used before
 		log.WithFields(map[string]interface{}{
-			"stid":             stid.String(),
+			"id":               id.String(),
 			"restriction_hash": string(hash),
 		}).Debug("Did not found restriction in database; it was not used before")
 		return *r.UsagesOther > 0
 	}
 	log.WithFields(map[string]interface{}{
-		"stid":             stid.String(),
+		"id":               id.String(),
 		"restriction_hash": string(hash),
 		"used":             *usages,
 		"usageLimit":       *r.UsagesAT,
@@ -142,50 +142,50 @@ func (r *Restriction) verify(ip string) bool {
 	return r.verifyTimeBased() &&
 		r.verifyIPBased(ip)
 }
-func (r *Restriction) verifyAT(tx *sqlx.Tx, ip string, stid uuid.UUID) bool {
-	return r.verify(ip) && r.verifyATUsageCounts(tx, stid)
+func (r *Restriction) verifyAT(tx *sqlx.Tx, ip string, id stid.STID) bool {
+	return r.verify(ip) && r.verifyATUsageCounts(tx, id)
 }
-func (r *Restriction) verifyOther(tx *sqlx.Tx, ip string, stid uuid.UUID) bool {
+func (r *Restriction) verifyOther(tx *sqlx.Tx, ip string, id stid.STID) bool {
 	return r.verify(ip) &&
-		r.verifyOtherUsageCounts(tx, stid)
+		r.verifyOtherUsageCounts(tx, id)
 }
 
 // UsedAT will update the usages_AT value for this restriction; it should be called after this restriction was used to obtain an access token;
-func (r *Restriction) UsedAT(tx *sqlx.Tx, stid uuid.UUID) error {
+func (r *Restriction) UsedAT(tx *sqlx.Tx, id stid.STID) error {
 	js, err := json.Marshal(r)
 	if err != nil {
 		return err
 	}
-	return supertokenrepohelper.IncreaseTokenUsageAT(tx, stid, js)
+	return supertokenrepohelper.IncreaseTokenUsageAT(tx, id, js)
 }
 
 // UsedOther will update the usages_other value for this restriction; it should be called after this restriction was used for other reasons than obtaining an access token;
-func (r *Restriction) UsedOther(tx *sqlx.Tx, stid uuid.UUID) error {
+func (r *Restriction) UsedOther(tx *sqlx.Tx, id stid.STID) error {
 	js, err := json.Marshal(r)
 	if err != nil {
 		return err
 	}
-	return supertokenrepohelper.IncreaseTokenUsageOther(tx, stid, js)
+	return supertokenrepohelper.IncreaseTokenUsageOther(tx, id, js)
 }
 
 // VerifyForAT verifies if this restrictions can be used to obtain an access token
-func (r Restrictions) VerifyForAT(tx *sqlx.Tx, ip string, stid uuid.UUID) bool {
+func (r Restrictions) VerifyForAT(tx *sqlx.Tx, ip string, id stid.STID) bool {
 	if len(r) == 0 {
 		return true
 	}
-	return len(r.GetValidForAT(tx, ip, stid)) > 0
+	return len(r.GetValidForAT(tx, ip, id)) > 0
 }
 
 // VerifyForOther verifies if this restrictions can be used for other actions than obtaining an access token
-func (r Restrictions) VerifyForOther(tx *sqlx.Tx, ip string, stid uuid.UUID) bool {
+func (r Restrictions) VerifyForOther(tx *sqlx.Tx, ip string, id stid.STID) bool {
 	if len(r) == 0 {
 		return true
 	}
-	return len(r.GetValidForOther(tx, ip, stid)) > 0
+	return len(r.GetValidForOther(tx, ip, id)) > 0
 }
 
 // GetValidForAT returns the subset of Restrictions that can be used to obtain an access token
-func (r Restrictions) GetValidForAT(tx *sqlx.Tx, ip string, stid uuid.UUID) (ret Restrictions) {
+func (r Restrictions) GetValidForAT(tx *sqlx.Tx, ip string, stid stid.STID) (ret Restrictions) {
 	for _, rr := range r {
 		if rr.verifyAT(tx, ip, stid) {
 			log.Trace("Found a valid restriction")
@@ -196,7 +196,7 @@ func (r Restrictions) GetValidForAT(tx *sqlx.Tx, ip string, stid uuid.UUID) (ret
 }
 
 // GetValidForOther returns the subset of Restrictions that can be used for other actions than obtaining an access token
-func (r Restrictions) GetValidForOther(tx *sqlx.Tx, ip string, stid uuid.UUID) (ret Restrictions) {
+func (r Restrictions) GetValidForOther(tx *sqlx.Tx, ip string, stid stid.STID) (ret Restrictions) {
 	for _, rr := range r {
 		if rr.verifyOther(tx, ip, stid) {
 			ret = append(ret, rr)

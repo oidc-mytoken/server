@@ -26,10 +26,13 @@ api:
 
 # Configuration for the database
 database:
-  host: "localhost"
+  hosts:
+    - "localhost"
   user: "mytoken"
   password: "mytoken"
   db: "mytoken"
+  # The interval (in seconds) in which mytoken tries to reconnect to db nodes that are down
+  try_reconnect_interval: 60
 
 # Configuration for token signing
 signing:

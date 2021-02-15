@@ -89,7 +89,9 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 // GetAuthFlowInfoByState returns AuthFlowInfoIn by state
 func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
 	info := authFlowInfo{}
-	if err := db.DB().Get(&info, `SELECT state_h, iss, restrictions, capabilities, subtoken_capabilities, name, polling_code, auth_url FROM AuthInfo WHERE state_h=? AND expires_at >= CURRENT_TIMESTAMP()`, state); err != nil {
+	if err := db.Transact(func(tx *sqlx.Tx) error {
+		return tx.Get(&info, `SELECT state_h, iss, restrictions, capabilities, subtoken_capabilities, name, polling_code, auth_url FROM AuthInfo WHERE state_h=? AND expires_at >= CURRENT_TIMESTAMP()`, state)
+	}); err != nil {
 		return nil, err
 	}
 	return info.toAuthFlowInfo(), nil

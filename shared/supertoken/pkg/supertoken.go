@@ -1,13 +1,11 @@
 package supertoken
 
 import (
-	"database/sql/driver"
 	"fmt"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jmoiron/sqlx"
-	uuid "github.com/satori/go.uuid"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
@@ -19,6 +17,7 @@ import (
 	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
 	eventService "github.com/oidc-mytoken/server/shared/supertoken/event"
 	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
+	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
 	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 )
@@ -30,7 +29,7 @@ type SuperToken struct {
 	ExpiresAt            int64                     `json:"exp,omitempty"`
 	NotBefore            int64                     `json:"nbf"`
 	IssuedAt             int64                     `json:"iat"`
-	ID                   uuid.UUID                 `json:"jti"`
+	ID                   stid.STID                 `json:"jti"`
 	Audience             string                    `json:"aud"`
 	OIDCSubject          string                    `json:"oidc_sub"`
 	OIDCIssuer           string                    `json:"oidc_iss"`
@@ -41,10 +40,7 @@ type SuperToken struct {
 }
 
 func (st *SuperToken) verifyID() bool {
-	if len(st.ID.String()) == 0 {
-		return false
-	}
-	return true
+	return st.ID.Valid()
 }
 
 func (st *SuperToken) verifySubject() bool {
@@ -74,7 +70,7 @@ func (st *SuperToken) VerifyCapabilities(required ...capabilities.Capability) bo
 func NewSuperToken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc capabilities.Capabilities) *SuperToken {
 	now := time.Now().Unix()
 	st := &SuperToken{
-		ID:                   uuid.NewV4(),
+		ID:                   stid.New(),
 		IssuedAt:             now,
 		NotBefore:            now,
 		Issuer:               config.Get().IssuerURL,
@@ -170,7 +166,7 @@ func (st *SuperToken) toTokenResponse() response.SuperTokenResponse {
 }
 
 // CreateTransferCode creates a transfer code for the passed super token
-func CreateTransferCode(stid uuid.UUID, jwt string, newST bool, responseType model.ResponseType, clientMetaData serverModel.ClientMetaData) (string, uint64, error) {
+func CreateTransferCode(stid stid.STID, jwt string, newST bool, responseType model.ResponseType, clientMetaData serverModel.ClientMetaData) (string, uint64, error) {
 	transferCode, err := transfercoderepo.NewTransferCode(jwt, newST, responseType)
 	if err != nil {
 		return "", 0, err
@@ -217,21 +213,6 @@ func (st *SuperToken) ToJWT() (string, error) {
 	var err error
 	st.jwt, err = jwt.NewWithClaims(jwt.GetSigningMethod(config.Get().Signing.Alg), st).SignedString(jws.GetPrivateKey())
 	return st.jwt, err
-}
-
-// Value implements the driver.Valuer interface.
-func (st *SuperToken) Value() (driver.Value, error) {
-	return st.ToJWT()
-}
-
-// Scan implements the sql.Scanner interface.
-func (st *SuperToken) Scan(src interface{}) error {
-	tmp, err := ParseJWT(src.(string))
-	if err != nil {
-		return err
-	}
-	*st = *tmp
-	return nil
 }
 
 // ParseJWT parses a token string into a SuperToken

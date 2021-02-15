@@ -4,47 +4,30 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"time"
 
+	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
-
-	// mysql driver
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/server/internal/db/cluster"
 )
 
-var dbCon *sqlx.DB
+var db *cluster.Cluster
 
 // Connect connects to the database using the mytoken config
-func Connect() error {
-	dsn := fmt.Sprintf("%s:%s@%s(%s)/%s", config.Get().DB.User, config.Get().DB.Password, "tcp", config.Get().DB.Host, config.Get().DB.DB)
-	return ConnectDSN(dsn)
-}
-
-// ConnectDSN connects to a database using the dsn string
-func ConnectDSN(dsn string) error {
-	dbTmp, err := sqlx.Connect("mysql", dsn)
-	if err != nil {
-		return err
+func Connect() {
+	if db != nil {
+		log.Debug("Closing existing db connections")
+		db.Close()
+		log.Debug("Done")
 	}
-	dbTmp.SetConnMaxLifetime(time.Minute * 4)
-	dbTmp.SetMaxOpenConns(10)
-	dbTmp.SetMaxIdleConns(10)
-	if dbCon != nil {
-		if err = dbCon.Close(); err != nil {
-			log.WithError(err).Error()
-		}
-	}
-	dbCon = dbTmp
-	return nil
+	db = cluster.NewFromConfig(config.Get().DB)
 }
 
 // DB returns the database connection
-func DB() *sqlx.DB {
-	return dbCon
-}
+// func DB() *sqlx.DB {
+// 	return dbCon
+// }
 
 // NewNullString creates a new sql.NullString from the given string
 func NewNullString(s string) sql.NullString {
@@ -83,26 +66,36 @@ func (b *BitBool) Scan(src interface{}) error {
 }
 
 // Transact does a database transaction for the passed function
+// func Transact(fn func(*sqlx.Tx) error) error {
+// 	tx, err := DB().Beginx()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	err = fn(tx)
+// 	if err != nil {
+// 		if e := tx.Rollback(); e != nil {
+// 			log.WithError(err).Error()
+// 		}
+// 		return err
+// 	}
+// 	return tx.Commit()
+// }
+
+// Transact does a database transaction for the passed function
 func Transact(fn func(*sqlx.Tx) error) error {
-	tx, err := DB().Beginx()
-	if err != nil {
-		return err
-	}
-	err = fn(tx)
-	if err != nil {
-		if e := tx.Rollback(); e != nil {
-			log.WithError(err).Error()
-		}
-		return err
-	}
-	return tx.Commit()
+	return db.Transact(fn)
 }
 
 // RunWithinTransaction runs the passed function using the passed transaction; if nil is passed as tx a new transaction is created. This is basically a wrapper function, that works with a possible nil-tx
 func RunWithinTransaction(tx *sqlx.Tx, fn func(*sqlx.Tx) error) error {
-	if tx == nil {
-		return Transact(fn)
-	} else {
-		return fn(tx)
-	}
+	return db.RunWithinTransaction(tx, fn)
 }
+
+// RunWithinTransaction runs the passed function using the passed transaction; if nil is passed as tx a new transaction is created. This is basically a wrapper function, that works with a possible nil-tx
+// func RunWithinTransaction(tx *sqlx.Tx, fn func(*sqlx.Tx) error) error {
+// 	if tx == nil {
+// 		return Transact(fn)
+// 	} else {
+// 		return fn(tx)
+// 	}
+// }

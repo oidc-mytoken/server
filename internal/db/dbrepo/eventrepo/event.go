@@ -2,17 +2,17 @@ package eventrepo
 
 import (
 	"github.com/jmoiron/sqlx"
-	uuid "github.com/satori/go.uuid"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model"
 	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
+	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
 )
 
 // EventDBObject holds information needed for storing an event in the database
 type EventDBObject struct {
 	*event.Event
-	STID uuid.UUID
+	STID stid.STID
 	model.ClientMetaData
 }
 

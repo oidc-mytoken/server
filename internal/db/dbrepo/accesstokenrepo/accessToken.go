@@ -4,11 +4,11 @@ import (
 	"database/sql"
 
 	"github.com/jmoiron/sqlx"
-	uuid "github.com/satori/go.uuid"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model"
 	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
+	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 
@@ -27,7 +27,7 @@ type accessToken struct {
 	Token   string
 	IP      string `db:"ip_created"`
 	Comment sql.NullString
-	STID    uuid.UUID `db:"ST_id"`
+	STID    stid.STID `db:"ST_id"`
 }
 
 func (t *AccessToken) toDBObject() (*accessToken, error) {

@@ -7,7 +7,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
-	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -25,6 +24,7 @@ import (
 	eventService "github.com/oidc-mytoken/server/shared/supertoken/event"
 	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
 	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
+	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
 	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/supertoken/token"
 	"github.com/oidc-mytoken/server/shared/utils"
@@ -220,8 +220,8 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 			Response: pkgModel.InvalidTokenError("token unknown"),
 		}
 	}
-	if rootID == "" {
-		rootID = parent.ID.String()
+	if !rootID.HashValid() {
+		rootID = parent.ID
 	}
 	r := restrictions.Tighten(parent.Restrictions, req.Restrictions)
 	capsFromParent := parent.SubtokenCapabilities
@@ -237,13 +237,13 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 		supertoken.NewSuperToken(parent.OIDCSubject, parent.OIDCIssuer, r, c, sc),
 		req.Name, networkData)
 	ste.RefreshToken = rt
-	ste.ParentID = parent.ID.String()
+	ste.ParentID = parent.ID
 	ste.RootID = rootID
 	return ste, nil
 }
 
 // RevokeSuperToken revokes a super token
-func RevokeSuperToken(tx *sqlx.Tx, id uuid.UUID, token token.Token, recursive bool, issuer string) *model.Response {
+func RevokeSuperToken(tx *sqlx.Tx, id stid.STID, token token.Token, recursive bool, issuer string) *model.Response {
 	rt, rtFound, dbErr := dbhelper.GetRefreshToken(id, token)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr)

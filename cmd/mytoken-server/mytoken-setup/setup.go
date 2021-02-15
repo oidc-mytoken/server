@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -13,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
-	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/cluster"
 	"github.com/oidc-mytoken/server/internal/db/dbdefinition"
 	"github.com/oidc-mytoken/server/internal/jws"
 	"github.com/oidc-mytoken/server/internal/model"
@@ -103,12 +104,12 @@ func (c *commandCreateDB) Execute(args []string) error {
 	if c.Password != nil && len(*c.Password) == 0 { // -p specified without argument
 		password = prompter.Password("Database Password")
 	}
-	dsn := fmt.Sprintf("%s:%s@%s(%s)/", c.Username, password, "tcp", config.Get().DB.Host)
-	if err := db.ConnectDSN(dsn); err != nil {
-		return err
-	}
-	log.WithField("user", c.Username).Debug("Connected to database")
-	if err := checkDB(); err != nil {
+	db := cluster.NewFromConfig(config.DBConf{
+		Hosts:    config.Get().DB.Hosts,
+		User:     c.Username,
+		Password: password,
+	})
+	if err := checkDB(db); err != nil {
 		return err
 	}
 	err := db.Transact(func(tx *sqlx.Tx) error {
@@ -199,10 +200,14 @@ func createUser(tx *sqlx.Tx) error {
 	return nil
 }
 
-func checkDB() error {
+func checkDB(db *cluster.Cluster) error {
 	log.WithField("database", config.Get().DB.DB).Debug("Check if database already exists")
-	rows, err := db.DB().Query(`SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME=?`, config.Get().DB.DB)
-	if err != nil {
+	var rows *sql.Rows
+	if err := db.Transact(func(tx *sqlx.Tx) error {
+		var err error
+		rows, err = tx.Query(`SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME=?`, config.Get().DB.DB)
+		return err
+	}); err != nil {
 		return err
 	}
 	defer rows.Close()

@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
@@ -16,15 +15,16 @@ import (
 	eventService "github.com/oidc-mytoken/server/shared/supertoken/event"
 	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
 	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
+	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 
 // SuperTokenEntry holds the information of a SuperTokenEntry as stored in the
 // database
 type SuperTokenEntry struct {
-	ID           uuid.UUID
-	ParentID     string `db:"parent_id"`
-	RootID       string `db:"root_id"`
+	ID           stid.STID
+	ParentID     stid.STID `db:"parent_id"`
+	RootID       stid.STID `db:"root_id"`
 	Token        *supertoken.SuperToken
 	RefreshToken string `db:"refresh_token"`
 	Name         string
@@ -46,28 +46,30 @@ func NewSuperTokenEntry(st *supertoken.SuperToken, name string, networkData mode
 
 // Root checks if this SuperTokenEntry is a root token
 func (ste *SuperTokenEntry) Root() bool {
-	if ste.RootID == "" {
-		return true
+	return !ste.RootID.HashValid()
+}
+
+func (ste *SuperTokenEntry) EncryptRT() (hash, crypt string, err error) {
+	hash = hashUtils.SHA512Str([]byte(ste.RefreshToken))
+	var key string
+	key, err = ste.Token.ToJWT()
+	if err != nil {
+		return
 	}
-	return false
+	crypt, err = cryptUtils.AES256Encrypt(ste.RefreshToken, key)
+	return
 }
 
 // Store stores the SuperTokenEntry in the database
 func (ste *SuperTokenEntry) Store(tx *sqlx.Tx, comment string) error {
-	rtHash := hashUtils.SHA512Str([]byte(ste.RefreshToken))
-	jwt, err := ste.Token.Value()
-	if err != nil {
-		return err
-	}
-	jwtStr := jwt.(string)
-	rtCrypt, err := cryptUtils.AES256Encrypt(ste.RefreshToken, jwtStr)
+	rtHash, rtCrypt, err := ste.EncryptRT()
 	if err != nil {
 		return err
 	}
 	steStore := superTokenEntryStore{
 		ID:               ste.ID,
-		ParentID:         db.NewNullString(ste.ParentID),
-		RootID:           db.NewNullString(ste.RootID),
+		ParentID:         ste.ParentID,
+		RootID:           ste.RootID,
 		RefreshToken:     rtCrypt,
 		RefreshTokenHash: rtHash,
 		Name:             db.NewNullString(ste.Name),
@@ -85,11 +87,11 @@ func (ste *SuperTokenEntry) Store(tx *sqlx.Tx, comment string) error {
 }
 
 type superTokenEntryStore struct {
-	ID               uuid.UUID
-	ParentID         sql.NullString `db:"parent_id"`
-	RootID           sql.NullString `db:"root_id"`
-	RefreshToken     string         `db:"refresh_token"`
-	RefreshTokenHash string         `db:"rt_hash"`
+	ID               stid.STID
+	ParentID         stid.STID `db:"parent_id"`
+	RootID           stid.STID `db:"root_id"`
+	RefreshToken     string    `db:"refresh_token"`
+	RefreshTokenHash string    `db:"rt_hash"`
 	Name             sql.NullString
 	IP               string `db:"ip_created"`
 	Iss              string
