@@ -137,6 +137,7 @@ function updateIcons() {
 
 function approve() {
     let data = {
+        "oidc_iss": issuer,
         "restrictions": restrictions,
         "capabilities": $('.capability-check:checked').map(function(_, el) {
             return $(el).val();

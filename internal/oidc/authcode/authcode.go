@@ -2,7 +2,6 @@ package authcode
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -37,8 +36,6 @@ import (
 var redirectURL string
 var consentEndpoint string
 
-const StatePlaceHolder = "STATE_PLACEHOLDER"
-
 // Init initializes the authcode component
 func Init() {
 	generalPaths := routes.GetGeneralPaths()
@@ -46,7 +43,7 @@ func Init() {
 	consentEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.ConsentEndpoint)
 }
 
-func authorizationURL(provider *config.ProviderConf, restrictions restrictions.Restrictions) string {
+func GetAuthorizationURL(provider *config.ProviderConf, oState string, restrictions restrictions.Restrictions) string {
 	log.Debug("Generating authorization url")
 	scopes := restrictions.GetScopes()
 	if len(scopes) <= 0 {
@@ -67,20 +64,16 @@ func authorizationURL(provider *config.ProviderConf, restrictions restrictions.R
 	}
 	auds := restrictions.GetAudiences()
 	if len(auds) > 0 {
-		additionalParams = append(additionalParams, oauth2.SetAuthURLParam("audience", strings.Join(auds, " ")))
+		additionalParams = append(additionalParams, oauth2.SetAuthURLParam(provider.AudienceRequestParameter, strings.Join(auds, " ")))
 	}
 
-	return oauth2Config.AuthCodeURL(StatePlaceHolder, additionalParams...)
+	return oauth2Config.AuthCodeURL(oState, additionalParams...)
 }
 
 // StartAuthCodeFlow starts an authorization code flow
-func StartAuthCodeFlow(ctx *fiber.Ctx) *model.Response {
+func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.Response {
 	log.Debug("Handle authcode")
-	body := ctx.Body()
-	req := response.NewAuthCodeFlowRequest()
-	if err := json.Unmarshal(body, &req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err)
-	}
+	req := oidcReq.ToAuthCodeFlowRequest()
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
 	if !ok {
 		return &model.Response{
@@ -97,7 +90,6 @@ func StartAuthCodeFlow(ctx *fiber.Ctx) *model.Response {
 	}
 
 	req.Restrictions.ReplaceThisIp(ctx.IP())
-	authURL := authorizationURL(provider, req.Restrictions)
 	oState, consentCode := state.CreateState(state.Info{Native: req.Native()})
 	authFlowInfoO := authcodeinforepo.AuthFlowInfoOut{
 		State:                oState,
@@ -106,7 +98,6 @@ func StartAuthCodeFlow(ctx *fiber.Ctx) *model.Response {
 		Capabilities:         req.Capabilities,
 		SubtokenCapabilities: req.SubtokenCapabilities,
 		Name:                 req.Name,
-		AuthorizationURL:     authURL,
 	}
 	authFlowInfo := authcodeinforepo.AuthFlowInfo{
 		AuthFlowInfoOut: authFlowInfoO,

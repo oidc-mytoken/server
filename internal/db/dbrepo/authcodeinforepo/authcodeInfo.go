@@ -29,7 +29,6 @@ type AuthFlowInfoOut struct {
 	SubtokenCapabilities capabilities.Capabilities
 	Name                 string
 	PollingCode          bool
-	AuthorizationURL     string
 }
 
 type authFlowInfo struct {
@@ -41,7 +40,6 @@ type authFlowInfo struct {
 	Name                 sql.NullString
 	PollingCode          db.BitBool `db:"polling_code"`
 	ExpiresIn            int64      `db:"expires_in"`
-	AuthorizationURL     string     `db:"auth_url"`
 }
 
 func (i *AuthFlowInfo) toAuthFlowInfo() *authFlowInfo {
@@ -54,7 +52,6 @@ func (i *AuthFlowInfo) toAuthFlowInfo() *authFlowInfo {
 		Name:                 db.NewNullString(i.Name),
 		ExpiresIn:            config.Get().Features.Polling.PollingCodeExpiresAfter,
 		PollingCode:          i.PollingCode != nil,
-		AuthorizationURL:     i.AuthorizationURL,
 	}
 }
 
@@ -67,7 +64,6 @@ func (i *authFlowInfo) toAuthFlowInfo() *AuthFlowInfoOut {
 		SubtokenCapabilities: i.SubtokenCapabilities,
 		Name:                 i.Name.String,
 		PollingCode:          bool(i.PollingCode),
-		AuthorizationURL:     i.AuthorizationURL,
 	}
 }
 
@@ -81,7 +77,7 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 				return err
 			}
 		}
-		_, err := tx.NamedExec(`INSERT INTO AuthInfo (state_h, iss, restrictions, capabilities, subtoken_capabilities, name, expires_in, polling_code, auth_url) VALUES(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name, :expires_in, :polling_code, :auth_url)`, store)
+		_, err := tx.NamedExec(`INSERT INTO AuthInfo (state_h, iss, restrictions, capabilities, subtoken_capabilities, name, expires_in, polling_code) VALUES(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name, :expires_in, :polling_code)`, store)
 		return err
 	})
 }
@@ -90,7 +86,7 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
 	info := authFlowInfo{}
 	if err := db.Transact(func(tx *sqlx.Tx) error {
-		return tx.Get(&info, `SELECT state_h, iss, restrictions, capabilities, subtoken_capabilities, name, polling_code, auth_url FROM AuthInfo WHERE state_h=? AND expires_at >= CURRENT_TIMESTAMP()`, state)
+		return tx.Get(&info, `SELECT state_h, iss, restrictions, capabilities, subtoken_capabilities, name, polling_code FROM AuthInfo WHERE state_h=? AND expires_at >= CURRENT_TIMESTAMP()`, state)
 	}); err != nil {
 		return nil, err
 	}

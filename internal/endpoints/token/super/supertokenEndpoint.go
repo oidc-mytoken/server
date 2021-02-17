@@ -1,10 +1,13 @@
 package super
 
 import (
+	"encoding/json"
+
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
+	response "github.com/oidc-mytoken/server/internal/endpoints/token/super/pkg"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/super/polling"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
@@ -50,10 +53,20 @@ func HandleSuperTokenEndpoint(ctx *fiber.Ctx) error {
 }
 
 func handleOIDCFlow(ctx *fiber.Ctx) error {
-	flow := ctxUtils.GetOIDCFlow(ctx)
-	switch flow {
+	req := response.NewOIDCFlowRequest()
+	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
+		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
+	}
+	_, ok := config.Get().ProviderByIssuer[req.Issuer]
+	if !ok {
+		return serverModel.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: model.APIErrorUnknownIssuer,
+		}.Send(ctx)
+	}
+	switch req.OIDCFlow {
 	case model.OIDCFlowAuthorizationCode:
-		return authcode.StartAuthCodeFlow(ctx).Send(ctx)
+		return authcode.StartAuthCodeFlow(ctx, *req).Send(ctx)
 	case model.OIDCFlowDevice:
 		return serverModel.ResponseNYI.Send(ctx)
 	default:
