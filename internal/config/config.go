@@ -156,13 +156,14 @@ type signingConf struct {
 
 // ProviderConf holds information about a provider
 type ProviderConf struct {
-	Issuer       string             `yaml:"issuer"`
-	ClientID     string             `yaml:"client_id"`
-	ClientSecret string             `yaml:"client_secret"`
-	Scopes       []string           `yaml:"scopes"`
-	Endpoints    *oauth2x.Endpoints `yaml:"-"`
-	Provider     *oidc.Provider     `yaml:"-"`
-	Name         string             `yaml:"name"`
+	Issuer                   string             `yaml:"issuer"`
+	ClientID                 string             `yaml:"client_id"`
+	ClientSecret             string             `yaml:"client_secret"`
+	Scopes                   []string           `yaml:"scopes"`
+	Endpoints                *oauth2x.Endpoints `yaml:"-"`
+	Provider                 *oidc.Provider     `yaml:"-"`
+	Name                     string             `yaml:"name"`
+	AudienceRequestParameter string             `yaml:"audience_request_parameter"`
 }
 
 var conf *config
@@ -214,6 +215,9 @@ func validate() error {
 		iss0, iss1 := issuerUtils.GetIssuerWithAndWithoutSlash(p.Issuer)
 		conf.ProviderByIssuer[iss0] = p
 		conf.ProviderByIssuer[iss1] = p
+		if len(p.AudienceRequestParameter) == 0 {
+			p.AudienceRequestParameter = "resource"
+		}
 	}
 	if conf.IssuerURL == "" {
 		return fmt.Errorf("invalid config: issuerurl not set")

@@ -21,7 +21,7 @@ func Refresh(provider *config.ProviderConf, superToken, rt string, scopes, audie
 
 // RefreshFlowAndUpdate uses an refresh token to obtain a new access token; if the refresh token changes, the UpdateChangedRT function is used to update the refresh token
 func RefreshFlowAndUpdate(provider *config.ProviderConf, superToken, rt string, scopes, audiences string, updateFnc UpdateChangedRT) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
-	req := oidcReqRes.NewRefreshRequest(rt)
+	req := oidcReqRes.NewRefreshRequest(rt, provider)
 	req.Scopes = scopes
 	req.Audiences = audiences
 	httpRes, err := httpClient.Do().R().SetBasicAuth(provider.ClientID, provider.ClientSecret).SetFormData(req.ToFormData()).SetResult(&oidcReqRes.OIDCTokenResponse{}).SetError(&oidcReqRes.OIDCErrorResponse{}).Post(provider.Endpoints.Token)
