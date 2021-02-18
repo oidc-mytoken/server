@@ -39,6 +39,13 @@ func handleNativeCallback(ctx *fiber.Ctx) error {
 	return ctx.Render("sites/native", binding, "layouts/main")
 }
 
+func handleNativeConsentAbortCallback(ctx *fiber.Ctx) error {
+	binding := map[string]interface{}{
+		"empty-navbar": true,
+	}
+	return ctx.Render("sites/native.abort", binding, "layouts/main")
+}
+
 func handleTestTokenInfo(ctx *fiber.Ctx) error {
 	tok := ctxUtils.GetSuperToken(ctx)
 	if tok == nil {

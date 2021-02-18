@@ -16,6 +16,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/consent"
 	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
 	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	model2 "github.com/oidc-mytoken/server/pkg/model"
 )
@@ -33,8 +34,7 @@ var serverConfig = fiber.Config{
 
 func initTemplateEngine() {
 	engine := mustache.NewFileSystem(rice.MustFindBox("../../web").HTTPBox(), ".mustache")
-	//TODO remove
-	engine.Reload(true)
+	engine.Reload(version.DEV)
 	serverConfig.Views = engine
 }
 
@@ -76,6 +76,7 @@ func addWebRoutes(s fiber.Router) {
 	s.Get("/", handleIndex)
 	s.Get("/home", handleHome)
 	s.Get("/native", handleNativeCallback)
+	s.Get("/native/abort", handleNativeConsentAbortCallback)
 }
 
 func start(s *fiber.App) {

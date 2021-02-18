@@ -37,6 +37,13 @@ func handlePollingCode(req response.PollingCodeRequest, networkData model.Client
 			Response: pkgModel.APIErrorBadTransferCode,
 		}
 	}
+	if pollingCodeStatus.ConsentDeclined {
+		log.WithField("polling_code", pollingCode).Debug("Consent declined")
+		return &model.Response{
+			Status:   fiber.StatusUnauthorized,
+			Response: pkgModel.APIErrorConsentDeclined,
+		}
+	}
 	if pollingCodeStatus.Expired {
 		log.WithField("polling_code", pollingCode).Debug("Polling code expired")
 		return &model.Response{

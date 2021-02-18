@@ -157,7 +157,8 @@ function approve() {
         },
         error: function(errRes){
             let errMsg = getErrorMessage(errRes);
-            console.log(errMsg);
+            $('#error-modal-msg').text(errMsg);
+            $('#error-modal').modal();
         },
         dataType: "json",
         contentType : "application/json"
@@ -165,8 +166,20 @@ function approve() {
 }
 
 function cancel() {
-    //TODO POST cancel
-    window.location.href = "/";
+    $.ajax({
+        type: "POST",
+        url: window.location.href,
+        success: function (data){
+            window.location.href = data['url'];
+        },
+        error: function(errRes){
+            let errMsg = getErrorMessage(errRes);
+            console.log(errMsg);
+            window.location.href = errRes.responseJSON['url'];
+        },
+        dataType: "json",
+        contentType : "application/json"
+    });
 }
 
 $('#cp-create_super_token').click(function() {

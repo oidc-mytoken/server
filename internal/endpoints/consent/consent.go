@@ -7,15 +7,18 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
 	model2 "github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 // handleConsent displays a consent page
@@ -41,8 +44,8 @@ func handleConsent(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut) e
 // HandleConsent displays a consent page
 func HandleConsent(ctx *fiber.Ctx) error {
 	consentCode := state.ParseConsentCode(ctx.Params("consent_code"))
-	state := state.NewState(consentCode.GetState())
-	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(state)
+	oState := state.NewState(consentCode.GetState())
+	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(oState)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return fiber.ErrNotFound
@@ -56,6 +59,31 @@ func HandleConsent(ctx *fiber.Ctx) error {
 func HandleConsentPost(ctx *fiber.Ctx) error {
 	consentCode := state.ParseConsentCode(ctx.Params("consent_code"))
 	oState := state.NewState(consentCode.GetState())
+	if len(ctx.Body()) == 0 { // consent not given
+		info := oState.Parse()
+		url := "/"
+		if info.Native {
+			url = "/native/abort"
+		}
+		if err := authcodeinforepo.DeleteAuthFlowInfoByState(nil, oState); err != nil {
+			res := model.ErrorToInternalServerErrorResponse(err)
+			m := utils.StructToStringMapUsingJSONTags(res.Response)
+			m["url"] = url
+			res.Response = m
+			return res.Send(ctx)
+		}
+		if info.Native {
+			if err := transfercoderepo.DeclineConsentByState(nil, oState); err != nil {
+				log.WithError(err).Error()
+			}
+		}
+		return model.Response{
+			Status: 278,
+			Response: map[string]string{
+				"url": url,
+			},
+		}.Send(ctx)
+	}
 	req := pkg.ConsentPostRequest{}
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)

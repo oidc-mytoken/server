@@ -20,6 +20,7 @@ var (
 	APIErrorBadTransferCode          = APIError{ErrorInvalidToken, "Bad polling or transfer code"}
 	APIErrorTransferCodeExpired      = APIError{ErrorExpiredToken, "polling or transfer code is expired"}
 	APIErrorAuthorizationPending     = ErrorWithoutDescription(ErrorAuthorizationPending)
+	APIErrorConsentDeclined          = APIError{ErrorAccessDenied, "user declined consent"}
 	APIErrorNoRefreshToken           = APIError{ErrorOIDC, "Did not receive a refresh token"}
 	APIErrorInsufficientCapabilities = APIError{ErrorInsufficientCapabilities, "The provided token does not have the required capability for this operation"}
 	APIErrorUsageRestricted          = APIError{ErrorUsageRestricted, "The restrictions of this token does not allow this usage"}
