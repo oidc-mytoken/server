@@ -85,7 +85,6 @@ var DDL = []string {
   "  `expires_in` int(11) NOT NULL,"+
   "  `expires_at` datetime NOT NULL DEFAULT (current_timestamp() + interval `expires_in` second),"+
   "  `subtoken_capabilities` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`subtoken_capabilities`)),"+
-  "  `auth_url` text NOT NULL,"+
   "  PRIMARY KEY (`state_h`)"+
   ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
   "/*!40101 SET character_set_client = @saved_cs_client */;",
@@ -218,7 +217,8 @@ var DDL = []string {
   "  `expires_in` tinyint NOT NULL,"+
   "  `expires_at` tinyint NOT NULL,"+
   "  `revoke_ST` tinyint NOT NULL,"+
-  "  `response_type` tinyint NOT NULL"+
+  "  `response_type` tinyint NOT NULL,"+
+  "  `consent_declined` tinyint NOT NULL"+
   ") ENGINE=MyISAM */;",
   "SET character_set_client = @saved_cs_client;",
   ""+
@@ -236,6 +236,7 @@ var DDL = []string {
   "  `expires_at` datetime NOT NULL DEFAULT (current_timestamp() + interval `expires_in` second),"+
   "  `revoke_ST` bit(1) NOT NULL DEFAULT b'0',"+
   "  `response_type` varchar(128) NOT NULL DEFAULT 'token',"+
+  "  `consent_declined` bit(1) DEFAULT NULL,"+
   "  PRIMARY KEY (`id`),"+
   "  CONSTRAINT `TransferCodesAttributes_FK` FOREIGN KEY (`id`) REFERENCES `ProxyTokens` (`id`) ON DELETE CASCADE ON UPDATE CASCADE"+
   ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
@@ -272,7 +273,7 @@ var DDL = []string {
   "CREATE TABLE `UserGrants` ("+
   "  `user_id` bigint(20) unsigned NOT NULL,"+
   "  `grant_id` int(10) unsigned NOT NULL,"+
-  "  `enabled` tinyint(1) NOT NULL,"+
+  "  `enabled` bit(1) NOT NULL,"+
   "  PRIMARY KEY (`user_id`,`grant_id`),"+
   "  KEY `UserGrants_FK` (`grant_id`),"+
   "  CONSTRAINT `UserGrants_FK` FOREIGN KEY (`grant_id`) REFERENCES `Grants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,"+
@@ -311,7 +312,7 @@ var DDL = []string {
   "/*!50001 SET character_set_results     = utf8mb4 */;",
   "/*!50001 SET collation_connection      = utf8mb4_general_ci */;",
   "/*!50001 CREATE ALGORITHM=UNDEFINED */"+
-  "/*!50001 VIEW `TransferCodes` AS select `pt`.`id` AS `id`,`pt`.`jwt` AS `jwt`,`tca`.`created` AS `created`,`tca`.`expires_in` AS `expires_in`,`tca`.`expires_at` AS `expires_at`,`tca`.`revoke_ST` AS `revoke_ST`,`tca`.`response_type` AS `response_type` from (`ProxyTokens` `pt` join `TransferCodesAttributes` `tca` on(`pt`.`id` = `tca`.`id`)) */;",
+  "/*!50001 VIEW `TransferCodes` AS select `pt`.`id` AS `id`,`pt`.`jwt` AS `jwt`,`tca`.`created` AS `created`,`tca`.`expires_in` AS `expires_in`,`tca`.`expires_at` AS `expires_at`,`tca`.`revoke_ST` AS `revoke_ST`,`tca`.`response_type` AS `response_type`,`tca`.`consent_declined` AS `consent_declined` from (`ProxyTokens` `pt` join `TransferCodesAttributes` `tca` on(`pt`.`id` = `tca`.`id`)) */;",
   "/*!50001 SET character_set_client      = @saved_cs_client */;",
   "/*!50001 SET character_set_results     = @saved_cs_results */;",
   "/*!50001 SET collation_connection      = @saved_col_connection */;",
