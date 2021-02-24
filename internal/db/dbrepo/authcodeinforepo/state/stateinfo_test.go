@@ -1,4 +1,4 @@
-package authcode
+package state
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestParseState(t *testing.T) {
-	stateInfos := []stateInfo{
+	stateInfos := []Info{
 		{Native: false},
 		{Native: true},
 		{Native: false, ResponseType: model.ResponseTypeToken},
@@ -18,10 +18,10 @@ func TestParseState(t *testing.T) {
 		{Native: true, ResponseType: model.ResponseTypeTransferCode},
 	}
 	for _, stateInfo := range stateInfos {
-		state := createState(stateInfo)
-		parsed := parseState(state)
+		s, _ := CreateState(stateInfo)
+		parsed := s.Parse()
 		if stateInfo != parsed {
-			t.Errorf("%+v was not correctly converted, instead got %+v from state '%s'", stateInfo, parsed, state)
+			t.Errorf("%+v was not correctly converted, instead got %+v from state '%+v'", stateInfo, parsed, s)
 		}
 	}
 }

@@ -26,33 +26,33 @@ func TestTightenAllEmpty(t *testing.T) {
 }
 func TestTightenOneEmpty(t *testing.T) {
 	a := Capabilities{}
-	b := Capabilities{"not", "empty"}
+	b := NewCapabilities([]string{"not", "empty"})
 	expected := Capabilities{}
 	testTighten(t, a, b, expected)
 	testTighten(t, b, a, expected)
 }
 func TestTightenNoIntersection(t *testing.T) {
-	a := Capabilities{"some", "values"}
-	b := Capabilities{"completly", "different"}
+	a := NewCapabilities([]string{"some", "values"})
+	b := NewCapabilities([]string{"completly", "different"})
 	expected := Capabilities{}
 	testTighten(t, a, b, expected)
 	testTighten(t, b, a, expected)
 }
 func TestTightenSame(t *testing.T) {
-	a := Capabilities{"some", "values"}
+	a := NewCapabilities([]string{"some", "values"})
 	testTighten(t, a, a, a)
 }
 func TestTightenSomeIntersection(t *testing.T) {
-	a := Capabilities{"some", "values"}
-	b := Capabilities{"some", "different"}
-	expected := Capabilities{"some"}
+	a := NewCapabilities([]string{"some", "values"})
+	b := NewCapabilities([]string{"some", "different"})
+	expected := NewCapabilities([]string{"some"})
 	testTighten(t, a, b, expected)
 	testTighten(t, b, a, expected)
 }
 func TestTightenSubSet(t *testing.T) {
-	a := Capabilities{"some", "values"}
-	b := Capabilities{"some", "more", "values"}
-	expected := Capabilities{"some", "values"}
+	a := NewCapabilities([]string{"some", "values"})
+	b := NewCapabilities([]string{"some", "more", "values"})
+	expected := NewCapabilities([]string{"some", "values"})
 	testTighten(t, a, b, expected)
 	testTighten(t, b, a, expected)
 }

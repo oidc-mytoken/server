@@ -1,6 +1,10 @@
 package supertokenrepo
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
+)
 
 func testRoot(t *testing.T, a SuperTokenEntry, expected bool) {
 	root := a.Root()
@@ -18,10 +22,13 @@ func TestSuperTokenEntry_RootEmpty(t *testing.T) {
 	testRoot(t, a, true)
 }
 func TestSuperTokenEntry_RootHasParentAsRoot(t *testing.T) {
-	a := SuperTokenEntry{ParentID: "id", RootID: "id"}
+	id := stid.New()
+	a := SuperTokenEntry{ParentID: id, RootID: id}
 	testRoot(t, a, false)
 }
 func TestSuperTokenEntry_RootHasRoot(t *testing.T) {
-	a := SuperTokenEntry{ParentID: "parentid", RootID: "rootid"}
+	pid := stid.New()
+	rid := stid.New()
+	a := SuperTokenEntry{ParentID: pid, RootID: rid}
 	testRoot(t, a, false)
 }

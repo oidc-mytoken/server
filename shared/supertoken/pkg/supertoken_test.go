@@ -3,28 +3,7 @@ package supertoken
 import (
 	"testing"
 	"time"
-
-	"github.com/oidc-mytoken/server/internal/config"
-	"github.com/oidc-mytoken/server/internal/jws"
-	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
 )
-
-func TestSuperTokenJWTUnique(t *testing.T) {
-	config.Load()
-	jws.LoadKey()
-	st := NewSuperToken("sub", "iss", nil, capabilities.AllCapabilities, nil)
-	jwt1, err := st.ToJWT()
-	if err != nil {
-		t.Error(err)
-	}
-	jwt2, err := st.ToJWT()
-	if err != nil {
-		t.Error(err)
-	}
-	if jwt1 == jwt2 {
-		t.Errorf("JWTs not unique: '%s'", jwt1)
-	}
-}
 
 func TestSuperToken_ExpiresIn_Unset(t *testing.T) {
 	st := SuperToken{}
