@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -11,21 +12,24 @@ import (
 func main() {
 	config.Load()
 	loggerUtils.Init()
-	if err := db.Connect(); err != nil {
-		log.WithError(err).Fatal()
-	}
+	db.Connect()
 	deleteExpiredTransferCodes()
 	deleteExpiredAuthInfo()
 }
 
-func deleteExpiredTransferCodes() {
-	if _, err := db.DB().Exec(`DELETE FROM ProxyTokens WHERE id = ANY(SELECT id FROM TransferCodesAttributes WHERE expires_at < CURRENT_TIMESTAMP())`); err != nil {
+func execSimpleQuery(sql string) {
+	if err := db.RunWithinTransaction(nil, func(tx *sqlx.Tx) error {
+		_, err := tx.Exec(sql)
+		return err
+	}); err != nil {
 		log.WithError(err).Error()
 	}
 }
 
+func deleteExpiredTransferCodes() {
+	execSimpleQuery(`DELETE FROM ProxyTokens WHERE id = ANY(SELECT id FROM TransferCodesAttributes WHERE expires_at < CURRENT_TIMESTAMP())`)
+}
+
 func deleteExpiredAuthInfo() {
-	if _, err := db.DB().Exec(`DELETE FROM AuthInfo WHERE expires_at < CURRENT_TIMESTAMP()`); err != nil {
-		log.WithError(err).Error()
-	}
+	execSimpleQuery(`DELETE FROM AuthInfo WHERE expires_at < CURRENT_TIMESTAMP()`)
 }

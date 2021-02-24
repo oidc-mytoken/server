@@ -5,14 +5,14 @@ import (
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
-type webCapability struct {
+type WebCapability struct {
 	capabilities.Capability
 	intClass *int
 }
 
-func WebCapabilities(cc capabilities.Capabilities) (wc []webCapability) {
+func WebCapabilities(cc capabilities.Capabilities) (wc []WebCapability) {
 	for _, c := range cc {
-		wc = append(wc, webCapability{c, nil})
+		wc = append(wc, WebCapability{c, nil})
 	}
 	return
 }
@@ -28,7 +28,7 @@ var normalCapabilities = []string{"AT", "create_super_token", "tokeninfo_introsp
 var warningCapabilities = []string{"list_super_tokens"}
 var dangerCapabilities = []string{"settings"}
 
-func (c webCapability) getIntClass() int {
+func (c WebCapability) getIntClass() int {
 	if c.intClass != nil {
 		return *c.intClass
 	}
@@ -47,15 +47,15 @@ func (c webCapability) getIntClass() int {
 	return -1
 }
 
-func (c webCapability) getDangerLevel() int {
+func (c WebCapability) getDangerLevel() int {
 	return c.getIntClass()
 }
 
-func (c webCapability) ColorClass() string {
+func (c WebCapability) ColorClass() string {
 	return textColorByDanger(c.getDangerLevel())
 }
 
-func (c webCapability) CapabilityLevel() string {
+func (c WebCapability) CapabilityLevel() string {
 	intClass := c.getIntClass()
 	switch intClass {
 	case 0:
@@ -68,6 +68,6 @@ func (c webCapability) CapabilityLevel() string {
 	return ""
 }
 
-func (c webCapability) IsCreateST() bool {
+func (c WebCapability) IsCreateST() bool {
 	return c.Name == capabilities.CapabilityCreateST.Name
 }

@@ -78,7 +78,6 @@ func (f OIDCFlow) AddToSliceIfNotFound(s *[]OIDCFlow) {
 		return
 	}
 	*s = append(*s, f)
-	return
 }
 
 // OIDCFlowIsInSlice checks if a OIDCFlow is present in a slice of OIDCFlows

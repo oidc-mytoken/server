@@ -50,14 +50,14 @@ func GetAudiencesFromJWT(token string) ([]string, bool) {
 		return nil, false
 	}
 	auds := res[0].Value
-	switch auds.(type) {
+	switch v := auds.(type) {
 	case string:
-		return []string{auds.(string)}, true
+		return []string{v}, true
 	case []string:
-		return auds.([]string), true
+		return v, true
 	case []interface{}:
 		strs := []string{}
-		for _, s := range auds.([]interface{}) {
+		for _, s := range v {
 			str, ok := s.(string)
 			if !ok {
 				return nil, false

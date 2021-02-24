@@ -111,11 +111,10 @@ func IPIsIn(ip string, ips []string) bool {
 			if ipNetB != nil && ipNetB.Contains(ipA) {
 				return true
 			}
-		} else {
-			if ip == ipp {
-				return true
-			}
+		} else if ip == ipp {
+			return true
 		}
+
 	}
 	return false
 }

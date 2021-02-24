@@ -141,8 +141,7 @@ func (my *Mytoken) PollOnce(pollingCode string) (string, bool, error) {
 	}
 	var myErr *MytokenError
 	if errors.As(err, &myErr) {
-		switch myErr.err {
-		case model.ErrorAuthorizationPending:
+		if myErr.err == model.ErrorAuthorizationPending {
 			err = nil
 		}
 	}

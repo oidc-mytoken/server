@@ -18,10 +18,7 @@ type AuthCodeFlowRequest struct {
 
 // Native checks if the request is native
 func (r *AuthCodeFlowRequest) Native() bool {
-	if r.RedirectType == redirectTypeNative {
-		return true
-	}
-	return false
+	return r.RedirectType == redirectTypeNative
 }
 
 // UnmarshalJSON implements the json unmarshaler interface

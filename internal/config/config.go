@@ -14,7 +14,7 @@ import (
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 )
 
-var defaultConfig = config{
+var defaultConfig = Config{
 	Server: serverConf{
 		Port: 8000,
 		TLS: tlsConf{
@@ -70,8 +70,8 @@ var defaultConfig = config{
 	},
 }
 
-// config holds the server configuration
-type config struct {
+// Config holds the server configuration
+type Config struct {
 	IssuerURL            string                   `yaml:"issuer"`
 	Server               serverConf               `yaml:"server"`
 	GeoIPDBFile          string                   `yaml:"geo_ip_db_file"`
@@ -166,10 +166,10 @@ type ProviderConf struct {
 	AudienceRequestParameter string             `yaml:"audience_request_parameter"`
 }
 
-var conf *config
+var conf *Config
 
-// Get returns the config
-func Get() *config {
+// Get returns the Config
+func Get() *Config {
 	return conf
 }
 
@@ -240,7 +240,7 @@ var possibleConfigLocations = []string{
 	"/etc/mytoken",
 }
 
-// Load reads the config file and populates the config struct; then validates the config
+// Load reads the config file and populates the Config struct; then validates the Config
 func Load() {
 	load()
 	if err := validate(); err != nil {
@@ -258,7 +258,7 @@ func load() {
 	}
 }
 
-// LoadForSetup reads the config file and populates the config struct; it does not validate the config, since this is not required for setup
+// LoadForSetup reads the config file and populates the Config struct; it does not validate the Config, since this is not required for setup
 func LoadForSetup() {
 	load()
 }
