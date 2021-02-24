@@ -229,7 +229,7 @@ func validate() error {
 		return fmt.Errorf("invalid config: tokensigningalg not set")
 	}
 	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(&conf.Features.EnabledOIDCFlows)
-	if model.OIDCFlowIsInSlice(model.OIDCFlowDevice, conf.Features.EnabledOIDCFlows) && conf.Features.Polling.Enabled == false {
+	if model.OIDCFlowIsInSlice(model.OIDCFlowDevice, conf.Features.EnabledOIDCFlows) && !conf.Features.Polling.Enabled {
 		return fmt.Errorf("oidc flow device flow requires polling_codes to be enabled")
 	}
 	return nil
