@@ -222,9 +222,9 @@ func StructToStringMap(st interface{}, tag string) map[string]string {
 	m := make(map[string]string)
 	for k, v := range s.Map() {
 		var str string
-		switch v.(type) {
+		switch v := v.(type) {
 		case string:
-			str = v.(string)
+			str = v
 		default:
 			str = fmt.Sprintf("%v", v)
 		}

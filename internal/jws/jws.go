@@ -37,11 +37,11 @@ func GenerateKeyPair() (sk, pk interface{}, err error) {
 		return nil, nil, fmt.Errorf("unknown signing algorithm '%s'", alg)
 	}
 	if err != nil {
-		switch sk.(type) {
+		switch sk := sk.(type) {
 		case *rsa.PrivateKey:
-			pk = &sk.(*rsa.PrivateKey).PublicKey
+			pk = &sk.PublicKey
 		case *ecdsa.PrivateKey:
-			pk = &sk.(*ecdsa.PrivateKey).PublicKey
+			pk = &sk.PublicKey
 		default:
 			err = fmt.Errorf("something went wrong, we just created an unknown key type")
 		}
@@ -51,11 +51,11 @@ func GenerateKeyPair() (sk, pk interface{}, err error) {
 
 // ExportPrivateKeyAsPemStr exports the private key
 func ExportPrivateKeyAsPemStr(sk interface{}) string {
-	switch sk.(type) {
+	switch sk := sk.(type) {
 	case *rsa.PrivateKey:
-		return exportRSAPrivateKeyAsPemStr(sk.(*rsa.PrivateKey))
+		return exportRSAPrivateKeyAsPemStr(sk)
 	case *ecdsa.PrivateKey:
-		return exportECPrivateKeyAsPemStr(sk.(*ecdsa.PrivateKey))
+		return exportECPrivateKeyAsPemStr(sk)
 	default:
 		return ""
 	}
