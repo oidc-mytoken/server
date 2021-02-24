@@ -266,7 +266,7 @@ func IsJWT(token string) bool {
 		return false
 	}
 	for i, segment := range arr {
-		if len(segment) > 0 || i < 2 { // first two segments must not be empty
+		if segment != "" || i < 2 { // first two segments must not be empty
 			if _, err := base64.URLEncoding.DecodeString(arr[2]); err != nil {
 				return false
 			}

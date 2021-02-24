@@ -23,7 +23,7 @@ func (my *Mytoken) GetAccessToken(superToken, oidcIssuer string, scopes, audienc
 		return "", newMytokenErrorFromError("error while sending http request", err)
 	}
 	if e := resp.Error(); e != nil {
-		if errRes := e.(*model.APIError); errRes != nil && len(errRes.Error) > 0 {
+		if errRes := e.(*model.APIError); errRes != nil && errRes.Error != "" {
 			return "", &MytokenError{
 				err:          errRes.Error,
 				errorDetails: errRes.ErrorDescription,

@@ -8,7 +8,7 @@ type MytokenError struct {
 
 func (err *MytokenError) Error() string {
 	e := err.err
-	if len(err.errorDetails) > 0 {
+	if err.errorDetails != "" {
 		e += ": " + err.errorDetails
 	}
 	return e

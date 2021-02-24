@@ -28,13 +28,13 @@ func (i *STID) Valid() bool {
 }
 
 func (i *STID) HashValid() bool {
-	if len(i.hash) > 0 {
+	if i.hash != "" {
 		return true
 	}
 	if i.UUID.String() == "00000000-0000-0000-0000-000000000000" {
 		return false
 	}
-	return len(i.Hash()) > 0
+	return i.Hash() != ""
 }
 
 func (i *STID) Hash() string {

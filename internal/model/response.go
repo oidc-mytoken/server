@@ -19,10 +19,8 @@ type Response struct {
 
 // Send sends this response using the passed fiber.Ctx
 func (r Response) Send(ctx *fiber.Ctx) error {
-	if r.Cookies != nil && len(r.Cookies) > 0 {
-		for _, c := range r.Cookies {
-			ctx.Cookie(c)
-		}
+	for _, c := range r.Cookies {
+		ctx.Cookie(c)
 	}
 	if fasthttp.StatusCodeIsRedirect(r.Status) {
 		return ctx.Redirect(r.Response.(string), r.Status)

@@ -18,7 +18,7 @@ func NewMytokenInstance(url string) (*Mytoken, error) {
 		return nil, newMytokenErrorFromError("could not connect to mytoken instance", err)
 	}
 	if e := resp.Error(); e != nil {
-		if errRes := e.(*model.APIError); errRes != nil && len(errRes.Error) > 0 {
+		if errRes := e.(*model.APIError); errRes != nil && errRes.Error != "" {
 			return nil, &MytokenError{
 				err:          errRes.Error,
 				errorDetails: errRes.ErrorDescription,

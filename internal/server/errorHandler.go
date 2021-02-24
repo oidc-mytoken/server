@@ -20,7 +20,7 @@ func handleError(ctx *fiber.Ctx, err error) error {
 		msg = e.Message
 	}
 
-	if len(ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8)) > 0 {
+	if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" {
 		return handleErrorHTML(ctx, code, msg)
 	}
 	return handleErrorJSON(ctx, code, msg)

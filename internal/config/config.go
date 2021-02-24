@@ -181,7 +181,7 @@ func validate() error {
 		return fmt.Errorf("invalid config: server.hostname not set")
 	}
 	if conf.Server.TLS.Enabled {
-		if len(conf.Server.TLS.Key) > 0 && len(conf.Server.TLS.Cert) > 0 {
+		if conf.Server.TLS.Key != "" && conf.Server.TLS.Cert != "" {
 			conf.Server.Port = 443
 		} else {
 			conf.Server.TLS.Enabled = false

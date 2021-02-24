@@ -13,14 +13,14 @@ import (
 func GetSuperTokenStr(ctx *fiber.Ctx) string {
 	req := pkg.CreateTransferCodeRequest{}
 	if err := json.Unmarshal(ctx.Body(), &req); err == nil {
-		if len(req.SuperToken) > 0 {
+		if req.SuperToken != "" {
 			return req.SuperToken
 		}
 	}
-	if tok := GetAuthHeaderToken(ctx); len(tok) > 0 {
+	if tok := GetAuthHeaderToken(ctx); tok != "" {
 		return tok
 	}
-	if tok := ctx.Cookies("mytoken-supertoken"); len(tok) > 0 {
+	if tok := ctx.Cookies("mytoken-supertoken"); tok != "" {
 		return tok
 	}
 	return ""

@@ -19,7 +19,7 @@ func (my *Mytoken) GetSuperToken(req interface{}) (string, error) {
 		return "", newMytokenErrorFromError("error while sending http request", err)
 	}
 	if e := resp.Error(); e != nil {
-		if errRes := e.(*model.APIError); errRes != nil && len(errRes.Error) > 0 {
+		if errRes := e.(*model.APIError); errRes != nil && errRes.Error != "" {
 			return "", &MytokenError{
 				err:          errRes.Error,
 				errorDetails: errRes.ErrorDescription,
@@ -91,7 +91,7 @@ func (my *Mytoken) InitAuthorizationFlow(issuer string, restrictions restriction
 		return nil, newMytokenErrorFromError("error while sending http request", err)
 	}
 	if e := resp.Error(); e != nil {
-		if errRes := e.(*model.APIError); errRes != nil && len(errRes.Error) > 0 {
+		if errRes := e.(*model.APIError); errRes != nil && errRes.Error != "" {
 			return nil, &MytokenError{
 				err:          errRes.Error,
 				errorDetails: errRes.ErrorDescription,

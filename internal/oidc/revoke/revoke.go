@@ -18,7 +18,7 @@ func RefreshToken(provider *config.ProviderConf, rt string) *model.Response {
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	if errRes, ok := httpRes.Error().(*oidcReqRes.OIDCErrorResponse); ok && errRes != nil && len(errRes.Error) > 0 {
+	if errRes, ok := httpRes.Error().(*oidcReqRes.OIDCErrorResponse); ok && errRes != nil && errRes.Error != "" {
 		return &model.Response{
 			Status:   httpRes.RawResponse.StatusCode,
 			Response: pkgModel.OIDCError(errRes.Error, errRes.ErrorDescription),

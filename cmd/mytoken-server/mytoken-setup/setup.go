@@ -161,7 +161,7 @@ func createTables(tx *sqlx.Tx) error {
 	}
 	for _, cmd := range dbdefinition.DDL {
 		cmd = strings.TrimSpace(cmd)
-		if len(cmd) > 0 && !strings.HasPrefix(cmd, "--") {
+		if cmd != "" && !strings.HasPrefix(cmd, "--") {
 			log.Trace(cmd)
 			if _, err := tx.Exec(cmd); err != nil {
 				return err

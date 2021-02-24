@@ -28,7 +28,7 @@ func RefreshFlowAndUpdate(provider *config.ProviderConf, superToken, rt, scopes,
 	if err != nil {
 		return nil, nil, err
 	}
-	if errRes, ok := httpRes.Error().(*oidcReqRes.OIDCErrorResponse); ok && errRes != nil && len(errRes.Error) > 0 {
+	if errRes, ok := httpRes.Error().(*oidcReqRes.OIDCErrorResponse); ok && errRes != nil && errRes.Error != "" {
 		errRes.Status = httpRes.RawResponse.StatusCode
 		return nil, errRes, nil
 	}

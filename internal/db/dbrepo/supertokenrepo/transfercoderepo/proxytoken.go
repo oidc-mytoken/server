@@ -38,7 +38,7 @@ func createProxyToken(token string) *proxyToken {
 // parseProxyToken parses the proxy token string into a proxyToken
 func parseProxyToken(token string) *proxyToken {
 	var id string
-	if len(token) > 0 {
+	if token != "" {
 		id = hashUtils.SHA512Str([]byte(token))
 	}
 	return &proxyToken{
@@ -74,7 +74,7 @@ func (pt *proxyToken) SetJWT(jwt string) (err error) {
 // JWT returns the decrypted jwt that is linked to this proxyToken
 func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 	jwt = pt.decryptedJWT
-	if len(jwt) > 0 {
+	if jwt != "" {
 		valid = true
 		return
 	}

@@ -31,17 +31,15 @@ type ConsentCode struct {
 }
 
 func (c *ConsentCode) String() string {
-	if len(c.public) > 0 {
-		return c.public
+	if c.public == "" {
+		c.public = c.r + c.encodedInfo
 	}
-	c.public = c.r + c.encodedInfo
 	return c.public
 }
 
 func (c *ConsentCode) GetState() string {
-	if len(c.state) > 0 {
-		return c.state
+	if c.state == "" {
+		c.state = hashUtils.HMACSHA512Str([]byte(c.r), []byte("state"))[:stateLen] + c.encodedInfo
 	}
-	c.state = hashUtils.HMACSHA512Str([]byte(c.r), []byte("state"))[:stateLen] + c.encodedInfo
 	return c.state
 }

@@ -126,9 +126,9 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 			}
 		}
 		usedRestriction = &possibleRestrictions[0]
-		if len(req.Scope) > 0 {
+		if req.Scope != "" {
 			scopes = req.Scope
-		} else if len(usedRestriction.Scope) > 0 {
+		} else if usedRestriction.Scope != "" {
 			scopes = usedRestriction.Scope
 		}
 		if req.Audience != "" {
@@ -159,7 +159,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 		}
 	}
 	retScopes := scopes
-	if len(oidcRes.Scopes) > 0 {
+	if oidcRes.Scopes != "" {
 		retScopes = oidcRes.Scopes
 	}
 	retAudiences, _ := jwtutils.GetAudiencesFromJWT(oidcRes.AccessToken)

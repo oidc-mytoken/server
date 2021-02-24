@@ -20,8 +20,8 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 	log.Debug("Handle redirect")
 	oidcError := ctx.Query("error")
 	state := state.NewState(ctx.Query("state"))
-	if len(oidcError) > 0 {
-		if len(state.State()) > 0 {
+	if oidcError != "" {
+		if state.State() != "" {
 			if err := db.Transact(func(tx *sqlx.Tx) error {
 				if err := transfercoderepo.DeleteTransferCodeByState(tx, state); err != nil {
 					return err

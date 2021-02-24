@@ -86,7 +86,7 @@ func revokeSuperToken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *
 	if err != nil {
 		return nil
 	}
-	if len(issuer) > 0 && st.OIDCIssuer != issuer {
+	if issuer != "" && st.OIDCIssuer != issuer {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: pkgModel.BadRequestError("token not for specified issuer"),

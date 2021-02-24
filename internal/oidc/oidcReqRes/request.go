@@ -38,7 +38,7 @@ func (r *RefreshRequest) ToFormData() map[string]string {
 	m := make(map[string]string)
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
-		if key := f.Tag.Get("json"); len(key) > 0 {
+		if key := f.Tag.Get("json"); key != "" {
 			if key == "resource" {
 				key = r.resourceParameter
 			}
