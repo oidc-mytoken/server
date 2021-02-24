@@ -214,7 +214,7 @@ func checkDB(db *cluster.Cluster) error {
 	if rows.Next() {
 		if !prompter.YesNo("The database already exists. If we continue all data will be deleted. Do you want to continue?", false) {
 			rows.Close()
-			os.Exit(1)
+			os.Exit(1) // skipcq CRT-D0011
 		}
 	}
 	return nil

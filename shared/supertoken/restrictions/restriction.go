@@ -362,7 +362,7 @@ func (r *Restrictions) ReplaceThisIp(ip string) {
 	}
 }
 
-func (r *Restrictions) removeIndex(i int) {
+func (r *Restrictions) removeIndex(i int) { // skipcq SCC-U1000
 	copy((*r)[i:], (*r)[i+1:]) // Shift r[i+1:] left one index.
 	// r[len(r)-1] = ""     // Erase last element (write zero value).
 	*r = (*r)[:len(*r)-1] // Truncate slice.
