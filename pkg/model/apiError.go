@@ -72,12 +72,12 @@ func OIDCError(oidcError, oidcErrorDescription string) APIError {
 }
 
 // OIDCErrorFromBody creates an APIError for oidc related errors from the response of an oidc provider
-func OIDCErrorFromBody(body []byte) (error APIError, ok bool) {
+func OIDCErrorFromBody(body []byte) (apiError APIError, ok bool) {
 	bodyError := APIError{}
 	if err := json.Unmarshal(body, &bodyError); err != nil {
 		return
 	}
-	error = OIDCError(bodyError.Error, bodyError.ErrorDescription)
+	apiError = OIDCError(bodyError.Error, bodyError.ErrorDescription)
 	ok = true
 	return
 }

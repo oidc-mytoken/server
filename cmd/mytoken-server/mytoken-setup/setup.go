@@ -213,6 +213,7 @@ func checkDB(db *cluster.Cluster) error {
 	defer rows.Close()
 	if rows.Next() {
 		if !prompter.YesNo("The database already exists. If we continue all data will be deleted. Do you want to continue?", false) {
+			rows.Close()
 			os.Exit(1)
 		}
 	}

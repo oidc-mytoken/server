@@ -65,16 +65,16 @@ func StringInSlice(key string, slice []string) bool {
 }
 
 // ReplaceStringInSlice replaces all occurrences of a string in a slice with another string
-func ReplaceStringInSlice(s *[]string, old, new string, caseSensitive bool) {
+func ReplaceStringInSlice(s *[]string, o, n string, caseSensitive bool) {
 	if !caseSensitive {
-		old = strings.ToLower(old)
+		o = strings.ToLower(o)
 	}
 	for i, ss := range *s {
 		if !caseSensitive {
 			ss = strings.ToLower(ss)
 		}
-		if old == ss {
-			(*s)[i] = new
+		if o == ss {
+			(*s)[i] = n
 		}
 	}
 }

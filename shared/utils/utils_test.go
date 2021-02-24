@@ -82,7 +82,7 @@ func TestIntersectSlicesOneEmpty(t *testing.T) {
 }
 func TestIntersectSlicesNoIntersection(t *testing.T) {
 	a := []string{"some", "values"}
-	b := []string{"completly", "different"}
+	b := []string{"completely", "different"}
 	expected := []string{}
 	testIntersectList(t, a, b, expected)
 	testIntersectList(t, b, a, expected)
@@ -239,46 +239,46 @@ func TestStringInSliceNotFound(t *testing.T) {
 
 func TestReplaceStringInSlice_Normal(t *testing.T) {
 	strs := []string{"a", "b", "c"}
-	old := "a"
-	new := "b"
+	o := "a"
+	n := "b"
 	exp := []string{"b", "b", "c"}
-	ReplaceStringInSlice(&strs, old, new, true)
+	ReplaceStringInSlice(&strs, o, n, true)
 	checkSlice(t, strs, exp)
 }
 func TestReplaceStringInSlice_Multiple(t *testing.T) {
 	strs := []string{"a", "b", "d", "a", "c"}
-	old := "a"
-	new := "b"
+	o := "a"
+	n := "b"
 	exp := []string{"b", "b", "d", "b", "c"}
-	ReplaceStringInSlice(&strs, old, new, true)
+	ReplaceStringInSlice(&strs, o, n, true)
 	checkSlice(t, strs, exp)
 }
 func TestReplaceStringInSlice_CaseSensitivity(t *testing.T) {
 	strs := []string{"a", "b", "A", "b"}
-	old := "a"
-	new := "c"
+	o := "a"
+	n := "c"
 	exp := []string{"c", "b", "A", "b"}
-	ReplaceStringInSlice(&strs, old, new, true)
+	ReplaceStringInSlice(&strs, o, n, true)
 	checkSlice(t, strs, exp)
 	strs = []string{"a", "b", "A", "b"}
 	exp = []string{"c", "b", "c", "b"}
-	ReplaceStringInSlice(&strs, old, new, false)
+	ReplaceStringInSlice(&strs, o, n, false)
 	checkSlice(t, strs, exp)
 }
 func TestReplaceStringInSlice_Empty(t *testing.T) {
 	strs := []string{}
-	old := "a"
-	new := "b"
+	o := "a"
+	n := "b"
 	exp := []string{}
-	ReplaceStringInSlice(&strs, old, new, true)
+	ReplaceStringInSlice(&strs, o, n, true)
 	checkSlice(t, strs, exp)
 }
 func TestReplaceStringInSlice_NotFound(t *testing.T) {
 	strs := []string{"a", "b", "c"}
-	old := "d"
-	new := "b"
+	o := "d"
+	n := "b"
 	exp := []string{"a", "b", "c"}
-	ReplaceStringInSlice(&strs, old, new, true)
+	ReplaceStringInSlice(&strs, o, n, true)
 	checkSlice(t, strs, exp)
 }
 

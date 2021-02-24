@@ -10,11 +10,6 @@ type Info struct {
 	ResponseType pkgModel.ResponseType
 }
 
-// StateInfoFlags
-const (
-	flagNative = 0x01
-)
-
 const infoAsciiLen = 2
 
 func (i Info) Encode() string {
