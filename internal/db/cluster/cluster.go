@@ -156,7 +156,7 @@ func (c *Cluster) Transact(fn func(*sqlx.Tx) error) error {
 		if n == nil {
 			return fmt.Errorf("no db node available")
 		}
-		err, closed := n.transact(fn)
+		closed, err := n.transact(fn)
 		if !closed {
 			return err
 		}
@@ -165,7 +165,7 @@ func (c *Cluster) Transact(fn func(*sqlx.Tx) error) error {
 	}
 }
 
-func (n *node) transact(fn func(*sqlx.Tx) error) (error, bool) {
+func (n *node) transact(fn func(*sqlx.Tx) error) (bool, error) {
 	err := n.trans(fn)
 	if err != nil {
 		e := err.Error()
@@ -174,10 +174,10 @@ func (n *node) transact(fn func(*sqlx.Tx) error) (error, bool) {
 			strings.HasPrefix(e, "dial tcp"),
 			strings.HasSuffix(e, "closing bad idle connection: EOF"):
 			log.WithField("dsn", n.dsn).Error("Node is down")
-			return err, true
+			return true, err
 		}
 	}
-	return err, false
+	return false, err
 }
 func (n *node) trans(fn func(*sqlx.Tx) error) error {
 	tx, err := n.db.Beginx()

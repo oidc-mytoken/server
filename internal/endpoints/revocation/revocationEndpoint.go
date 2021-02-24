@@ -70,10 +70,7 @@ func revokeAnyToken(tx *sqlx.Tx, token, issuer string, recursive bool) (errRes *
 				return err
 			}
 			token = jwt
-			if err = shortToken.Delete(tx); err != nil {
-				return err
-			}
-			return nil
+			return shortToken.Delete(tx)
 		}); err != nil {
 			return model.ErrorToInternalServerErrorResponse(err)
 		}

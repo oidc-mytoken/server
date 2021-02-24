@@ -35,7 +35,7 @@ func (my *Mytoken) GetSuperToken(req interface{}) (string, error) {
 	return stRes.SuperToken, nil
 }
 
-func (my *Mytoken) GetSuperTokenBySuperToken(superToken, issuer string, restrictions restrictions.Restrictions, capabilities capabilities.Capabilities, subtokenCapabilities capabilities.Capabilities, responseType model.ResponseType, name string) (string, error) {
+func (my *Mytoken) GetSuperTokenBySuperToken(superToken, issuer string, restrictions restrictions.Restrictions, capabilities, subtokenCapabilities capabilities.Capabilities, responseType model.ResponseType, name string) (string, error) {
 	req := pkg.SuperTokenFromSuperTokenRequest{
 		Issuer:               issuer,
 		GrantType:            model.GrantTypeSuperToken,
@@ -57,7 +57,7 @@ func (my *Mytoken) GetSuperTokenByTransferCode(transferCode string) (string, err
 	return my.GetSuperToken(req)
 }
 
-func (my *Mytoken) GetSuperTokenByAuthorizationFlow(issuer string, restrictions restrictions.Restrictions, capabilities capabilities.Capabilities, subtokenCapabilities capabilities.Capabilities, responseType model.ResponseType, name string, initPolling func(string) error, callback func(int64, int), endPolling func()) (string, error) {
+func (my *Mytoken) GetSuperTokenByAuthorizationFlow(issuer string, restrictions restrictions.Restrictions, capabilities, subtokenCapabilities capabilities.Capabilities, responseType model.ResponseType, name string, initPolling func(string) error, callback func(int64, int), endPolling func()) (string, error) {
 	authRes, err := my.InitAuthorizationFlow(issuer, restrictions, capabilities, subtokenCapabilities, responseType, name)
 	if err != nil {
 		return "", err
@@ -65,24 +65,26 @@ func (my *Mytoken) GetSuperTokenByAuthorizationFlow(issuer string, restrictions 
 	if err = initPolling(authRes.AuthorizationURL); err != nil {
 		return "", err
 	}
-	token, err := my.Poll(authRes.PollingInfo, callback)
+	tok, err := my.Poll(authRes.PollingInfo, callback)
 	if err == nil {
 		endPolling()
 	}
-	return token, err
+	return tok, err
 }
 
-func (my *Mytoken) InitAuthorizationFlow(issuer string, restrictions restrictions.Restrictions, capabilities capabilities.Capabilities, subtokenCapabilities capabilities.Capabilities, responseType model.ResponseType, name string) (*pkg.AuthCodeFlowResponse, error) {
+func (my *Mytoken) InitAuthorizationFlow(issuer string, restrictions restrictions.Restrictions, capabilities, subtokenCapabilities capabilities.Capabilities, responseType model.ResponseType, name string) (*pkg.AuthCodeFlowResponse, error) {
 	req := pkg.AuthCodeFlowRequest{
-		Issuer:               issuer,
-		GrantType:            model.GrantTypeOIDCFlow,
-		OIDCFlow:             model.OIDCFlowAuthorizationCode,
-		Restrictions:         restrictions,
-		Capabilities:         capabilities,
-		SubtokenCapabilities: subtokenCapabilities,
-		RedirectType:         "native",
-		Name:                 name,
-		ResponseType:         responseType,
+		OIDCFlowRequest: pkg.OIDCFlowRequest{
+			Issuer:               issuer,
+			GrantType:            model.GrantTypeOIDCFlow,
+			OIDCFlow:             model.OIDCFlowAuthorizationCode,
+			Restrictions:         restrictions,
+			Capabilities:         capabilities,
+			SubtokenCapabilities: subtokenCapabilities,
+			Name:                 name,
+			ResponseType:         responseType,
+		},
+		RedirectType: "native",
 	}
 	resp, err := httpClient.Do().R().SetBody(req).SetResult(&pkg.AuthCodeFlowResponse{}).SetError(&model.APIError{}).Post(my.SuperTokenEndpoint)
 	if err != nil {
@@ -114,12 +116,12 @@ func (my *Mytoken) Poll(res pkg.PollingInfo, callback func(int64, int)) (string,
 		if t.After(expires) {
 			break
 		}
-		token, set, err := my.PollOnce(res.PollingCode)
+		tok, set, err := my.PollOnce(res.PollingCode)
 		if err != nil {
 			return "", err
 		}
 		if set {
-			return token, nil
+			return tok, nil
 		}
 		callback(res.PollingInterval, i)
 		i++
@@ -133,9 +135,9 @@ func (my *Mytoken) PollOnce(pollingCode string) (string, bool, error) {
 		PollingCode: pollingCode,
 	}
 
-	token, err := my.GetSuperToken(req)
+	tok, err := my.GetSuperToken(req)
 	if err == nil {
-		return token, true, nil
+		return tok, true, nil
 	}
 	var myErr *MytokenError
 	if errors.As(err, &myErr) {
@@ -144,5 +146,5 @@ func (my *Mytoken) PollOnce(pollingCode string) (string, bool, error) {
 			err = nil
 		}
 	}
-	return token, false, err
+	return tok, false, err
 }

@@ -181,10 +181,7 @@ func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response
 		if err := ste.Store(tx, "Used grant_type super_token"); err != nil {
 			return err
 		}
-		if err := eventService.LogEvent(tx, event.FromNumber(event.STEventInheritedRT, "Got RT from parent"), ste.ID, *networkData); err != nil {
-			return err
-		}
-		return nil
+		return eventService.LogEvent(tx, event.FromNumber(event.STEventInheritedRT, "Got RT from parent"), ste.ID, *networkData)
 	}); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}

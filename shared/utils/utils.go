@@ -41,7 +41,7 @@ func RandASCIIString(n int) string {
 		cache >>= letterIdxBits
 		remain--
 	}
-	return *(*string)(unsafe.Pointer(&b))
+	return *(*string)(unsafe.Pointer(&b)) // unsafe is fine here skipcq: GSC-G103
 }
 
 // IntersectSlices returns the common elements of two slices

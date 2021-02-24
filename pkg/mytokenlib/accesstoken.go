@@ -9,7 +9,7 @@ import (
 	"github.com/oidc-mytoken/server/shared/supertoken/token"
 )
 
-func (my *Mytoken) GetAccessToken(superToken, oidcIssuer string, scopes []string, audiences []string, comment string) (string, error) {
+func (my *Mytoken) GetAccessToken(superToken, oidcIssuer string, scopes, audiences []string, comment string) (string, error) {
 	req := pkg.AccessTokenRequest{
 		Issuer:     oidcIssuer,
 		GrantType:  model.GrantTypeSuperToken,

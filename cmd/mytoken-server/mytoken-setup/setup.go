@@ -122,7 +122,7 @@ func (c *commandCreateDB) Execute(args []string) error {
 		if err := createTables(tx); err != nil {
 			return err
 		}
-		if err := addPredefinedValues(tx); err != nil {
+		if err := addPredefinedValues(tx); err != nil { // skipcq RVV-B0005
 			return err
 		}
 		return nil

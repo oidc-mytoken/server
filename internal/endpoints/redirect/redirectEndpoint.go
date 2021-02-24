@@ -26,10 +26,7 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 				if err := transfercoderepo.DeleteTransferCodeByState(tx, state); err != nil {
 					return err
 				}
-				if err := authcodeinforepo.DeleteAuthFlowInfoByState(tx, state); err != nil {
-					return err
-				}
-				return nil
+				return authcodeinforepo.DeleteAuthFlowInfoByState(tx, state)
 			}); err != nil {
 				log.WithError(err).Error()
 			}

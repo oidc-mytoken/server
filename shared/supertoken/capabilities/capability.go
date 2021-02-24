@@ -51,7 +51,7 @@ var AllCapabilities = Capabilities{
 
 func descriptionFor(name string) string {
 	for _, c := range AllCapabilities {
-		if strings.ToLower(c.Name) == strings.ToLower(name) {
+		if strings.EqualFold(c.Name, name) {
 			return c.Description
 		}
 	}

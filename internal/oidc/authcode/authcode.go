@@ -212,10 +212,7 @@ func CodeExchange(oState *state.State, code string, networkData model.ClientMeta
 				return err
 			}
 		}
-		if err = authcodeinforepo.DeleteAuthFlowInfoByState(tx, oState); err != nil {
-			return err
-		}
-		return nil
+		return authcodeinforepo.DeleteAuthFlowInfoByState(tx, oState)
 	}); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}

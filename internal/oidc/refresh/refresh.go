@@ -15,12 +15,12 @@ import (
 type UpdateChangedRT func(oldRT, newRT, superToken string) error
 
 // Refresh uses an refresh token to obtain a new access token; if the refresh token changes, this is ignored
-func Refresh(provider *config.ProviderConf, superToken, rt string, scopes, audiences string) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
+func Refresh(provider *config.ProviderConf, superToken, rt, scopes, audiences string) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
 	return RefreshFlowAndUpdate(provider, superToken, rt, scopes, audiences, nil)
 }
 
 // RefreshFlowAndUpdate uses an refresh token to obtain a new access token; if the refresh token changes, the UpdateChangedRT function is used to update the refresh token
-func RefreshFlowAndUpdate(provider *config.ProviderConf, superToken, rt string, scopes, audiences string, updateFnc UpdateChangedRT) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
+func RefreshFlowAndUpdate(provider *config.ProviderConf, superToken, rt, scopes, audiences string, updateFnc UpdateChangedRT) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
 	req := oidcReqRes.NewRefreshRequest(rt, provider)
 	req.Scopes = scopes
 	req.Audiences = audiences
@@ -46,7 +46,7 @@ func RefreshFlowAndUpdate(provider *config.ProviderConf, superToken, rt string, 
 }
 
 // RefreshFlowAndUpdateDB uses an refresh token to obtain a new access token; if the refresh token changes, it is updated in the database
-func RefreshFlowAndUpdateDB(provider *config.ProviderConf, superToken, rt string, scopes, audiences string) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
+func RefreshFlowAndUpdateDB(provider *config.ProviderConf, superToken, rt, scopes, audiences string) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
 	return RefreshFlowAndUpdate(provider, superToken, rt, scopes, audiences, updateChangedRTInDB)
 }
 

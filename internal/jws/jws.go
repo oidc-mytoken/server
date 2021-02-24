@@ -18,7 +18,7 @@ import (
 )
 
 // GenerateKeyPair generates a cryptographic key pair for the algorithm specified in the mytoken config.
-func GenerateKeyPair() (sk interface{}, pk interface{}, err error) {
+func GenerateKeyPair() (sk, pk interface{}, err error) {
 	alg := config.Get().Signing.Alg
 	switch alg {
 	case oidc.RS256, oidc.RS384, oidc.RS512, oidc.PS256, oidc.PS384, oidc.PS512:

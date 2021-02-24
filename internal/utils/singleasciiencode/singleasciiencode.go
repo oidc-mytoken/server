@@ -54,7 +54,7 @@ func (fe *FlagEncoder) Sets(values map[string]bool) bool {
 	return true
 }
 
-func (fe FlagEncoder) Get(name string) (value bool, found bool) {
+func (fe FlagEncoder) Get(name string) (value, found bool) {
 	var index int
 	var n string
 	for index, n = range fe.names {
