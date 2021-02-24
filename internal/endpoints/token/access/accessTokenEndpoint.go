@@ -71,7 +71,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	if revoked {
 		return (&serverModel.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError("not a valid token"),
+			Response: model.InvalidTokenError(""),
 		}).Send(ctx)
 	}
 	log.Trace("Checked token not revoked")

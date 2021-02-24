@@ -78,63 +78,65 @@ func (r *Restriction) verifyGeoIPDisallow(ip string) bool {
 	}
 	return !utils.StringInSlice(geoip.CountryCode(ip), disallow)
 }
+func (r *Restriction) getATUsageCounts(tx *sqlx.Tx, stid stid.STID) (*int64, error) {
+	hash, err := r.hash()
+	if err != nil {
+		return nil, err
+	}
+	return supertokenrepohelper.GetTokenUsagesAT(tx, stid, string(hash))
+}
 func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, stid stid.STID) bool {
 	log.Trace("Verifying AT usage count")
 	if r.UsagesAT == nil {
 		return true
 	}
-	hash, err := r.hash()
+	usages, err := r.getATUsageCounts(tx, stid)
 	if err != nil {
 		log.WithError(err).Error()
-		return false
-	}
-	usages, err := supertokenrepohelper.GetTokenUsagesAT(tx, stid, string(hash))
-	if err != nil {
 		return false
 	}
 	if usages == nil {
 		//  was not used before
 		log.WithFields(map[string]interface{}{
-			"stid":             stid.String(),
-			"restriction_hash": string(hash),
+			"stid": stid.String(),
 		}).Debug("Did not found restriction in database; it was not used before")
 		return *r.UsagesAT > 0
 	}
 	log.WithFields(map[string]interface{}{
-		"stid":             stid.String(),
-		"restriction_hash": string(hash),
-		"used":             *usages,
-		"usageLimit":       *r.UsagesAT,
+		"stid":       stid.String(),
+		"used":       *usages,
+		"usageLimit": *r.UsagesAT,
 	}).Debug("Found restriction usage in db.")
 	return *usages < *r.UsagesAT
+}
+func (r *Restriction) getOtherUsageCounts(tx *sqlx.Tx, stid stid.STID) (*int64, error) {
+	hash, err := r.hash()
+	if err != nil {
+		return nil, err
+	}
+	return supertokenrepohelper.GetTokenUsagesOther(tx, stid, string(hash))
 }
 func (r *Restriction) verifyOtherUsageCounts(tx *sqlx.Tx, id stid.STID) bool {
 	log.Trace("Verifying other usage count")
 	if r.UsagesOther == nil {
 		return true
 	}
-	hash, err := r.hash()
+	usages, err := r.getOtherUsageCounts(tx, id)
 	if err != nil {
 		log.WithError(err).Error()
-		return false
-	}
-	usages, err := supertokenrepohelper.GetTokenUsagesOther(tx, id, string(hash))
-	if err != nil {
 		return false
 	}
 	if usages == nil {
 		// was not used before
 		log.WithFields(map[string]interface{}{
-			"id":               id.String(),
-			"restriction_hash": string(hash),
+			"id": id.String(),
 		}).Debug("Did not found restriction in database; it was not used before")
 		return *r.UsagesOther > 0
 	}
 	log.WithFields(map[string]interface{}{
-		"id":               id.String(),
-		"restriction_hash": string(hash),
-		"used":             *usages,
-		"usageLimit":       *r.UsagesAT,
+		"id":         id.String(),
+		"used":       *usages,
+		"usageLimit": *r.UsagesAT,
 	}).Debug("Found restriction usage in db.")
 	return *usages < *r.UsagesOther
 }

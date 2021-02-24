@@ -10,6 +10,7 @@ import (
 	"github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
 	"github.com/oidc-mytoken/server/shared/context"
+	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 )
@@ -63,6 +64,13 @@ var defaultConfig = Config{
 		},
 		AccessTokenGrant: onlyEnable{true},
 		SignedJWTGrant:   onlyEnable{true},
+		TokenInfo: tokeninfoConfig{
+			Introspect: onlyEnable{true},
+			History:    onlyEnable{true},
+			Tree:       onlyEnable{true},
+			List:       onlyEnable{true},
+		},
+		WebInterface: onlyEnable{true},
 	},
 	ProviderByIssuer: make(map[string]*ProviderConf),
 	API: apiConf{
@@ -97,6 +105,16 @@ type featuresConf struct {
 	Polling          pollingConf      `yaml:"polling_codes"`
 	AccessTokenGrant onlyEnable       `yaml:"access_token_grant"`
 	SignedJWTGrant   onlyEnable       `yaml:"signed_jwt_grant"`
+	TokenInfo        tokeninfoConfig  `yaml:"tokeninfo"`
+	WebInterface     onlyEnable       `yaml:"web_interface"`
+}
+
+type tokeninfoConfig struct {
+	Enabled    bool       `yaml:"-"`
+	Introspect onlyEnable `yaml:"introspect"`
+	History    onlyEnable `yaml:"event_history"`
+	Tree       onlyEnable `yaml:"subtoken_tree"`
+	List       onlyEnable `yaml:"list_super_tokens"`
 }
 
 type shortTokenConfig struct {
@@ -232,6 +250,15 @@ func validate() error {
 	if model.OIDCFlowIsInSlice(model.OIDCFlowDevice, conf.Features.EnabledOIDCFlows) && !conf.Features.Polling.Enabled {
 		return fmt.Errorf("oidc flow device flow requires polling_codes to be enabled")
 	}
+	if !conf.Features.TokenInfo.Introspect.Enabled && conf.Features.WebInterface.Enabled {
+		return fmt.Errorf("web interface requires tokeninfo.introspect to be enabled")
+	}
+	conf.Features.TokenInfo.Enabled = utils.OR(
+		conf.Features.TokenInfo.Introspect.Enabled,
+		conf.Features.TokenInfo.History.Enabled,
+		conf.Features.TokenInfo.Tree.Enabled,
+		conf.Features.TokenInfo.List.Enabled,
+	)
 	return nil
 }
 

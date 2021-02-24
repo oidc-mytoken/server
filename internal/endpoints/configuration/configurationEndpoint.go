@@ -73,4 +73,20 @@ func Init() {
 	if config.Get().Features.SignedJWTGrant.Enabled {
 		pkgModel.GrantTypePrivateKeyJWT.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
 	}
+	if !config.Get().Features.TokenInfo.Enabled {
+		mytokenConfig.TokeninfoEndpoint = ""
+	} else {
+		if config.Get().Features.TokenInfo.Introspect.Enabled {
+			pkgModel.TokeninfoActionIntrospect.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
+		}
+		if config.Get().Features.TokenInfo.History.Enabled {
+			pkgModel.TokeninfoActionEventHistory.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
+		}
+		if config.Get().Features.TokenInfo.Tree.Enabled {
+			pkgModel.TokeninfoActionSubtokenTree.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
+		}
+		if config.Get().Features.TokenInfo.List.Enabled {
+			pkgModel.TokeninfoActionListSuperTokens.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
+		}
+	}
 }

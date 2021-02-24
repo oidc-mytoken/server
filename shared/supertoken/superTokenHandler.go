@@ -132,7 +132,7 @@ func HandleSuperTokenFromSuperToken(ctx *fiber.Ctx) *model.Response {
 	if revoked {
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: pkgModel.InvalidTokenError("not a valid token"),
+			Response: pkgModel.InvalidTokenError(""),
 		}
 	}
 	log.Trace("Checked token not revoked")
@@ -204,7 +204,7 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 	if !rtFound {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.InvalidTokenError("token unknown"),
+			Response: pkgModel.InvalidTokenError(""),
 		}
 	}
 	rootID, rootFound, dbErr := dbhelper.GetSTRootID(parent.ID)
@@ -214,7 +214,7 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 	if !rootFound {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.InvalidTokenError("token unknown"),
+			Response: pkgModel.InvalidTokenError(""),
 		}
 	}
 	if !rootID.HashValid() {

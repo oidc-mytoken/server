@@ -1,9 +1,15 @@
 
 function checkIfLoggedIn() {
+    let data = {
+     'action':'introspect'
+    };
+    data = JSON.stringify(data);
     $.ajax({
         type: "POST",
-        url: "/api/v0/test", //TODO
+        url: storageGet('tokeninfo_endpoint'),
+        data: data,
         success: function(res){
+            console.log(res);
             if (window.location.pathname == "/") {
             window.location.href = "/home";
             }
@@ -14,6 +20,7 @@ function checkIfLoggedIn() {
                 window.location.href = "/";
             }
         },
+        dataType: "json",
         contentType : "application/json"
     });
 }

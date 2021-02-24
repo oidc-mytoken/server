@@ -284,3 +284,13 @@ func ORErrors(errs ...error) error {
 	}
 	return nil
 }
+
+// OR logically ORs multiple bools
+func OR(bools ...bool) bool {
+	for _, b := range bools {
+		if b {
+			return b
+		}
+	}
+	return false
+}

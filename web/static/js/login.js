@@ -13,11 +13,16 @@ $('#login-form').on('submit', function(e){
         }
     ]
     data['capabilities'] = [
-        "create_super_token"
+        "create_super_token",
+        "tokeninfo_introspect"
     ]
     data['subtoken_capabilities'] = [
         "AT",
-        "settings"
+        "settings",
+        "tokeninfo_introspect",
+        "tokeninfo_history",
+        "tokeninfo_tree",
+        "list_super_tokens"
     ]
     data = JSON.stringify(data);
     $.ajax({

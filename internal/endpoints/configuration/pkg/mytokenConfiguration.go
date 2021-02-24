@@ -14,6 +14,7 @@ type MytokenConfiguration struct {
 	JWKSURI                                string                    `json:"jwks_uri"`
 	ProvidersSupported                     []SupportedProviderConfig `json:"providers_supported"`
 	TokenSigningAlgValue                   string                    `json:"token_signing_alg_value"`
+	TokenInfoEndpointActionsSupported      []model.TokeninfoAction   `json:"tokeninfo_endpoint_actions_supported,omitempty"`
 	AccessTokenEndpointGrantTypesSupported []model.GrantType         `json:"access_token_endpoint_grant_types_supported"`
 	SuperTokenEndpointGrantTypesSupported  []model.GrantType         `json:"super_token_endpoint_grant_types_supported"`
 	SuperTokenEndpointOIDCFlowsSupported   []model.OIDCFlow          `json:"super_token_endpoint_oidc_flow_supported"`

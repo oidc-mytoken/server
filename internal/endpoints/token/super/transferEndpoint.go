@@ -48,7 +48,7 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 		if !valid {
 			return model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: pkgModel.InvalidTokenError("invalid token"),
+				Response: pkgModel.InvalidTokenError(""),
 			}.Send(ctx)
 		}
 		if err != nil {
@@ -73,7 +73,7 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 	if revoked {
 		return model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: pkgModel.InvalidTokenError("invalid token"),
+			Response: pkgModel.InvalidTokenError(""),
 		}.Send(ctx)
 	}
 

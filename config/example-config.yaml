@@ -74,6 +74,22 @@ features:
   token_revocation:
     enabled: true
 
+  # Endpoint to obtain different information about super tokens issued by this instance.
+  tokeninfo:
+    # Basic super token introspection (token-content useful when using short super tokens). Also gives information about validity and how often the token was used before.
+    # Must be enabled for usage with the web interface.
+    introspect:
+      enabled: true
+    # If enabled allows to query the tokeninfo endpoint to obtain the history of events for a given super token
+    event_history:
+      enabled: true
+    # If enabled allows to query the tokeninfo endpoint for a list (tree) of all subtokens for a given super token
+    subtoken_tree:
+      enabled: true
+    # If enabled allows a user to query the tokeninfo endpoint for a list of all its super tokens (the super token itself won't be returned)
+    list_super_tokens:
+      enabled: true
+
   # Support for short super tokens
   short_tokens:
     enabled: true
@@ -96,6 +112,10 @@ features:
 
   # Support for the private_key_jwt grant, i.e. a user can use an signed jwt to obtain an ST.
   signed_jwt_grant:
+    enabled: true
+
+  # Provides a web interface for in browser usage
+  web_interface:
     enabled: true
 
 # The list of supported providers

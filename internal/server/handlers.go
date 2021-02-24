@@ -4,10 +4,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/oidc-mytoken/server/internal/config"
-	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
-	"github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
-	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
 )
 
 func handleIndex(ctx *fiber.Ctx) error {
@@ -44,33 +40,4 @@ func handleNativeConsentAbortCallback(ctx *fiber.Ctx) error {
 		"empty-navbar": true,
 	}
 	return ctx.Render("sites/native.abort", binding, "layouts/main")
-}
-
-func handleTestTokenInfo(ctx *fiber.Ctx) error {
-	tok := ctxUtils.GetSuperToken(ctx)
-	if tok == nil {
-		return model.Response{
-			Status: fiber.StatusUnauthorized,
-		}.Send(ctx)
-	}
-
-	st, err := supertoken.ParseJWT(string(*tok))
-	if err != nil {
-		return model.Response{
-			Status: fiber.StatusUnauthorized,
-		}.Send(ctx)
-	}
-
-	revoked, dbErr := dbhelper.CheckTokenRevoked(st.ID)
-	if dbErr != nil {
-		return model.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
-	}
-	if revoked {
-		return model.Response{
-			Status: fiber.StatusUnauthorized,
-		}.Send(ctx)
-	}
-	return model.Response{
-		Status: fiber.StatusNoContent,
-	}.Send(ctx)
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/revocation"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/access"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/super"
+	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 )
@@ -27,5 +28,7 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 	if config.Get().Features.TransferCodes.Enabled {
 		s.Post(apiPaths.TokenTransferEndpoint, super.HandleCreateTransferCodeForExistingSuperToken)
 	}
-	s.Post("/api/v0/test", handleTestTokenInfo) //TODO
+	if config.Get().Features.TokenInfo.Enabled {
+		s.Post(apiPaths.TokenInfoEndpoint, tokeninfo.HandleTokenInfo)
+	}
 }
