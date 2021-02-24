@@ -123,8 +123,7 @@ func RevokeST(tx *sqlx.Tx, id stid.STID, recursive bool) error {
 
 // CountRTOccurrences counts how many SuperTokens use the passed refresh token
 func CountRTOccurrences(tx *sqlx.Tx, rt string) (count int, err error) {
-	var rtHash string
-	rtHash = hashUtils.SHA512Str([]byte(rt))
+	var rtHash string = hashUtils.SHA512Str([]byte(rt))
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		err = tx.Get(&count, `SELECT COUNT(1) FROM SuperTokens WHERE rt_hash=?`, rtHash)
 		return err
