@@ -30,7 +30,7 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 	}
 	log.Trace("Parsed super token request")
 	clearCookie := false
-	if len(req.Token) == 0 {
+	if req.Token == "" {
 		req.Token = ctx.Cookies("mytoken-supertoken")
 		clearCookie = true
 	}

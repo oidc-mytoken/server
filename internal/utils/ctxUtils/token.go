@@ -29,7 +29,7 @@ func GetSuperTokenStr(ctx *fiber.Ctx) string {
 // GetSuperToken checks a fiber.Ctx for a super token and returns a token object
 func GetSuperToken(ctx *fiber.Ctx) *token.Token {
 	tok := GetSuperTokenStr(ctx)
-	if len(tok) == 0 {
+	if tok == "" {
 		return nil
 	}
 	t, err := token.GetLongSuperToken(tok)

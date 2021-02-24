@@ -24,14 +24,14 @@ func NewState(state string) *State {
 }
 
 func (s *State) Hash() string {
-	if len(s.hash) == 0 {
+	if s.hash == "" {
 		s.hash = hashUtils.SHA512Str([]byte(s.state))
 	}
 	return s.hash
 }
 
 func (s *State) PollingCode() string {
-	if len(s.pollingCode) == 0 {
+	if s.pollingCode == "" {
 		s.pollingCode = hashUtils.HMACSHA512Str([]byte(s.state), []byte("polling_code"))[:config.Get().Features.Polling.Len]
 		log.WithField("state", s.state).WithField("polling_code", s.pollingCode).Debug("Created polling_code for state")
 	}

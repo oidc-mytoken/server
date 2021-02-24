@@ -213,7 +213,7 @@ func (r Restrictions) WithScopes(scopes []string) (ret Restrictions) {
 		return r
 	}
 	for _, rr := range r {
-		if len(rr.Scope) == 0 || utils.IsSubSet(scopes, utils.SplitIgnoreEmpty(rr.Scope, " ")) {
+		if rr.Scope == "" || utils.IsSubSet(scopes, utils.SplitIgnoreEmpty(rr.Scope, " ")) {
 			ret = append(ret, rr)
 		}
 	}
