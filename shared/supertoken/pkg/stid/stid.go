@@ -38,7 +38,7 @@ func (i *STID) HashValid() bool {
 }
 
 func (i *STID) Hash() string {
-	if len(i.hash) == 0 && i.Valid() {
+	if i.hash == "" && i.Valid() {
 		i.hash = hashUtils.SHA512Str(i.Bytes())
 	}
 	return i.hash

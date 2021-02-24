@@ -45,7 +45,7 @@ func PopTokenForTransferCode(tx *sqlx.Tx, pollingCode string) (jwt string, err e
 		if err != nil {
 			return err
 		}
-		if !valid || len(jwt) == 0 {
+		if !valid || jwt == "" {
 			return nil
 		}
 		return pt.Delete(tx)

@@ -18,7 +18,7 @@ import (
 // HandleCreateTransferCodeForExistingSuperToken handles request to create a transfer code for an existing supertoken
 func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 	token := ctxUtils.GetAuthHeaderToken(ctx)
-	if len(token) == 0 {
+	if token == "" {
 		var req pkg.CreateTransferCodeRequest
 		if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 			return model.Response{
@@ -27,7 +27,7 @@ func HandleCreateTransferCodeForExistingSuperToken(ctx *fiber.Ctx) error {
 			}.Send(ctx)
 		}
 		token = req.SuperToken
-		if len(token) == 0 {
+		if token == "" {
 			return model.Response{
 				Status:   fiber.StatusUnauthorized,
 				Response: pkgModel.BadRequestError("required parameter 'super_token' missing"),

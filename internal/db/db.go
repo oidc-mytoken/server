@@ -31,7 +31,7 @@ func Connect() {
 
 // NewNullString creates a new sql.NullString from the given string
 func NewNullString(s string) sql.NullString {
-	if len(s) == 0 {
+	if s == "" {
 		return sql.NullString{}
 	}
 	return sql.NullString{

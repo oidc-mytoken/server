@@ -101,7 +101,7 @@ func (c *commandGenSigningKey) Execute(args []string) error {
 // Execute implements the flags.Commander interface
 func (c *commandCreateDB) Execute(args []string) error {
 	password := ""
-	if c.Password != nil && len(*c.Password) == 0 { // -p specified without argument
+	if c.Password != nil && *c.Password == "" { // -p specified without argument
 		password = prompter.Password("Database Password")
 	}
 	db := cluster.NewFromConfig(config.DBConf{

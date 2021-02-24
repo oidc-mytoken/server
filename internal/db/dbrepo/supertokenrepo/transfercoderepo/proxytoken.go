@@ -58,7 +58,7 @@ func (pt proxyToken) Token() string {
 
 // ID returns the id of this token
 func (pt *proxyToken) ID() string {
-	if len(pt.id) == 0 {
+	if pt.id == "" {
 		pt.id = hashUtils.SHA512Str([]byte(pt.token))
 	}
 	return pt.id
@@ -78,7 +78,7 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 		valid = true
 		return
 	}
-	if len(pt.encryptedJWT) == 0 {
+	if pt.encryptedJWT == "" {
 		if err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 			return tx.Get(&pt.encryptedJWT, `SELECT jwt FROM ProxyTokens WHERE id=?`, pt.id)
 		}); err != nil {
@@ -90,7 +90,7 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 		}
 	}
 	valid = true
-	if len(pt.encryptedJWT) == 0 {
+	if pt.encryptedJWT == "" {
 		return
 	}
 	jwt, err = cryptUtils.AES256Decrypt(pt.encryptedJWT, pt.token)

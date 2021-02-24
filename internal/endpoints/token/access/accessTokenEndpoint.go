@@ -91,7 +91,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		return res.Send(ctx)
 	}
 	log.Trace("Checked super token capabilities")
-	if len(req.Issuer) == 0 {
+	if req.Issuer == "" {
 		req.Issuer = st.OIDCIssuer
 	} else if req.Issuer != st.OIDCIssuer {
 		res := serverModel.Response{
@@ -131,7 +131,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 		} else if len(usedRestriction.Scope) > 0 {
 			scopes = usedRestriction.Scope
 		}
-		if len(req.Audience) != 0 {
+		if req.Audience != "" {
 			auds = req.Audience
 		} else if len(usedRestriction.Audiences) > 0 {
 			auds = strings.Join(usedRestriction.Audiences, " ")

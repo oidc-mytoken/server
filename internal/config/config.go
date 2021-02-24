@@ -215,7 +215,7 @@ func validate() error {
 		iss0, iss1 := issuerUtils.GetIssuerWithAndWithoutSlash(p.Issuer)
 		conf.ProviderByIssuer[iss0] = p
 		conf.ProviderByIssuer[iss1] = p
-		if len(p.AudienceRequestParameter) == 0 {
+		if p.AudienceRequestParameter == "" {
 			p.AudienceRequestParameter = "resource"
 		}
 	}

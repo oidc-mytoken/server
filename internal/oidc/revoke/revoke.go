@@ -10,7 +10,7 @@ import (
 
 // RefreshToken revokes a refresh token
 func RefreshToken(provider *config.ProviderConf, rt string) *model.Response {
-	if len(provider.Endpoints.Revocation) == 0 {
+	if provider.Endpoints.Revocation == "" {
 		return nil
 	}
 	req := oidcReqRes.NewRTRevokeRequest(rt)

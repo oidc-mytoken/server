@@ -44,7 +44,7 @@ func (st *SuperToken) verifyID() bool {
 }
 
 func (st *SuperToken) verifySubject() bool {
-	if len(st.Subject) == 0 {
+	if st.Subject == "" {
 		return false
 	}
 	if st.Subject != issuerUtils.CombineSubIss(st.OIDCSubject, st.OIDCIssuer) {
@@ -186,7 +186,7 @@ func CreateTransferCode(stid stid.STID, jwt string, newST bool, responseType mod
 
 // ToTokenResponse creates a SuperTokenResponse for this SuperToken according to the passed model.ResponseType
 func (st *SuperToken) ToTokenResponse(responseType model.ResponseType, networkData serverModel.ClientMetaData, jwt string) (response.SuperTokenResponse, error) {
-	if len(jwt) == 0 {
+	if jwt == "" {
 		jwt = st.jwt
 	}
 	switch responseType {
