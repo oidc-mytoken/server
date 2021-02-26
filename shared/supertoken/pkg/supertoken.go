@@ -2,7 +2,6 @@ package supertoken
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jmoiron/sqlx"
@@ -20,15 +19,16 @@ import (
 	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
 	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
+	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
 // SuperToken is a mytoken SuperToken
 type SuperToken struct {
 	Issuer               string                    `json:"iss"`
 	Subject              string                    `json:"sub"`
-	ExpiresAt            int64                     `json:"exp,omitempty"`
-	NotBefore            int64                     `json:"nbf"`
-	IssuedAt             int64                     `json:"iat"`
+	ExpiresAt            unixtime.UnixTime         `json:"exp,omitempty"`
+	NotBefore            unixtime.UnixTime         `json:"nbf"`
+	IssuedAt             unixtime.UnixTime         `json:"iat"`
 	ID                   stid.STID                 `json:"jti"`
 	Audience             string                    `json:"aud"`
 	OIDCSubject          string                    `json:"oidc_sub"`
@@ -68,7 +68,7 @@ func (st *SuperToken) VerifyCapabilities(required ...capabilities.Capability) bo
 
 // NewSuperToken creates a new SuperToken
 func NewSuperToken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc capabilities.Capabilities) *SuperToken {
-	now := time.Now().Unix()
+	now := unixtime.Now()
 	st := &SuperToken{
 		ID:                   stid.New(),
 		IssuedAt:             now,
@@ -97,7 +97,7 @@ func NewSuperToken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc c
 
 // ExpiresIn returns the amount of seconds in which this token expires
 func (st *SuperToken) ExpiresIn() uint64 {
-	now := time.Now().Unix()
+	now := unixtime.Now()
 	expAt := st.ExpiresAt
 	if expAt > 0 && expAt > now {
 		return uint64(expAt - now)
@@ -109,11 +109,11 @@ func (st *SuperToken) ExpiresIn() uint64 {
 func (st *SuperToken) Valid() error {
 	standardClaims := jwt.StandardClaims{
 		Audience:  st.Audience,
-		ExpiresAt: st.ExpiresAt,
+		ExpiresAt: int64(st.ExpiresAt),
 		Id:        st.ID.String(),
-		IssuedAt:  st.IssuedAt,
+		IssuedAt:  int64(st.IssuedAt),
 		Issuer:    st.Issuer,
-		NotBefore: st.NotBefore,
+		NotBefore: int64(st.NotBefore),
 		Subject:   st.Subject,
 	}
 	if err := standardClaims.Valid(); err != nil {

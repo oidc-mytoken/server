@@ -121,7 +121,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 		possibleRestrictions := st.Restrictions.GetValidForAT(nil, networkData.IP, st.ID).WithScopes(utils.SplitIgnoreEmpty(req.Scope, " ")).WithAudiences(utils.SplitIgnoreEmpty(req.Audience, " "))
 		if len(possibleRestrictions) == 0 {
 			return &serverModel.Response{
-				Status:   fiber.StatusBadRequest,
+				Status:   fiber.StatusForbidden,
 				Response: model.APIErrorUsageRestricted,
 			}
 		}

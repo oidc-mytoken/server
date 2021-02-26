@@ -2,7 +2,8 @@ package supertoken
 
 import (
 	"testing"
-	"time"
+
+	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
 func TestSuperToken_ExpiresIn_Unset(t *testing.T) {
@@ -14,10 +15,10 @@ func TestSuperToken_ExpiresIn_Unset(t *testing.T) {
 }
 
 func TestSuperToken_ExpiresIn_Future(t *testing.T) {
-	in := uint64(100)
-	st := SuperToken{ExpiresAt: time.Now().Unix() + int64(in)}
+	in := int64(100)
+	st := SuperToken{ExpiresAt: unixtime.InSeconds(in)}
 	expIn := st.ExpiresIn()
-	if expIn != in {
+	if expIn != uint64(in) {
 		t.Errorf("Expected expires in to be %d not %d", in, expIn)
 	}
 }

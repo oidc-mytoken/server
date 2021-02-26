@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"math"
 	"strings"
-	"time"
 
 	"github.com/jinzhu/copier"
 	"github.com/jmoiron/sqlx"
@@ -16,6 +15,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
 	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
 	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
 // Restrictions is a slice of Restriction
@@ -23,15 +23,15 @@ type Restrictions []Restriction
 
 // Restriction describes a token usage restriction
 type Restriction struct {
-	NotBefore     int64    `json:"nbf,omitempty"`
-	ExpiresAt     int64    `json:"exp,omitempty"`
-	Scope         string   `json:"scope,omitempty"`
-	Audiences     []string `json:"audience,omitempty"`
-	IPs           []string `json:"ip,omitempty"`
-	GeoIPAllow    []string `json:"geoip_allow,omitempty"`
-	GeoIPDisallow []string `json:"geoip_disallow,omitempty"`
-	UsagesAT      *int64   `json:"usages_AT,omitempty"`
-	UsagesOther   *int64   `json:"usages_other,omitempty"`
+	NotBefore     unixtime.UnixTime `json:"nbf,omitempty"`
+	ExpiresAt     unixtime.UnixTime `json:"exp,omitempty"`
+	Scope         string            `json:"scope,omitempty"`
+	Audiences     []string          `json:"audience,omitempty"`
+	IPs           []string          `json:"ip,omitempty"`
+	GeoIPAllow    []string          `json:"geoip_allow,omitempty"`
+	GeoIPDisallow []string          `json:"geoip_disallow,omitempty"`
+	UsagesAT      *int64            `json:"usages_AT,omitempty"`
+	UsagesOther   *int64            `json:"usages_other,omitempty"`
 	// Usages    *int64   `json:"usages,omitempty"`
 }
 
@@ -46,7 +46,7 @@ func (r *Restriction) hash() ([]byte, error) {
 
 func (r *Restriction) verifyTimeBased() bool {
 	log.Trace("Verifying time based")
-	now := time.Now().Unix()
+	now := unixtime.Now()
 	return (now >= r.NotBefore) && (r.ExpiresAt == 0 ||
 		now <= r.ExpiresAt)
 }
@@ -266,11 +266,11 @@ func (r Restrictions) Value() (driver.Value, error) {
 }
 
 // GetExpires gets the maximum (latest) expiration time of all restrictions
-func (r *Restrictions) GetExpires() int64 {
+func (r *Restrictions) GetExpires() unixtime.UnixTime {
 	if r == nil {
 		return 0
 	}
-	exp := int64(0)
+	exp := unixtime.UnixTime(0)
 	for _, rr := range *r {
 		if rr.ExpiresAt == 0 { // if one entry has no expiry the max expiry is 0
 			return 0
@@ -283,11 +283,11 @@ func (r *Restrictions) GetExpires() int64 {
 }
 
 // GetNotBefore gets the minimal (earliest) notbefore time of all restrictions
-func (r *Restrictions) GetNotBefore() int64 {
+func (r *Restrictions) GetNotBefore() unixtime.UnixTime {
 	if r == nil || len(*r) == 0 {
 		return 0
 	}
-	nbf := int64(math.MaxInt64)
+	nbf := unixtime.UnixTime(math.MaxInt64)
 	for _, rr := range *r {
 		if rr.NotBefore == 0 { // if one entry has no notbefore the min notbefore is 0
 			return 0

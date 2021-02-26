@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
@@ -29,14 +30,36 @@ func Connect() {
 // 	return dbCon
 // }
 
-// NewNullString creates a new sql.NullString from the given string
-func NewNullString(s string) sql.NullString {
-	if s == "" {
-		return sql.NullString{}
+// NullString extends the sql.NullString
+type NullString struct {
+	sql.NullString
+}
+
+// MarshalJSON implements the json.Marshaler interface
+func (s NullString) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String)
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface
+func (s *NullString) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
 	}
-	return sql.NullString{
-		String: s,
-		Valid:  true,
+	*s = NewNullString(str)
+	return nil
+}
+
+// NewNullString creates a new NullString from the given string
+func NewNullString(s string) NullString {
+	if s == "" {
+		return NullString{}
+	}
+	return NullString{
+		sql.NullString{
+			String: s,
+			Valid:  true,
+		},
 	}
 }
 

@@ -1,9 +1,7 @@
 package supertokenrepo
 
 import (
-	"database/sql"
 	"errors"
-	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -28,8 +26,7 @@ type SuperTokenEntry struct {
 	Token        *supertoken.SuperToken
 	RefreshToken string `db:"refresh_token"`
 	Name         string
-	CreatedAt    time.Time `db:"created_at"`
-	IP           string    `db:"ip_created"`
+	IP           string `db:"ip_created"`
 	networkData  model.ClientMetaData
 }
 
@@ -92,7 +89,7 @@ type superTokenEntryStore struct {
 	RootID           stid.STID `db:"root_id"`
 	RefreshToken     string    `db:"refresh_token"`
 	RefreshTokenHash string    `db:"rt_hash"`
-	Name             sql.NullString
+	Name             db.NullString
 	IP               string `db:"ip_created"`
 	Iss              string
 	Sub              string

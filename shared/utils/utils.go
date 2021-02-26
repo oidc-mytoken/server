@@ -167,11 +167,6 @@ func GetTimeIn(seconds int64) time.Time {
 	return time.Now().Add(time.Duration(seconds) * time.Second)
 }
 
-// GetUnixTimeIn returns the unix time stamp for the current time + the number of passed seconds
-func GetUnixTimeIn(seconds int64) int64 {
-	return GetTimeIn(seconds).Unix()
-}
-
 // CompareNullableIntsWithNilAsInfinity compare two *int64 and handles nil as infinity. It returns 0 if both are equal, a positive value if a is greater than b, a negative value is a is less than b
 func CompareNullableIntsWithNilAsInfinity(a, b *int64) int {
 	if a == nil && b == nil {

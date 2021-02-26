@@ -1,8 +1,6 @@
 package accesstokenrepo
 
 import (
-	"database/sql"
-
 	"github.com/jmoiron/sqlx"
 
 	"github.com/oidc-mytoken/server/internal/db"
@@ -26,7 +24,7 @@ type AccessToken struct {
 type accessToken struct {
 	Token   string
 	IP      string `db:"ip_created"`
-	Comment sql.NullString
+	Comment db.NullString
 	STID    stid.STID `db:"ST_id"`
 }
 

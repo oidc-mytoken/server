@@ -3,10 +3,10 @@ package pkg
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
 type WebRestrictions struct {
@@ -31,7 +31,7 @@ func (r WebRestrictions) getTimeClass() int {
 	exp := r.GetExpires()
 	if exp == 0 {
 		r.timeClass = utils.NewInt(0)
-	} else if exp-time.Now().Unix() > 7*24*2600 {
+	} else if exp-unixtime.Now() > 7*24*2600 {
 		r.timeClass = utils.NewInt(1)
 	} else {
 		r.timeClass = utils.NewInt(2)

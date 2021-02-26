@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gofiber/fiber/v2"
@@ -31,6 +30,7 @@ import (
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 	"github.com/oidc-mytoken/server/shared/utils/jwtutils"
+	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
 var redirectURL string
@@ -82,7 +82,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 		}
 	}
 	exp := req.Restrictions.GetExpires()
-	if exp > 0 && exp < time.Now().Unix() {
+	if exp > 0 && exp < unixtime.Now() {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: pkgModel.BadRequestError("token would already be expired"),

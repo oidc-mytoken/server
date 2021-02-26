@@ -1,8 +1,6 @@
 package authcodeinforepo
 
 import (
-	"database/sql"
-
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
@@ -37,7 +35,7 @@ type authFlowInfo struct {
 	Restrictions         restrictions.Restrictions
 	Capabilities         capabilities.Capabilities
 	SubtokenCapabilities capabilities.Capabilities `db:"subtoken_capabilities"`
-	Name                 sql.NullString
+	Name                 db.NullString
 	PollingCode          db.BitBool `db:"polling_code"`
 	ExpiresIn            int64      `db:"expires_in"`
 }

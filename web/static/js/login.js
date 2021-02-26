@@ -14,16 +14,16 @@ $('#login-form').on('submit', function(e){
     ]
     data['capabilities'] = [
         "create_super_token",
-        "tokeninfo_introspect"
+        "tokeninfo_introspect",
+        "tokeninfo_history",
+        "tokeninfo_tree"
     ]
     data['subtoken_capabilities'] = [
         "AT",
         "settings",
-        "tokeninfo_introspect",
-        "tokeninfo_history",
-        "tokeninfo_tree",
         "list_super_tokens"
     ]
+    data['name'] = "mytoken-web";
     data = JSON.stringify(data);
     $.ajax({
         type: "POST",

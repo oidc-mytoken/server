@@ -58,6 +58,7 @@ function getAT(okCallback, errCallback, superToken) {
 
 function getST(okCallback, errCallback, capability="AT") {
     let data = {
+        "name":"mytoken-web ST for "+capability,
         "grant_type": "super_token",
         "capabilities": [capability],
         "restrictions": [

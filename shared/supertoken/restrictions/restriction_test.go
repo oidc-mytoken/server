@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
 func checkRestrictions(t *testing.T, exp, a Restrictions) {
@@ -484,7 +485,7 @@ func TestIsTighterThanAll4(t *testing.T) {
 func TestRestrictions_GetExpiresEmpty(t *testing.T) {
 	r := Restrictions{}
 	expires := r.GetExpires()
-	var expected int64 = 0
+	var expected unixtime.UnixTime = 0
 	if expected != expires {
 		t.Errorf("Expected %d, but got %d", expected, expires)
 	}
@@ -494,7 +495,7 @@ func TestRestrictions_GetExpiresInfinite(t *testing.T) {
 		{ExpiresAt: 0},
 	}
 	expires := r.GetExpires()
-	var expected int64 = 0
+	var expected unixtime.UnixTime = 0
 	if expected != expires {
 		t.Errorf("Expected %d, but got %d", expected, expires)
 	}
@@ -504,7 +505,7 @@ func TestRestrictions_GetExpiresOne(t *testing.T) {
 		{ExpiresAt: 100},
 	}
 	expires := r.GetExpires()
-	var expected int64 = 100
+	var expected unixtime.UnixTime = 100
 	if expected != expires {
 		t.Errorf("Expected %d, but got %d", expected, expires)
 	}
@@ -516,7 +517,7 @@ func TestRestrictions_GetExpiresMultiple(t *testing.T) {
 		{ExpiresAt: 200},
 	}
 	expires := r.GetExpires()
-	var expected int64 = 300
+	var expected unixtime.UnixTime = 300
 	if expected != expires {
 		t.Errorf("Expected %d, but got %d", expected, expires)
 	}
@@ -529,7 +530,7 @@ func TestRestrictions_GetExpiresMultipleAndInfinite(t *testing.T) {
 		{ExpiresAt: 200},
 	}
 	expires := r.GetExpires()
-	var expected int64 = 0
+	var expected unixtime.UnixTime = 0
 	if expected != expires {
 		t.Errorf("Expected %d, but got %d", expected, expires)
 	}
@@ -538,7 +539,7 @@ func TestRestrictions_GetExpiresMultipleAndInfinite(t *testing.T) {
 func TestRestrictions_GetNotBeforeEmpty(t *testing.T) {
 	r := Restrictions{}
 	expires := r.GetNotBefore()
-	var expected int64 = 0
+	var expected unixtime.UnixTime = 0
 	if expected != expires {
 		t.Errorf("Expected %d, but got %d", expected, expires)
 	}
@@ -548,7 +549,7 @@ func TestRestrictions_GetNotBeforeInfinite(t *testing.T) {
 		{NotBefore: 0},
 	}
 	expires := r.GetNotBefore()
-	var expected int64 = 0
+	var expected unixtime.UnixTime = 0
 	if expected != expires {
 		t.Errorf("Expected %d, but got %d", expected, expires)
 	}
@@ -558,7 +559,7 @@ func TestRestrictions_GetNotBeforeOne(t *testing.T) {
 		{NotBefore: 100},
 	}
 	expires := r.GetNotBefore()
-	var expected int64 = 100
+	var expected unixtime.UnixTime = 100
 	if expected != expires {
 		t.Errorf("Expected %d, but got %d", expected, expires)
 	}
@@ -570,7 +571,7 @@ func TestRestrictions_GetNotBeforeMultiple(t *testing.T) {
 		{NotBefore: 200},
 	}
 	expires := r.GetNotBefore()
-	var expected int64 = 100
+	var expected unixtime.UnixTime = 100
 	if expected != expires {
 		t.Errorf("Expected %d, but got %d", expected, expires)
 	}
@@ -583,7 +584,7 @@ func TestRestrictions_GetNotBeforeMultipleAndInfinite(t *testing.T) {
 		{NotBefore: 200},
 	}
 	expires := r.GetNotBefore()
-	var expected int64 = 0
+	var expected unixtime.UnixTime = 0
 	if expected != expires {
 		t.Errorf("Expected %d, but got %d", expected, expires)
 	}
@@ -614,7 +615,7 @@ func TestRestriction_Hash(t *testing.T) {
 }
 
 func TestRestriction_VerifyTimeBased(t *testing.T) {
-	now := utils.GetUnixTimeIn(0)
+	now := unixtime.Now()
 	cases := []struct {
 		r   Restriction
 		exp bool
