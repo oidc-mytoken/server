@@ -4,22 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
 )
-
-func TestTree(t *testing.T) {
-	config.LoadForSetup()
-	db.Connect()
-	tree, err := AllTokensForUser(nil, 4)
-	if err != nil {
-		t.Error(err)
-	}
-	for _, tt := range tree {
-		tt.print(0)
-	}
-}
 
 func str(tokens []SuperTokenEntry) string {
 	s := ""
