@@ -13,7 +13,7 @@ const (
 // AuthCodeFlowRequest holds a authorization code flow request
 type AuthCodeFlowRequest struct {
 	OIDCFlowRequest
-	RedirectType string `json:"redirect_type"`
+	RedirectType string
 }
 
 // Native checks if the request is native
@@ -29,4 +29,10 @@ func (r *AuthCodeFlowRequest) UnmarshalJSON(data []byte) error {
 	}
 	*r = tmp.ToAuthCodeFlowRequest()
 	return nil
+}
+
+// MarshalJSON implements the json marshaler interface
+func (r *AuthCodeFlowRequest) MarshalJSON() ([]byte, error) {
+	r.redirectType = r.RedirectType
+	return json.Marshal(r.OIDCFlow)
 }
