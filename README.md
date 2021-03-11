@@ -19,6 +19,6 @@ The power of a super token can be restricted by the user, so he can create exact
 
 The mytoken command line client can be found at [https://github.com/oidc-mytoken/client](https://github.com/oidc-mytoken/client).
 
-Documentation is available at [https://docs-sdm.scc.kit.edu/mytoken](https://docs-sdm.scc.kit.edu/mytoken) (currently no public access).
+Documentation is available at [https://mytoken-docs.data.kit.edu/](https://mytoken-docs.data.kit.edu/).
 
 A demo instance of mytoken is running at [https://mytoken.data.kit.edu/](https://mytoken.data.kit.edu/).
