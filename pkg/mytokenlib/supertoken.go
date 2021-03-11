@@ -109,7 +109,11 @@ func (my *Mytoken) InitAuthorizationFlow(issuer string, restrictions restriction
 
 func (my *Mytoken) Poll(res pkg.PollingInfo, callback func(int64, int)) (string, error) {
 	expires := time.Now().Add(time.Duration(res.PollingCodeExpiresIn) * time.Second)
-	tick := time.NewTicker(time.Duration(res.PollingInterval) * time.Second)
+	interval := res.PollingInterval
+	if interval == 0 {
+		interval = 5
+	}
+	tick := time.NewTicker(time.Duration(interval) * time.Second)
 	defer tick.Stop()
 	i := 0
 	for t := range tick.C {
