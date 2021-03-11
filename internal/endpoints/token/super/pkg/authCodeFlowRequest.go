@@ -13,7 +13,7 @@ const (
 // AuthCodeFlowRequest holds a authorization code flow request
 type AuthCodeFlowRequest struct {
 	OIDCFlowRequest
-	RedirectType string
+	RedirectType string `json:"redirect_type"`
 }
 
 // Native checks if the request is native

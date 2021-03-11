@@ -37,7 +37,7 @@ func (r OIDCFlowRequest) MarshalJSON() ([]byte, error) {
 	type ofr OIDCFlowRequest
 	o := struct {
 		ofr
-		RedirectType string `json:"redirect_type"`
+		RedirectType string `json:"redirect_type,omitempty"`
 	}{
 		ofr:          ofr(r),
 		RedirectType: r.redirectType,
