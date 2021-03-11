@@ -36,11 +36,19 @@ func main() {
 	loggerUtils.Init()
 
 	parser := flags.NewNamedParser("mytoken", flags.HelpFlag|flags.PassDoubleDash)
-	parser.AddCommand("signing-key", "Generates a new signing key", "Generates a new signing key according to the properties specified in the config file and stores it.", &genSigningKeyComm)
-	parser.AddCommand("db", "Setups the database", "Setups the database as needed and specified in the config file.", &createDBComm)
-	parser.AddCommand("install", "Installs needed dependencies", "", &installComm)
-	_, err := parser.Parse()
-	if err != nil {
+	if _, err := parser.AddCommand("signing-key", "Generates a new signing key", "Generates a new signing key according to the properties specified in the config file and stores it.", &genSigningKeyComm); err != nil {
+		log.WithError(err).Fatal()
+		os.Exit(1)
+	}
+	if _, err := parser.AddCommand("db", "Setups the database", "Setups the database as needed and specified in the config file.", &createDBComm); err != nil {
+		log.WithError(err).Fatal()
+		os.Exit(1)
+	}
+	if _, err := parser.AddCommand("install", "Installs needed dependencies", "", &installComm); err != nil {
+		log.WithError(err).Fatal()
+		os.Exit(1)
+	}
+	if _, err := parser.Parse(); err != nil {
 		var flagError *flags.Error
 		if errors.As(err, &flagError) {
 			if flagError.Type == flags.ErrHelp {
@@ -213,7 +221,7 @@ func checkDB(db *cluster.Cluster) error {
 	defer rows.Close()
 	if rows.Next() {
 		if !prompter.YesNo("The database already exists. If we continue all data will be deleted. Do you want to continue?", false) {
-			rows.Close()
+			_ = rows.Close()
 			os.Exit(1) // skipcq CRT-D0011
 		}
 	}

@@ -48,7 +48,8 @@ type node struct {
 
 func (n *node) close() {
 	if n.db != nil {
-		n.db.Close()
+		err := n.db.Close()
+		log.WithError(err).Error()
 		n.db = nil
 	}
 }
@@ -116,10 +117,10 @@ func (c *Cluster) checkNodesDown() bool {
 		break
 	}
 	l := len(c.down)
-	c.addNode(n)
+	_ = c.addNode(n)
 	for i := 0; i < l; i++ { // check the reminding nodes
 		n = <-c.down
-		c.addNode(n)
+		_ = c.addNode(n)
 	}
 	return false
 }
