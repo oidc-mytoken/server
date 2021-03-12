@@ -20,8 +20,8 @@ const (
 	keyIterations = 8
 )
 
-func RandomBytes(len int) []byte {
-	r := make([]byte, len)
+func RandomBytes(size int) []byte {
+	r := make([]byte, size)
 	if _, err := rand.Read(r); err != nil {
 		_, _ = mathRand.Read(r)
 	}
