@@ -2,6 +2,7 @@ package supertokenrepohelper
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"errors"
 
 	"github.com/jmoiron/sqlx"
@@ -9,37 +10,78 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
 	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
-	"github.com/oidc-mytoken/server/shared/supertoken/token"
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 
 // UpdateRefreshToken updates a refresh token in the database, all occurrences of the RT are updated.
-func UpdateRefreshToken(tx *sqlx.Tx, oldRT, newRT, jwt string) error {
-	oldRTCrypt, err := cryptUtils.AES256Encrypt(oldRT, jwt)
-	if err != nil {
-		return err
-	}
-	newRTCrypt, err := cryptUtils.AES256Encrypt(newRT, jwt)
-	if err != nil {
-		return err
-	}
+func UpdateRefreshToken(tx *sqlx.Tx, tokenID stid.STID, newRT, jwt string) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`UPDATE SuperTokens SET refresh_token=? WHERE refresh_token=?`, newRTCrypt, oldRTCrypt)
+		key, rtHash, err := GetEncryptionKey(tx, tokenID, jwt)
+		if err != nil {
+			return err
+		}
+		updatedRT, err := cryptUtils.AESEncrypt(newRT, key)
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(`UPDATE RefreshTokens SET rt=? WHERE hash=?`, updatedRT, rtHash)
 		return err
 	})
 }
 
+func GetEncryptionKey(tx *sqlx.Tx, tokenID stid.STID, jwt string) ([]byte, string, error) {
+	var key []byte
+	var hash string
+	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		var res struct {
+			EncryptedKey encryptionKey `db:"encryption_key"`
+			Hash         string        `db:"rt_hash"`
+		}
+		if err := tx.Get(&res, `SELECT encryption_key, rt_hash FROM MyTokens WHERE id=?`, tokenID); err != nil {
+			return err
+		}
+		hash = res.Hash
+		tmp, err := res.EncryptedKey.decrypt(jwt)
+		key = tmp
+		return err
+	})
+	return key, hash, err
+}
+
+type encryptionKey string
+
+func (k encryptionKey) decrypt(jwt string) ([]byte, error) {
+	decryptedKey, err := cryptUtils.AES256Decrypt(string(k), jwt)
+	if err != nil {
+		return nil, err
+	}
+	return base64.StdEncoding.DecodeString(decryptedKey)
+}
+
+type rtStruct struct {
+	RT  string        `db:"refresh_token"`
+	Key encryptionKey `db:"encryption_key"`
+}
+
+func (rt rtStruct) decrypt(jwt string) (string, error) {
+	key, err := rt.Key.decrypt(jwt)
+	if err != nil {
+		return "", err
+	}
+	return cryptUtils.AESDecrypt(rt.RT, key)
+}
+
 // GetRefreshToken returns the refresh token for a super token id
-func GetRefreshToken(stid stid.STID, token token.Token) (string, bool, error) {
-	var rtCrypt string
+func GetRefreshToken(stid stid.STID, jwt string) (string, bool, error) {
+	var rt rtStruct
 	found, err := parseError(db.Transact(func(tx *sqlx.Tx) error {
-		return tx.Get(&rtCrypt, `SELECT refresh_token FROM SuperTokens WHERE id=?`, stid)
+		return tx.Get(&rt, `SELECT refresh_token, encryption_key FROM MyTokens WHERE id=?`, stid)
 	}))
 	if !found {
 		return "", found, err
 	}
-	rt, err := cryptUtils.AES256Decrypt(rtCrypt, string(token))
-	return rt, true, err
+	plainRT, err := rt.decrypt(jwt)
+	return plainRT, true, err
 }
 
 func parseError(err error) (bool, error) {

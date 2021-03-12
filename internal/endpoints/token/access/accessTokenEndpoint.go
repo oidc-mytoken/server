@@ -137,7 +137,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 			auds = strings.Join(usedRestriction.Audiences, " ")
 		}
 	}
-	rt, rtFound, dbErr := dbhelper.GetRefreshToken(st.ID, req.SuperToken)
+	rt, rtFound, dbErr := dbhelper.GetRefreshToken(st.ID, string(req.SuperToken))
 	if dbErr != nil {
 		return serverModel.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -148,7 +148,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 		}
 	}
 
-	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, string(req.SuperToken), rt, scopes, auds)
+	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, st.ID, string(req.SuperToken), rt, scopes, auds)
 	if err != nil {
 		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}

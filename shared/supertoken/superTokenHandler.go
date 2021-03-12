@@ -197,7 +197,7 @@ func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response
 }
 
 func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTokenFromSuperTokenRequest, networkData model.ClientMetaData) (*supertokenrepo.SuperTokenEntry, *model.Response) {
-	rt, rtFound, dbErr := dbhelper.GetRefreshToken(parent.ID, req.SuperToken)
+	rt, rtFound, dbErr := dbhelper.GetRefreshToken(parent.ID, string(req.SuperToken))
 	if dbErr != nil {
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -233,7 +233,13 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 	ste := supertokenrepo.NewSuperTokenEntry(
 		supertoken.NewSuperToken(parent.OIDCSubject, parent.OIDCIssuer, r, c, sc),
 		req.Name, networkData)
-	ste.RefreshToken = rt
+	encryptionKey, _, err := dbhelper.GetEncryptionKey(nil, parent.ID, string(req.SuperToken))
+	if err != nil {
+		return ste, model.ErrorToInternalServerErrorResponse(err)
+	}
+	if err = ste.SetRefreshToken(rt, encryptionKey); err != nil {
+		return ste, model.ErrorToInternalServerErrorResponse(err)
+	}
 	ste.ParentID = parent.ID
 	ste.RootID = rootID
 	return ste, nil
@@ -241,7 +247,7 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 
 // RevokeSuperToken revokes a super token
 func RevokeSuperToken(tx *sqlx.Tx, id stid.STID, token token.Token, recursive bool, issuer string) *model.Response {
-	rt, rtFound, dbErr := dbhelper.GetRefreshToken(id, token)
+	rt, rtFound, dbErr := dbhelper.GetRefreshToken(id, string(token))
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr)
 	}
