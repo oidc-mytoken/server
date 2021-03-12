@@ -3,6 +3,7 @@ package tokeninfo
 import (
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	pkgModel "github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
@@ -18,12 +19,15 @@ func handleTokenInfoIntrospect(st *supertoken.SuperToken) model.Response {
 			Response: pkgModel.APIErrorInsufficientCapabilities,
 		}
 	}
-	res, err := st.ToUsedSuperToken()
+	usedToken, err := st.ToUsedSuperToken()
 	if err != nil {
 		return *model.ErrorToInternalServerErrorResponse(err)
 	}
 	return model.Response{
-		Status:   fiber.StatusOK,
-		Response: res,
+		Status: fiber.StatusOK,
+		Response: pkg.TokeninfoIntrospectResponse{
+			Valid: true,
+			Token: *usedToken,
+		},
 	}
 }
