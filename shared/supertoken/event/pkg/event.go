@@ -62,16 +62,17 @@ func eventStringToInt(str string) int {
 }
 
 // AllEvents hold all possible Events
-var AllEvents = [...]string{"unknown", "AT_created", "ST_created", "tokeninfo_history", "tokeninfo_tree", "tokeninfo_list_super_tokens", "mng_enabled_AT_grant", "mng_disabled_AT_grant", "mng_enabled_JWT_grant", "mng_disabled_JWT_grant", "mng_linked_grant", "mng_unlinked_grant", "mng_enabled_tracing", "mng_disabled_tracing", "inherited_RT", "transfer_code_created", "transfer_code_used"}
+var AllEvents = [...]string{"unknown", "created", "AT_created", "ST_created", "tokeninfo_history", "tokeninfo_tree", "tokeninfo_list_super_tokens", "mng_enabled_AT_grant", "mng_disabled_AT_grant", "mng_enabled_JWT_grant", "mng_disabled_JWT_grant", "mng_linked_grant", "mng_unlinked_grant", "mng_enabled_tracing", "mng_disabled_tracing", "inherited_RT", "transfer_code_created", "transfer_code_used"}
 
 // Events for SuperTokens
 const (
 	STEventUnknown = iota
+	STEventCreated
 	STEventATCreated
-	STEventSTCreated
-	STEventTokenInfoHistory
-	STEventTokenInfoTree
-	STEventTokenInfoListSTs
+	STEventSTCreated        //TODO
+	STEventTokenInfoHistory //TODO
+	STEventTokenInfoTree    //TODO
+	STEventTokenInfoListSTs //TODO
 	STEventMngGrantATEnabled
 	STEventMngGrantATDisabled
 	STEventMngGrantJWTEnabled
@@ -82,6 +83,6 @@ const (
 	STEventMngTracingDisabled
 	STEventInheritedRT
 	STEventTransferCodeCreated
-	STEventTransferCodeUsed
+	STEventTransferCodeUsed //TODO
 	maxEvent
 )
