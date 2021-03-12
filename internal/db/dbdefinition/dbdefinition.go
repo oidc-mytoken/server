@@ -97,14 +97,14 @@ var DDL = []string {
   "/*!40101 SET @saved_cs_client     = @@character_set_client */;",
   "/*!40101 SET character_set_client = utf8 */;",
   "CREATE TABLE `EncryptionKeys` ("+
-  "  `rt_hash` char(128) NOT NULL,"+
+  "  `rt_id` bigint(20) unsigned NOT NULL,"+
   "  `MT_id` varchar(128) NOT NULL,"+
   "  `encryption_key` text NOT NULL,"+
   "  `created` datetime NOT NULL DEFAULT current_timestamp(),"+
-  "  PRIMARY KEY (`rt_hash`,`MT_id`),"+
+  "  PRIMARY KEY (`rt_id`,`MT_id`),"+
   "  KEY `EncryptionKeys_FK` (`MT_id`),"+
   "  CONSTRAINT `EncryptionKeys_FK` FOREIGN KEY (`MT_id`) REFERENCES `SuperTokens` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,"+
-  "  CONSTRAINT `EncryptionKeys_FK_1` FOREIGN KEY (`rt_hash`) REFERENCES `RefreshTokens` (`hash`)"+
+  "  CONSTRAINT `EncryptionKeys_FK_1` FOREIGN KEY (`rt_id`) REFERENCES `RefreshTokens` (`id`) ON DELETE CASCADE ON UPDATE CASCADE"+
   ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
   "/*!40101 SET character_set_client = @saved_cs_client */;",
   ""+
@@ -173,7 +173,7 @@ var DDL = []string {
   "  `created` tinyint NOT NULL,"+
   "  `ip_created` tinyint NOT NULL,"+
   "  `user_id` tinyint NOT NULL,"+
-  "  `rt_hash` tinyint NOT NULL,"+
+  "  `rt_id` tinyint NOT NULL,"+
   "  `refresh_token` tinyint NOT NULL,"+
   "  `rt_updated` tinyint NOT NULL,"+
   "  `encryption_key` tinyint NOT NULL"+
@@ -202,12 +202,12 @@ var DDL = []string {
   "/*!40101 SET @saved_cs_client     = @@character_set_client */;",
   "/*!40101 SET character_set_client = utf8 */;",
   "CREATE TABLE `RefreshTokens` ("+
-  "  `hash` char(128) NOT NULL,"+
+  "  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,"+
   "  `rt` text NOT NULL,"+
   "  `created` datetime NOT NULL DEFAULT current_timestamp(),"+
   "  `updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),"+
-  "  PRIMARY KEY (`hash`)"+
-  ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+  "  PRIMARY KEY (`id`)"+
+  ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;",
   "/*!40101 SET character_set_client = @saved_cs_client */;",
   ""+
   "--",
@@ -248,17 +248,17 @@ var DDL = []string {
   "  `created` datetime NOT NULL DEFAULT current_timestamp(),"+
   "  `ip_created` varchar(32) NOT NULL,"+
   "  `user_id` bigint(20) unsigned NOT NULL,"+
-  "  `rt_hash` char(128) NOT NULL,"+
+  "  `rt_id` bigint(20) unsigned NOT NULL,"+
   "  `seqno` bigint(20) unsigned NOT NULL DEFAULT 1,"+
   "  PRIMARY KEY (`id`),"+
   "  KEY `SessionTokens_parent_id_IDX` (`parent_id`) USING BTREE,"+
   "  KEY `SessionTokens_root_id_IDX` (`root_id`) USING BTREE,"+
   "  KEY `SuperTokens_FK_2` (`user_id`),"+
-  "  KEY `SuperTokens_FK_3` (`rt_hash`),"+
+  "  KEY `SuperTokens_FK_3` (`rt_id`),"+
   "  CONSTRAINT `SuperTokens_FK` FOREIGN KEY (`parent_id`) REFERENCES `SuperTokens` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,"+
   "  CONSTRAINT `SuperTokens_FK_1` FOREIGN KEY (`root_id`) REFERENCES `SuperTokens` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,"+
   "  CONSTRAINT `SuperTokens_FK_2` FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,"+
-  "  CONSTRAINT `SuperTokens_FK_3` FOREIGN KEY (`rt_hash`) REFERENCES `RefreshTokens` (`hash`)"+
+  "  CONSTRAINT `SuperTokens_FK_3` FOREIGN KEY (`rt_id`) REFERENCES `RefreshTokens` (`id`) ON UPDATE CASCADE"+
   ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
   "/*!40101 SET character_set_client = @saved_cs_client */;",
   ""+
@@ -408,7 +408,7 @@ var DDL = []string {
   "/*!50001 SET character_set_results     = utf8mb4 */;",
   "/*!50001 SET collation_connection      = utf8mb4_general_ci */;",
   "/*!50001 CREATE ALGORITHM=UNDEFINED */"+
-  "/*!50001 VIEW `MyTokens` AS select `st`.`id` AS `id`,`st`.`seqno` AS `seqno`,`st`.`parent_id` AS `parent_id`,`st`.`root_id` AS `root_id`,`st`.`name` AS `name`,`st`.`created` AS `created`,`st`.`ip_created` AS `ip_created`,`st`.`user_id` AS `user_id`,`st`.`rt_hash` AS `rt_hash`,`rts`.`rt` AS `refresh_token`,`rts`.`updated` AS `rt_updated`,`keys`.`encryption_key` AS `encryption_key` from ((`SuperTokens` `st` join `RefreshTokens` `rts` on(`st`.`rt_hash` = `rts`.`hash`)) join `EncryptionKeys` `keys` on(`st`.`id` = `keys`.`MT_id` and `st`.`rt_hash` = `keys`.`rt_hash`)) */;",
+  "/*!50001 VIEW `MyTokens` AS select `st`.`id` AS `id`,`st`.`seqno` AS `seqno`,`st`.`parent_id` AS `parent_id`,`st`.`root_id` AS `root_id`,`st`.`name` AS `name`,`st`.`created` AS `created`,`st`.`ip_created` AS `ip_created`,`st`.`user_id` AS `user_id`,`st`.`rt_id` AS `rt_id`,`rts`.`rt` AS `refresh_token`,`rts`.`updated` AS `rt_updated`,`keys`.`encryption_key` AS `encryption_key` from ((`SuperTokens` `st` join `RefreshTokens` `rts` on(`st`.`rt_id` = `rts`.`id`)) join `EncryptionKeys` `keys` on(`st`.`id` = `keys`.`MT_id` and `st`.`rt_id` = `keys`.`rt_id`)) */;",
   "/*!50001 SET character_set_client      = @saved_cs_client */;",
   "/*!50001 SET character_set_results     = @saved_cs_results */;",
   "/*!50001 SET collation_connection      = @saved_col_connection */;",
