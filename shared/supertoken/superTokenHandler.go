@@ -1,7 +1,9 @@
 package supertoken
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -11,6 +13,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo"
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/transfercoderepo"
@@ -197,8 +200,9 @@ func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response
 }
 
 func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTokenFromSuperTokenRequest, networkData model.ClientMetaData) (*supertokenrepo.SuperTokenEntry, *model.Response) {
-	rt, rtFound, dbErr := dbhelper.GetRefreshToken(parent.ID, string(req.SuperToken))
-	if dbErr != nil {
+	rtID, dbErr := refreshtokenrepo.GetRTID(nil, parent.ID)
+	rtFound, err := dbhelper.ParseError(dbErr)
+	if err != nil {
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
 	}
 	if !rtFound {
@@ -233,11 +237,11 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 	ste := supertokenrepo.NewSuperTokenEntry(
 		supertoken.NewSuperToken(parent.OIDCSubject, parent.OIDCIssuer, r, c, sc),
 		req.Name, networkData)
-	encryptionKey, _, err := dbhelper.GetEncryptionKey(nil, parent.ID, string(req.SuperToken))
+	encryptionKey, _, err := refreshtokenrepo.GetEncryptionKey(nil, parent.ID, string(req.SuperToken))
 	if err != nil {
 		return ste, model.ErrorToInternalServerErrorResponse(err)
 	}
-	if err = ste.SetRefreshToken(rt, encryptionKey); err != nil {
+	if err = ste.SetRefreshToken(rtID, encryptionKey); err != nil {
 		return ste, model.ErrorToInternalServerErrorResponse(err)
 	}
 	ste.ParentID = parent.ID
@@ -247,13 +251,6 @@ func createSuperTokenEntry(parent *supertoken.SuperToken, req *response.SuperTok
 
 // RevokeSuperToken revokes a super token
 func RevokeSuperToken(tx *sqlx.Tx, id stid.STID, token token.Token, recursive bool, issuer string) *model.Response {
-	rt, rtFound, dbErr := dbhelper.GetRefreshToken(id, string(token))
-	if dbErr != nil {
-		return model.ErrorToInternalServerErrorResponse(dbErr)
-	}
-	if !rtFound {
-		return nil
-	}
 	provider, ok := config.Get().ProviderByIssuer[issuer]
 	if !ok {
 		return &model.Response{
@@ -262,20 +259,32 @@ func RevokeSuperToken(tx *sqlx.Tx, id stid.STID, token token.Token, recursive bo
 		}
 	}
 	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if err := dbhelper.RevokeST(tx, id, recursive); err != nil {
+		rtID, err := refreshtokenrepo.GetRTID(tx, id)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil
+			}
 			return err
 		}
-		count, err := dbhelper.CountRTOccurrences(tx, rt)
+		rt, _, err := refreshtokenrepo.GetRefreshToken(tx, id, string(token))
 		if err != nil {
 			return err
 		}
-		if count == 0 {
-			if e := revoke.RefreshToken(provider, rt); e != nil {
-				apiError := e.Response.(pkgModel.APIError)
-				return fmt.Errorf("%s: %s", apiError.Error, apiError.ErrorDescription)
-			}
+		if err = dbhelper.RevokeST(tx, id, recursive); err != nil {
+			return err
 		}
-		return nil
+		count, err := refreshtokenrepo.CountRTOccurrences(tx, rtID)
+		if err != nil {
+			return err
+		}
+		if count > 0 {
+			return nil
+		}
+		if e := revoke.RefreshToken(provider, rt); e != nil {
+			apiError := e.Response.(pkgModel.APIError)
+			return fmt.Errorf("%s: %s", apiError.Error, apiError.ErrorDescription)
+		}
+		return refreshtokenrepo.DeleteRefreshToken(tx, rtID)
 	}); err != nil {
 		if strings.HasPrefix(err.Error(), "oidc_error") {
 			return &model.Response{

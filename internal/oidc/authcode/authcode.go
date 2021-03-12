@@ -259,7 +259,7 @@ func createSuperTokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowI
 			authFlowInfo.Capabilities,
 			authFlowInfo.SubtokenCapabilities),
 		authFlowInfo.Name, networkData)
-	if err := ste.SetRefreshToken(token.RefreshToken, nil); err != nil {
+	if err := ste.InitRefreshToken(token.RefreshToken); err != nil {
 		return nil, err
 	}
 	if err := ste.Store(tx, "Used grant_type oidc_flow authorization_code"); err != nil {

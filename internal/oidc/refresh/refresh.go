@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
-	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcReqRes"
 	"github.com/oidc-mytoken/server/shared/httpClient"
 	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
@@ -52,5 +52,5 @@ func RefreshFlowAndUpdateDB(provider *config.ProviderConf, tokenID stid.STID, su
 }
 
 func updateChangedRTInDB(tokenID stid.STID, newRT, superToken string) error {
-	return dbhelper.UpdateRefreshToken(nil, tokenID, newRT, superToken)
+	return refreshtokenrepo.UpdateRefreshToken(nil, tokenID, newRT, superToken)
 }

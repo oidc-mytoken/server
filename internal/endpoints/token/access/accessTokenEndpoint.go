@@ -11,6 +11,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/accesstokenrepo"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	request "github.com/oidc-mytoken/server/internal/endpoints/token/access/pkg"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
@@ -137,7 +138,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 			auds = strings.Join(usedRestriction.Audiences, " ")
 		}
 	}
-	rt, rtFound, dbErr := dbhelper.GetRefreshToken(st.ID, string(req.SuperToken))
+	rt, rtFound, dbErr := refreshtokenrepo.GetRefreshToken(nil, st.ID, string(req.SuperToken))
 	if dbErr != nil {
 		return serverModel.ErrorToInternalServerErrorResponse(dbErr)
 	}

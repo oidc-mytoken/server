@@ -10,7 +10,6 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
 	eventService "github.com/oidc-mytoken/server/shared/supertoken/event"
 	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
 	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
@@ -25,22 +24,19 @@ type SuperTokenEntry struct {
 	ParentID               stid.STID `db:"parent_id"`
 	RootID                 stid.STID `db:"root_id"`
 	Token                  *supertoken.SuperToken
+	rtID                   *uint64
 	refreshToken           string
 	encryptionKey          []byte
 	rtEncrypted            string
 	encryptionKeyEncrypted string
-	rtHash                 string
 	Name                   string
 	IP                     string `db:"ip_created"`
 	networkData            model.ClientMetaData
 }
 
-func (ste *SuperTokenEntry) SetRefreshToken(rt string, key []byte) error {
+func (ste *SuperTokenEntry) InitRefreshToken(rt string) error {
 	ste.refreshToken = rt
-	ste.encryptionKey = key
-	if key == nil {
-		ste.encryptionKey = cryptUtils.RandomBytes(32)
-	}
+	ste.encryptionKey = cryptUtils.RandomBytes(32)
 	tmp, err := cryptUtils.AESEncrypt(ste.refreshToken, ste.encryptionKey)
 	if err != nil {
 		return err
@@ -55,7 +51,21 @@ func (ste *SuperTokenEntry) SetRefreshToken(rt string, key []byte) error {
 		return err
 	}
 	ste.encryptionKeyEncrypted = tmp
-	ste.rtHash = hashUtils.SHA512Str([]byte(ste.refreshToken))
+	return nil
+}
+
+func (ste *SuperTokenEntry) SetRefreshToken(rtID uint64, key []byte) error {
+	ste.encryptionKey = key
+	jwt, err := ste.Token.ToJWT()
+	if err != nil {
+		return err
+	}
+	tmp, err := cryptUtils.AES256Encrypt(base64.StdEncoding.EncodeToString(key), jwt)
+	if err != nil {
+		return err
+	}
+	ste.encryptionKeyEncrypted = tmp
+	ste.rtID = &rtID
 	return nil
 }
 
@@ -78,23 +88,30 @@ func (ste *SuperTokenEntry) Root() bool {
 // Store stores the SuperTokenEntry in the database
 func (ste *SuperTokenEntry) Store(tx *sqlx.Tx, comment string) error {
 	steStore := superTokenEntryStore{
-		ID:               ste.ID,
-		ParentID:         ste.ParentID,
-		RootID:           ste.RootID,
-		RefreshTokenHash: ste.rtHash,
-		Name:             db.NewNullString(ste.Name),
-		IP:               ste.IP,
-		Iss:              ste.Token.OIDCIssuer,
-		Sub:              ste.Token.OIDCSubject,
+		ID:       ste.ID,
+		ParentID: ste.ParentID,
+		RootID:   ste.RootID,
+		Name:     db.NewNullString(ste.Name),
+		IP:       ste.IP,
+		Iss:      ste.Token.OIDCIssuer,
+		Sub:      ste.Token.OIDCSubject,
 	}
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if _, err := tx.Exec(`INSERT INTO RefreshTokens  (hash, rt)  VALUES(?,?)ON DUPLICATE KEY UPDATE rt=?`, ste.rtHash, ste.rtEncrypted, ste.rtEncrypted); err != nil {
-			return err
+		if ste.rtID == nil {
+			if _, err := tx.Exec(`INSERT INTO RefreshTokens  (rt)  VALUES(?)`, ste.rtEncrypted); err != nil {
+				return err
+			}
+			var rtID uint64
+			if err := tx.Get(&rtID, `SELECT LAST_INSERT_ID()`); err != nil {
+				return err
+			}
+			ste.rtID = &rtID
 		}
+		steStore.RefreshTokenID = *ste.rtID
 		if err := steStore.Store(tx); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`INSERT IGNORE INTO EncryptionKeys  (rt_hash, MT_id, encryption_key)  VALUES(?,?,?)`, ste.rtHash, ste.ID, ste.encryptionKeyEncrypted); err != nil {
+		if _, err := tx.Exec(`INSERT IGNORE INTO EncryptionKeys  (rt_id, MT_id, encryption_key)  VALUES(?,?,?)`, steStore.RefreshTokenID, ste.ID, ste.encryptionKeyEncrypted); err != nil {
 			return err
 		}
 		return eventService.LogEvent(tx, event.FromNumber(event.STEventCreated, comment), ste.ID, ste.networkData)
@@ -102,21 +119,20 @@ func (ste *SuperTokenEntry) Store(tx *sqlx.Tx, comment string) error {
 }
 
 type superTokenEntryStore struct {
-	ID               stid.STID
-	ParentID         stid.STID `db:"parent_id"`
-	RootID           stid.STID `db:"root_id"`
-	RefreshToken     string    `db:"refresh_token"`
-	RefreshTokenHash string    `db:"rt_hash"`
-	Name             db.NullString
-	IP               string `db:"ip_created"`
-	Iss              string
-	Sub              string
+	ID             stid.STID
+	ParentID       stid.STID `db:"parent_id"`
+	RootID         stid.STID `db:"root_id"`
+	RefreshTokenID uint64    `db:"rt_id"`
+	Name           db.NullString
+	IP             string `db:"ip_created"`
+	Iss            string
+	Sub            string
 }
 
 // Store stores the superTokenEntryStore in the database; if this is the first token for this user, the user is also added to the db
 func (e *superTokenEntryStore) Store(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		stmt, err := tx.PrepareNamed(`INSERT INTO SuperTokens (id, parent_id, root_id, rt_hash, name, ip_created, user_id) VALUES(:id, :parent_id, :root_id, :rt_hash, :name, :ip_created, (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
+		stmt, err := tx.PrepareNamed(`INSERT INTO SuperTokens (id, parent_id, root_id, rt_id, name, ip_created, user_id) VALUES(:id, :parent_id, :root_id, :rt_id, :name, :ip_created, (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
 		if err != nil {
 			return err
 		}
