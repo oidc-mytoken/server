@@ -51,7 +51,7 @@ func handlePollingCode(req response.PollingCodeRequest, networkData model.Client
 			Response: pkgModel.APIErrorTransferCodeExpired,
 		}
 	}
-	token, err := transfercoderepo.PopTokenForTransferCode(nil, pollingCode)
+	token, err := transfercoderepo.PopTokenForTransferCode(nil, pollingCode, networkData)
 	if err != nil {
 		log.WithError(err).Error()
 		return model.ErrorToInternalServerErrorResponse(err)

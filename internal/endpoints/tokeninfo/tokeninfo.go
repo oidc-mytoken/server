@@ -23,15 +23,16 @@ func HandleTokenInfo(ctx *fiber.Ctx) error {
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
+	clientMetadata := ctxUtils.ClientMetaData(ctx)
 	switch req.Action {
 	case model2.TokeninfoActionIntrospect:
-		return handleTokenInfoIntrospect(st).Send(ctx)
+		return handleTokenInfoIntrospect(st, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionEventHistory:
-		return handleTokenInfoHistory(st, ctx.IP()).Send(ctx)
+		return handleTokenInfoHistory(st, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionSubtokenTree:
-		return handleTokenInfoTree(st, ctx.IP()).Send(ctx)
+		return handleTokenInfoTree(st, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionListSuperTokens:
-		return handleTokenInfoList(st, ctx.IP()).Send(ctx)
+		return handleTokenInfoList(st, clientMetadata).Send(ctx)
 	default:
 		return model.Response{
 			Status:   fiber.StatusBadRequest,

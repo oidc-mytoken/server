@@ -114,7 +114,10 @@ func (ste *SuperTokenEntry) Store(tx *sqlx.Tx, comment string) error {
 		if _, err := tx.Exec(`INSERT IGNORE INTO EncryptionKeys  (rt_id, MT_id, encryption_key)  VALUES(?,?,?)`, steStore.RefreshTokenID, ste.ID, ste.encryptionKeyEncrypted); err != nil {
 			return err
 		}
-		return eventService.LogEvent(tx, event.FromNumber(event.STEventCreated, comment), ste.ID, ste.networkData)
+		return eventService.LogEvent(tx, eventService.MTEvent{
+			Event: event.FromNumber(event.STEventCreated, comment),
+			MTID:  ste.ID,
+		}, ste.networkData)
 	})
 }
 

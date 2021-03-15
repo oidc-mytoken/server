@@ -62,7 +62,7 @@ func HandleSuperTokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 			}
 			return fmt.Errorf("error_res")
 		}
-		tokenStr, err = transfercoderepo.PopTokenForTransferCode(tx, req.TransferCode)
+		tokenStr, err = transfercoderepo.PopTokenForTransferCode(tx, req.TransferCode, *ctxUtils.ClientMetaData(ctx))
 		return err
 	}); err != nil {
 		if errorRes != nil {
@@ -184,7 +184,10 @@ func handleSuperTokenFromSuperToken(parent *supertoken.SuperToken, req *response
 		if err := ste.Store(tx, "Used grant_type super_token"); err != nil {
 			return err
 		}
-		return eventService.LogEvent(tx, event.FromNumber(event.STEventInheritedRT, "Got RT from parent"), ste.ID, *networkData)
+		return eventService.LogEvents(tx, []eventService.MTEvent{
+			{event.FromNumber(event.STEventInheritedRT, "Got RT from parent"), ste.ID},
+			{event.FromNumber(event.STEventSTCreated, strings.TrimSpace(fmt.Sprintf("Created ST %s", req.Name))), ste.ID},
+		}, *networkData)
 	}); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}

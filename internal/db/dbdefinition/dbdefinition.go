@@ -190,7 +190,10 @@ var DDL = []string {
   "CREATE TABLE `ProxyTokens` ("+
   "  `id` varchar(128) NOT NULL,"+
   "  `jwt` text NOT NULL,"+
-  "  PRIMARY KEY (`id`)"+
+  "  `MT_id` varchar(128) NOT NULL,"+
+  "  PRIMARY KEY (`id`),"+
+  "  KEY `ProxyTokens_FK` (`MT_id`),"+
+  "  CONSTRAINT `ProxyTokens_FK` FOREIGN KEY (`MT_id`) REFERENCES `SuperTokens` (`id`) ON DELETE CASCADE ON UPDATE CASCADE"+
   ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
   "/*!40101 SET character_set_client = @saved_cs_client */;",
   ""+

@@ -10,6 +10,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
 )
 
 // TransferCode is a type used to transfer a token
@@ -24,9 +25,9 @@ type transferCodeAttributes struct {
 }
 
 // NewTransferCode creates a new TransferCode for the passed jwt
-func NewTransferCode(jwt string, newST bool, responseType model.ResponseType) (*TransferCode, error) {
+func NewTransferCode(jwt string, mID stid.STID, newST bool, responseType model.ResponseType) (*TransferCode, error) {
 	pt := newProxyToken(config.Get().Features.Polling.Len)
-	if err := pt.SetJWT(jwt); err != nil {
+	if err := pt.SetJWT(jwt, mID); err != nil {
 		return nil, err
 	}
 	transferCode := &TransferCode{

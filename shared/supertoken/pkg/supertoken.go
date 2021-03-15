@@ -143,7 +143,7 @@ func (st *SuperToken) toSuperTokenResponse(jwt string) response.SuperTokenRespon
 }
 
 func (st *SuperToken) toShortSuperTokenResponse(jwt string) (response.SuperTokenResponse, error) {
-	shortToken, err := transfercoderepo.NewShortToken(jwt)
+	shortToken, err := transfercoderepo.NewShortToken(jwt, st.ID)
 	if err != nil {
 		return response.SuperTokenResponse{}, err
 	}
@@ -167,7 +167,7 @@ func (st *SuperToken) toTokenResponse() response.SuperTokenResponse {
 
 // CreateTransferCode creates a transfer code for the passed super token
 func CreateTransferCode(stid stid.STID, jwt string, newST bool, responseType model.ResponseType, clientMetaData serverModel.ClientMetaData) (string, uint64, error) {
-	transferCode, err := transfercoderepo.NewTransferCode(jwt, newST, responseType)
+	transferCode, err := transfercoderepo.NewTransferCode(jwt, stid, newST, responseType)
 	if err != nil {
 		return "", 0, err
 	}
@@ -175,10 +175,10 @@ func CreateTransferCode(stid stid.STID, jwt string, newST bool, responseType mod
 		if err = transferCode.Store(tx); err != nil {
 			return err
 		}
-		return eventService.LogEvent(tx, &event.Event{
-			Type:    event.STEventTransferCodeCreated,
-			Comment: fmt.Sprintf("token type: %s", responseType.String()),
-		}, stid, clientMetaData)
+		return eventService.LogEvent(tx, eventService.MTEvent{
+			Event: event.FromNumber(event.STEventTransferCodeCreated, fmt.Sprintf("token type: %s", responseType.String())),
+			MTID:  stid,
+		}, clientMetaData)
 	})
 	expiresIn := uint64(config.Get().Features.Polling.PollingCodeExpiresAfter)
 	return transferCode.String(), expiresIn, err

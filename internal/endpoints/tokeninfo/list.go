@@ -13,11 +13,13 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	pkgModel "github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
+	eventService "github.com/oidc-mytoken/server/shared/supertoken/event"
+	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
 	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
 	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
 )
 
-func handleTokenInfoList(st *supertoken.SuperToken, ip string) model.Response {
+func handleTokenInfoList(st *supertoken.SuperToken, clientMetadata *model.ClientMetaData) model.Response {
 	// If we call this function it means the token is valid.
 
 	if !st.Capabilities.Has(capabilities.CapabilityListST) {
@@ -29,7 +31,7 @@ func handleTokenInfoList(st *supertoken.SuperToken, ip string) model.Response {
 
 	var usedRestriction *restrictions.Restriction
 	if len(st.Restrictions) > 0 {
-		possibleRestrictions := st.Restrictions.GetValidForOther(nil, ip, st.ID)
+		possibleRestrictions := st.Restrictions.GetValidForOther(nil, clientMetadata.IP, st.ID)
 		if len(possibleRestrictions) == 0 {
 			return model.Response{
 				Status:   fiber.StatusForbidden,
@@ -49,7 +51,13 @@ func handleTokenInfoList(st *supertoken.SuperToken, ip string) model.Response {
 		if usedRestriction == nil {
 			return nil
 		}
-		return usedRestriction.UsedOther(tx, st.ID)
+		if err = usedRestriction.UsedOther(tx, st.ID); err != nil {
+			return err
+		}
+		return eventService.LogEvent(tx, eventService.MTEvent{
+			Event: event.FromNumber(event.STEventTokenInfoListSTs, ""),
+			MTID:  st.ID,
+		}, *clientMetadata)
 	}); err != nil {
 		return *model.ErrorToInternalServerErrorResponse(err)
 	}

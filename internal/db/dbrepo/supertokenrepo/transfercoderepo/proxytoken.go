@@ -8,6 +8,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
@@ -16,6 +17,7 @@ import (
 type proxyToken struct {
 	id    string
 	token string
+	mtID  stid.STID
 
 	encryptedJWT string
 	decryptedJWT string
@@ -65,7 +67,8 @@ func (pt *proxyToken) ID() string {
 }
 
 // SetJWT sets the jwt for this proxyToken
-func (pt *proxyToken) SetJWT(jwt string) (err error) {
+func (pt *proxyToken) SetJWT(jwt string, mID stid.STID) (err error) {
+	pt.mtID = mID
 	pt.decryptedJWT = jwt
 	pt.encryptedJWT, err = cryptUtils.AES256Encrypt(jwt, pt.token)
 	return
@@ -80,7 +83,16 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 	}
 	if pt.encryptedJWT == "" {
 		if err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-			return tx.Get(&pt.encryptedJWT, `SELECT jwt FROM ProxyTokens WHERE id=?`, pt.id)
+			var res struct {
+				JWT  string    `db:"jwt"`
+				MTID stid.STID `db:"MT_id"`
+			}
+			if err := tx.Get(&res, `SELECT jwt, MT_id FROM ProxyTokens WHERE id=?`, pt.id); err != nil {
+				return err
+			}
+			pt.encryptedJWT = res.JWT
+			pt.mtID = res.MTID
+			return nil
 		}); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				err = nil
@@ -101,7 +113,7 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 // Store stores the proxyToken
 func (pt proxyToken) Store(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`INSERT INTO ProxyTokens (id, jwt) VALUES (?,?)`, pt.id, pt.encryptedJWT)
+		_, err := tx.Exec(`INSERT INTO ProxyTokens (id, jwt, MT_id) VALUES (?,?,?)`, pt.id, pt.encryptedJWT, pt.mtID)
 		return err
 	})
 }
@@ -109,7 +121,7 @@ func (pt proxyToken) Store(tx *sqlx.Tx) error {
 // Update updates the jwt of the proxyToken
 func (pt proxyToken) Update(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`UPDATE ProxyTokens SET jwt=? WHERE id=?`, pt.encryptedJWT, pt.id)
+		_, err := tx.Exec(`UPDATE ProxyTokens SET jwt=?, MT_id=? WHERE id=?`, pt.encryptedJWT, pt.mtID, pt.id)
 		return err
 	})
 }

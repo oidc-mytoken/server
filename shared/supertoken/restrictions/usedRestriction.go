@@ -14,10 +14,10 @@ type UsedRestriction struct {
 	UsagesOtherDone *int64 `json:"usages_other_done,omitempty"`
 }
 
-func (r Restrictions) ToUsedRestrictions(id stid.STID) (ur []UsedRestriction, err error) {
+func (r Restrictions) ToUsedRestrictions(tx *sqlx.Tx, id stid.STID) (ur []UsedRestriction, err error) {
 	var u UsedRestriction
 	for _, rr := range r {
-		u, err = rr.ToUsedRestriction(id)
+		u, err = rr.ToUsedRestriction(tx, id)
 		if err != nil {
 			return
 		}
@@ -26,11 +26,11 @@ func (r Restrictions) ToUsedRestrictions(id stid.STID) (ur []UsedRestriction, er
 	return
 }
 
-func (r Restriction) ToUsedRestriction(id stid.STID) (UsedRestriction, error) {
+func (r Restriction) ToUsedRestriction(tx *sqlx.Tx, id stid.STID) (UsedRestriction, error) {
 	ur := UsedRestriction{
 		Restriction: r,
 	}
-	err := db.Transact(func(tx *sqlx.Tx) error {
+	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		at, err := r.getATUsageCounts(tx, id)
 		if err != nil {
 			return err

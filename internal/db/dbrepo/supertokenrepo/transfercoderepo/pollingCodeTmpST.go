@@ -8,7 +8,11 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
+	model2 "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/pkg/model"
+	eventService "github.com/oidc-mytoken/server/shared/supertoken/event"
+	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
+	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
 )
 
 // TransferCodeStatus holds information about the status of a polling code
@@ -37,7 +41,7 @@ func CheckTransferCode(tx *sqlx.Tx, pollingCode string) (TransferCodeStatus, err
 }
 
 // PopTokenForTransferCode returns the decrypted token for a polling code and then deletes the entry
-func PopTokenForTransferCode(tx *sqlx.Tx, pollingCode string) (jwt string, err error) {
+func PopTokenForTransferCode(tx *sqlx.Tx, pollingCode string, clientMetadata model2.ClientMetaData) (jwt string, err error) {
 	pt := createProxyToken(pollingCode)
 	var valid bool
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
@@ -48,15 +52,21 @@ func PopTokenForTransferCode(tx *sqlx.Tx, pollingCode string) (jwt string, err e
 		if !valid || jwt == "" {
 			return nil
 		}
-		return pt.Delete(tx)
+		if err = pt.Delete(tx); err != nil {
+			return err
+		}
+		return eventService.LogEvent(tx, eventService.MTEvent{
+			Event: event.FromNumber(event.STEventTransferCodeUsed, ""),
+			MTID:  pt.mtID,
+		}, clientMetadata)
 	})
 	return
 }
 
 // LinkPollingCodeToST links a pollingCode to a SuperToken
-func LinkPollingCodeToST(tx *sqlx.Tx, pollingCode, jwt string) error {
+func LinkPollingCodeToST(tx *sqlx.Tx, pollingCode, jwt string, mID stid.STID) error {
 	pc := createProxyToken(pollingCode)
-	if err := pc.SetJWT(jwt); err != nil {
+	if err := pc.SetJWT(jwt, mID); err != nil {
 		return err
 	}
 	return pc.Update(tx)

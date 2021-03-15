@@ -2,6 +2,7 @@ package transfercoderepo
 
 import (
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
 )
 
 // ShortToken holds database information of a short token
@@ -10,9 +11,9 @@ type ShortToken struct {
 }
 
 // NewShortToken creates a new short token from the given jwt of a normal SuperToken
-func NewShortToken(jwt string) (*ShortToken, error) {
+func NewShortToken(jwt string, mID stid.STID) (*ShortToken, error) {
 	pt := newProxyToken(config.Get().Features.ShortTokens.Len)
-	if err := pt.SetJWT(jwt); err != nil {
+	if err := pt.SetJWT(jwt, mID); err != nil {
 		return nil, err
 	}
 	shortToken := &ShortToken{

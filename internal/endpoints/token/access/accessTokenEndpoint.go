@@ -176,7 +176,10 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 		if err = at.Store(tx); err != nil {
 			return err
 		}
-		if err = eventService.LogEvent(tx, event.FromNumber(event.STEventATCreated, "Used grant_type super_token"), st.ID, networkData); err != nil {
+		if err = eventService.LogEvent(tx, eventService.MTEvent{
+			Event: event.FromNumber(event.STEventATCreated, "Used grant_type super_token"),
+			MTID:  st.ID,
+		}, networkData); err != nil {
 			return err
 		}
 		if usedRestriction != nil {

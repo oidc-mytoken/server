@@ -1,6 +1,8 @@
 package supertoken
 
 import (
+	"github.com/jmoiron/sqlx"
+
 	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
 )
 
@@ -10,11 +12,11 @@ type UsedSuperToken struct {
 	Restrictions []restrictions.UsedRestriction `json:"restrictions,omitempty"`
 }
 
-func (st *SuperToken) ToUsedSuperToken() (*UsedSuperToken, error) {
+func (st *SuperToken) ToUsedSuperToken(tx *sqlx.Tx) (*UsedSuperToken, error) {
 	ust := &UsedSuperToken{
 		SuperToken: *st,
 	}
 	var err error
-	ust.Restrictions, err = st.Restrictions.ToUsedRestrictions(st.ID)
+	ust.Restrictions, err = st.Restrictions.ToUsedRestrictions(tx, st.ID)
 	return ust, err
 }
