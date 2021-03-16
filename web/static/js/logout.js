@@ -1,6 +1,6 @@
 
 function logout() {
-    revokeST(function () {
+    revokeMT(function () {
         window.location.href = "/"
     })
 }

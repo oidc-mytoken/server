@@ -208,7 +208,7 @@ func CodeExchange(oState *state.State, code string, networkData model.ClientMeta
 			if err != nil {
 				return err
 			}
-			if err = transfercoderepo.LinkPollingCodeToST(tx, oState.PollingCode(), jwt, ste.ID); err != nil {
+			if err = transfercoderepo.LinkPollingCodeToMT(tx, oState.PollingCode(), jwt, ste.ID); err != nil {
 				return err
 			}
 		}

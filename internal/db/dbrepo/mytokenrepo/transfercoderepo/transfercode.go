@@ -20,12 +20,12 @@ type TransferCode struct {
 }
 
 type transferCodeAttributes struct {
-	NewST db.BitBool
+	NewMT db.BitBool
 	model.ResponseType
 }
 
 // NewTransferCode creates a new TransferCode for the passed jwt
-func NewTransferCode(jwt string, mID mtid.MTID, newST bool, responseType model.ResponseType) (*TransferCode, error) {
+func NewTransferCode(jwt string, mID mtid.MTID, newMT bool, responseType model.ResponseType) (*TransferCode, error) {
 	pt := newProxyToken(config.Get().Features.Polling.Len)
 	if err := pt.SetJWT(jwt, mID); err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func NewTransferCode(jwt string, mID mtid.MTID, newST bool, responseType model.R
 	transferCode := &TransferCode{
 		proxyToken: *pt,
 		Attributes: transferCodeAttributes{
-			NewST:        db.BitBool(newST),
+			NewMT:        db.BitBool(newMT),
 			ResponseType: responseType,
 		},
 	}
@@ -51,7 +51,7 @@ func CreatePollingCode(pollingCode string, responseType model.ResponseType) *Tra
 	return &TransferCode{
 		proxyToken: *pt,
 		Attributes: transferCodeAttributes{
-			NewST:        true,
+			NewMT:        true,
 			ResponseType: responseType,
 		},
 	}
@@ -64,16 +64,16 @@ func (tc TransferCode) Store(tx *sqlx.Tx) error {
 		if err := tc.proxyToken.Store(tx); err != nil {
 			return err
 		}
-		_, err := tx.Exec(`INSERT INTO TransferCodesAttributes (id, expires_in,  revoke_ST, response_type) VALUES(?,?,?,?)`, tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewST, tc.Attributes.ResponseType)
+		_, err := tx.Exec(`INSERT INTO TransferCodesAttributes (id, expires_in,  revoke_MT, response_type) VALUES(?,?,?,?)`, tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewMT, tc.Attributes.ResponseType)
 		return err
 	})
 }
 
 // GetRevokeJWT returns a bool indicating if the linked jwt should also be revoked when this TransferCode is revoked or not
 func (tc TransferCode) GetRevokeJWT(tx *sqlx.Tx) (bool, error) {
-	var revokeST db.BitBool
+	var revokeMT db.BitBool
 	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if err := tx.Get(&revokeST, `SELECT revoke_ST FROM TransferCodesAttributes WHERE id=?`, tc.id); err != nil {
+		if err := tx.Get(&revokeMT, `SELECT revoke_MT FROM TransferCodesAttributes WHERE id=?`, tc.id); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return nil
 			}
@@ -81,5 +81,5 @@ func (tc TransferCode) GetRevokeJWT(tx *sqlx.Tx) (bool, error) {
 		}
 		return nil
 	})
-	return bool(revokeST), err
+	return bool(revokeMT), err
 }

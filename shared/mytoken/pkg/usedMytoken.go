@@ -12,11 +12,11 @@ type UsedMytoken struct {
 	Restrictions []restrictions.UsedRestriction `json:"restrictions,omitempty"`
 }
 
-func (st *Mytoken) ToUsedMytoken(tx *sqlx.Tx) (*UsedMytoken, error) {
-	ust := &UsedMytoken{
-		Mytoken: *st,
+func (mt *Mytoken) ToUsedMytoken(tx *sqlx.Tx) (*UsedMytoken, error) {
+	umt := &UsedMytoken{
+		Mytoken: *mt,
 	}
 	var err error
-	ust.Restrictions, err = st.Restrictions.ToUsedRestrictions(tx, st.ID)
-	return ust, err
+	umt.Restrictions, err = mt.Restrictions.ToUsedRestrictions(tx, mt.ID)
+	return umt, err
 }

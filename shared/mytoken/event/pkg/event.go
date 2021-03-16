@@ -69,11 +69,11 @@ const (
 	MTEventUnknown = iota
 	MTEventCreated
 	MTEventATCreated
-	MTEventSTCreated
+	MTEventMTCreated
 	MTEventTokenInfoIntrospect
 	MTEventTokenInfoHistory
 	MTEventTokenInfoTree
-	MTEventTokenInfoListSTs
+	MTEventTokenInfoListMTs
 	MTEventMngGrantATEnabled
 	MTEventMngGrantATDisabled
 	MTEventMngGrantJWTEnabled

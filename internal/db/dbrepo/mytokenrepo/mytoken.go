@@ -70,10 +70,10 @@ func (ste *MytokenEntry) SetRefreshToken(rtID uint64, key []byte) error {
 }
 
 // NewMytokenEntry creates a new MytokenEntry
-func NewMytokenEntry(st *mytoken.Mytoken, name string, networkData model.ClientMetaData) *MytokenEntry {
+func NewMytokenEntry(mt *mytoken.Mytoken, name string, networkData model.ClientMetaData) *MytokenEntry {
 	return &MytokenEntry{
-		ID:          st.ID,
-		Token:       st,
+		ID:          mt.ID,
+		Token:       mt,
 		Name:        name,
 		IP:          networkData.IP,
 		networkData: networkData,

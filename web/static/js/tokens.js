@@ -10,7 +10,7 @@ clipboard.on('success', function (e) {
 
 $('#get-at').on('click', function(e){
     e.preventDefault();
-    getST(
+    getMT(
         function (res) {
            const mToken = res['mytoken']
             getAT(
@@ -56,9 +56,9 @@ function getAT(okCallback, errCallback, mToken) {
     });
 }
 
-function getST(okCallback, errCallback, capability="AT") {
+function getMT(okCallback, errCallback, capability="AT") {
     let data = {
-        "name":"mytoken-web ST for "+capability,
+        "name":"mytoken-web MT for "+capability,
         "grant_type": "mytoken",
         "capabilities": [capability],
         "restrictions": [
@@ -82,7 +82,7 @@ function getST(okCallback, errCallback, capability="AT") {
     });
 }
 
-function revokeST(callback, recursive=true) {
+function revokeMT(callback, recursive=true) {
     let data = {
         "recursive": recursive
     };

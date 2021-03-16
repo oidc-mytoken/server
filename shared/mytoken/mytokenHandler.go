@@ -79,7 +79,7 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	st, err := mytoken.ParseJWT(string(jwt))
+	mt, err := mytoken.ParseJWT(string(jwt))
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
@@ -88,10 +88,10 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 		Response: response.MytokenResponse{
 			Mytoken:              tokenStr,
 			MytokenType:          tokenType,
-			ExpiresIn:            st.ExpiresIn(),
-			Restrictions:         st.Restrictions,
-			Capabilities:         st.Capabilities,
-			SubtokenCapabilities: st.SubtokenCapabilities,
+			ExpiresIn:            mt.ExpiresIn(),
+			Restrictions:         mt.Restrictions,
+			Capabilities:         mt.Capabilities,
+			SubtokenCapabilities: mt.SubtokenCapabilities,
 		},
 	}
 
@@ -119,7 +119,7 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 		}
 	}
 
-	st, err := mytoken.ParseJWT(string(req.Mytoken))
+	mt, err := mytoken.ParseJWT(string(req.Mytoken))
 	if err != nil {
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
@@ -128,7 +128,7 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	}
 	log.Trace("Parsed mytoken")
 
-	revoked, dbErr := dbhelper.CheckTokenRevoked(st.ID)
+	revoked, dbErr := dbhelper.CheckTokenRevoked(mt.ID)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -140,14 +140,14 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	}
 	log.Trace("Checked token not revoked")
 
-	if ok := st.VerifyCapabilities(capabilities.CapabilityCreateMT); !ok {
+	if ok := mt.VerifyCapabilities(capabilities.CapabilityCreateMT); !ok {
 		return &model.Response{
 			Status:   fiber.StatusForbidden,
 			Response: pkgModel.APIErrorInsufficientCapabilities,
 		}
 	}
 	log.Trace("Checked mytoken capabilities")
-	if ok := st.Restrictions.VerifyForOther(nil, ctx.IP(), st.ID); !ok {
+	if ok := mt.Restrictions.VerifyForOther(nil, ctx.IP(), mt.ID); !ok {
 		return &model.Response{
 			Status:   fiber.StatusForbidden,
 			Response: pkgModel.APIErrorUsageRestricted,
@@ -156,9 +156,9 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	log.Trace("Checked mytoken restrictions")
 
 	if req.Issuer == "" {
-		req.Issuer = st.OIDCIssuer
+		req.Issuer = mt.OIDCIssuer
 	} else {
-		if req.Issuer != st.OIDCIssuer {
+		if req.Issuer != mt.OIDCIssuer {
 			return &model.Response{
 				Status:   fiber.StatusBadRequest,
 				Response: pkgModel.BadRequestError("token not for specified issuer"),
@@ -167,7 +167,7 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 		log.Trace("Checked issuer")
 	}
 	req.Restrictions.ReplaceThisIp(ctx.IP())
-	return handleMytokenFromMytoken(st, req, ctxUtils.ClientMetaData(ctx), req.ResponseType)
+	return handleMytokenFromMytoken(mt, req, ctxUtils.ClientMetaData(ctx), req.ResponseType)
 }
 
 func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData *model.ClientMetaData, responseType pkgModel.ResponseType) *model.Response {
@@ -186,7 +186,7 @@ func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFrom
 		}
 		return eventService.LogEvents(tx, []eventService.MTEvent{
 			{event.FromNumber(event.MTEventInheritedRT, "Got RT from parent"), ste.ID},
-			{event.FromNumber(event.MTEventSTCreated, strings.TrimSpace(fmt.Sprintf("Created ST %s", req.Name))), ste.ID},
+			{event.FromNumber(event.MTEventMTCreated, strings.TrimSpace(fmt.Sprintf("Created MT %s", req.Name))), ste.ID},
 		}, *networkData)
 	}); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
@@ -214,7 +214,7 @@ func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytoke
 			Response: pkgModel.InvalidTokenError(""),
 		}
 	}
-	rootID, rootFound, dbErr := dbhelper.GetSTRootID(parent.ID)
+	rootID, rootFound, dbErr := dbhelper.GetMTRootID(parent.ID)
 	if dbErr != nil {
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -273,7 +273,7 @@ func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, token token.Token, recursive bool,
 		if err != nil {
 			return err
 		}
-		if err = dbhelper.RevokeST(tx, id, recursive); err != nil {
+		if err = dbhelper.RevokeMT(tx, id, recursive); err != nil {
 			return err
 		}
 		count, err := refreshtokenrepo.CountRTOccurrences(tx, rtID)

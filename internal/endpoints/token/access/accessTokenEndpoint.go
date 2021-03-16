@@ -56,7 +56,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		}
 	}
 
-	st, err := mytoken.ParseJWT(string(req.Mytoken))
+	mt, err := mytoken.ParseJWT(string(req.Mytoken))
 	if err != nil {
 		return (&serverModel.Response{
 			Status:   fiber.StatusUnauthorized,
@@ -65,7 +65,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	}
 	log.Trace("Parsed mytoken")
 
-	revoked, dbErr := dbhelper.CheckTokenRevoked(st.ID)
+	revoked, dbErr := dbhelper.CheckTokenRevoked(mt.ID)
 	if dbErr != nil {
 		return serverModel.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
 	}
@@ -77,14 +77,14 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	}
 	log.Trace("Checked token not revoked")
 
-	if ok := st.Restrictions.VerifyForAT(nil, ctx.IP(), st.ID); !ok {
+	if ok := mt.Restrictions.VerifyForAT(nil, ctx.IP(), mt.ID); !ok {
 		return (&serverModel.Response{
 			Status:   fiber.StatusForbidden,
 			Response: model.APIErrorUsageRestricted,
 		}).Send(ctx)
 	}
 	log.Trace("Checked mytoken restrictions")
-	if ok := st.VerifyCapabilities(capabilities.CapabilityAT); !ok {
+	if ok := mt.VerifyCapabilities(capabilities.CapabilityAT); !ok {
 		res := serverModel.Response{
 			Status:   fiber.StatusForbidden,
 			Response: model.APIErrorInsufficientCapabilities,
@@ -93,8 +93,8 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	}
 	log.Trace("Checked mytoken capabilities")
 	if req.Issuer == "" {
-		req.Issuer = st.OIDCIssuer
-	} else if req.Issuer != st.OIDCIssuer {
+		req.Issuer = mt.OIDCIssuer
+	} else if req.Issuer != mt.OIDCIssuer {
 		res := serverModel.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.BadRequestError("token not for specified issuer"),
@@ -103,10 +103,10 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	}
 	log.Trace("Checked issuer")
 
-	return handleAccessTokenRefresh(st, req, *ctxUtils.ClientMetaData(ctx)).Send(ctx)
+	return handleAccessTokenRefresh(mt, req, *ctxUtils.ClientMetaData(ctx)).Send(ctx)
 }
 
-func handleAccessTokenRefresh(st *mytoken.Mytoken, req request.AccessTokenRequest, networkData serverModel.ClientMetaData) *serverModel.Response {
+func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData serverModel.ClientMetaData) *serverModel.Response {
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
 	if !ok {
 		return &serverModel.Response{
@@ -118,8 +118,8 @@ func handleAccessTokenRefresh(st *mytoken.Mytoken, req request.AccessTokenReques
 	scopes := strings.Join(provider.Scopes, " ") // default if no restrictions apply
 	auds := ""                                   // default if no restrictions apply
 	var usedRestriction *restrictions.Restriction
-	if len(st.Restrictions) > 0 {
-		possibleRestrictions := st.Restrictions.GetValidForAT(nil, networkData.IP, st.ID).WithScopes(utils.SplitIgnoreEmpty(req.Scope, " ")).WithAudiences(utils.SplitIgnoreEmpty(req.Audience, " "))
+	if len(mt.Restrictions) > 0 {
+		possibleRestrictions := mt.Restrictions.GetValidForAT(nil, networkData.IP, mt.ID).WithScopes(utils.SplitIgnoreEmpty(req.Scope, " ")).WithAudiences(utils.SplitIgnoreEmpty(req.Audience, " "))
 		if len(possibleRestrictions) == 0 {
 			return &serverModel.Response{
 				Status:   fiber.StatusForbidden,
@@ -138,7 +138,7 @@ func handleAccessTokenRefresh(st *mytoken.Mytoken, req request.AccessTokenReques
 			auds = strings.Join(usedRestriction.Audiences, " ")
 		}
 	}
-	rt, rtFound, dbErr := refreshtokenrepo.GetRefreshToken(nil, st.ID, string(req.Mytoken))
+	rt, rtFound, dbErr := refreshtokenrepo.GetRefreshToken(nil, mt.ID, string(req.Mytoken))
 	if dbErr != nil {
 		return serverModel.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -149,7 +149,7 @@ func handleAccessTokenRefresh(st *mytoken.Mytoken, req request.AccessTokenReques
 		}
 	}
 
-	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, st.ID, string(req.Mytoken), rt, scopes, auds)
+	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, mt.ID, string(req.Mytoken), rt, scopes, auds)
 	if err != nil {
 		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}
@@ -168,7 +168,7 @@ func handleAccessTokenRefresh(st *mytoken.Mytoken, req request.AccessTokenReques
 		Token:     oidcRes.AccessToken,
 		IP:        networkData.IP,
 		Comment:   req.Comment,
-		Mytoken:   st,
+		Mytoken:   mt,
 		Scopes:    utils.SplitIgnoreEmpty(retScopes, " "),
 		Audiences: retAudiences,
 	}
@@ -178,12 +178,12 @@ func handleAccessTokenRefresh(st *mytoken.Mytoken, req request.AccessTokenReques
 		}
 		if err = eventService.LogEvent(tx, eventService.MTEvent{
 			Event: event.FromNumber(event.MTEventATCreated, "Used grant_type mytoken"),
-			MTID:  st.ID,
+			MTID:  mt.ID,
 		}, networkData); err != nil {
 			return err
 		}
 		if usedRestriction != nil {
-			if err = usedRestriction.UsedAT(tx, st.ID); err != nil {
+			if err = usedRestriction.UsedAT(tx, mt.ID); err != nil {
 				return err
 			}
 		}

@@ -22,8 +22,8 @@ func ParseError(err error) (bool, error) {
 	return true, nil
 }
 
-// GetSTParentID returns the id of the parent mytoken of the passed mytoken id
-func GetSTParentID(myID mtid.MTID) (string, bool, error) {
+// GetMTParentID returns the id of the parent mytoken of the passed mytoken id
+func GetMTParentID(myID mtid.MTID) (string, bool, error) {
 	var parentID sql.NullString
 	found, err := ParseError(db.Transact(func(tx *sqlx.Tx) error {
 		return tx.Get(&parentID, `SELECT parent_id FROM MTokens WHERE id=?`, myID)
@@ -31,8 +31,8 @@ func GetSTParentID(myID mtid.MTID) (string, bool, error) {
 	return parentID.String, found, err
 }
 
-// GetSTRootID returns the id of the root mytoken of the passed mytoken id
-func GetSTRootID(id mtid.MTID) (mtid.MTID, bool, error) {
+// GetMTRootID returns the id of the root mytoken of the passed mytoken id
+func GetMTRootID(id mtid.MTID) (mtid.MTID, bool, error) {
 	var rootID mtid.MTID
 	found, err := ParseError(db.Transact(func(tx *sqlx.Tx) error {
 		return tx.Get(&rootID, `SELECT root_id FROM MTokens WHERE id=?`, id)
@@ -40,8 +40,8 @@ func GetSTRootID(id mtid.MTID) (mtid.MTID, bool, error) {
 	return rootID, found, err
 }
 
-// recursiveRevokeST revokes the passed mytoken as well as all children
-func recursiveRevokeST(tx *sqlx.Tx, id mtid.MTID) error {
+// recursiveRevokeMT revokes the passed mytoken as well as all children
+func recursiveRevokeMT(tx *sqlx.Tx, id mtid.MTID) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`
 			DELETE FROM MTokens WHERE id=ANY(
@@ -50,7 +50,7 @@ func recursiveRevokeST(tx *sqlx.Tx, id mtid.MTID) error {
 			(
 				SELECT id, parent_id FROM MTokens WHERE id=?
 				UNION ALL
-				SELECT st.id, st.parent_id FROM MTokens st INNER JOIN childs c WHERE st.parent_id=c.id
+				SELECT mt.id, mt.parent_id FROM MTokens mt INNER JOIN childs c WHERE mt.parent_id=c.id
 			)
 			SELECT id
 			FROM   childs
@@ -73,20 +73,20 @@ func CheckTokenRevoked(id mtid.MTID) (bool, error) {
 	return true, nil
 }
 
-// revokeST revokes the passed mytoken but no children
-func revokeST(tx *sqlx.Tx, id mtid.MTID) error {
+// revokeMT revokes the passed mytoken but no children
+func revokeMT(tx *sqlx.Tx, id mtid.MTID) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`DELETE FROM MTokens WHERE id=?`, id)
 		return err
 	})
 }
 
-// RevokeST revokes the passed mytoken and depending on the recursive parameter also its children
-func RevokeST(tx *sqlx.Tx, id mtid.MTID, recursive bool) error {
+// RevokeMT revokes the passed mytoken and depending on the recursive parameter also its children
+func RevokeMT(tx *sqlx.Tx, id mtid.MTID, recursive bool) error {
 	if recursive {
-		return recursiveRevokeST(tx, id)
+		return recursiveRevokeMT(tx, id)
 	} else {
-		return revokeST(tx, id)
+		return revokeMT(tx, id)
 	}
 }
 

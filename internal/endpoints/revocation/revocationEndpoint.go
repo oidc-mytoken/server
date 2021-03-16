@@ -82,27 +82,27 @@ func revokeAnyToken(tx *sqlx.Tx, token, issuer string, recursive bool) (errRes *
 }
 
 func revokeMytoken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *model.Response) {
-	st, err := mytokenPkg.ParseJWT(jwt)
+	mt, err := mytokenPkg.ParseJWT(jwt)
 	if err != nil {
 		return nil
 	}
-	if issuer != "" && st.OIDCIssuer != issuer {
+	if issuer != "" && mt.OIDCIssuer != issuer {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: pkgModel.BadRequestError("token not for specified issuer"),
 		}
 	}
-	return mytoken.RevokeMytoken(tx, st.ID, token.Token(jwt), recursive, st.OIDCIssuer)
+	return mytoken.RevokeMytoken(tx, mt.ID, token.Token(jwt), recursive, mt.OIDCIssuer)
 }
 
 func revokeTransferCode(tx *sqlx.Tx, token, issuer string) (errRes *model.Response) {
 	transferCode := transfercoderepo.ParseTransferCode(token)
 	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		revokeST, err := transferCode.GetRevokeJWT(tx)
+		revokeMT, err := transferCode.GetRevokeJWT(tx)
 		if err != nil {
 			return err
 		}
-		if revokeST {
+		if revokeMT {
 			jwt, valid, err := transferCode.JWT(tx)
 			if err != nil {
 				return err

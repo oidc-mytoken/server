@@ -63,8 +63,8 @@ func PopTokenForTransferCode(tx *sqlx.Tx, pollingCode string, clientMetadata mod
 	return
 }
 
-// LinkPollingCodeToST links a pollingCode to a Mytoken
-func LinkPollingCodeToST(tx *sqlx.Tx, pollingCode, jwt string, mID mtid.MTID) error {
+// LinkPollingCodeToMT links a pollingCode to a Mytoken
+func LinkPollingCodeToMT(tx *sqlx.Tx, pollingCode, jwt string, mID mtid.MTID) error {
 	pc := createProxyToken(pollingCode)
 	if err := pc.SetJWT(jwt, mID); err != nil {
 		return err

@@ -53,7 +53,7 @@ func testMytoken(ctx *fiber.Ctx, req *pkg.TokenInfoRequest) (*mytoken.Mytoken, *
 		}
 	}
 
-	st, err := mytoken.ParseJWT(string(req.Mytoken))
+	mt, err := mytoken.ParseJWT(string(req.Mytoken))
 	if err != nil {
 		return nil, &model.Response{
 			Status:   fiber.StatusUnauthorized,
@@ -61,7 +61,7 @@ func testMytoken(ctx *fiber.Ctx, req *pkg.TokenInfoRequest) (*mytoken.Mytoken, *
 		}
 	}
 
-	revoked, dbErr := dbhelper.CheckTokenRevoked(st.ID)
+	revoked, dbErr := dbhelper.CheckTokenRevoked(mt.ID)
 	if dbErr != nil {
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -71,5 +71,5 @@ func testMytoken(ctx *fiber.Ctx, req *pkg.TokenInfoRequest) (*mytoken.Mytoken, *
 			Response: model2.InvalidTokenError(""),
 		}
 	}
-	return st, nil
+	return mt, nil
 }

@@ -74,6 +74,6 @@ func (c WebCapability) CapabilityLevel() string {
 	return ""
 }
 
-func (c WebCapability) IsCreateST() bool {
+func (c WebCapability) IsCreateMT() bool {
 	return c.Name == capabilities.CapabilityCreateMT.Name
 }

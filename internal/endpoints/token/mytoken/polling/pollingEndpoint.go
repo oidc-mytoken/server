@@ -62,12 +62,12 @@ func handlePollingCode(req response.PollingCodeRequest, networkData model.Client
 			Response: pkgModel.APIErrorAuthorizationPending,
 		}
 	}
-	st, err := mytoken.ParseJWT(token)
+	mt, err := mytoken.ParseJWT(token)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	log.Tracef("The JWT was parsed as '%+v'", st)
-	res, err := st.ToTokenResponse(pollingCodeStatus.ResponseType, networkData, token)
+	log.Tracef("The JWT was parsed as '%+v'", mt)
+	res, err := mt.ToTokenResponse(pollingCodeStatus.ResponseType, networkData, token)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}

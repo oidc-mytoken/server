@@ -78,19 +78,19 @@ func (r *Restriction) verifyGeoIPDisallow(ip string) bool {
 	}
 	return !utils.StringInSlice(geoip.CountryCode(ip), disallow)
 }
-func (r *Restriction) getATUsageCounts(tx *sqlx.Tx, stid mtid.MTID) (*int64, error) {
+func (r *Restriction) getATUsageCounts(tx *sqlx.Tx, myID mtid.MTID) (*int64, error) {
 	hash, err := r.hash()
 	if err != nil {
 		return nil, err
 	}
-	return mytokenrepohelper.GetTokenUsagesAT(tx, stid, string(hash))
+	return mytokenrepohelper.GetTokenUsagesAT(tx, myID, string(hash))
 }
-func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, stid mtid.MTID) bool {
+func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, myID mtid.MTID) bool {
 	log.Trace("Verifying AT usage count")
 	if r.UsagesAT == nil {
 		return true
 	}
-	usages, err := r.getATUsageCounts(tx, stid)
+	usages, err := r.getATUsageCounts(tx, myID)
 	if err != nil {
 		log.WithError(err).Error()
 		return false
@@ -98,23 +98,23 @@ func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, stid mtid.MTID) bool {
 	if usages == nil {
 		//  was not used before
 		log.WithFields(map[string]interface{}{
-			"stid": stid.String(),
+			"myID": myID.String(),
 		}).Debug("Did not found restriction in database; it was not used before")
 		return *r.UsagesAT > 0
 	}
 	log.WithFields(map[string]interface{}{
-		"stid":       stid.String(),
+		"myID":       myID.String(),
 		"used":       *usages,
 		"usageLimit": *r.UsagesAT,
 	}).Debug("Found restriction usage in db.")
 	return *usages < *r.UsagesAT
 }
-func (r *Restriction) getOtherUsageCounts(tx *sqlx.Tx, stid mtid.MTID) (*int64, error) {
+func (r *Restriction) getOtherUsageCounts(tx *sqlx.Tx, myID mtid.MTID) (*int64, error) {
 	hash, err := r.hash()
 	if err != nil {
 		return nil, err
 	}
-	return mytokenrepohelper.GetTokenUsagesOther(tx, stid, string(hash))
+	return mytokenrepohelper.GetTokenUsagesOther(tx, myID, string(hash))
 }
 func (r *Restriction) verifyOtherUsageCounts(tx *sqlx.Tx, id mtid.MTID) bool {
 	log.Trace("Verifying other usage count")
@@ -187,9 +187,9 @@ func (r Restrictions) VerifyForOther(tx *sqlx.Tx, ip string, id mtid.MTID) bool 
 }
 
 // GetValidForAT returns the subset of Restrictions that can be used to obtain an access token
-func (r Restrictions) GetValidForAT(tx *sqlx.Tx, ip string, stid mtid.MTID) (ret Restrictions) {
+func (r Restrictions) GetValidForAT(tx *sqlx.Tx, ip string, myID mtid.MTID) (ret Restrictions) {
 	for _, rr := range r {
-		if rr.verifyAT(tx, ip, stid) {
+		if rr.verifyAT(tx, ip, myID) {
 			log.Trace("Found a valid restriction")
 			ret = append(ret, rr)
 		}
@@ -198,9 +198,9 @@ func (r Restrictions) GetValidForAT(tx *sqlx.Tx, ip string, stid mtid.MTID) (ret
 }
 
 // GetValidForOther returns the subset of Restrictions that can be used for other actions than obtaining an access token
-func (r Restrictions) GetValidForOther(tx *sqlx.Tx, ip string, stid mtid.MTID) (ret Restrictions) {
+func (r Restrictions) GetValidForOther(tx *sqlx.Tx, ip string, myID mtid.MTID) (ret Restrictions) {
 	for _, rr := range r {
-		if rr.verifyOther(tx, ip, stid) {
+		if rr.verifyOther(tx, ip, myID) {
 			ret = append(ret, rr)
 		}
 	}
@@ -242,7 +242,7 @@ type TokenUsages []TokenUsage
 
 // TokenUsage holds the information about the usages of an my token
 type TokenUsage struct {
-	STID            string `db:"ST_id"`
+	MTID            string `db:"MT_id"`
 	UsagesOtherUsed uint   `db:"usages_other"`
 	UsagesATUsed    uint   `db:"usages_AT"`
 }

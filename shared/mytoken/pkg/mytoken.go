@@ -39,27 +39,27 @@ type Mytoken struct {
 	jwt                  string
 }
 
-func (st *Mytoken) verifyID() bool {
-	return st.ID.Valid()
+func (mt *Mytoken) verifyID() bool {
+	return mt.ID.Valid()
 }
 
-func (st *Mytoken) verifySubject() bool {
-	if st.Subject == "" {
+func (mt *Mytoken) verifySubject() bool {
+	if mt.Subject == "" {
 		return false
 	}
-	if st.Subject != issuerUtils.CombineSubIss(st.OIDCSubject, st.OIDCIssuer) {
+	if mt.Subject != issuerUtils.CombineSubIss(mt.OIDCSubject, mt.OIDCIssuer) {
 		return false
 	}
 	return true
 }
 
 // VerifyCapabilities verifies that this Mytoken has the required capabilities
-func (st *Mytoken) VerifyCapabilities(required ...capabilities.Capability) bool {
-	if st.Capabilities == nil || len(st.Capabilities) == 0 {
+func (mt *Mytoken) VerifyCapabilities(required ...capabilities.Capability) bool {
+	if mt.Capabilities == nil || len(mt.Capabilities) == 0 {
 		return false
 	}
 	for _, c := range required {
-		if !st.Capabilities.Has(c) {
+		if !mt.Capabilities.Has(c) {
 			return false
 		}
 	}
@@ -69,7 +69,7 @@ func (st *Mytoken) VerifyCapabilities(required ...capabilities.Capability) bool 
 // NewMytoken creates a new Mytoken
 func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc capabilities.Capabilities) *Mytoken {
 	now := unixtime.Now()
-	st := &Mytoken{
+	mt := &Mytoken{
 		ID:                   mtid.New(),
 		IssuedAt:             now,
 		NotBefore:            now,
@@ -82,23 +82,23 @@ func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc capa
 		SubtokenCapabilities: sc,
 	}
 	if len(r) > 0 {
-		st.Restrictions = r
+		mt.Restrictions = r
 		exp := r.GetExpires()
 		if exp != 0 {
-			st.ExpiresAt = exp
+			mt.ExpiresAt = exp
 		}
 		nbf := r.GetNotBefore()
 		if nbf != 0 && nbf > now {
-			st.NotBefore = nbf
+			mt.NotBefore = nbf
 		}
 	}
-	return st
+	return mt
 }
 
 // ExpiresIn returns the amount of seconds in which this token expires
-func (st *Mytoken) ExpiresIn() uint64 {
+func (mt *Mytoken) ExpiresIn() uint64 {
 	now := unixtime.Now()
-	expAt := st.ExpiresAt
+	expAt := mt.ExpiresAt
 	if expAt > 0 && expAt > now {
 		return uint64(expAt - now)
 	}
@@ -106,15 +106,15 @@ func (st *Mytoken) ExpiresIn() uint64 {
 }
 
 // Valid checks if this Mytoken is valid
-func (st *Mytoken) Valid() error {
+func (mt *Mytoken) Valid() error {
 	standardClaims := jwt.StandardClaims{
-		Audience:  st.Audience,
-		ExpiresAt: int64(st.ExpiresAt),
-		Id:        st.ID.String(),
-		IssuedAt:  int64(st.IssuedAt),
-		Issuer:    st.Issuer,
-		NotBefore: int64(st.NotBefore),
-		Subject:   st.Subject,
+		Audience:  mt.Audience,
+		ExpiresAt: int64(mt.ExpiresAt),
+		Id:        mt.ID.String(),
+		IssuedAt:  int64(mt.IssuedAt),
+		Issuer:    mt.Issuer,
+		NotBefore: int64(mt.NotBefore),
+		Subject:   mt.Subject,
 	}
 	if err := standardClaims.Valid(); err != nil {
 		return err
@@ -125,49 +125,49 @@ func (st *Mytoken) Valid() error {
 	if ok := standardClaims.VerifyAudience(config.Get().IssuerURL, true); !ok {
 		return fmt.Errorf("invalid Audience")
 	}
-	if ok := st.verifyID(); !ok {
+	if ok := mt.verifyID(); !ok {
 		return fmt.Errorf("invalid id")
 	}
-	if ok := st.verifySubject(); !ok {
+	if ok := mt.verifySubject(); !ok {
 		return fmt.Errorf("invalid subject")
 	}
 	return nil
 }
 
 // ToMytokenResponse returns a MytokenResponse for this token. It requires that jwt is set or that the jwt is passed as argument; if not passed as argument toJWT must have been called earlier on this token to set jwt. This is always the case, if the token has been stored.
-func (st *Mytoken) toMytokenResponse(jwt string) response.MytokenResponse {
-	res := st.toTokenResponse()
+func (mt *Mytoken) toMytokenResponse(jwt string) response.MytokenResponse {
+	res := mt.toTokenResponse()
 	res.Mytoken = jwt
 	res.MytokenType = model.ResponseTypeToken
 	return res
 }
 
-func (st *Mytoken) toShortMytokenResponse(jwt string) (response.MytokenResponse, error) {
-	shortToken, err := transfercoderepo.NewShortToken(jwt, st.ID)
+func (mt *Mytoken) toShortMytokenResponse(jwt string) (response.MytokenResponse, error) {
+	shortToken, err := transfercoderepo.NewShortToken(jwt, mt.ID)
 	if err != nil {
 		return response.MytokenResponse{}, err
 	}
 	if err = shortToken.Store(nil); err != nil {
 		return response.MytokenResponse{}, err
 	}
-	res := st.toTokenResponse()
+	res := mt.toTokenResponse()
 	res.Mytoken = shortToken.String()
 	res.MytokenType = model.ResponseTypeShortToken
 	return res, nil
 }
 
-func (st *Mytoken) toTokenResponse() response.MytokenResponse {
+func (mt *Mytoken) toTokenResponse() response.MytokenResponse {
 	return response.MytokenResponse{
-		ExpiresIn:            st.ExpiresIn(),
-		Restrictions:         st.Restrictions,
-		Capabilities:         st.Capabilities,
-		SubtokenCapabilities: st.SubtokenCapabilities,
+		ExpiresIn:            mt.ExpiresIn(),
+		Restrictions:         mt.Restrictions,
+		Capabilities:         mt.Capabilities,
+		SubtokenCapabilities: mt.SubtokenCapabilities,
 	}
 }
 
 // CreateTransferCode creates a transfer code for the passed mytoken id
-func CreateTransferCode(stid mtid.MTID, jwt string, newST bool, responseType model.ResponseType, clientMetaData serverModel.ClientMetaData) (string, uint64, error) {
-	transferCode, err := transfercoderepo.NewTransferCode(jwt, stid, newST, responseType)
+func CreateTransferCode(myID mtid.MTID, jwt string, newMT bool, responseType model.ResponseType, clientMetaData serverModel.ClientMetaData) (string, uint64, error) {
+	transferCode, err := transfercoderepo.NewTransferCode(jwt, myID, newMT, responseType)
 	if err != nil {
 		return "", 0, err
 	}
@@ -177,7 +177,7 @@ func CreateTransferCode(stid mtid.MTID, jwt string, newST bool, responseType mod
 		}
 		return eventService.LogEvent(tx, eventService.MTEvent{
 			Event: event.FromNumber(event.MTEventTransferCodeCreated, fmt.Sprintf("token type: %s", responseType.String())),
-			MTID:  stid,
+			MTID:  myID,
 		}, clientMetaData)
 	})
 	expiresIn := uint64(config.Get().Features.Polling.PollingCodeExpiresAfter)
@@ -185,34 +185,34 @@ func CreateTransferCode(stid mtid.MTID, jwt string, newST bool, responseType mod
 }
 
 // ToTokenResponse creates a MytokenResponse for this Mytoken according to the passed model.ResponseType
-func (st *Mytoken) ToTokenResponse(responseType model.ResponseType, networkData serverModel.ClientMetaData, jwt string) (response.MytokenResponse, error) {
+func (mt *Mytoken) ToTokenResponse(responseType model.ResponseType, networkData serverModel.ClientMetaData, jwt string) (response.MytokenResponse, error) {
 	if jwt == "" {
-		jwt = st.jwt
+		jwt = mt.jwt
 	}
 	switch responseType {
 	case model.ResponseTypeShortToken:
 		if config.Get().Features.ShortTokens.Enabled {
-			return st.toShortMytokenResponse(jwt)
+			return mt.toShortMytokenResponse(jwt)
 		}
 	case model.ResponseTypeTransferCode:
-		transferCode, expiresIn, err := CreateTransferCode(st.ID, jwt, true, model.ResponseTypeToken, networkData)
-		res := st.toTokenResponse()
+		transferCode, expiresIn, err := CreateTransferCode(mt.ID, jwt, true, model.ResponseTypeToken, networkData)
+		res := mt.toTokenResponse()
 		res.TransferCode = transferCode
 		res.MytokenType = model.ResponseTypeTransferCode
 		res.ExpiresIn = expiresIn
 		return res, err
 	}
-	return st.toMytokenResponse(jwt), nil
+	return mt.toMytokenResponse(jwt), nil
 }
 
 // ToJWT returns the Mytoken as JWT
-func (st *Mytoken) ToJWT() (string, error) {
-	if st.jwt != "" {
-		return st.jwt, nil
+func (mt *Mytoken) ToJWT() (string, error) {
+	if mt.jwt != "" {
+		return mt.jwt, nil
 	}
 	var err error
-	st.jwt, err = jwt.NewWithClaims(jwt.GetSigningMethod(config.Get().Signing.Alg), st).SignedString(jws.GetPrivateKey())
-	return st.jwt, err
+	mt.jwt, err = jwt.NewWithClaims(jwt.GetSigningMethod(config.Get().Signing.Alg), mt).SignedString(jws.GetPrivateKey())
+	return mt.jwt, err
 }
 
 // ParseJWT parses a token string into a Mytoken

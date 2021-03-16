@@ -14,10 +14,10 @@ import (
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
-func handleTokenInfoIntrospect(st *mytoken.Mytoken, clientMetadata *model.ClientMetaData) model.Response {
+func handleTokenInfoIntrospect(mt *mytoken.Mytoken, clientMetadata *model.ClientMetaData) model.Response {
 	// If we call this function it means the token is valid.
 
-	if !st.Capabilities.Has(capabilities.CapabilityTokeninfoIntrospect) {
+	if !mt.Capabilities.Has(capabilities.CapabilityTokeninfoIntrospect) {
 		return model.Response{
 			Status:   fiber.StatusForbidden,
 			Response: pkgModel.APIErrorInsufficientCapabilities,
@@ -25,14 +25,14 @@ func handleTokenInfoIntrospect(st *mytoken.Mytoken, clientMetadata *model.Client
 	}
 	var usedToken mytoken.UsedMytoken
 	if err := db.RunWithinTransaction(nil, func(tx *sqlx.Tx) error {
-		tmp, err := st.ToUsedMytoken(tx)
+		tmp, err := mt.ToUsedMytoken(tx)
 		usedToken = *tmp
 		if err != nil {
 			return err
 		}
 		return eventService.LogEvent(tx, eventService.MTEvent{
 			Event: event.FromNumber(event.MTEventTokenInfoIntrospect, ""),
-			MTID:  st.ID,
+			MTID:  mt.ID,
 		}, *clientMetadata)
 	}); err != nil {
 		return *model.ErrorToInternalServerErrorResponse(err)
