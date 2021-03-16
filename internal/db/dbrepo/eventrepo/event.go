@@ -5,14 +5,14 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model"
-	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
-	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
+	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
 
 // EventDBObject holds information needed for storing an event in the database
 type EventDBObject struct {
 	*event.Event
-	STID stid.STID
+	STID mtid.MTID
 	model.ClientMetaData
 }
 

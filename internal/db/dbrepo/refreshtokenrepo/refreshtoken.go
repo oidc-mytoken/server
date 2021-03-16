@@ -6,13 +6,13 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	helper "github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
-	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
+	helper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
+	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 
 // UpdateRefreshToken updates a refresh token in the database, all occurrences of the RT are updated.
-func UpdateRefreshToken(tx *sqlx.Tx, tokenID stid.STID, newRT, jwt string) error {
+func UpdateRefreshToken(tx *sqlx.Tx, tokenID mtid.MTID, newRT, jwt string) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		key, rtID, err := GetEncryptionKey(tx, tokenID, jwt)
 		if err != nil {
@@ -27,7 +27,7 @@ func UpdateRefreshToken(tx *sqlx.Tx, tokenID stid.STID, newRT, jwt string) error
 	})
 }
 
-func GetEncryptionKey(tx *sqlx.Tx, tokenID stid.STID, jwt string) ([]byte, uint64, error) {
+func GetEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID, jwt string) ([]byte, uint64, error) {
 	var key []byte
 	var rtID uint64
 	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
@@ -69,11 +69,11 @@ func (rt rtStruct) decrypt(jwt string) (string, error) {
 	return cryptUtils.AESDecrypt(rt.RT, key)
 }
 
-// GetRefreshToken returns the refresh token for a super token id
-func GetRefreshToken(tx *sqlx.Tx, stid stid.STID, jwt string) (string, bool, error) {
+// GetRefreshToken returns the refresh token for a mytoken id
+func GetRefreshToken(tx *sqlx.Tx, myid mtid.MTID, jwt string) (string, bool, error) {
 	var rt rtStruct
 	found, err := helper.ParseError(db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&rt, `SELECT refresh_token, encryption_key FROM MyTokens WHERE id=?`, stid)
+		return tx.Get(&rt, `SELECT refresh_token, encryption_key FROM MyTokens WHERE id=?`, myid)
 	}))
 	if !found {
 		return "", found, err
@@ -90,7 +90,7 @@ func DeleteRefreshToken(tx *sqlx.Tx, rtID uint64) error {
 	})
 }
 
-// CountRTOccurrences counts how many SuperTokens use the passed refresh token
+// CountRTOccurrences counts how many Mytokens use the passed refresh token
 func CountRTOccurrences(tx *sqlx.Tx, rtID uint64) (count int, err error) {
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		return tx.Get(&count, `SELECT COUNT(1) FROM SuperTokens WHERE rt_id=?`, rtID)
@@ -98,10 +98,10 @@ func CountRTOccurrences(tx *sqlx.Tx, rtID uint64) (count int, err error) {
 	return
 }
 
-// GetRTID returns the refresh token id for a supertoken
-func GetRTID(tx *sqlx.Tx, mytID stid.STID) (rtID uint64, err error) {
+// GetRTID returns the refresh token id for a mytoken
+func GetRTID(tx *sqlx.Tx, myID mtid.MTID) (rtID uint64, err error) {
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&rtID, `SELECT rt_ID FROM SuperTokens WHERE id=?`, mytID)
+		return tx.Get(&rtID, `SELECT rt_ID FROM SuperTokens WHERE id=?`, myID)
 	})
 	return
 }

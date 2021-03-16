@@ -17,16 +17,16 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/accesstokenrepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/transfercoderepo"
-	response "github.com/oidc-mytoken/server/internal/endpoints/token/super/pkg"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
+	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/issuer"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	pkgModel "github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/context"
-	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
-	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
+	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 	"github.com/oidc-mytoken/server/shared/utils/jwtutils"
@@ -123,7 +123,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 	}
 }
 
-// CodeExchange performs an oidc code exchange it creates the super token and stores it in the database
+// CodeExchange performs an oidc code exchange it creates the mytoken and stores it in the database
 func CodeExchange(oState *state.State, code string, networkData model.ClientMetaData) *model.Response {
 	log.Debug("Handle code exchange")
 	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(oState)
@@ -186,19 +186,19 @@ func CodeExchange(oState *state.State, code string, networkData model.ClientMeta
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	var ste *supertokenrepo.SuperTokenEntry
+	var ste *mytokenrepo.MytokenEntry
 	if err = db.Transact(func(tx *sqlx.Tx) error {
-		ste, err = createSuperTokenEntry(tx, authInfo, token, oidcSub, networkData)
+		ste, err = createMytokenEntry(tx, authInfo, token, oidcSub, networkData)
 		if err != nil {
 			return err
 		}
 		at := accesstokenrepo.AccessToken{
-			Token:      token.AccessToken,
-			IP:         networkData.IP,
-			Comment:    "Initial Access Token from authorization code flow",
-			SuperToken: ste.Token,
-			Scopes:     scopes,
-			Audiences:  audiences,
+			Token:     token.AccessToken,
+			IP:        networkData.IP,
+			Comment:   "Initial Access Token from authorization code flow",
+			Mytoken:   ste.Token,
+			Scopes:    scopes,
+			Audiences: audiences,
 		}
 		if err = at.Store(tx); err != nil {
 			return err
@@ -227,8 +227,8 @@ func CodeExchange(oState *state.State, code string, networkData model.ClientMeta
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	cookieName := "mytoken-supertoken"
-	cookieValue := res.SuperToken
+	cookieName := "mytoken"
+	cookieValue := res.Mytoken
 	cookieAge := 3600 * 24 //TODO from config, same as in js
 	if stateInf.ResponseType == pkgModel.ResponseTypeTransferCode {
 		cookieName = "mytoken-transfercode"
@@ -250,9 +250,9 @@ func CodeExchange(oState *state.State, code string, networkData model.ClientMeta
 	}
 }
 
-func createSuperTokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut, token *oauth2.Token, oidcSub string, networkData model.ClientMetaData) (*supertokenrepo.SuperTokenEntry, error) {
-	ste := supertokenrepo.NewSuperTokenEntry(
-		supertoken.NewSuperToken(
+func createMytokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut, token *oauth2.Token, oidcSub string, networkData model.ClientMetaData) (*mytokenrepo.MytokenEntry, error) {
+	ste := mytokenrepo.NewMytokenEntry(
+		mytoken.NewMytoken(
 			oidcSub,
 			authFlowInfo.Issuer,
 			authFlowInfo.Restrictions,

@@ -1,7 +1,7 @@
 
 const configElements = [
     "access_token_endpoint",
-    "super_token_endpoint",
+    "mytoken_endpoint",
     "usersettings_endpoint",
     "revocation_endpoint",
     "tokeninfo_endpoint"

@@ -1,7 +1,7 @@
 package pkg
 
 import (
-	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
+	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
@@ -24,9 +24,15 @@ const (
 	intClassDanger
 )
 
-var normalCapabilities = []string{"AT", "create_super_token", "tokeninfo_introspect", "tokeninfo_history", "tokeninfo_tree"}
-var warningCapabilities = []string{"list_super_tokens"}
-var dangerCapabilities = []string{"settings"}
+var normalCapabilities = []string{
+	capabilities.CapabilityAT.Name,
+	capabilities.CapabilityCreateMT.Name,
+	capabilities.CapabilityTokeninfoIntrospect.Name,
+	capabilities.CapabilityTokeninfoHistory.Name,
+	capabilities.CapabilityTokeninfoTree.Name,
+}
+var warningCapabilities = []string{capabilities.CapabilityListMT.Name}
+var dangerCapabilities = []string{capabilities.CapabilitySettings.Name}
 
 func (c WebCapability) getIntClass() int {
 	if c.intClass != nil {
@@ -69,5 +75,5 @@ func (c WebCapability) CapabilityLevel() string {
 }
 
 func (c WebCapability) IsCreateST() bool {
-	return c.Name == capabilities.CapabilityCreateST.Name
+	return c.Name == capabilities.CapabilityCreateMT.Name
 }

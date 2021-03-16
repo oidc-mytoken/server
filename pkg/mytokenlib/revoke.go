@@ -6,9 +6,9 @@ import (
 	"github.com/oidc-mytoken/server/shared/httpClient"
 )
 
-func (my *Mytoken) Revoke(superToken, oidcIssuer string, recursive bool) error {
+func (my *MytokenProvider) Revoke(mytoken, oidcIssuer string, recursive bool) error {
 	req := pkg.RevocationRequest{
-		Token:      superToken,
+		Token:      mytoken,
 		Recursive:  recursive,
 		OIDCIssuer: oidcIssuer,
 	}

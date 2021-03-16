@@ -8,13 +8,13 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	pkgModel "github.com/oidc-mytoken/server/pkg/model"
-	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
-	eventService "github.com/oidc-mytoken/server/shared/supertoken/event"
-	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
-	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
+	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
+	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
+	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
-func handleTokenInfoIntrospect(st *supertoken.SuperToken, clientMetadata *model.ClientMetaData) model.Response {
+func handleTokenInfoIntrospect(st *mytoken.Mytoken, clientMetadata *model.ClientMetaData) model.Response {
 	// If we call this function it means the token is valid.
 
 	if !st.Capabilities.Has(capabilities.CapabilityTokeninfoIntrospect) {
@@ -23,15 +23,15 @@ func handleTokenInfoIntrospect(st *supertoken.SuperToken, clientMetadata *model.
 			Response: pkgModel.APIErrorInsufficientCapabilities,
 		}
 	}
-	var usedToken supertoken.UsedSuperToken
+	var usedToken mytoken.UsedMytoken
 	if err := db.RunWithinTransaction(nil, func(tx *sqlx.Tx) error {
-		tmp, err := st.ToUsedSuperToken(tx)
+		tmp, err := st.ToUsedMytoken(tx)
 		usedToken = *tmp
 		if err != nil {
 			return err
 		}
 		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.STEventTokenInfoIntrospect, ""),
+			Event: event.FromNumber(event.MTEventTokenInfoIntrospect, ""),
 			MTID:  st.ID,
 		}, *clientMetadata)
 	}); err != nil {

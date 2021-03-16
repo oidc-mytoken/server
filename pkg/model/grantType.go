@@ -11,11 +11,11 @@ import (
 type GrantType int
 
 // AllGrantTypes holds all defined GrantType strings
-var AllGrantTypes = [...]string{"super_token", "oidc_flow", "polling_code", "access_token", "private_key_jwt", "transfer_code"}
+var AllGrantTypes = [...]string{"mytoken", "oidc_flow", "polling_code", "access_token", "private_key_jwt", "transfer_code"}
 
 // GrantTypes
 const (
-	GrantTypeSuperToken GrantType = iota
+	GrantTypeMytoken GrantType = iota
 	GrantTypeOIDCFlow
 	GrantTypePollingCode
 	GrantTypeAccessToken

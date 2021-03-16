@@ -182,7 +182,7 @@ function cancel() {
     });
 }
 
-$('#cp-create_super_token').click(function() {
+$('#cp-create_mytoken').click(function() {
     let enabled = $(this).prop("checked");
     $('.subtoken-capability-check').prop("checked", enabled);
     $('.subtoken-capability-check').prop("disabled", !enabled);

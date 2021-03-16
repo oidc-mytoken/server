@@ -11,14 +11,14 @@ import (
 type TokeninfoAction int
 
 // AllTokeninfoActions holds all defined TokenInfo strings
-var AllTokeninfoActions = [...]string{"introspect", "event_history", "subtoken_tree", "list_super_tokens"}
+var AllTokeninfoActions = [...]string{"introspect", "event_history", "subtoken_tree", "list_mytokens"}
 
 // TokeninfoActions
 const (
 	TokeninfoActionIntrospect TokeninfoAction = iota
 	TokeninfoActionEventHistory
 	TokeninfoActionSubtokenTree
-	TokeninfoActionListSuperTokens
+	TokeninfoActionListMytokens
 	maxTokeninfoAction
 )
 

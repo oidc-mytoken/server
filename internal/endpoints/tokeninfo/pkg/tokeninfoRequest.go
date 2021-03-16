@@ -2,10 +2,10 @@ package pkg
 
 import (
 	"github.com/oidc-mytoken/server/pkg/model"
-	"github.com/oidc-mytoken/server/shared/supertoken/token"
+	"github.com/oidc-mytoken/server/shared/mytoken/token"
 )
 
 type TokenInfoRequest struct {
-	Action     model.TokeninfoAction `json:"action"`
-	SuperToken token.Token           `json:"super_token"`
+	Action  model.TokeninfoAction `json:"action"`
+	Mytoken token.Token           `json:"mytoken"`
 }

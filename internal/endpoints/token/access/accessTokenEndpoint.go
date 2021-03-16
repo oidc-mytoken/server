@@ -11,19 +11,19 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/accesstokenrepo"
+	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
-	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
 	request "github.com/oidc-mytoken/server/internal/endpoints/token/access/pkg"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/refresh"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
 	"github.com/oidc-mytoken/server/pkg/model"
-	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
-	eventService "github.com/oidc-mytoken/server/shared/supertoken/event"
-	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
-	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
-	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/supertoken/token"
+	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
+	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
+	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
+	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/shared/mytoken/token"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/jwtutils"
 )
@@ -37,7 +37,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	}
 	log.Trace("Parsed access token request")
 
-	if req.GrantType != model.GrantTypeSuperToken {
+	if req.GrantType != model.GrantTypeMytoken {
 		res := serverModel.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.APIErrorUnsupportedGrantType,
@@ -45,9 +45,9 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		return res.Send(ctx)
 	}
 	log.Trace("Checked grant type")
-	if len(req.SuperToken) == 0 {
+	if len(req.Mytoken) == 0 {
 		var err error
-		req.SuperToken, err = token.GetLongSuperToken(ctx.Cookies("mytoken-supertoken"))
+		req.Mytoken, err = token.GetLongMytoken(ctx.Cookies("mytoken"))
 		if err != nil {
 			return serverModel.Response{
 				Status:   fiber.StatusUnauthorized,
@@ -56,14 +56,14 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		}
 	}
 
-	st, err := supertoken.ParseJWT(string(req.SuperToken))
+	st, err := mytoken.ParseJWT(string(req.Mytoken))
 	if err != nil {
 		return (&serverModel.Response{
 			Status:   fiber.StatusUnauthorized,
 			Response: model.InvalidTokenError(err.Error()),
 		}).Send(ctx)
 	}
-	log.Trace("Parsed super token")
+	log.Trace("Parsed mytoken")
 
 	revoked, dbErr := dbhelper.CheckTokenRevoked(st.ID)
 	if dbErr != nil {
@@ -83,7 +83,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 			Response: model.APIErrorUsageRestricted,
 		}).Send(ctx)
 	}
-	log.Trace("Checked super token restrictions")
+	log.Trace("Checked mytoken restrictions")
 	if ok := st.VerifyCapabilities(capabilities.CapabilityAT); !ok {
 		res := serverModel.Response{
 			Status:   fiber.StatusForbidden,
@@ -91,7 +91,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		}
 		return res.Send(ctx)
 	}
-	log.Trace("Checked super token capabilities")
+	log.Trace("Checked mytoken capabilities")
 	if req.Issuer == "" {
 		req.Issuer = st.OIDCIssuer
 	} else if req.Issuer != st.OIDCIssuer {
@@ -106,7 +106,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	return handleAccessTokenRefresh(st, req, *ctxUtils.ClientMetaData(ctx)).Send(ctx)
 }
 
-func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessTokenRequest, networkData serverModel.ClientMetaData) *serverModel.Response {
+func handleAccessTokenRefresh(st *mytoken.Mytoken, req request.AccessTokenRequest, networkData serverModel.ClientMetaData) *serverModel.Response {
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
 	if !ok {
 		return &serverModel.Response{
@@ -138,7 +138,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 			auds = strings.Join(usedRestriction.Audiences, " ")
 		}
 	}
-	rt, rtFound, dbErr := refreshtokenrepo.GetRefreshToken(nil, st.ID, string(req.SuperToken))
+	rt, rtFound, dbErr := refreshtokenrepo.GetRefreshToken(nil, st.ID, string(req.Mytoken))
 	if dbErr != nil {
 		return serverModel.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -149,7 +149,7 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 		}
 	}
 
-	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, st.ID, string(req.SuperToken), rt, scopes, auds)
+	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, st.ID, string(req.Mytoken), rt, scopes, auds)
 	if err != nil {
 		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}
@@ -165,19 +165,19 @@ func handleAccessTokenRefresh(st *supertoken.SuperToken, req request.AccessToken
 	}
 	retAudiences, _ := jwtutils.GetAudiencesFromJWT(oidcRes.AccessToken)
 	at := accesstokenrepo.AccessToken{
-		Token:      oidcRes.AccessToken,
-		IP:         networkData.IP,
-		Comment:    req.Comment,
-		SuperToken: st,
-		Scopes:     utils.SplitIgnoreEmpty(retScopes, " "),
-		Audiences:  retAudiences,
+		Token:     oidcRes.AccessToken,
+		IP:        networkData.IP,
+		Comment:   req.Comment,
+		Mytoken:   st,
+		Scopes:    utils.SplitIgnoreEmpty(retScopes, " "),
+		Audiences: retAudiences,
 	}
 	if err = db.Transact(func(tx *sqlx.Tx) error {
 		if err = at.Store(tx); err != nil {
 			return err
 		}
 		if err = eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.STEventATCreated, "Used grant_type super_token"),
+			Event: event.FromNumber(event.MTEventATCreated, "Used grant_type mytoken"),
 			MTID:  st.ID,
 		}, networkData); err != nil {
 			return err

@@ -40,15 +40,15 @@ func Init() {
 	mytokenConfig = &pkg.MytokenConfiguration{
 		Issuer:                                 config.Get().IssuerURL,
 		AccessTokenEndpoint:                    utils.CombineURLPath(config.Get().IssuerURL, apiPaths.AccessTokenEndpoint),
-		SuperTokenEndpoint:                     utils.CombineURLPath(config.Get().IssuerURL, apiPaths.SuperTokenEndpoint),
+		MytokenEndpoint:                        utils.CombineURLPath(config.Get().IssuerURL, apiPaths.MytokenEndpoint),
 		TokeninfoEndpoint:                      utils.CombineURLPath(config.Get().IssuerURL, apiPaths.TokenInfoEndpoint),
 		UserSettingsEndpoint:                   utils.CombineURLPath(config.Get().IssuerURL, apiPaths.UserSettingEndpoint),
 		JWKSURI:                                utils.CombineURLPath(config.Get().IssuerURL, otherPaths.JWKSEndpoint),
 		ProvidersSupported:                     getProvidersFromConfig(),
 		TokenSigningAlgValue:                   config.Get().Signing.Alg,
-		AccessTokenEndpointGrantTypesSupported: []pkgModel.GrantType{pkgModel.GrantTypeSuperToken},
-		SuperTokenEndpointGrantTypesSupported:  []pkgModel.GrantType{pkgModel.GrantTypeOIDCFlow, pkgModel.GrantTypeSuperToken},
-		SuperTokenEndpointOIDCFlowsSupported:   config.Get().Features.EnabledOIDCFlows,
+		AccessTokenEndpointGrantTypesSupported: []pkgModel.GrantType{pkgModel.GrantTypeMytoken},
+		MytokenEndpointGrantTypesSupported:     []pkgModel.GrantType{pkgModel.GrantTypeOIDCFlow, pkgModel.GrantTypeMytoken},
+		MytokenEndpointOIDCFlowsSupported:      config.Get().Features.EnabledOIDCFlows,
 		ResponseTypesSupported:                 []pkgModel.ResponseType{pkgModel.ResponseTypeToken},
 		ServiceDocumentation:                   config.Get().ServiceDocumentation,
 		Version:                                version.VERSION(),
@@ -61,17 +61,17 @@ func Init() {
 	}
 	if config.Get().Features.TransferCodes.Enabled {
 		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(config.Get().IssuerURL, apiPaths.TokenTransferEndpoint)
-		pkgModel.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+		pkgModel.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 		pkgModel.ResponseTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
 	}
 	if config.Get().Features.Polling.Enabled {
-		pkgModel.GrantTypePollingCode.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+		pkgModel.GrantTypePollingCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 	}
 	if config.Get().Features.AccessTokenGrant.Enabled {
-		pkgModel.GrantTypeAccessToken.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+		pkgModel.GrantTypeAccessToken.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 	}
 	if config.Get().Features.SignedJWTGrant.Enabled {
-		pkgModel.GrantTypePrivateKeyJWT.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+		pkgModel.GrantTypePrivateKeyJWT.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 	}
 	if !config.Get().Features.TokenInfo.Enabled {
 		mytokenConfig.TokeninfoEndpoint = ""
@@ -86,7 +86,7 @@ func Init() {
 			pkgModel.TokeninfoActionSubtokenTree.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
 		}
 		if config.Get().Features.TokenInfo.List.Enabled {
-			pkgModel.TokeninfoActionListSuperTokens.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
+			pkgModel.TokeninfoActionListMytokens.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
 		}
 	}
 }

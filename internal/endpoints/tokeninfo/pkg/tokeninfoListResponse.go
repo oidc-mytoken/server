@@ -1,13 +1,13 @@
 package pkg
 
 import (
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/tree"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/tree"
 )
 
 type TokeninfoListResponse struct {
-	Tokens []tree.SuperTokenEntryTree `json:"super_tokens"`
+	Tokens []tree.MytokenEntryTree `json:"mytokens"`
 }
 
-func NewTokeninfoListResponse(l []tree.SuperTokenEntryTree) TokeninfoListResponse {
+func NewTokeninfoListResponse(l []tree.MytokenEntryTree) TokeninfoListResponse {
 	return TokeninfoListResponse{Tokens: l}
 }

@@ -5,17 +5,17 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model"
-	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
-	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
+	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 
 // AccessToken holds database information about an access token
 type AccessToken struct {
-	Token      string
-	IP         string
-	Comment    string
-	SuperToken *supertoken.SuperToken
+	Token   string
+	IP      string
+	Comment string
+	Mytoken *mytoken.Mytoken
 
 	Scopes    []string
 	Audiences []string
@@ -25,11 +25,11 @@ type accessToken struct {
 	Token   string
 	IP      string `db:"ip_created"`
 	Comment db.NullString
-	STID    stid.STID `db:"ST_id"`
+	STID    mtid.MTID `db:"ST_id"`
 }
 
 func (t *AccessToken) toDBObject() (*accessToken, error) {
-	stJWT, err := t.SuperToken.ToJWT()
+	stJWT, err := t.Mytoken.ToJWT()
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (t *AccessToken) toDBObject() (*accessToken, error) {
 		Token:   token,
 		IP:      t.IP,
 		Comment: db.NewNullString(t.Comment),
-		STID:    t.SuperToken.ID,
+		STID:    t.Mytoken.ID,
 	}, nil
 }
 

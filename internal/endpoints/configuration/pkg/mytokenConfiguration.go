@@ -6,7 +6,7 @@ import "github.com/oidc-mytoken/server/pkg/model"
 type MytokenConfiguration struct {
 	Issuer                                 string                    `json:"issuer"`
 	AccessTokenEndpoint                    string                    `json:"access_token_endpoint"`
-	SuperTokenEndpoint                     string                    `json:"super_token_endpoint"`
+	MytokenEndpoint                        string                    `json:"mytoken_endpoint"`
 	TokeninfoEndpoint                      string                    `json:"tokeninfo_endpoint,omitempty"`
 	RevocationEndpoint                     string                    `json:"revocation_endpoint,omitempty"`
 	UserSettingsEndpoint                   string                    `json:"usersettings_endpoint"`
@@ -16,8 +16,8 @@ type MytokenConfiguration struct {
 	TokenSigningAlgValue                   string                    `json:"token_signing_alg_value"`
 	TokenInfoEndpointActionsSupported      []model.TokeninfoAction   `json:"tokeninfo_endpoint_actions_supported,omitempty"`
 	AccessTokenEndpointGrantTypesSupported []model.GrantType         `json:"access_token_endpoint_grant_types_supported"`
-	SuperTokenEndpointGrantTypesSupported  []model.GrantType         `json:"super_token_endpoint_grant_types_supported"`
-	SuperTokenEndpointOIDCFlowsSupported   []model.OIDCFlow          `json:"super_token_endpoint_oidc_flow_supported"`
+	MytokenEndpointGrantTypesSupported     []model.GrantType         `json:"mytoken_endpoint_grant_types_supported"`
+	MytokenEndpointOIDCFlowsSupported      []model.OIDCFlow          `json:"mytoken_endpoint_oidc_flow_supported"`
 	ResponseTypesSupported                 []model.ResponseType      `json:"response_types_supported"`
 	ServiceDocumentation                   string                    `json:"service_documentation,omitempty"`
 	Version                                string                    `json:"version,omitempty"`

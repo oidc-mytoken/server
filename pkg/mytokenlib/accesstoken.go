@@ -6,17 +6,17 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/token/access/pkg"
 	"github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/httpClient"
-	"github.com/oidc-mytoken/server/shared/supertoken/token"
+	"github.com/oidc-mytoken/server/shared/mytoken/token"
 )
 
-func (my *Mytoken) GetAccessToken(superToken, oidcIssuer string, scopes, audiences []string, comment string) (string, error) {
+func (my *MytokenProvider) GetAccessToken(mytoken, oidcIssuer string, scopes, audiences []string, comment string) (string, error) {
 	req := pkg.AccessTokenRequest{
-		Issuer:     oidcIssuer,
-		GrantType:  model.GrantTypeSuperToken,
-		SuperToken: token.Token(superToken),
-		Scope:      strings.Join(scopes, " "),
-		Audience:   strings.Join(audiences, " "),
-		Comment:    comment,
+		Issuer:    oidcIssuer,
+		GrantType: model.GrantTypeMytoken,
+		Mytoken:   token.Token(mytoken),
+		Scope:     strings.Join(scopes, " "),
+		Audience:  strings.Join(audiences, " "),
+		Comment:   comment,
 	}
 	resp, err := httpClient.Do().R().SetBody(req).SetResult(&pkg.AccessTokenResponse{}).SetError(&model.APIError{}).Post(my.AccessTokenEndpoint)
 	if err != nil {

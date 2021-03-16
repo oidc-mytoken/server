@@ -114,7 +114,7 @@ type tokeninfoConfig struct {
 	Introspect onlyEnable `yaml:"introspect"`
 	History    onlyEnable `yaml:"event_history"`
 	Tree       onlyEnable `yaml:"subtoken_tree"`
-	List       onlyEnable `yaml:"list_super_tokens"`
+	List       onlyEnable `yaml:"list_mytokens"`
 }
 
 type shortTokenConfig struct {

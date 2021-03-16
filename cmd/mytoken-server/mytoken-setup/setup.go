@@ -21,7 +21,7 @@ import (
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/internal/utils/zipdownload"
 	model2 "github.com/oidc-mytoken/server/pkg/model"
-	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
+	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 )
 

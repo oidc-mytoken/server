@@ -9,19 +9,19 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcReqRes"
 	"github.com/oidc-mytoken/server/shared/httpClient"
-	"github.com/oidc-mytoken/server/shared/supertoken/pkg/stid"
+	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
 
 // UpdateChangedRT is a function that should update a refresh token, it takes the old value as well as the new one
-type UpdateChangedRT func(tokenID stid.STID, newRT, superToken string) error
+type UpdateChangedRT func(tokenID mtid.MTID, newRT, mytoken string) error
 
 // Refresh uses an refresh token to obtain a new access token; if the refresh token changes, this is ignored
-func Refresh(provider *config.ProviderConf, tokenID stid.STID, superToken, rt, scopes, audiences string) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
-	return RefreshFlowAndUpdate(provider, tokenID, superToken, rt, scopes, audiences, nil)
+func Refresh(provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes, audiences string) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
+	return RefreshFlowAndUpdate(provider, tokenID, mytoken, rt, scopes, audiences, nil)
 }
 
 // RefreshFlowAndUpdate uses an refresh token to obtain a new access token; if the refresh token changes, the UpdateChangedRT function is used to update the refresh token
-func RefreshFlowAndUpdate(provider *config.ProviderConf, tokenID stid.STID, superToken, rt, scopes, audiences string, updateFnc UpdateChangedRT) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
+func RefreshFlowAndUpdate(provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes, audiences string, updateFnc UpdateChangedRT) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
 	req := oidcReqRes.NewRefreshRequest(rt, provider)
 	req.Scopes = scopes
 	req.Audiences = audiences
@@ -38,7 +38,7 @@ func RefreshFlowAndUpdate(provider *config.ProviderConf, tokenID stid.STID, supe
 		return nil, nil, fmt.Errorf("could not unmarshal oidc response")
 	}
 	if res.RefreshToken != "" && res.RefreshToken != rt && updateFnc != nil {
-		if err = updateFnc(tokenID, res.RefreshToken, superToken); err != nil {
+		if err = updateFnc(tokenID, res.RefreshToken, mytoken); err != nil {
 			log.WithError(err).Error()
 			return res, nil, err
 		}
@@ -47,10 +47,10 @@ func RefreshFlowAndUpdate(provider *config.ProviderConf, tokenID stid.STID, supe
 }
 
 // RefreshFlowAndUpdateDB uses an refresh token to obtain a new access token; if the refresh token changes, it is updated in the database
-func RefreshFlowAndUpdateDB(provider *config.ProviderConf, tokenID stid.STID, superToken, rt, scopes, audiences string) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
-	return RefreshFlowAndUpdate(provider, tokenID, superToken, rt, scopes, audiences, updateChangedRTInDB)
+func RefreshFlowAndUpdateDB(provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes, audiences string) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
+	return RefreshFlowAndUpdate(provider, tokenID, mytoken, rt, scopes, audiences, updateChangedRTInDB)
 }
 
-func updateChangedRTInDB(tokenID stid.STID, newRT, superToken string) error {
-	return refreshtokenrepo.UpdateRefreshToken(nil, tokenID, newRT, superToken)
+func updateChangedRTInDB(tokenID mtid.MTID, newRT, mytoken string) error {
+	return refreshtokenrepo.UpdateRefreshToken(nil, tokenID, newRT, mytoken)
 }

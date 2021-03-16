@@ -11,13 +11,13 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/transfercoderepo"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	request "github.com/oidc-mytoken/server/internal/endpoints/revocation/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	pkgModel "github.com/oidc-mytoken/server/pkg/model"
-	"github.com/oidc-mytoken/server/shared/supertoken"
-	supertokenPkg "github.com/oidc-mytoken/server/shared/supertoken/pkg"
-	"github.com/oidc-mytoken/server/shared/supertoken/token"
+	"github.com/oidc-mytoken/server/shared/mytoken"
+	mytokenPkg "github.com/oidc-mytoken/server/shared/mytoken/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/token"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
@@ -28,10 +28,10 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	log.Trace("Parsed super token request")
+	log.Trace("Parsed mytoken request")
 	clearCookie := false
 	if req.Token == "" {
-		req.Token = ctx.Cookies("mytoken-supertoken")
+		req.Token = ctx.Cookies("mytoken")
 		clearCookie = true
 	}
 	errRes := revokeAnyToken(nil, req.Token, req.OIDCIssuer, req.Recursive)
@@ -42,7 +42,7 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 		return model.Response{
 			Status: fiber.StatusNoContent,
 			Cookies: []*fiber.Cookie{{
-				Name:     "mytoken-supertoken",
+				Name:     "mytoken",
 				Value:    "",
 				Path:     "/api",
 				Expires:  time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -56,8 +56,8 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 }
 
 func revokeAnyToken(tx *sqlx.Tx, token, issuer string, recursive bool) (errRes *model.Response) {
-	if utils.IsJWT(token) { // normal SuperToken
-		return revokeSuperToken(tx, token, issuer, recursive)
+	if utils.IsJWT(token) { // normal Mytoken
+		return revokeMytoken(tx, token, issuer, recursive)
 	} else if len(token) == config.Get().Features.Polling.Len { // Transfer Code
 		return revokeTransferCode(tx, token, issuer)
 	} else { // Short Token
@@ -77,12 +77,12 @@ func revokeAnyToken(tx *sqlx.Tx, token, issuer string, recursive bool) (errRes *
 		if !valid {
 			return nil
 		}
-		return revokeSuperToken(tx, token, issuer, recursive)
+		return revokeMytoken(tx, token, issuer, recursive)
 	}
 }
 
-func revokeSuperToken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *model.Response) {
-	st, err := supertokenPkg.ParseJWT(jwt)
+func revokeMytoken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *model.Response) {
+	st, err := mytokenPkg.ParseJWT(jwt)
 	if err != nil {
 		return nil
 	}
@@ -92,7 +92,7 @@ func revokeSuperToken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *
 			Response: pkgModel.BadRequestError("token not for specified issuer"),
 		}
 	}
-	return supertoken.RevokeSuperToken(tx, st.ID, token.Token(jwt), recursive, st.OIDCIssuer)
+	return mytoken.RevokeMytoken(tx, st.ID, token.Token(jwt), recursive, st.OIDCIssuer)
 }
 
 func revokeTransferCode(tx *sqlx.Tx, token, issuer string) (errRes *model.Response) {

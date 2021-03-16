@@ -1,8 +1,8 @@
 package pkg
 
 import (
-	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
-	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
+	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
+	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 )
 
 // ConsentPostRequest holds the post request for confirming consent

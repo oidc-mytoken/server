@@ -13,21 +13,21 @@ $('#login-form').on('submit', function(e){
         }
     ]
     data['capabilities'] = [
-        "create_super_token",
+        "create_mytoken",
         "tokeninfo_introspect",
         "tokeninfo_history",
         "tokeninfo_tree"
     ]
     data['subtoken_capabilities'] = [
         "AT",
-        "settings",
-        "list_super_tokens"
+        // "settings",
+        "list_mytokens"
     ]
     data['name'] = "mytoken-web";
     data = JSON.stringify(data);
     $.ajax({
         type: "POST",
-        url: storageGet("super_token_endpoint"),
+        url: storageGet("mytoken_endpoint"),
         data: data,
         success: function(res){
             window.location.href = res['authorization_url'];

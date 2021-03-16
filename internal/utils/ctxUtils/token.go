@@ -5,34 +5,34 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/oidc-mytoken/server/internal/endpoints/token/super/pkg"
-	"github.com/oidc-mytoken/server/shared/supertoken/token"
+	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/token"
 )
 
-// GetSuperTokenStr checks a fiber.Ctx for a super token and returns the token string as passed to the request
-func GetSuperTokenStr(ctx *fiber.Ctx) string {
+// GetMytokenStr checks a fiber.Ctx for a mytoken and returns the token string as passed to the request
+func GetMytokenStr(ctx *fiber.Ctx) string {
 	req := pkg.CreateTransferCodeRequest{}
 	if err := json.Unmarshal(ctx.Body(), &req); err == nil {
-		if req.SuperToken != "" {
-			return req.SuperToken
+		if req.Mytoken != "" {
+			return req.Mytoken
 		}
 	}
 	if tok := GetAuthHeaderToken(ctx); tok != "" {
 		return tok
 	}
-	if tok := ctx.Cookies("mytoken-supertoken"); tok != "" {
+	if tok := ctx.Cookies("mytoken"); tok != "" {
 		return tok
 	}
 	return ""
 }
 
-// GetSuperToken checks a fiber.Ctx for a super token and returns a token object
-func GetSuperToken(ctx *fiber.Ctx) *token.Token {
-	tok := GetSuperTokenStr(ctx)
+// GetMytoken checks a fiber.Ctx for a mytoken and returns a token object
+func GetMytoken(ctx *fiber.Ctx) *token.Token {
+	tok := GetMytokenStr(ctx)
 	if tok == "" {
 		return nil
 	}
-	t, err := token.GetLongSuperToken(tok)
+	t, err := token.GetLongMytoken(tok)
 	if err != nil {
 		return nil
 	}

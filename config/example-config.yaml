@@ -74,28 +74,28 @@ features:
   token_revocation:
     enabled: true
 
-  # Endpoint to obtain different information about super tokens issued by this instance.
+  # Endpoint to obtain different information about mytokens issued by this instance.
   tokeninfo:
-    # Basic super token introspection (token-content useful when using short super tokens). Also gives information about validity and how often the token was used before.
+    # Basic mytoken introspection (token-content useful when using short mytokens). Also gives information about validity and how often the token was used before.
     # Must be enabled for usage with the web interface.
     introspect:
       enabled: true
-    # If enabled allows to query the tokeninfo endpoint to obtain the history of events for a given super token
+    # If enabled allows to query the tokeninfo endpoint to obtain the history of events for a given mytoken
     event_history:
       enabled: true
-    # If enabled allows to query the tokeninfo endpoint for a list (tree) of all subtokens for a given super token
+    # If enabled allows to query the tokeninfo endpoint for a list (tree) of all subtokens for a given mytoken
     subtoken_tree:
       enabled: true
-    # If enabled allows a user to query the tokeninfo endpoint for a list of all its super tokens (the super token itself won't be returned)
-    list_super_tokens:
+    # If enabled allows a user to query the tokeninfo endpoint for a list of all its mytokens (the mytoken itself won't be returned)
+    list_mytokens:
       enabled: true
 
-  # Support for short super tokens
+  # Support for short mytokens
   short_tokens:
     enabled: true
     len: 64 # Default 64, min 32
 
-  # Support for transfer codes for super tokens; transfer codes have the same len as polling codes and expire after the same time
+  # Support for transfer codes for mytokens; transfer codes have the same len as polling codes and expire after the same time
   transfer_codes:
     enabled: true
 

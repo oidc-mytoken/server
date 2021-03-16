@@ -12,7 +12,7 @@ $('#get-at').on('click', function(e){
     e.preventDefault();
     getST(
         function (res) {
-           const superToken = res['super_token']
+           const mToken = res['mytoken']
             getAT(
                 function(res) {
                     $('#at-msg').text(res['access_token']);
@@ -24,7 +24,7 @@ $('#get-at').on('click', function(e){
                     $('#at-msg').addClass('text-danger');
                     $('#at-copy').removeClass('d-none');
                 },
-                superToken);
+                mToken);
         },
         function () {
             $('#at-msg').text(getErrorMessage(errRes));
@@ -35,13 +35,13 @@ $('#get-at').on('click', function(e){
     return false;
 });
 
-function getAT(okCallback, errCallback, superToken) {
+function getAT(okCallback, errCallback, mToken) {
     let data = {
-        "grant_type": "super_token",
+        "grant_type": "mytoken",
         "comment": "from web interface"
     };
-    if (superToken!=undefined) {
-        data["super_token"]=superToken
+    if (mToken!=undefined) {
+        data["mytoken"]=mToken
     }
 
     data = JSON.stringify(data);
@@ -59,7 +59,7 @@ function getAT(okCallback, errCallback, superToken) {
 function getST(okCallback, errCallback, capability="AT") {
     let data = {
         "name":"mytoken-web ST for "+capability,
-        "grant_type": "super_token",
+        "grant_type": "mytoken",
         "capabilities": [capability],
         "restrictions": [
             {
@@ -73,7 +73,7 @@ function getST(okCallback, errCallback, capability="AT") {
     data = JSON.stringify(data);
     $.ajax({
         type: "POST",
-        url: storageGet('super_token_endpoint'),
+        url: storageGet('mytoken_endpoint'),
         data: data,
         success: okCallback,
         error: errCallback,

@@ -1,10 +1,10 @@
 package pkg
 
 import (
-	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
+	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
 type TokeninfoIntrospectResponse struct {
-	Valid bool                      `json:"valid"`
-	Token supertoken.UsedSuperToken `json:"token"`
+	Valid bool                `json:"valid"`
+	Token mytoken.UsedMytoken `json:"token"`
 }

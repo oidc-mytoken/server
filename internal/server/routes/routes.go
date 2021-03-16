@@ -13,7 +13,7 @@ func init() {
 	routes = &paths{
 		api: map[int]APIPaths{
 			0: {
-				SuperTokenEndpoint:    utils.CombineURLPath(apiPath.V0, "/token/super"),
+				MytokenEndpoint:       utils.CombineURLPath(apiPath.V0, "/token/my"),
 				AccessTokenEndpoint:   utils.CombineURLPath(apiPath.V0, "/token/access"),
 				TokenInfoEndpoint:     utils.CombineURLPath(apiPath.V0, "/tokeninfo"),
 				RevocationEndpoint:    utils.CombineURLPath(apiPath.V0, "/token/revoke"),
@@ -45,7 +45,7 @@ type GeneralPaths struct {
 
 // APIPaths holds all api route paths
 type APIPaths struct {
-	SuperTokenEndpoint    string
+	MytokenEndpoint       string
 	AccessTokenEndpoint   string
 	TokenInfoEndpoint     string
 	RevocationEndpoint    string

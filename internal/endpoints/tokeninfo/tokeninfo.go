@@ -6,12 +6,12 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/supertokenrepohelper"
+	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
 	model2 "github.com/oidc-mytoken/server/pkg/model"
-	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
+	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
 func HandleTokenInfo(ctx *fiber.Ctx) error {
@@ -19,7 +19,7 @@ func HandleTokenInfo(ctx *fiber.Ctx) error {
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	st, errRes := testSuperToken(ctx, &req)
+	st, errRes := testMytoken(ctx, &req)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
@@ -31,7 +31,7 @@ func HandleTokenInfo(ctx *fiber.Ctx) error {
 		return handleTokenInfoHistory(st, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionSubtokenTree:
 		return handleTokenInfoTree(st, clientMetadata).Send(ctx)
-	case model2.TokeninfoActionListSuperTokens:
+	case model2.TokeninfoActionListMytokens:
 		return handleTokenInfoList(st, clientMetadata).Send(ctx)
 	default:
 		return model.Response{
@@ -41,19 +41,19 @@ func HandleTokenInfo(ctx *fiber.Ctx) error {
 	}
 }
 
-func testSuperToken(ctx *fiber.Ctx, req *pkg.TokenInfoRequest) (*supertoken.SuperToken, *model.Response) {
-	if req.SuperToken == "" {
-		if t := ctxUtils.GetSuperToken(ctx); t != nil {
-			req.SuperToken = *t
+func testMytoken(ctx *fiber.Ctx, req *pkg.TokenInfoRequest) (*mytoken.Mytoken, *model.Response) {
+	if req.Mytoken == "" {
+		if t := ctxUtils.GetMytoken(ctx); t != nil {
+			req.Mytoken = *t
 		} else {
 			return nil, &model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: model2.InvalidTokenError("no super token found in request"),
+				Response: model2.InvalidTokenError("no mytoken found in request"),
 			}
 		}
 	}
 
-	st, err := supertoken.ParseJWT(string(req.SuperToken))
+	st, err := mytoken.ParseJWT(string(req.Mytoken))
 	if err != nil {
 		return nil, &model.Response{
 			Status:   fiber.StatusUnauthorized,

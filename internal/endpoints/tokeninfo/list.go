@@ -8,21 +8,21 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/tree"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/tree"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	pkgModel "github.com/oidc-mytoken/server/pkg/model"
-	"github.com/oidc-mytoken/server/shared/supertoken/capabilities"
-	eventService "github.com/oidc-mytoken/server/shared/supertoken/event"
-	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
-	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
-	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
+	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
+	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
+	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
+	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 )
 
-func handleTokenInfoList(st *supertoken.SuperToken, clientMetadata *model.ClientMetaData) model.Response {
+func handleTokenInfoList(st *mytoken.Mytoken, clientMetadata *model.ClientMetaData) model.Response {
 	// If we call this function it means the token is valid.
 
-	if !st.Capabilities.Has(capabilities.CapabilityListST) {
+	if !st.Capabilities.Has(capabilities.CapabilityListMT) {
 		return model.Response{
 			Status:   fiber.StatusForbidden,
 			Response: pkgModel.APIErrorInsufficientCapabilities,
@@ -41,7 +41,7 @@ func handleTokenInfoList(st *supertoken.SuperToken, clientMetadata *model.Client
 		usedRestriction = &possibleRestrictions[0]
 	}
 
-	var tokenList []tree.SuperTokenEntryTree
+	var tokenList []tree.MytokenEntryTree
 	if err := db.Transact(func(tx *sqlx.Tx) error {
 		var err error
 		tokenList, err = tree.AllTokens(tx, st.ID)
@@ -55,7 +55,7 @@ func handleTokenInfoList(st *supertoken.SuperToken, clientMetadata *model.Client
 			return err
 		}
 		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.STEventTokenInfoListSTs, ""),
+			Event: event.FromNumber(event.MTEventTokenInfoListSTs, ""),
 			MTID:  st.ID,
 		}, *clientMetadata)
 	}); err != nil {
