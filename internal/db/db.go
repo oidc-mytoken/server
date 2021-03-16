@@ -25,11 +25,6 @@ func Connect() {
 	db = cluster.NewFromConfig(config.Get().DB)
 }
 
-// DB returns the database connection
-// func DB() *sqlx.DB {
-// 	return dbCon
-// }
-
 // NullString extends the sql.NullString
 type NullString struct {
 	sql.NullString
@@ -93,22 +88,6 @@ func (b *BitBool) Scan(src interface{}) error {
 }
 
 // Transact does a database transaction for the passed function
-// func Transact(fn func(*sqlx.Tx) error) error {
-// 	tx, err := DB().Beginx()
-// 	if err != nil {
-// 		return err
-// 	}
-// 	err = fn(tx)
-// 	if err != nil {
-// 		if e := tx.Rollback(); e != nil {
-// 			log.WithError(err).Error()
-// 		}
-// 		return err
-// 	}
-// 	return tx.Commit()
-// }
-
-// Transact does a database transaction for the passed function
 func Transact(fn func(*sqlx.Tx) error) error {
 	return db.Transact(fn)
 }
@@ -117,12 +96,3 @@ func Transact(fn func(*sqlx.Tx) error) error {
 func RunWithinTransaction(tx *sqlx.Tx, fn func(*sqlx.Tx) error) error {
 	return db.RunWithinTransaction(tx, fn)
 }
-
-// RunWithinTransaction runs the passed function using the passed transaction; if nil is passed as tx a new transaction is created. This is basically a wrapper function, that works with a possible nil-tx
-// func RunWithinTransaction(tx *sqlx.Tx, fn func(*sqlx.Tx) error) error {
-// 	if tx == nil {
-// 		return Transact(fn)
-// 	} else {
-// 		return fn(tx)
-// 	}
-// }

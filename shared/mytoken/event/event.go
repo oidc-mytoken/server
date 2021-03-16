@@ -18,7 +18,7 @@ type MTEvent struct {
 func LogEvent(tx *sqlx.Tx, event MTEvent, clientMetaData model.ClientMetaData) error {
 	return (&eventrepo.EventDBObject{
 		Event:          event.Event,
-		STID:           event.MTID,
+		MTID:           event.MTID,
 		ClientMetaData: clientMetaData,
 	}).Store(tx)
 }

@@ -25,7 +25,7 @@ type accessToken struct {
 	Token   string
 	IP      string `db:"ip_created"`
 	Comment db.NullString
-	STID    mtid.MTID `db:"ST_id"`
+	MTID    mtid.MTID `db:"MT_id"`
 }
 
 func (t *AccessToken) toDBObject() (*accessToken, error) {
@@ -41,7 +41,7 @@ func (t *AccessToken) toDBObject() (*accessToken, error) {
 		Token:   token,
 		IP:      t.IP,
 		Comment: db.NewNullString(t.Comment),
-		STID:    t.Mytoken.ID,
+		MTID:    t.Mytoken.ID,
 	}, nil
 }
 
@@ -78,7 +78,7 @@ func (t *AccessToken) Store(tx *sqlx.Tx) error {
 		return err
 	}
 	storeFnc := func(tx *sqlx.Tx) error {
-		res, err := tx.NamedExec(`INSERT INTO AccessTokens (token, ip_created, comment, ST_id) VALUES (:token, :ip_created, :comment, :ST_id)`, store)
+		res, err := tx.NamedExec(`INSERT INTO AccessTokens (token, ip_created, comment, MT_id) VALUES (:token, :ip_created, :comment, :MT_id)`, store)
 		if err != nil {
 			return err
 		}

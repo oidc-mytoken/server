@@ -93,7 +93,7 @@ func DeleteRefreshToken(tx *sqlx.Tx, rtID uint64) error {
 // CountRTOccurrences counts how many Mytokens use the passed refresh token
 func CountRTOccurrences(tx *sqlx.Tx, rtID uint64) (count int, err error) {
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&count, `SELECT COUNT(1) FROM SuperTokens WHERE rt_id=?`, rtID)
+		return tx.Get(&count, `SELECT COUNT(1) FROM MTokens WHERE rt_id=?`, rtID)
 	})
 	return
 }
@@ -101,7 +101,7 @@ func CountRTOccurrences(tx *sqlx.Tx, rtID uint64) (count int, err error) {
 // GetRTID returns the refresh token id for a mytoken
 func GetRTID(tx *sqlx.Tx, myID mtid.MTID) (rtID uint64, err error) {
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&rtID, `SELECT rt_ID FROM SuperTokens WHERE id=?`, myID)
+		return tx.Get(&rtID, `SELECT rt_ID FROM MTokens WHERE id=?`, myID)
 	})
 	return
 }

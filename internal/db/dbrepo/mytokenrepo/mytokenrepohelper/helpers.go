@@ -23,10 +23,10 @@ func ParseError(err error) (bool, error) {
 }
 
 // GetSTParentID returns the id of the parent mytoken of the passed mytoken id
-func GetSTParentID(stid mtid.MTID) (string, bool, error) {
+func GetSTParentID(myID mtid.MTID) (string, bool, error) {
 	var parentID sql.NullString
 	found, err := ParseError(db.Transact(func(tx *sqlx.Tx) error {
-		return tx.Get(&parentID, `SELECT parent_id FROM SuperTokens WHERE id=?`, stid)
+		return tx.Get(&parentID, `SELECT parent_id FROM MTokens WHERE id=?`, myID)
 	}))
 	return parentID.String, found, err
 }
@@ -35,7 +35,7 @@ func GetSTParentID(stid mtid.MTID) (string, bool, error) {
 func GetSTRootID(id mtid.MTID) (mtid.MTID, bool, error) {
 	var rootID mtid.MTID
 	found, err := ParseError(db.Transact(func(tx *sqlx.Tx) error {
-		return tx.Get(&rootID, `SELECT root_id FROM SuperTokens WHERE id=?`, id)
+		return tx.Get(&rootID, `SELECT root_id FROM MTokens WHERE id=?`, id)
 	}))
 	return rootID, found, err
 }
@@ -44,13 +44,13 @@ func GetSTRootID(id mtid.MTID) (mtid.MTID, bool, error) {
 func recursiveRevokeST(tx *sqlx.Tx, id mtid.MTID) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`
-			DELETE FROM SuperTokens WHERE id=ANY(
+			DELETE FROM MTokens WHERE id=ANY(
 			WITH Recursive childs
 			AS
 			(
-				SELECT id, parent_id FROM SuperTokens WHERE id=?
+				SELECT id, parent_id FROM MTokens WHERE id=?
 				UNION ALL
-				SELECT st.id, st.parent_id FROM SuperTokens st INNER JOIN childs c WHERE st.parent_id=c.id
+				SELECT st.id, st.parent_id FROM MTokens st INNER JOIN childs c WHERE st.parent_id=c.id
 			)
 			SELECT id
 			FROM   childs
@@ -63,7 +63,7 @@ func recursiveRevokeST(tx *sqlx.Tx, id mtid.MTID) error {
 func CheckTokenRevoked(id mtid.MTID) (bool, error) {
 	var count int
 	if err := db.Transact(func(tx *sqlx.Tx) error {
-		return tx.Get(&count, `SELECT COUNT(1) FROM SuperTokens WHERE id=?`, id)
+		return tx.Get(&count, `SELECT COUNT(1) FROM MTokens WHERE id=?`, id)
 	}); err != nil {
 		return true, err
 	}
@@ -76,7 +76,7 @@ func CheckTokenRevoked(id mtid.MTID) (bool, error) {
 // revokeST revokes the passed mytoken but no children
 func revokeST(tx *sqlx.Tx, id mtid.MTID) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`DELETE FROM SuperTokens WHERE id=?`, id)
+		_, err := tx.Exec(`DELETE FROM MTokens WHERE id=?`, id)
 		return err
 	})
 }
@@ -91,10 +91,10 @@ func RevokeST(tx *sqlx.Tx, id mtid.MTID, recursive bool) error {
 }
 
 // GetTokenUsagesAT returns how often a Mytoken was used with a specific restriction to obtain an access token
-func GetTokenUsagesAT(tx *sqlx.Tx, stid mtid.MTID, restrictionHash string) (usages *int64, err error) {
+func GetTokenUsagesAT(tx *sqlx.Tx, myID mtid.MTID, restrictionHash string) (usages *int64, err error) {
 	var usageCount int64
 	if err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&usageCount, `SELECT usages_AT FROM TokenUsages WHERE restriction_hash=? AND ST_id=?`, restrictionHash, stid)
+		return tx.Get(&usageCount, `SELECT usages_AT FROM TokenUsages WHERE restriction_hash=? AND MT_id=?`, restrictionHash, myID)
 	}); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// No usage entry -> was not used before -> usages=nil
@@ -108,10 +108,10 @@ func GetTokenUsagesAT(tx *sqlx.Tx, stid mtid.MTID, restrictionHash string) (usag
 }
 
 // GetTokenUsagesOther returns how often a Mytoken was used with a specific restriction to do something else than obtaining an access token
-func GetTokenUsagesOther(tx *sqlx.Tx, stid mtid.MTID, restrictionHash string) (usages *int64, err error) {
+func GetTokenUsagesOther(tx *sqlx.Tx, myID mtid.MTID, restrictionHash string) (usages *int64, err error) {
 	var usageCount int64
 	if err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&usageCount, `SELECT usages_other FROM TokenUsages WHERE restriction_hash=? AND ST_id=?`, restrictionHash, stid)
+		return tx.Get(&usageCount, `SELECT usages_other FROM TokenUsages WHERE restriction_hash=? AND MT_id=?`, restrictionHash, myID)
 	}); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// No usage entry -> was not used before -> usages=nil
@@ -125,17 +125,17 @@ func GetTokenUsagesOther(tx *sqlx.Tx, stid mtid.MTID, restrictionHash string) (u
 }
 
 // IncreaseTokenUsageAT increases the usage count for obtaining ATs with a Mytoken and the given restriction
-func IncreaseTokenUsageAT(tx *sqlx.Tx, stid mtid.MTID, jsonRestriction []byte) error {
+func IncreaseTokenUsageAT(tx *sqlx.Tx, myID mtid.MTID, jsonRestriction []byte) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`INSERT INTO TokenUsages (ST_id, restriction, restriction_hash, usages_AT) VALUES (?, ?, ?, 1) ON DUPLICATE KEY UPDATE usages_AT = usages_AT + 1`, stid, jsonRestriction, hashUtils.SHA512Str(jsonRestriction))
+		_, err := tx.Exec(`INSERT INTO TokenUsages (MT_id, restriction, restriction_hash, usages_AT) VALUES (?, ?, ?, 1) ON DUPLICATE KEY UPDATE usages_AT = usages_AT + 1`, myID, jsonRestriction, hashUtils.SHA512Str(jsonRestriction))
 		return err
 	})
 }
 
 // IncreaseTokenUsageOther increases the usage count for other usages with a Mytoken and the given restriction
-func IncreaseTokenUsageOther(tx *sqlx.Tx, stid mtid.MTID, jsonRestriction []byte) error {
+func IncreaseTokenUsageOther(tx *sqlx.Tx, myID mtid.MTID, jsonRestriction []byte) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`INSERT INTO TokenUsages (ST_id, restriction, restriction_hash, usages_other) VALUES (?, ?, ?, 1) ON DUPLICATE KEY UPDATE usages_other = usages_other + 1`, stid, jsonRestriction, hashUtils.SHA512Str(jsonRestriction))
+		_, err := tx.Exec(`INSERT INTO TokenUsages (MT_id, restriction, restriction_hash, usages_other) VALUES (?, ?, ?, 1) ON DUPLICATE KEY UPDATE usages_other = usages_other + 1`, myID, jsonRestriction, hashUtils.SHA512Str(jsonRestriction))
 		return err
 	})
 }
