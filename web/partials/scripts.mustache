@@ -9,13 +9,15 @@
         <script src="/static/js/login.js"></script>
     {{/logged-in}}
     {{#logged-in}}
-        <script src="/static/js/clipboard.min.js"></script>
+        <script src="/static/js/lib/clipboard.min.js"></script>
+        <script src="/static/js/lib/user-agent.min.js"></script>
         <script src="/static/js/tokens.js"></script>
+        <script src="/static/js/tokeninfo.js"></script>
         <script src="/static/js/logout.js"></script>
     {{/logged-in}}
 {{/empty-navbar}}
 {{#consent}}
     <script src="/static/js/utils.js"></script>
-    <script src="/static/js/behave.min.js"></script>
+    <script src="/static/js/lib/behave.min.js"></script>
     <script src="/static/js/consent.js"></script>
 {{/consent}}

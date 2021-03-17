@@ -25,3 +25,8 @@
 .table-grey {
     background-color: #63778a;
 }
+
+span.user-agent i + i {
+    padding-left: 1em;
+}
+
