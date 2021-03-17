@@ -233,6 +233,12 @@ func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytoke
 		capsFromParent = parent.Capabilities
 	}
 	c := capabilities.Tighten(capsFromParent, req.Capabilities)
+	if len(c) == 0 {
+		return nil, &model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: pkgModel.BadRequestError("mytoken to be issued cannot have any of the requested capabilities"),
+		}
+	}
 	var sc capabilities.Capabilities = nil
 	if c.Has(capabilities.CapabilityCreateMT) {
 		sc = capabilities.Tighten(capsFromParent, req.SubtokenCapabilities)
