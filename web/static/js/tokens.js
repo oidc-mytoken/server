@@ -26,7 +26,7 @@ $('#get-at').on('click', function(e){
                 },
                 mToken);
         },
-        function () {
+        function (errRes) {
             $('#at-msg').text(getErrorMessage(errRes));
             $('#at-msg').addClass('text-danger');
             $('#at-copy').removeClass('d-none');
