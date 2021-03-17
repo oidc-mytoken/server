@@ -128,7 +128,7 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	}
 	log.Trace("Parsed mytoken")
 
-	revoked, dbErr := dbhelper.CheckTokenRevoked(mt.ID)
+	revoked, dbErr := dbhelper.CheckTokenRevoked(nil, mt.ID, mt.SeqNo, mt.Rotation)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr)
 	}

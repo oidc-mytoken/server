@@ -65,7 +65,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	}
 	log.Trace("Parsed mytoken")
 
-	revoked, dbErr := dbhelper.CheckTokenRevoked(mt.ID)
+	revoked, dbErr := dbhelper.CheckTokenRevoked(nil, mt.ID, mt.SeqNo, mt.Rotation)
 	if dbErr != nil {
 		return serverModel.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
 	}

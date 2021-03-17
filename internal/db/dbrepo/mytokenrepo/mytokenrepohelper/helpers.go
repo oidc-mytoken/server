@@ -9,6 +9,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 )
 
 func ParseError(err error) (bool, error) {
@@ -60,10 +61,30 @@ func recursiveRevokeMT(tx *sqlx.Tx, id mtid.MTID) error {
 }
 
 // CheckTokenRevoked checks if a Mytoken has been revoked.
-func CheckTokenRevoked(id mtid.MTID) (bool, error) {
+func CheckTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64, rot *rotation.Rotation) (bool, error) {
+	if rot != nil && rot.Lifetime > 0 {
+		return checkRotatingTokenRevoked(tx, id, seqno, rot.Lifetime)
+	}
+	return checkTokenRevoked(tx, id, seqno)
+}
+
+func checkTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64) (bool, error) {
 	var count int
-	if err := db.Transact(func(tx *sqlx.Tx) error {
-		return tx.Get(&count, `SELECT COUNT(1) FROM MTokens WHERE id=?`, id)
+	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		return tx.Get(&count, `SELECT COUNT(1) FROM MTokens WHERE id=? AND seqno=?`, id, seqno)
+	}); err != nil {
+		return true, err
+	}
+	if count > 0 { // token was found as Mytoken
+		return false, nil
+	}
+	return true, nil
+}
+
+func checkRotatingTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64, rotationLifetime uint64) (bool, error) {
+	var count int
+	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		return tx.Get(&count, `SELECT COUNT(1) FROM MTokens WHERE id=? AND seqno=? AND TIMESTAMPADD(SECOND, ?, last_rotated) >= CURRENT_TIMESTAMP()`, id, seqno, rotationLifetime)
 	}); err != nil {
 		return true, err
 	}

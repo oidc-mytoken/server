@@ -18,6 +18,7 @@ import (
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
@@ -30,12 +31,14 @@ type Mytoken struct {
 	NotBefore            unixtime.UnixTime         `json:"nbf"`
 	IssuedAt             unixtime.UnixTime         `json:"iat"`
 	ID                   mtid.MTID                 `json:"jti"`
+	SeqNo                uint64                    `json:"seq_no"`
 	Audience             string                    `json:"aud"`
 	OIDCSubject          string                    `json:"oidc_sub"`
 	OIDCIssuer           string                    `json:"oidc_iss"`
 	Restrictions         restrictions.Restrictions `json:"restrictions,omitempty"`
 	Capabilities         capabilities.Capabilities `json:"capabilities"`
 	SubtokenCapabilities capabilities.Capabilities `json:"subtoken_capabilities,omitempty"`
+	Rotation             *rotation.Rotation        `json:"rotation,omitempty"`
 	jwt                  string
 }
 
@@ -71,6 +74,7 @@ func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc capa
 	now := unixtime.Now()
 	mt := &Mytoken{
 		ID:                   mtid.New(),
+		SeqNo:                1,
 		IssuedAt:             now,
 		NotBefore:            now,
 		Issuer:               config.Get().IssuerURL,

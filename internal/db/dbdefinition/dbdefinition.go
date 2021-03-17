@@ -195,7 +195,8 @@ var DDL = []string{
 		"  `ip_created` varchar(32) NOT NULL," +
 		"  `user_id` bigint(20) unsigned NOT NULL," +
 		"  `rt_id` bigint(20) unsigned NOT NULL," +
-		"  `seqno` bigint(20) unsigned NOT NULL DEFAULT 1," +
+		"  `seqno` bigint(20) unsigned NOT NULL," +
+		"  `last_rotated` datetime NOT NULL DEFAULT current_timestamp()," +
 		"  PRIMARY KEY (`id`)," +
 		"  KEY `SessionTokens_parent_id_IDX` (`parent_id`) USING BTREE," +
 		"  KEY `SessionTokens_root_id_IDX` (`root_id`) USING BTREE," +
@@ -207,6 +208,26 @@ var DDL = []string{
 		"  CONSTRAINT `MyTokens_FK_3` FOREIGN KEY (`rt_id`) REFERENCES `RefreshTokens` (`id`) ON UPDATE CASCADE" +
 		") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
+	"/*!50003 SET @saved_cs_client      = @@character_set_client */ ;",
+	"/*!50003 SET @saved_cs_results     = @@character_set_results */ ;",
+	"/*!50003 SET @saved_col_connection = @@collation_connection */ ;",
+	"/*!50003 SET character_set_client  = utf8mb4 */ ;",
+	"/*!50003 SET character_set_results = utf8mb4 */ ;",
+	"/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;",
+	"/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;",
+	"/*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;",
+	"DELIMITER ;;",
+	"     FOR EACH ROW" +
+		"     BEGIN" +
+		"     IF NOT NEW.seqno <=> OLD.seqno THEN" +
+		"     SET NEW.last_rotated = current_timestamp();     " +
+		"     END IF;",
+	"     END */;;",
+	"DELIMITER ;",
+	"/*!50003 SET sql_mode              = @saved_sql_mode */ ;",
+	"/*!50003 SET character_set_client  = @saved_cs_client */ ;",
+	"/*!50003 SET character_set_results = @saved_cs_results */ ;",
+	"/*!50003 SET collation_connection  = @saved_col_connection */ ;",
 	"" +
 		"--",
 	"-- Temporary table structure for view `MyTokens`",
@@ -242,7 +263,7 @@ var DDL = []string{
 	"CREATE TABLE `ProxyTokens` (" +
 		"  `id` varchar(128) NOT NULL," +
 		"  `jwt` text NOT NULL," +
-		"  `MT_id` varchar(128) NOT NULL," +
+		"  `MT_id` varchar(128) DEFAULT NULL," +
 		"  PRIMARY KEY (`id`)," +
 		"  KEY `ProxyTokens_FK` (`MT_id`)," +
 		"  CONSTRAINT `ProxyTokens_FK` FOREIGN KEY (`MT_id`) REFERENCES `MTokens` (`id`) ON DELETE CASCADE ON UPDATE CASCADE" +

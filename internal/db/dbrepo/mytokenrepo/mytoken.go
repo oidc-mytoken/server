@@ -21,6 +21,7 @@ import (
 // database
 type MytokenEntry struct {
 	ID                     mtid.MTID
+	SeqNo                  uint64
 	ParentID               mtid.MTID `db:"parent_id"`
 	RootID                 mtid.MTID `db:"root_id"`
 	Token                  *mytoken.Mytoken
@@ -73,6 +74,7 @@ func (ste *MytokenEntry) SetRefreshToken(rtID uint64, key []byte) error {
 func NewMytokenEntry(mt *mytoken.Mytoken, name string, networkData model.ClientMetaData) *MytokenEntry {
 	return &MytokenEntry{
 		ID:          mt.ID,
+		SeqNo:       mt.SeqNo,
 		Token:       mt,
 		Name:        name,
 		IP:          networkData.IP,
@@ -89,6 +91,7 @@ func (ste *MytokenEntry) Root() bool {
 func (ste *MytokenEntry) Store(tx *sqlx.Tx, comment string) error {
 	steStore := mytokenEntryStore{
 		ID:       ste.ID,
+		SeqNo:    ste.SeqNo,
 		ParentID: ste.ParentID,
 		RootID:   ste.RootID,
 		Name:     db.NewNullString(ste.Name),
@@ -123,6 +126,7 @@ func (ste *MytokenEntry) Store(tx *sqlx.Tx, comment string) error {
 
 type mytokenEntryStore struct {
 	ID             mtid.MTID
+	SeqNo          uint64
 	ParentID       mtid.MTID `db:"parent_id"`
 	RootID         mtid.MTID `db:"root_id"`
 	RefreshTokenID uint64    `db:"rt_id"`
@@ -135,7 +139,7 @@ type mytokenEntryStore struct {
 // Store stores the mytokenEntryStore in the database; if this is the first token for this user, the user is also added to the db
 func (e *mytokenEntryStore) Store(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		stmt, err := tx.PrepareNamed(`INSERT INTO MTokens (id, parent_id, root_id, rt_id, name, ip_created, user_id) VALUES(:id, :parent_id, :root_id, :rt_id, :name, :ip_created, (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
+		stmt, err := tx.PrepareNamed(`INSERT INTO MTokens (id, seqno, parent_id, root_id, rt_id, name, ip_created, user_id) VALUES(:id, :seqno, :parent_id, :root_id, :rt_id, :name, :ip_created, (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
 		if err != nil {
 			return err
 		}

@@ -66,7 +66,7 @@ func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
 		}.Send(ctx)
 	}
 
-	revoked, dbErr := dbhelper.CheckTokenRevoked(mToken.ID)
+	revoked, dbErr := dbhelper.CheckTokenRevoked(nil, mToken.ID, mToken.SeqNo, mToken.Rotation)
 	if dbErr != nil {
 		return model.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
 	}
