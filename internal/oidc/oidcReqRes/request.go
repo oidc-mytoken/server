@@ -3,6 +3,7 @@ package oidcReqRes
 import (
 	"encoding/json"
 	"reflect"
+	"strings"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/shared/utils"
@@ -31,6 +32,18 @@ func NewRefreshRequest(rt string, conf *config.ProviderConf) *RefreshRequest {
 	}
 }
 
+func parseTagValue(tag string) (value string, omitEmpty bool) {
+	tmp := strings.Split(tag, ",")
+	value = tmp[0]
+	if len(tmp) > 1 {
+		rest := tmp[1:]
+		if utils.StringInSlice("omitempty", rest) {
+			omitEmpty = true
+		}
+	}
+	return
+}
+
 // ToFormData formats the RefreshRequest as a string map
 func (r *RefreshRequest) ToFormData() map[string]string {
 	v := reflect.ValueOf(*r)
@@ -38,11 +51,15 @@ func (r *RefreshRequest) ToFormData() map[string]string {
 	m := make(map[string]string)
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
-		if key := f.Tag.Get("json"); key != "" {
+		if k := f.Tag.Get("json"); k != "" {
+			key, omitempty := parseTagValue(k)
 			if key == "resource" {
 				key = r.resourceParameter
 			}
-			m[key] = v.Field(i).String()
+			value := v.Field(i).String()
+			if !omitempty || value != "" {
+				m[key] = value
+			}
 		}
 	}
 	return m

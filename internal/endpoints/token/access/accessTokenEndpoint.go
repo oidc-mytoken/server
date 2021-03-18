@@ -159,9 +159,9 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 			Response: model.OIDCError(oidcErrRes.Error, oidcErrRes.ErrorDescription),
 		}
 	}
-	retScopes := scopes
-	if oidcRes.Scopes != "" {
-		retScopes = oidcRes.Scopes
+	retScopes := oidcRes.Scopes
+	if retScopes == "" {
+		retScopes = scopes
 	}
 	retAudiences, _ := jwtutils.GetAudiencesFromJWT(oidcRes.AccessToken)
 	at := accesstokenrepo.AccessToken{
