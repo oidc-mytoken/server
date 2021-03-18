@@ -342,11 +342,17 @@ func Tighten(old, wanted Restrictions) (res Restrictions) {
 	if err := copier.Copy(&base, &old); err != nil {
 		log.WithError(err).Error()
 	}
-	for i, a := range wanted {
-		for _, o := range base {
+	for _, a := range wanted {
+		for i, o := range base {
 			if a.isTighterThan(o) {
 				res = append(res, a)
-				base = append(base[:i], base[i+1:]...)
+				if o.UsagesOther != nil && a.UsagesOther != nil {
+					*base[i].UsagesOther -= *a.UsagesOther
+				}
+				if o.UsagesAT != nil && a.UsagesAT != nil {
+					*base[i].UsagesAT -= *a.UsagesAT
+				}
+				// base = append(base[:i], base[i+1:]...)
 				break
 			}
 		}

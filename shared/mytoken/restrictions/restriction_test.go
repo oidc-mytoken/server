@@ -34,6 +34,22 @@ func TestTighten_RestrictEmpty(t *testing.T) {
 	res := Tighten(base, wanted)
 	checkRestrictions(t, expected, res)
 }
+func TestTighten_RestrictEmpty2(t *testing.T) {
+	base := Restrictions{}
+	wanted := Restrictions{
+		{
+			Scope:     "a b c",
+			ExpiresAt: 100,
+		},
+		{
+			Scope:     "d",
+			ExpiresAt: 100,
+		},
+	}
+	expected := wanted
+	res := Tighten(base, wanted)
+	checkRestrictions(t, expected, res)
+}
 func TestTighten_RequestEmpty(t *testing.T) {
 	base := Restrictions{
 		{
@@ -79,6 +95,7 @@ func TestTighten_RestrictToOne(t *testing.T) {
 	res := Tighten(base, wanted)
 	checkRestrictions(t, expected, res)
 }
+
 func TestTighten_RestrictToTwo(t *testing.T) {
 	base := Restrictions{
 		{
@@ -101,6 +118,27 @@ func TestTighten_RestrictToTwo(t *testing.T) {
 		},
 		{
 			Scope:     "d",
+			ExpiresAt: 50,
+		},
+	}
+	expected := wanted
+	res := Tighten(base, wanted)
+	checkRestrictions(t, expected, res)
+}
+func TestTighten_RestrictToTwo2(t *testing.T) {
+	base := Restrictions{
+		{
+			Scope:     "a b c",
+			ExpiresAt: 500,
+		},
+	}
+	wanted := Restrictions{
+		{
+			Scope:     "a c",
+			ExpiresAt: 100,
+		},
+		{
+			Scope:     "b",
 			ExpiresAt: 50,
 		},
 	}
@@ -154,7 +192,7 @@ func TestTighten_RestrictDontCombineTwo(t *testing.T) {
 	res := Tighten(base, wanted)
 	checkRestrictions(t, expected, res)
 }
-func TestTighten_RestrictDontExtendUsages(t *testing.T) {
+func TestTighten_RestrictDontExtendUsages1(t *testing.T) {
 	base := Restrictions{
 		{
 			UsagesAT: utils.NewInt64(10),
@@ -162,13 +200,59 @@ func TestTighten_RestrictDontExtendUsages(t *testing.T) {
 	}
 	wanted := Restrictions{
 		{
-			UsagesAT: utils.NewInt64(10),
+			UsagesAT: utils.NewInt64(11),
 		},
+	}
+	expected := base
+	res := Tighten(base, wanted)
+	checkRestrictions(t, expected, res)
+}
+func TestTighten_RestrictDontExtendUsages2(t *testing.T) {
+	base := Restrictions{
 		{
 			UsagesAT: utils.NewInt64(10),
 		},
 	}
-	expected := base
+	wanted := Restrictions{
+		{
+			UsagesAT: utils.NewInt64(4),
+		},
+		{
+			UsagesAT: utils.NewInt64(4),
+		},
+		{
+			UsagesAT: utils.NewInt64(4),
+		},
+	}
+	expected := Restrictions{
+		{
+			UsagesAT: utils.NewInt64(4),
+		},
+		{
+			UsagesAT: utils.NewInt64(4),
+		},
+	}
+	res := Tighten(base, wanted)
+	checkRestrictions(t, expected, res)
+}
+func TestTighten_RestrictSplitUsages(t *testing.T) {
+	base := Restrictions{
+		{
+			UsagesAT: utils.NewInt64(10),
+		},
+	}
+	wanted := Restrictions{
+		{
+			UsagesAT: utils.NewInt64(5),
+		},
+		{
+			UsagesAT: utils.NewInt64(3),
+		},
+		{
+			UsagesAT: utils.NewInt64(2),
+		},
+	}
+	expected := wanted
 	res := Tighten(base, wanted)
 	checkRestrictions(t, expected, res)
 }
