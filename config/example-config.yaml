@@ -61,7 +61,7 @@ logging:
     level: "error"
 
 # URL with documentation about the service
-service_documentation: "https://docs-sdm.scc.kit.edu/mytoken/"
+service_documentation: "https://mytoken-docs.data.kit.edu/"
 
 # Configuration and enabling/disabling for different features
 features:
