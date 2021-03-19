@@ -1,6 +1,6 @@
 module github.com/oidc-mytoken/server
 
-go 1.14
+go 1.15
 
 require (
 	github.com/GeertJohan/go.rice v1.0.2
