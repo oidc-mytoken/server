@@ -216,14 +216,13 @@ var DDL = []string{
 	"/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;",
 	"/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;",
 	"/*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;",
-	"DELIMITER ;;",
-	"     FOR EACH ROW" +
+	"/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`%`*/ /*!50003 TRIGGER updtrigger BEFORE UPDATE ON MTokens" +
+		"     FOR EACH ROW" +
 		"     BEGIN" +
 		"     IF NOT NEW.seqno <=> OLD.seqno THEN" +
 		"     SET NEW.last_rotated = current_timestamp();     " +
-		"     END IF;",
-	"     END */;;",
-	"DELIMITER ;",
+		"     END IF;" +
+		"     END */;",
 	"/*!50003 SET sql_mode              = @saved_sql_mode */ ;",
 	"/*!50003 SET character_set_client  = @saved_cs_client */ ;",
 	"/*!50003 SET character_set_results = @saved_cs_results */ ;",
