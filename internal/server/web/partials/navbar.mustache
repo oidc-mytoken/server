@@ -2,25 +2,6 @@
     <a class="navbar-brand" href="/{{#logged-in}}home{{/logged-in}}"><img src="/static/img/mytoken.png" alt="mytoken" style="height: 50px;"/></a>
     {{^empty-navbar}}
         <ul class="navbar-nav mr-auto">
-            <!--                <li class="nav-item">-->
-            <!--                    <a class="nav-link" href="#">Features</a>-->
-            <!--                </li>-->
-            <!--                <li class="nav-item">-->
-            <!--                    <a class="nav-link" href="#">Pricing</a>-->
-            <!--                </li>-->
-            <!--                <li class="nav-item">-->
-            <!--                    <a class="nav-link" href="#">About</a>-->
-            <!--                </li>-->
-            <!--                <li class="nav-item dropdown">-->
-            <!--                    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Dropdown</a>-->
-            <!--                    <div class="dropdown-menu">-->
-            <!--                        <a class="dropdown-item" href="#">Action</a>-->
-            <!--                        <a class="dropdown-item" href="#">Another action</a>-->
-            <!--                        <a class="dropdown-item" href="#">Something else here</a>-->
-            <!--                        <div class="dropdown-divider"></div>-->
-            <!--                        <a class="dropdown-item" href="#">Separated link</a>-->
-            <!--                    </div>-->
-            <!--                </li>-->
         </ul>
         {{#logged-in}}
             <ul class="navbar-nav">
@@ -45,8 +26,6 @@
                 <select class="form-control custom-select" name="oidc_issuer">
                     {{#providers}}
                     <option value="{{issuer}}">{{name}}</option>
-<!--                    <option value="https://wlcg.cloud.cnaf.infn.it/">WLCG IAM</option>-->
-<!--                    <option value="https://aai-dev.egi.eu/oidc/">EGI DEV</option>-->
                     {{/providers}}
                 </select>
                 <button class="btn btn-secondary" type="submit">Sign in</button>

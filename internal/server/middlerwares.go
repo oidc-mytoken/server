@@ -1,9 +1,11 @@
 package server
 
 import (
+	"embed"
+	"io/fs"
+	"net/http"
 	"time"
 
-	rice "github.com/GeertJohan/go.rice"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
@@ -12,9 +14,30 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/helmet/v2"
+	log "github.com/sirupsen/logrus"
 
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 )
+
+//go:embed web/static
+var _staticFS embed.FS
+var staticFS fs.FS
+
+//go:embed web/static/img/favicon.ico
+var _faviconFS embed.FS
+var faviconFS fs.FS
+
+func init() {
+	var err error
+	staticFS, err = fs.Sub(_staticFS, "web/static")
+	if err != nil {
+		log.WithError(err).Fatal()
+	}
+	faviconFS, err = fs.Sub(_faviconFS, "web/static/img")
+	if err != nil {
+		log.WithError(err).Fatal()
+	}
+}
 
 func addMiddlewares(s fiber.Router) {
 	addRecoverMiddleware(s)
@@ -50,14 +73,15 @@ func addCompressMiddleware(s fiber.Router) {
 
 func addStaticFiles(s fiber.Router) {
 	s.Use("/static", filesystem.New(filesystem.Config{
-		Root:   rice.MustFindBox("../../web/static").HTTPBox(),
+		Root:   http.FS(staticFS),
 		MaxAge: 3600,
 	}))
 }
 
 func addFaviconMiddleware(s fiber.Router) {
 	s.Use(favicon.New(favicon.Config{
-		File: "./web/static/img/favicon.ico",
+		File:       "favicon.ico",
+		FileSystem: http.FS(faviconFS),
 	}))
 }
 

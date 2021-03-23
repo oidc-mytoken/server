@@ -1,11 +1,13 @@
 package server
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
+	"net/http"
 	"strings"
 	"time"
 
-	rice "github.com/GeertJohan/go.rice"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/mustache"
 	log "github.com/sirupsen/logrus"
@@ -16,7 +18,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/consent"
 	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
 	"github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	model2 "github.com/oidc-mytoken/server/pkg/model"
 )
@@ -32,9 +33,29 @@ var serverConfig = fiber.Config{
 	ErrorHandler: handleError,
 }
 
+//go:embed web/sites web/layouts
+var _webFiles embed.FS
+var webFiles fs.FS
+
+//go:embed web/partials
+var _partials embed.FS
+var partials fs.FS
+
+func init() {
+	var err error
+	webFiles, err = fs.Sub(_webFiles, "web")
+	if err != nil {
+		log.WithError(err).Fatal()
+	}
+	partials, err = fs.Sub(_partials, "web/partials")
+	if err != nil {
+		log.WithError(err).Fatal()
+	}
+}
+
 func initTemplateEngine() {
-	engine := mustache.NewFileSystem(rice.MustFindBox("../../web").HTTPBox(), ".mustache")
-	engine.Reload(version.DEV)
+	engine := mustache.NewFileSystemPartials(http.FS(webFiles), ".mustache", http.FS(partials))
+	// engine.Reload(version.DEV)
 	serverConfig.Views = engine
 }
 
