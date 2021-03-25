@@ -1,6 +1,16 @@
 # The issuer url to be used. MUST point to this server
 issuer: "https://mytoken.example.com"
 
+# Details about the service operator. Will be displayed in the privacy page.
+service_operator:
+  # The name of the service operator
+  name: "Example Foundation"
+  homepage: "https://example.com"
+  # An email address where users can contact the service operator. It is recommend to use a email list for this
+  mail_contact: "mytoken@example.com"
+  # A dedicated email address for privacy related topics can be given. If you do not have a dedicated mail for privacy, it can be omitted.
+  mail_privacy: "mytoken-privacy@example.com"
+
 # Configuration for the mytoken server
 server:
   hostname: "mytoken.example.com"

@@ -90,14 +90,15 @@ func addRoutes(s fiber.Router) {
 	s.Get(routes.GetGeneralPaths().OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
 	s.Get("/c/:consent_code", consent.HandleConsent)
 	s.Post("/c/:consent_code", consent.HandleConsentPost)
+	s.Get("/native", handleNativeCallback)
+	s.Get("/native/abort", handleNativeConsentAbortCallback)
+	s.Get(routes.GetGeneralPaths().Privacy, handlePrivacy)
 	addAPIRoutes(s)
 }
 
 func addWebRoutes(s fiber.Router) {
 	s.Get("/", handleIndex)
 	s.Get("/home", handleHome)
-	s.Get("/native", handleNativeCallback)
-	s.Get("/native/abort", handleNativeConsentAbortCallback)
 }
 
 func start(s *fiber.App) {

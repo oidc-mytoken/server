@@ -41,3 +41,15 @@ func handleNativeConsentAbortCallback(ctx *fiber.Ctx) error {
 	}
 	return ctx.Render("sites/native.abort", binding, "layouts/main")
 }
+
+func handlePrivacy(ctx *fiber.Ctx) error {
+	so := config.Get().ServiceOperator
+	binding := map[string]interface{}{
+		"empty-navbar":    true,
+		"name":            so.Name,
+		"homepage":        so.Homepage,
+		"contact":         so.Contact,
+		"privacy-contact": so.Privacy,
+	}
+	return ctx.Render("sites/privacy", binding, "layouts/main")
+}

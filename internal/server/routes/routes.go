@@ -26,6 +26,7 @@ func init() {
 			OIDCRedirectEndpoint:  "/redirect",
 			JWKSEndpoint:          "/jwks",
 			ConsentEndpoint:       "/c",
+			Privacy:               "/privacy",
 		},
 	}
 }
@@ -41,6 +42,7 @@ type GeneralPaths struct {
 	OIDCRedirectEndpoint  string
 	JWKSEndpoint          string
 	ConsentEndpoint       string
+	Privacy               string
 }
 
 // APIPaths holds all api route paths

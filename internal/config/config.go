@@ -5,7 +5,7 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 
 	"github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
@@ -91,6 +91,7 @@ type Config struct {
 	Features             featuresConf             `yaml:"features"`
 	Providers            []*ProviderConf          `yaml:"providers"`
 	ProviderByIssuer     map[string]*ProviderConf `yaml:"-"`
+	ServiceOperator      ServiceOperatorConf      `yaml:"service_operator"`
 }
 
 type apiConf struct {
@@ -184,6 +185,26 @@ type ProviderConf struct {
 	AudienceRequestParameter string             `yaml:"audience_request_parameter"`
 }
 
+type ServiceOperatorConf struct {
+	Name     string `yaml:"name"`
+	Homepage string `yaml:"homepage"`
+	Contact  string `yaml:"mail_contact"`
+	Privacy  string `yaml:"mail_privacy"`
+}
+
+func (so *ServiceOperatorConf) validate() error {
+	if so.Name == "" {
+		return fmt.Errorf("invalid config: service_operator.name not set")
+	}
+	if so.Contact == "" {
+		return fmt.Errorf("invalid config: service_operator.mail_contact not set")
+	}
+	if so.Privacy == "" {
+		so.Privacy = so.Contact
+	}
+	return nil
+}
+
 var conf *Config
 
 // Get returns the Config
@@ -204,6 +225,9 @@ func validate() error {
 		} else {
 			conf.Server.TLS.Enabled = false
 		}
+	}
+	if err := conf.ServiceOperator.validate(); err != nil {
+		return err
 	}
 	if len(conf.Providers) <= 0 {
 		return fmt.Errorf("invalid config: providers must have at least one entry")
