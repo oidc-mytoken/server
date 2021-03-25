@@ -1,0 +1,17 @@
+    [Unit]
+    Description=mytoken
+    After=network.target auditd.service
+
+    [Service]
+    ExecStart=/usr/local/bin/mytoken-server
+    ExecReload=/bin/kill -HUP $MAINPID
+    WorkingDirectory=/
+    StandardOutput=inherit
+    StandardError=inherit
+    KillMode=process
+    Restart=always
+    RestartPreventExitStatus=255
+    Type=simple
+
+    [Install]
+    WantedBy=multi-user.target

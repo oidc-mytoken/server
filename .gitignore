@@ -8,3 +8,4 @@ config/config.yaml
 IP2LOCATION-LITE-DB1.IPV6.BIN
 /cmd/test
 generateDDL.sh
+dist/

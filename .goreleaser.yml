@@ -1,0 +1,94 @@
+project_name: mytoken-server
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - id: server
+    main: ./cmd/mytoken-server/main.go
+    binary: mytoken-server
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+  #      - windows
+  #      - darwin
+  - id: setup
+    main: ./cmd/mytoken-server/mytoken-setup/setup.go
+    binary: mytoken-setup
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+  - id: garbage
+    main: ./cmd/mytoken-server/mytoken-dbGarbageCollector/main.go
+    binary: mytoken-dbgc
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+nfpms:
+  - id: server-pkg
+    package_name: mytoken-server
+    builds:
+      - server
+    homepage: https://mytoken-doc.data.kit.edu/server/intro
+    maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
+    description: Mytoken is a central web service with the goal to easily obtain OpenID Connect access tokens across devices.
+    license: MIT
+    formats:
+#      - apk
+      - deb
+      - rpm
+    release: 1
+    section: misc
+    empty_folders:
+      - /var/log/mytoken
+    contents:
+      - src: config/example-config.yaml
+        dst: /etc/mytoken/example-config.yaml
+        type: config
+      - src: config/mytoken.service
+        dst: /etc/systemd/system/mytoken.service
+  - id: setup-pkg
+    package_name: mytoken-server-setup
+    builds:
+      - setup
+    homepage: https://mytoken-doc.data.kit.edu/server/intro
+    maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
+    description: A setup utility for the mytoken-server
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    release: 1
+    section: misc
+  - id: garbage-pkg
+    package_name: mytoken-server-dbgc
+    builds:
+      - garbage
+    homepage: https://mytoken-doc.data.kit.edu/server/intro
+    maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
+    description: A garbage collector for the mytoken database. It deletes expired entries.
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    release: 1
+    section: misc
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
