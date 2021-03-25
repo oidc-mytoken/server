@@ -81,7 +81,7 @@ func checkTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64) (bool, error) {
 	return true, nil
 }
 
-func checkRotatingTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64, rotationLifetime uint64) (bool, error) {
+func checkRotatingTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno, rotationLifetime uint64) (bool, error) {
 	var count int
 	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		return tx.Get(&count, `SELECT COUNT(1) FROM MTokens WHERE id=? AND seqno=? AND TIMESTAMPADD(SECOND, ?, last_rotated) >= CURRENT_TIMESTAMP()`, id, seqno, rotationLifetime)
