@@ -11,14 +11,15 @@ import (
 
 // MytokenFromMytokenRequest is a request to create a new Mytoken from an existing Mytoken
 type MytokenFromMytokenRequest struct {
-	Issuer               string                    `json:"oidc_issuer"`
-	GrantType            model.GrantType           `json:"grant_type"`
-	Mytoken              token.Token               `json:"mytoken"`
-	Restrictions         restrictions.Restrictions `json:"restrictions"`
-	Capabilities         capabilities.Capabilities `json:"capabilities"`
-	SubtokenCapabilities capabilities.Capabilities `json:"subtoken_capabilities"`
-	Name                 string                    `json:"name"`
-	ResponseType         model.ResponseType        `json:"response_type"`
+	Issuer                       string                    `json:"oidc_issuer"`
+	GrantType                    model.GrantType           `json:"grant_type"`
+	Mytoken                      token.Token               `json:"mytoken"`
+	Restrictions                 restrictions.Restrictions `json:"restrictions"`
+	Capabilities                 capabilities.Capabilities `json:"capabilities"`
+	SubtokenCapabilities         capabilities.Capabilities `json:"subtoken_capabilities"`
+	Name                         string                    `json:"name"`
+	ResponseType                 model.ResponseType        `json:"response_type"`
+	FailOnRestrictionsNotTighter bool                      `json:"error_on_restrictions"`
 }
 
 // NewMytokenRequest creates a MytokenFromMytokenRequest with the default values where they can be omitted

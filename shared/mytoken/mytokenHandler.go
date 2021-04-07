@@ -227,7 +227,13 @@ func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytoke
 	if !rootID.HashValid() {
 		rootID = parent.ID
 	}
-	r := restrictions.Tighten(parent.Restrictions, req.Restrictions)
+	r, ok := restrictions.Tighten(parent.Restrictions, req.Restrictions)
+	if !ok && req.FailOnRestrictionsNotTighter {
+		return nil, &model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: pkgModel.BadRequestError("requested restrictions are not superset of original restrictions"),
+		}
+	}
 	capsFromParent := parent.SubtokenCapabilities
 	if capsFromParent == nil {
 		capsFromParent = parent.Capabilities

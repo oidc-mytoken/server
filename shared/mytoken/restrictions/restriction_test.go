@@ -9,7 +9,10 @@ import (
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
-func checkRestrictions(t *testing.T, exp, a Restrictions) {
+func checkRestrictions(t *testing.T, exp, a Restrictions, okExp, ok bool) {
+	if okExp != ok {
+		t.Errorf("Expected '%+v', but got '%+v' for ok-status", okExp, ok)
+	}
 	if len(a) != len(exp) {
 		t.Errorf("Expected '%+v', but got '%+v'", exp, a)
 		return
@@ -31,8 +34,8 @@ func TestTighten_RestrictEmpty(t *testing.T) {
 		},
 	}
 	expected := wanted
-	res := Tighten(base, wanted)
-	checkRestrictions(t, expected, res)
+	res, ok := Tighten(base, wanted)
+	checkRestrictions(t, expected, res, true, ok)
 }
 func TestTighten_RestrictEmpty2(t *testing.T) {
 	base := Restrictions{}
@@ -47,8 +50,8 @@ func TestTighten_RestrictEmpty2(t *testing.T) {
 		},
 	}
 	expected := wanted
-	res := Tighten(base, wanted)
-	checkRestrictions(t, expected, res)
+	res, ok := Tighten(base, wanted)
+	checkRestrictions(t, expected, res, true, ok)
 }
 func TestTighten_RequestEmpty(t *testing.T) {
 	base := Restrictions{
@@ -67,8 +70,8 @@ func TestTighten_RequestEmpty(t *testing.T) {
 	}
 	wanted := Restrictions{}
 	expected := base
-	res := Tighten(base, wanted)
-	checkRestrictions(t, expected, res)
+	res, ok := Tighten(base, wanted)
+	checkRestrictions(t, expected, res, true, ok)
 }
 func TestTighten_RestrictToOne(t *testing.T) {
 	base := Restrictions{
@@ -92,8 +95,8 @@ func TestTighten_RestrictToOne(t *testing.T) {
 		},
 	}
 	expected := wanted
-	res := Tighten(base, wanted)
-	checkRestrictions(t, expected, res)
+	res, ok := Tighten(base, wanted)
+	checkRestrictions(t, expected, res, true, ok)
 }
 
 func TestTighten_RestrictToTwo(t *testing.T) {
@@ -122,8 +125,8 @@ func TestTighten_RestrictToTwo(t *testing.T) {
 		},
 	}
 	expected := wanted
-	res := Tighten(base, wanted)
-	checkRestrictions(t, expected, res)
+	res, ok := Tighten(base, wanted)
+	checkRestrictions(t, expected, res, true, ok)
 }
 func TestTighten_RestrictToTwo2(t *testing.T) {
 	base := Restrictions{
@@ -143,8 +146,8 @@ func TestTighten_RestrictToTwo2(t *testing.T) {
 		},
 	}
 	expected := wanted
-	res := Tighten(base, wanted)
-	checkRestrictions(t, expected, res)
+	res, ok := Tighten(base, wanted)
+	checkRestrictions(t, expected, res, true, ok)
 }
 func TestTighten_RestrictConflict(t *testing.T) {
 	base := Restrictions{
@@ -168,8 +171,8 @@ func TestTighten_RestrictConflict(t *testing.T) {
 		},
 	}
 	expected := base
-	res := Tighten(base, wanted)
-	checkRestrictions(t, expected, res)
+	res, ok := Tighten(base, wanted)
+	checkRestrictions(t, expected, res, false, ok)
 }
 func TestTighten_RestrictDontCombineTwo(t *testing.T) {
 	base := Restrictions{
@@ -189,8 +192,8 @@ func TestTighten_RestrictDontCombineTwo(t *testing.T) {
 		},
 	}
 	expected := base
-	res := Tighten(base, wanted)
-	checkRestrictions(t, expected, res)
+	res, ok := Tighten(base, wanted)
+	checkRestrictions(t, expected, res, false, ok)
 }
 func TestTighten_RestrictDontExtendUsages1(t *testing.T) {
 	base := Restrictions{
@@ -204,8 +207,8 @@ func TestTighten_RestrictDontExtendUsages1(t *testing.T) {
 		},
 	}
 	expected := base
-	res := Tighten(base, wanted)
-	checkRestrictions(t, expected, res)
+	res, ok := Tighten(base, wanted)
+	checkRestrictions(t, expected, res, false, ok)
 }
 func TestTighten_RestrictDontExtendUsages2(t *testing.T) {
 	base := Restrictions{
@@ -232,8 +235,8 @@ func TestTighten_RestrictDontExtendUsages2(t *testing.T) {
 			UsagesAT: utils.NewInt64(4),
 		},
 	}
-	res := Tighten(base, wanted)
-	checkRestrictions(t, expected, res)
+	res, ok := Tighten(base, wanted)
+	checkRestrictions(t, expected, res, false, ok)
 }
 func TestTighten_RestrictSplitUsages(t *testing.T) {
 	base := Restrictions{
@@ -253,8 +256,8 @@ func TestTighten_RestrictSplitUsages(t *testing.T) {
 		},
 	}
 	expected := wanted
-	res := Tighten(base, wanted)
-	checkRestrictions(t, expected, res)
+	res, ok := Tighten(base, wanted)
+	checkRestrictions(t, expected, res, true, ok)
 }
 
 func testIsTighter(t *testing.T, a, b Restriction, expected bool) {

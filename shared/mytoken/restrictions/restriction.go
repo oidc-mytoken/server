@@ -334,17 +334,22 @@ func (r *Restrictions) SetMaxAudiences(mAud []string) {
 }
 
 // Tighten tightens/restricts a Restrictions with another set; if the wanted Restrictions are not tighter the original ones are returned
-func Tighten(old, wanted Restrictions) (res Restrictions) {
+func Tighten(old, wanted Restrictions) (res Restrictions, ok bool) {
 	if len(old) == 0 {
-		return wanted
+		ok = true
+		res = wanted
+		return
 	}
 	base := Restrictions{}
 	if err := copier.Copy(&base, &old); err != nil {
 		log.WithError(err).Error()
 	}
+	var droppedRestrictionsFromWanted bool
 	for _, a := range wanted {
+		thisOk := false
 		for i, o := range base {
 			if a.isTighterThan(o) {
+				thisOk = true
 				res = append(res, a)
 				if o.UsagesOther != nil && a.UsagesOther != nil {
 					*base[i].UsagesOther -= *a.UsagesOther
@@ -356,10 +361,18 @@ func Tighten(old, wanted Restrictions) (res Restrictions) {
 				break
 			}
 		}
+		if !thisOk {
+			droppedRestrictionsFromWanted = true
+		}
 	}
 	if len(res) == 0 { // if all from wanted are dropped, because they are not tighter than old, than use old
-		return old
+		res = old
+		if len(wanted) == 0 { // the default for an empty restriction field is always using the parent's restrictions, so this is fine
+			ok = true
+		}
+		return
 	}
+	ok = !droppedRestrictionsFromWanted
 	return
 }
 
