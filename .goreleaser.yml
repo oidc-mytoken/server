@@ -86,6 +86,9 @@ checksum:
   name_template: 'checksums.txt'
 snapshot:
   name_template: "{{ .Tag }}-next"
+release:
+  draft: true
+  name_template: "{{.ProjectName}} {{.Version}}"
 changelog:
   sort: asc
   filters:
