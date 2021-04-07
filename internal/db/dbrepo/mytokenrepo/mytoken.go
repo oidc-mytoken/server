@@ -114,7 +114,14 @@ func (ste *MytokenEntry) Store(tx *sqlx.Tx, comment string) error {
 		if err := steStore.Store(tx); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`INSERT IGNORE INTO EncryptionKeys  (rt_id, MT_id, encryption_key)  VALUES(?,?,?)`, steStore.RefreshTokenID, ste.ID, ste.encryptionKeyEncrypted); err != nil {
+		if _, err := tx.Exec(`INSERT IGNORE INTO EncryptionKeys  (encryption_key)  VALUES(?)`, ste.encryptionKeyEncrypted); err != nil {
+			return err
+		}
+		var keyID uint64
+		if err := tx.Get(&keyID, `SELECT LAST_INSERT_ID()`); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(`INSERT IGNORE INTO RT_EncryptionKeys  (rt_id, MT_id, key_id)  VALUES(?,?,?)`, steStore.RefreshTokenID, ste.ID, keyID); err != nil {
 			return err
 		}
 		return eventService.LogEvent(tx, eventService.MTEvent{
