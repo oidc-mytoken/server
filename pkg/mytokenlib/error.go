@@ -20,3 +20,6 @@ func newMytokenErrorFromError(e string, err error) *MytokenError {
 		errorDetails: err.Error(),
 	}
 }
+
+const unexpectedResponse = "unexpected response from mytoken server"
+const errorWhileHttp = "error while sending http request"

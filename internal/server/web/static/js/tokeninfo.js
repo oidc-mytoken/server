@@ -157,8 +157,8 @@ $('#get-list').on('click', function(e){
         function (res) {
             const mToken = res['mytoken']
             _tokeninfo('list_mytokens',
-                function(res){
-                    msg.html(tokenlistToHTML(res['mytokens']));
+                function(infoRes){
+                    msg.html(tokenlistToHTML(infoRes['mytokens']));
                     msg.removeClass('text-danger');
                     copy.addClass('d-none');
                 },

@@ -114,14 +114,7 @@ func (ste *MytokenEntry) Store(tx *sqlx.Tx, comment string) error {
 		if err := steStore.Store(tx); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`INSERT IGNORE INTO EncryptionKeys  (encryption_key)  VALUES(?)`, ste.encryptionKeyEncrypted); err != nil {
-			return err
-		}
-		var keyID uint64
-		if err := tx.Get(&keyID, `SELECT LAST_INSERT_ID()`); err != nil {
-			return err
-		}
-		if _, err := tx.Exec(`INSERT IGNORE INTO RT_EncryptionKeys  (rt_id, MT_id, key_id)  VALUES(?,?,?)`, steStore.RefreshTokenID, ste.ID, keyID); err != nil {
+		if err := storeEncryptionKey(tx, ste.encryptionKeyEncrypted, steStore.RefreshTokenID, ste.ID); err != nil {
 			return err
 		}
 		return eventService.LogEvent(tx, eventService.MTEvent{
@@ -129,6 +122,18 @@ func (ste *MytokenEntry) Store(tx *sqlx.Tx, comment string) error {
 			MTID:  ste.ID,
 		}, ste.networkData)
 	})
+}
+
+func storeEncryptionKey(tx *sqlx.Tx, key string, rtID uint64, myid mtid.MTID) error {
+	if _, err := tx.Exec(`INSERT IGNORE INTO EncryptionKeys  (encryption_key)  VALUES(?)`, key); err != nil {
+		return err
+	}
+	var keyID uint64
+	if err := tx.Get(&keyID, `SELECT LAST_INSERT_ID()`); err != nil {
+		return err
+	}
+	_, err := tx.Exec(`INSERT IGNORE INTO RT_EncryptionKeys  (rt_id, MT_id, key_id)  VALUES(?,?,?)`, rtID, myid, keyID)
+	return err
 }
 
 type mytokenEntryStore struct {

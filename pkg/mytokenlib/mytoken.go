@@ -57,17 +57,23 @@ func (my *MytokenProvider) GetMytokenByTransferCode(transferCode string) (string
 	return my.GetMytoken(req)
 }
 
-func (my *MytokenProvider) GetMytokenByAuthorizationFlow(issuer string, restrictions restrictions.Restrictions, capabilities, subtokenCapabilities capabilities.Capabilities, responseType model.ResponseType, name string, initPolling func(string) error, callback func(int64, int), endPolling func()) (string, error) {
+type PollingCallbacks struct {
+	Init     func(string) error
+	Callback func(int64, int)
+	End      func()
+}
+
+func (my *MytokenProvider) GetMytokenByAuthorizationFlow(issuer string, restrictions restrictions.Restrictions, capabilities, subtokenCapabilities capabilities.Capabilities, responseType model.ResponseType, name string, callbacks PollingCallbacks) (string, error) {
 	authRes, err := my.InitAuthorizationFlow(issuer, restrictions, capabilities, subtokenCapabilities, responseType, name)
 	if err != nil {
 		return "", err
 	}
-	if err = initPolling(authRes.AuthorizationURL); err != nil {
+	if err = callbacks.Init(authRes.AuthorizationURL); err != nil {
 		return "", err
 	}
-	tok, err := my.Poll(authRes.PollingInfo, callback)
+	tok, err := my.Poll(authRes.PollingInfo, callbacks.Callback)
 	if err == nil {
-		endPolling()
+		callbacks.End()
 	}
 	return tok, err
 }

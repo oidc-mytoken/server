@@ -10,26 +10,28 @@ clipboard.on('success', function (e) {
 
 $('#get-at').on('click', function(e){
     e.preventDefault();
+    let msg = $('#at-msg');
+    let copy = $('#at-copy');
     getMT(
         function (res) {
            const mToken = res['mytoken']
             getAT(
-                function(res) {
-                    $('#at-msg').text(res['access_token']);
-                    $('#at-msg').removeClass('text-danger');
-                    $('#at-copy').removeClass('d-none');
+                function(tokenRes) {
+                    msg.text(tokenRes['access_token']);
+                    msg.removeClass('text-danger');
+                    copy.removeClass('d-none');
                 },
                 function (errRes) {
-                    $('#at-msg').text(getErrorMessage(errRes));
-                    $('#at-msg').addClass('text-danger');
-                    $('#at-copy').removeClass('d-none');
+                    msg.text(getErrorMessage(errRes));
+                    msg.addClass('text-danger');
+                    copy.removeClass('d-none');
                 },
                 mToken);
         },
         function (errRes) {
-            $('#at-msg').text(getErrorMessage(errRes));
-            $('#at-msg').addClass('text-danger');
-            $('#at-copy').removeClass('d-none');
+            msg.text(getErrorMessage(errRes));
+            msg.addClass('text-danger');
+            copy.removeClass('d-none');
         }
     );
     return false;
@@ -40,7 +42,7 @@ function getAT(okCallback, errCallback, mToken) {
         "grant_type": "mytoken",
         "comment": "from web interface"
     };
-    if (mToken!=undefined) {
+    if (mToken!==undefined) {
         data["mytoken"]=mToken
     }
 
@@ -65,8 +67,8 @@ function getMT(okCallback, errCallback, capability="AT") {
             {
                 "exp":  Math.floor(Date.now() / 1000) + 60,
                 "ip": ["this"],
-                "usages_AT": capability=="AT" ? 1 : 0,
-                "usages_other": capability=="AT" ? 0 : 1
+                "usages_AT": capability==="AT" ? 1 : 0,
+                "usages_other": capability==="AT" ? 0 : 1
             }
         ]
     };

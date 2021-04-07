@@ -35,9 +35,20 @@ func getProvidersFromConfig() (providers []pkg.SupportedProviderConfig) {
 
 // Init initializes the configuration endpoint
 func Init() {
+	mytokenConfig = basicConfiguration()
+	addTokenRevocation(mytokenConfig)
+	addShortTokens(mytokenConfig)
+	addTransferCodes(mytokenConfig)
+	addPollingCodes(mytokenConfig)
+	addAccessTokenGrant(mytokenConfig)
+	addSignedJWTGrant(mytokenConfig)
+	addTokenInfo(mytokenConfig)
+}
+
+func basicConfiguration() *pkg.MytokenConfiguration {
 	apiPaths := routes.GetCurrentAPIPaths()
 	otherPaths := routes.GetGeneralPaths()
-	mytokenConfig = &pkg.MytokenConfiguration{
+	return &pkg.MytokenConfiguration{
 		Issuer:                                 config.Get().IssuerURL,
 		AccessTokenEndpoint:                    utils.CombineURLPath(config.Get().IssuerURL, apiPaths.AccessTokenEndpoint),
 		MytokenEndpoint:                        utils.CombineURLPath(config.Get().IssuerURL, apiPaths.MytokenEndpoint),
@@ -53,26 +64,41 @@ func Init() {
 		ServiceDocumentation:                   config.Get().ServiceDocumentation,
 		Version:                                version.VERSION(),
 	}
+}
+
+func addTokenRevocation(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.TokenRevocation.Enabled {
-		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(config.Get().IssuerURL, apiPaths.RevocationEndpoint)
+		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(config.Get().IssuerURL, routes.GetCurrentAPIPaths().RevocationEndpoint)
 	}
-	if config.Get().Features.TransferCodes.Enabled {
+}
+func addShortTokens(mytokenConfig *pkg.MytokenConfiguration) {
+	if config.Get().Features.ShortTokens.Enabled {
 		pkgModel.ResponseTypeShortToken.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
 	}
+}
+func addTransferCodes(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.TransferCodes.Enabled {
-		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(config.Get().IssuerURL, apiPaths.TokenTransferEndpoint)
+		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(config.Get().IssuerURL, routes.GetCurrentAPIPaths().TokenTransferEndpoint)
 		pkgModel.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 		pkgModel.ResponseTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
 	}
+}
+func addPollingCodes(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.Polling.Enabled {
 		pkgModel.GrantTypePollingCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 	}
+}
+func addAccessTokenGrant(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.AccessTokenGrant.Enabled {
 		pkgModel.GrantTypeAccessToken.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 	}
+}
+func addSignedJWTGrant(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.SignedJWTGrant.Enabled {
 		pkgModel.GrantTypePrivateKeyJWT.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 	}
+}
+func addTokenInfo(mytokenConfig *pkg.MytokenConfiguration) {
 	if !config.Get().Features.TokenInfo.Enabled {
 		mytokenConfig.TokeninfoEndpoint = ""
 	} else {

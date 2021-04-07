@@ -152,8 +152,8 @@ function approve() {
         type: "POST",
         url: window.location.href,
         data: data,
-        success: function (data){
-            window.location.href = data['authorization_url'];
+        success: function (res){
+            window.location.href = res['authorization_url'];
         },
         error: function(errRes){
             let errMsg = getErrorMessage(errRes);

@@ -14,7 +14,7 @@ func (my *MytokenProvider) TokeninfoIntrospect(mytoken string) (*pkg.TokeninfoIn
 	}
 	resp, err := httpClient.Do().R().SetBody(req).SetResult(&pkg.TokeninfoIntrospectResponse{}).SetError(&model.APIError{}).Post(my.TokeninfoEndpoint)
 	if err != nil {
-		return nil, newMytokenErrorFromError("error while sending http request", err)
+		return nil, newMytokenErrorFromError(errorWhileHttp, err)
 	}
 	if eRes := resp.Error(); eRes != nil {
 		if errRes := eRes.(*model.APIError); errRes != nil && errRes.Error != "" {
@@ -27,7 +27,7 @@ func (my *MytokenProvider) TokeninfoIntrospect(mytoken string) (*pkg.TokeninfoIn
 	res, ok := resp.Result().(*pkg.TokeninfoIntrospectResponse)
 	if !ok {
 		return nil, &MytokenError{
-			err: "unexpected response from mytoken server",
+			err: unexpectedResponse,
 		}
 	}
 	return res, nil
@@ -39,7 +39,7 @@ func (my *MytokenProvider) TokeninfoHistory(mytoken string) (*pkg.TokeninfoHisto
 	}
 	resp, err := httpClient.Do().R().SetBody(req).SetResult(&pkg.TokeninfoHistoryResponse{}).SetError(&model.APIError{}).Post(my.TokeninfoEndpoint)
 	if err != nil {
-		return nil, newMytokenErrorFromError("error while sending http request", err)
+		return nil, newMytokenErrorFromError(errorWhileHttp, err)
 	}
 	if eRes := resp.Error(); eRes != nil {
 		if errRes := eRes.(*model.APIError); errRes != nil && errRes.Error != "" {
@@ -52,7 +52,7 @@ func (my *MytokenProvider) TokeninfoHistory(mytoken string) (*pkg.TokeninfoHisto
 	res, ok := resp.Result().(*pkg.TokeninfoHistoryResponse)
 	if !ok {
 		return nil, &MytokenError{
-			err: "unexpected response from mytoken server",
+			err: unexpectedResponse,
 		}
 	}
 	return res, nil
@@ -64,7 +64,7 @@ func (my *MytokenProvider) TokeninfoSubtokens(mytoken string) (*pkg.TokeninfoTre
 	}
 	resp, err := httpClient.Do().R().SetBody(req).SetResult(&pkg.TokeninfoTreeResponse{}).SetError(&model.APIError{}).Post(my.TokeninfoEndpoint)
 	if err != nil {
-		return nil, newMytokenErrorFromError("error while sending http request", err)
+		return nil, newMytokenErrorFromError(errorWhileHttp, err)
 	}
 	if eRes := resp.Error(); eRes != nil {
 		if errRes := eRes.(*model.APIError); errRes != nil && errRes.Error != "" {
@@ -77,7 +77,7 @@ func (my *MytokenProvider) TokeninfoSubtokens(mytoken string) (*pkg.TokeninfoTre
 	res, ok := resp.Result().(*pkg.TokeninfoTreeResponse)
 	if !ok {
 		return nil, &MytokenError{
-			err: "unexpected response from mytoken server",
+			err: unexpectedResponse,
 		}
 	}
 	return res, nil
@@ -89,7 +89,7 @@ func (my *MytokenProvider) TokeninfoListMytokens(mytoken string) (*pkg.Tokeninfo
 	}
 	resp, err := httpClient.Do().R().SetBody(req).SetResult(&pkg.TokeninfoListResponse{}).SetError(&model.APIError{}).Post(my.TokeninfoEndpoint)
 	if err != nil {
-		return nil, newMytokenErrorFromError("error while sending http request", err)
+		return nil, newMytokenErrorFromError(errorWhileHttp, err)
 	}
 	if eRes := resp.Error(); eRes != nil {
 		if errRes := eRes.(*model.APIError); errRes != nil && errRes.Error != "" {
@@ -102,7 +102,7 @@ func (my *MytokenProvider) TokeninfoListMytokens(mytoken string) (*pkg.Tokeninfo
 	res, ok := resp.Result().(*pkg.TokeninfoListResponse)
 	if !ok {
 		return nil, &MytokenError{
-			err: "unexpected response from mytoken server",
+			err: unexpectedResponse,
 		}
 	}
 	return res, nil

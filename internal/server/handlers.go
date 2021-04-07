@@ -8,7 +8,7 @@ import (
 
 func handleIndex(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
-		"logged-in": false,
+		loggedIn: false,
 	}
 	providers := []map[string]string{}
 	for _, p := range config.Get().Providers {
@@ -18,38 +18,38 @@ func handleIndex(ctx *fiber.Ctx) error {
 		providers = append(providers, pp)
 	}
 	binding["providers"] = providers
-	return ctx.Render("sites/index", binding, "layouts/main")
+	return ctx.Render("sites/index", binding, layoutMain)
 }
 
 func handleHome(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
-		"logged-in": true,
+		loggedIn: true,
 	}
-	return ctx.Render("sites/home", binding, "layouts/main")
+	return ctx.Render("sites/home", binding, layoutMain)
 }
 
 func handleNativeCallback(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
-		"empty-navbar": true,
+		emptyNavbar: true,
 	}
-	return ctx.Render("sites/native", binding, "layouts/main")
+	return ctx.Render("sites/native", binding, layoutMain)
 }
 
 func handleNativeConsentAbortCallback(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
-		"empty-navbar": true,
+		emptyNavbar: true,
 	}
-	return ctx.Render("sites/native.abort", binding, "layouts/main")
+	return ctx.Render("sites/native.abort", binding, layoutMain)
 }
 
 func handlePrivacy(ctx *fiber.Ctx) error {
 	so := config.Get().ServiceOperator
 	binding := map[string]interface{}{
-		"empty-navbar":    true,
+		emptyNavbar:       true,
 		"name":            so.Name,
 		"homepage":        so.Homepage,
 		"contact":         so.Contact,
 		"privacy-contact": so.Privacy,
 	}
-	return ctx.Render("sites/privacy", binding, "layouts/main")
+	return ctx.Render("sites/privacy", binding, layoutMain)
 }

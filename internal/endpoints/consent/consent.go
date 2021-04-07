@@ -55,34 +55,38 @@ func HandleConsent(ctx *fiber.Ctx) error {
 	return handleConsent(ctx, authInfo)
 }
 
+func handleConsentDecline(ctx *fiber.Ctx, oState *state.State) error {
+	info := oState.Parse()
+	url := "/"
+	if info.Native {
+		url = "/native/abort"
+	}
+	if err := authcodeinforepo.DeleteAuthFlowInfoByState(nil, oState); err != nil {
+		res := model.ErrorToInternalServerErrorResponse(err)
+		m := utils.StructToStringMapUsingJSONTags(res.Response)
+		m["url"] = url
+		res.Response = m
+		return res.Send(ctx)
+	}
+	if info.Native {
+		if err := transfercoderepo.DeclineConsentByState(nil, oState); err != nil {
+			log.WithError(err).Error()
+		}
+	}
+	return model.Response{
+		Status: 278,
+		Response: map[string]string{
+			"url": url,
+		},
+	}.Send(ctx)
+}
+
 // HandleConsentPost handles consent confirmation requests
 func HandleConsentPost(ctx *fiber.Ctx) error {
 	consentCode := state.ParseConsentCode(ctx.Params("consent_code"))
 	oState := state.NewState(consentCode.GetState())
-	if len(ctx.Body()) == 0 { // consent not given
-		info := oState.Parse()
-		url := "/"
-		if info.Native {
-			url = "/native/abort"
-		}
-		if err := authcodeinforepo.DeleteAuthFlowInfoByState(nil, oState); err != nil {
-			res := model.ErrorToInternalServerErrorResponse(err)
-			m := utils.StructToStringMapUsingJSONTags(res.Response)
-			m["url"] = url
-			res.Response = m
-			return res.Send(ctx)
-		}
-		if info.Native {
-			if err := transfercoderepo.DeclineConsentByState(nil, oState); err != nil {
-				log.WithError(err).Error()
-			}
-		}
-		return model.Response{
-			Status: 278,
-			Response: map[string]string{
-				"url": url,
-			},
-		}.Send(ctx)
+	if len(ctx.Body()) == 0 {
+		return handleConsentDecline(ctx, oState)
 	}
 	req := pkg.ConsentPostRequest{}
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
