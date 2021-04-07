@@ -1,9 +1,6 @@
 package tree
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/jmoiron/sqlx"
 
 	"github.com/oidc-mytoken/server/internal/db"
@@ -37,13 +34,6 @@ type MytokenEntryTree struct {
 	Children []MytokenEntryTree `json:"children,omitempty"`
 }
 
-func (stet MytokenEntryTree) print(depth int) {
-	fmt.Printf("%s%s - %s - %s\n", strings.Repeat(" ", depth*4), stet.Token.Name.String, stet.Token.CreatedAt.Time().String(), stet.Token.IP)
-	for _, c := range stet.Children {
-		c.print(depth + 1)
-	}
-}
-
 func GetUserID(tx *sqlx.Tx, tokenID mtid.MTID) (uid int64, err error) {
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		return tx.Get(&uid, `SELECT user_id FROM MTokens WHERE id=? ORDER BY name`, tokenID)
@@ -71,6 +61,7 @@ func AllTokensForUser(tx *sqlx.Tx, uid int64) ([]MytokenEntryTree, error) {
 	}
 	return tokensToTrees(tokens), nil
 }
+
 func subtokens(tx *sqlx.Tx, rootID mtid.MTID) ([]MytokenEntry, error) {
 	var tokens []MytokenEntry
 	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
@@ -78,6 +69,7 @@ func subtokens(tx *sqlx.Tx, rootID mtid.MTID) ([]MytokenEntry, error) {
 	})
 	return tokens, err
 }
+
 func TokenSubTree(tx *sqlx.Tx, tokenID mtid.MTID) (MytokenEntryTree, error) {
 	var tokens []MytokenEntry
 	var root MytokenEntry
