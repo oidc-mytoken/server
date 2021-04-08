@@ -8,7 +8,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
-	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 )
 
@@ -23,8 +23,8 @@ type AuthFlowInfoOut struct {
 	State                *state.State
 	Issuer               string
 	Restrictions         restrictions.Restrictions
-	Capabilities         capabilities.Capabilities
-	SubtokenCapabilities capabilities.Capabilities
+	Capabilities         api.Capabilities
+	SubtokenCapabilities api.Capabilities
 	Name                 string
 	PollingCode          bool
 }
@@ -33,8 +33,8 @@ type authFlowInfo struct {
 	State                *state.State `db:"state_h"`
 	Issuer               string       `db:"iss"`
 	Restrictions         restrictions.Restrictions
-	Capabilities         capabilities.Capabilities
-	SubtokenCapabilities capabilities.Capabilities `db:"subtoken_capabilities"`
+	Capabilities         api.Capabilities
+	SubtokenCapabilities api.Capabilities `db:"subtoken_capabilities"`
 	Name                 db.NullString
 	PollingCode          db.BitBool `db:"polling_code"`
 	ExpiresIn            int64      `db:"expires_in"`
@@ -99,7 +99,7 @@ func DeleteAuthFlowInfoByState(tx *sqlx.Tx, state *state.State) error {
 	})
 }
 
-func UpdateTokenInfoByState(tx *sqlx.Tx, state *state.State, r restrictions.Restrictions, c, sc capabilities.Capabilities) error {
+func UpdateTokenInfoByState(tx *sqlx.Tx, state *state.State, r restrictions.Restrictions, c, sc api.Capabilities) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`UPDATE AuthInfo SET restrictions=?, capabilities=?, subtoken_capabilities=? WHERE state_h=?`, r, c, sc, state)
 		return err

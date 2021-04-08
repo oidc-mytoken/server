@@ -7,26 +7,25 @@ import (
 
 	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 )
 
 // OIDCFlowRequest holds the request for an OIDC Flow request
 type OIDCFlowRequest struct {
-	api.OIDCFlowRequest  `json:",inline"`
-	GrantType            model.GrantType           `json:"grant_type"`
-	OIDCFlow             model.OIDCFlow            `json:"oidc_flow"`
-	Restrictions         restrictions.Restrictions `json:"restrictions"`
-	Capabilities         capabilities.Capabilities `json:"capabilities"`
-	SubtokenCapabilities capabilities.Capabilities `json:"subtoken_capabilities"`
-	ResponseType         model.ResponseType        `json:"response_type"`
-	redirectType         string
+	api.OIDCFlowRequest `json:",inline"`
+	GrantType           model.GrantType           `json:"grant_type"`
+	OIDCFlow            model.OIDCFlow            `json:"oidc_flow"`
+	Restrictions        restrictions.Restrictions `json:"restrictions"`
+	ResponseType        model.ResponseType        `json:"response_type"`
+	redirectType        string
 }
 
 // NewOIDCFlowRequest creates a new OIDCFlowRequest with default values where they can be omitted
 func NewOIDCFlowRequest() *OIDCFlowRequest {
 	return &OIDCFlowRequest{
-		Capabilities: capabilities.Capabilities{capabilities.CapabilityAT},
+		OIDCFlowRequest: api.OIDCFlowRequest{
+			Capabilities: api.Capabilities{api.CapabilityAT},
+		},
 		ResponseType: model.ResponseTypeToken,
 		redirectType: redirectTypeWeb,
 	}
@@ -60,7 +59,7 @@ func (r *OIDCFlowRequest) UnmarshalJSON(data []byte) error {
 	}
 	o.redirectType = o.RedirectType
 	*r = OIDCFlowRequest(o.ofr)
-	if r.SubtokenCapabilities != nil && !r.Capabilities.Has(capabilities.CapabilityCreateMT) {
+	if r.SubtokenCapabilities != nil && !r.Capabilities.Has(api.CapabilityCreateMT) {
 		r.SubtokenCapabilities = nil
 	}
 	return nil

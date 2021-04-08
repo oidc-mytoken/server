@@ -12,7 +12,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/pkg/api/v0"
-	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
@@ -22,7 +21,7 @@ import (
 func handleTokenInfoTree(mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
 	// If we call this function it means the token is valid.
 
-	if !mt.Capabilities.Has(capabilities.CapabilityTokeninfoTree) {
+	if !mt.Capabilities.Has(api.CapabilityTokeninfoTree) {
 		return model.Response{
 			Status:   fiber.StatusForbidden,
 			Response: api.APIErrorInsufficientCapabilities,

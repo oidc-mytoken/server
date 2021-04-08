@@ -24,7 +24,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
 	"github.com/oidc-mytoken/server/pkg/api/v0"
 	pkgModel "github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
@@ -88,13 +87,13 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 		Status: fiber.StatusOK,
 		Response: response.MytokenResponse{
 			MytokenResponse: api.MytokenResponse{
-				Mytoken:   tokenStr,
-				ExpiresIn: mt.ExpiresIn(),
+				Mytoken:              tokenStr,
+				ExpiresIn:            mt.ExpiresIn(),
+				Capabilities:         mt.Capabilities,
+				SubtokenCapabilities: mt.SubtokenCapabilities,
 			},
-			MytokenType:          tokenType,
-			Restrictions:         mt.Restrictions,
-			Capabilities:         mt.Capabilities,
-			SubtokenCapabilities: mt.SubtokenCapabilities,
+			MytokenType:  tokenType,
+			Restrictions: mt.Restrictions,
 		},
 	}
 
@@ -143,7 +142,7 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	}
 	log.Trace("Checked token not revoked")
 
-	if ok := mt.VerifyCapabilities(capabilities.CapabilityCreateMT); !ok {
+	if ok := mt.VerifyCapabilities(api.CapabilityCreateMT); !ok {
 		return &model.Response{
 			Status:   fiber.StatusForbidden,
 			Response: api.APIErrorInsufficientCapabilities,
@@ -241,16 +240,16 @@ func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytoke
 	if capsFromParent == nil {
 		capsFromParent = parent.Capabilities
 	}
-	c := capabilities.Tighten(capsFromParent, req.Capabilities)
+	c := api.Tighten(capsFromParent, req.Capabilities)
 	if len(c) == 0 {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: pkgModel.BadRequestError("mytoken to be issued cannot have any of the requested capabilities"),
 		}
 	}
-	var sc capabilities.Capabilities = nil
-	if c.Has(capabilities.CapabilityCreateMT) {
-		sc = capabilities.Tighten(capsFromParent, req.SubtokenCapabilities)
+	var sc api.Capabilities = nil
+	if c.Has(api.CapabilityCreateMT) {
+		sc = api.Tighten(capsFromParent, req.SubtokenCapabilities)
 	}
 	ste := mytokenrepo.NewMytokenEntry(
 		mytoken.NewMytoken(parent.OIDCSubject, parent.OIDCIssuer, r, c, sc),

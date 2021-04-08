@@ -31,7 +31,7 @@ func (my *MytokenProvider) GetMytoken(req interface{}) (string, error) {
 	return stRes.Mytoken, nil
 }
 
-func (my *MytokenProvider) GetMytokenByMytoken(mytoken, issuer string, restrictions api.Restrictions, capabilities, subtokenCapabilities []string, responseType, name string) (string, error) {
+func (my *MytokenProvider) GetMytokenByMytoken(mytoken, issuer string, restrictions api.Restrictions, capabilities, subtokenCapabilities api.Capabilities, responseType, name string) (string, error) {
 	req := api.MytokenFromMytokenRequest{
 		Issuer:               issuer,
 		GrantType:            api.GrantTypeMytoken,
@@ -59,7 +59,7 @@ type PollingCallbacks struct {
 	End      func()
 }
 
-func (my *MytokenProvider) GetMytokenByAuthorizationFlow(issuer string, restrictions api.Restrictions, capabilities, subtokenCapabilities []string, responseType string, name string, callbacks PollingCallbacks) (string, error) {
+func (my *MytokenProvider) GetMytokenByAuthorizationFlow(issuer string, restrictions api.Restrictions, capabilities, subtokenCapabilities api.Capabilities, responseType, name string, callbacks PollingCallbacks) (string, error) {
 	authRes, err := my.InitAuthorizationFlow(issuer, restrictions, capabilities, subtokenCapabilities, responseType, name)
 	if err != nil {
 		return "", err
@@ -74,7 +74,7 @@ func (my *MytokenProvider) GetMytokenByAuthorizationFlow(issuer string, restrict
 	return tok, err
 }
 
-func (my *MytokenProvider) InitAuthorizationFlow(issuer string, restrictions api.Restrictions, capabilities, subtokenCapabilities []string, responseType, name string) (*api.AuthCodeFlowResponse, error) {
+func (my *MytokenProvider) InitAuthorizationFlow(issuer string, restrictions api.Restrictions, capabilities, subtokenCapabilities api.Capabilities, responseType, name string) (*api.AuthCodeFlowResponse, error) {
 	req := api.AuthCodeFlowRequest{
 		OIDCFlowRequest: api.OIDCFlowRequest{
 			Issuer:               issuer,

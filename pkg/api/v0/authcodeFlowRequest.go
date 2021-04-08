@@ -12,8 +12,8 @@ type OIDCFlowRequest struct {
 	GrantType            string       `json:"grant_type"`
 	OIDCFlow             string       `json:"oidc_flow"`
 	Restrictions         Restrictions `json:"restrictions"`
-	Capabilities         []string     `json:"capabilities"`
-	SubtokenCapabilities []string     `json:"subtoken_capabilities"`
+	Capabilities         Capabilities `json:"capabilities"`
+	SubtokenCapabilities Capabilities `json:"subtoken_capabilities"`
 	Name                 string       `json:"name"`
 	ResponseType         string       `json:"response_type"`
 }

@@ -13,7 +13,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/jws"
 	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
@@ -37,8 +36,8 @@ type Mytoken struct {
 	OIDCSubject          string                    `json:"oidc_sub"`
 	OIDCIssuer           string                    `json:"oidc_iss"`
 	Restrictions         restrictions.Restrictions `json:"restrictions,omitempty"`
-	Capabilities         capabilities.Capabilities `json:"capabilities"`
-	SubtokenCapabilities capabilities.Capabilities `json:"subtoken_capabilities,omitempty"`
+	Capabilities         api.Capabilities          `json:"capabilities"`
+	SubtokenCapabilities api.Capabilities          `json:"subtoken_capabilities,omitempty"`
 	Rotation             *rotation.Rotation        `json:"rotation,omitempty"`
 	jwt                  string
 }
@@ -58,7 +57,7 @@ func (mt *Mytoken) verifySubject() bool {
 }
 
 // VerifyCapabilities verifies that this Mytoken has the required capabilities
-func (mt *Mytoken) VerifyCapabilities(required ...capabilities.Capability) bool {
+func (mt *Mytoken) VerifyCapabilities(required ...api.Capability) bool {
 	if mt.Capabilities == nil || len(mt.Capabilities) == 0 {
 		return false
 	}
@@ -71,7 +70,7 @@ func (mt *Mytoken) VerifyCapabilities(required ...capabilities.Capability) bool 
 }
 
 // NewMytoken creates a new Mytoken
-func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc capabilities.Capabilities) *Mytoken {
+func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.Capabilities) *Mytoken {
 	now := unixtime.Now()
 	mt := &Mytoken{
 		ID:                   mtid.New(),
@@ -164,11 +163,11 @@ func (mt *Mytoken) toShortMytokenResponse(jwt string) (response.MytokenResponse,
 func (mt *Mytoken) toTokenResponse() response.MytokenResponse {
 	return response.MytokenResponse{
 		MytokenResponse: api.MytokenResponse{
-			ExpiresIn: mt.ExpiresIn(),
+			ExpiresIn:            mt.ExpiresIn(),
+			Capabilities:         mt.Capabilities,
+			SubtokenCapabilities: mt.SubtokenCapabilities,
 		},
-		Restrictions:         mt.Restrictions,
-		Capabilities:         mt.Capabilities,
-		SubtokenCapabilities: mt.SubtokenCapabilities,
+		Restrictions: mt.Restrictions,
 	}
 }
 

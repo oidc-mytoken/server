@@ -1,16 +1,16 @@
 package pkg
 
 import (
-	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 type WebCapability struct {
-	capabilities.Capability
+	api.Capability
 	intClass *int
 }
 
-func WebCapabilities(cc capabilities.Capabilities) (wc []WebCapability) {
+func WebCapabilities(cc api.Capabilities) (wc []WebCapability) {
 	for _, c := range cc {
 		wc = append(wc, WebCapability{c, nil})
 	}
@@ -25,14 +25,14 @@ const (
 )
 
 var normalCapabilities = []string{
-	capabilities.CapabilityAT.Name,
-	capabilities.CapabilityCreateMT.Name,
-	capabilities.CapabilityTokeninfoIntrospect.Name,
-	capabilities.CapabilityTokeninfoHistory.Name,
-	capabilities.CapabilityTokeninfoTree.Name,
+	api.CapabilityAT.Name,
+	api.CapabilityCreateMT.Name,
+	api.CapabilityTokeninfoIntrospect.Name,
+	api.CapabilityTokeninfoHistory.Name,
+	api.CapabilityTokeninfoTree.Name,
 }
-var warningCapabilities = []string{capabilities.CapabilityListMT.Name}
-var dangerCapabilities = []string{capabilities.CapabilitySettings.Name}
+var warningCapabilities = []string{api.CapabilityListMT.Name}
+var dangerCapabilities = []string{api.CapabilitySettings.Name}
 
 func (c WebCapability) getIntClass() int {
 	if c.intClass != nil {
@@ -75,5 +75,5 @@ func (c WebCapability) CapabilityLevel() string {
 }
 
 func (c WebCapability) IsCreateMT() bool {
-	return c.Name == capabilities.CapabilityCreateMT.Name
+	return c.Name == api.CapabilityCreateMT.Name
 }

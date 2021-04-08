@@ -13,8 +13,8 @@ type Mytoken struct {
 	OIDCSubject          string       `json:"oidc_sub"`
 	OIDCIssuer           string       `json:"oidc_iss"`
 	Restrictions         Restrictions `json:"restrictions,omitempty"`
-	Capabilities         []string     `json:"capabilities"`
-	SubtokenCapabilities []string     `json:"subtoken_capabilities,omitempty"`
+	Capabilities         Capabilities `json:"capabilities"`
+	SubtokenCapabilities Capabilities `json:"subtoken_capabilities,omitempty"`
 	Rotation             Rotation     `json:"rotation,omitempty"`
 }
 

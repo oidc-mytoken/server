@@ -18,7 +18,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
 	"github.com/oidc-mytoken/server/pkg/api/v0"
 	model2 "github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
@@ -33,7 +32,7 @@ func handleConsent(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut) e
 		"capabilities": pkg.WebCapabilities(c),
 		"iss":          authInfo.Issuer,
 	}
-	if c.Has(capabilities.CapabilityCreateMT) {
+	if c.Has(api.CapabilityCreateMT) {
 		if len(sc) == 0 {
 			sc = c
 		}
@@ -94,7 +93,7 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	for _, c := range req.Capabilities {
-		if !capabilities.AllCapabilities.Has(c) {
+		if !api.AllCapabilities.Has(c) {
 			return model.Response{
 				Status:   fiber.StatusBadRequest,
 				Response: model2.BadRequestError(fmt.Sprintf("unknown capability '%s'", c)),
@@ -102,7 +101,7 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 		}
 	}
 	for _, c := range req.SubtokenCapabilities {
-		if !capabilities.AllCapabilities.Has(c) {
+		if !api.AllCapabilities.Has(c) {
 			return model.Response{
 				Status:   fiber.StatusBadRequest,
 				Response: model2.BadRequestError(fmt.Sprintf("unknown subtoken_capability '%s'", c)),

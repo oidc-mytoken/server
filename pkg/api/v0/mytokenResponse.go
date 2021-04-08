@@ -7,6 +7,6 @@ type MytokenResponse struct {
 	TransferCode         string       `json:"transfer_code,omitempty"`
 	ExpiresIn            uint64       `json:"expires_in,omitempty"`
 	Restrictions         Restrictions `json:"restrictions,omitempty"`
-	Capabilities         []string     `json:"capabilities,omitempty"`
-	SubtokenCapabilities []string     `json:"subtoken_capabilities,omitempty"`
+	Capabilities         Capabilities `json:"capabilities,omitempty"`
+	SubtokenCapabilities Capabilities `json:"subtoken_capabilities,omitempty"`
 }

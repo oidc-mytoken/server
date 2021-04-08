@@ -5,7 +5,6 @@ import (
 
 	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/mytoken/token"
 )
@@ -16,8 +15,6 @@ type MytokenFromMytokenRequest struct {
 	GrantType                     model.GrantType           `json:"grant_type"`
 	Mytoken                       token.Token               `json:"mytoken"`
 	Restrictions                  restrictions.Restrictions `json:"restrictions"`
-	Capabilities                  capabilities.Capabilities `json:"capabilities"`
-	SubtokenCapabilities          capabilities.Capabilities `json:"subtoken_capabilities"`
 	ResponseType                  model.ResponseType        `json:"response_type"`
 }
 
@@ -36,7 +33,7 @@ func (r *MytokenFromMytokenRequest) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*r = MytokenFromMytokenRequest(*rr)
-	if r.SubtokenCapabilities != nil && !r.Capabilities.Has(capabilities.CapabilityCreateMT) {
+	if r.SubtokenCapabilities != nil && !r.Capabilities.Has(api.CapabilityCreateMT) {
 		r.SubtokenCapabilities = nil
 	}
 	return nil

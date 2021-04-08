@@ -19,7 +19,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
 	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
@@ -85,7 +84,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		}).Send(ctx)
 	}
 	log.Trace("Checked mytoken restrictions")
-	if ok := mt.VerifyCapabilities(capabilities.CapabilityAT); !ok {
+	if ok := mt.VerifyCapabilities(api.CapabilityAT); !ok {
 		res := serverModel.Response{
 			Status:   fiber.StatusForbidden,
 			Response: api.APIErrorInsufficientCapabilities,

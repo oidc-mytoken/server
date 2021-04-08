@@ -1,4 +1,4 @@
-package capabilities
+package api
 
 import (
 	"database/sql/driver"

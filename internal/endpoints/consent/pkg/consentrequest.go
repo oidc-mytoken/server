@@ -1,7 +1,7 @@
 package pkg
 
 import (
-	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 )
 
@@ -9,6 +9,6 @@ import (
 type ConsentPostRequest struct {
 	Issuer               string                    `json:"oidc_iss"`
 	Restrictions         restrictions.Restrictions `json:"restrictions"`
-	Capabilities         capabilities.Capabilities `json:"capabilities"`
-	SubtokenCapabilities capabilities.Capabilities `json:"subtoken_capabilities"`
+	Capabilities         api.Capabilities          `json:"capabilities"`
+	SubtokenCapabilities api.Capabilities          `json:"subtoken_capabilities"`
 }
