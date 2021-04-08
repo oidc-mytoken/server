@@ -5,6 +5,7 @@ import (
 )
 
 type TokeninfoHistoryResponse struct {
+	// un update check api.TokeninfoHistoryResponse
 	EventHistory eventrepo.EventHistory `json:"events"`
 }
 

@@ -3,7 +3,7 @@ package mytoken
 import (
 	"fmt"
 
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -11,8 +11,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/jws"
-	serverModel "github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
@@ -25,6 +25,7 @@ import (
 
 // Mytoken is a mytoken Mytoken
 type Mytoken struct {
+	// On update also update api.Mytoken
 	Issuer               string                    `json:"iss"`
 	Subject              string                    `json:"sub"`
 	ExpiresAt            unixtime.UnixTime         `json:"exp,omitempty"`
@@ -162,7 +163,9 @@ func (mt *Mytoken) toShortMytokenResponse(jwt string) (response.MytokenResponse,
 
 func (mt *Mytoken) toTokenResponse() response.MytokenResponse {
 	return response.MytokenResponse{
-		ExpiresIn:            mt.ExpiresIn(),
+		MytokenResponse: api.MytokenResponse{
+			ExpiresIn: mt.ExpiresIn(),
+		},
 		Restrictions:         mt.Restrictions,
 		Capabilities:         mt.Capabilities,
 		SubtokenCapabilities: mt.SubtokenCapabilities,
@@ -170,7 +173,7 @@ func (mt *Mytoken) toTokenResponse() response.MytokenResponse {
 }
 
 // CreateTransferCode creates a transfer code for the passed mytoken id
-func CreateTransferCode(myID mtid.MTID, jwt string, newMT bool, responseType model.ResponseType, clientMetaData serverModel.ClientMetaData) (string, uint64, error) {
+func CreateTransferCode(myID mtid.MTID, jwt string, newMT bool, responseType model.ResponseType, clientMetaData api.ClientMetaData) (string, uint64, error) {
 	transferCode, err := transfercoderepo.NewTransferCode(jwt, myID, newMT, responseType)
 	if err != nil {
 		return "", 0, err
@@ -189,7 +192,7 @@ func CreateTransferCode(myID mtid.MTID, jwt string, newMT bool, responseType mod
 }
 
 // ToTokenResponse creates a MytokenResponse for this Mytoken according to the passed model.ResponseType
-func (mt *Mytoken) ToTokenResponse(responseType model.ResponseType, networkData serverModel.ClientMetaData, jwt string) (response.MytokenResponse, error) {
+func (mt *Mytoken) ToTokenResponse(responseType model.ResponseType, networkData api.ClientMetaData, jwt string) (response.MytokenResponse, error) {
 	if jwt == "" {
 		jwt = mt.jwt
 	}

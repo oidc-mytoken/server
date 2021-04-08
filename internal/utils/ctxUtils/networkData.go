@@ -3,12 +3,12 @@ package ctxUtils
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 )
 
 // ClientMetaData returns the model.ClientMetaData for a given fiber.Ctx
-func ClientMetaData(ctx *fiber.Ctx) *model.ClientMetaData {
-	return &model.ClientMetaData{
+func ClientMetaData(ctx *fiber.Ctx) *api.ClientMetaData {
+	return &api.ClientMetaData{
 		IP:        ctx.IP(),
 		UserAgent: string(ctx.Request().Header.UserAgent()),
 	}

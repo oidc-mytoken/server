@@ -9,7 +9,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
 

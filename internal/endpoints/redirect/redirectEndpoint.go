@@ -12,7 +12,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
-	pkgModel "github.com/oidc-mytoken/server/pkg/model"
+	pkgModel "github.com/oidc-mytoken/server/shared/model"
 )
 
 // HandleOIDCRedirect handles redirects from the openid provider after an auth code flow

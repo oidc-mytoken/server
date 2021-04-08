@@ -23,8 +23,9 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/issuer"
 	"github.com/oidc-mytoken/server/internal/server/routes"
-	pkgModel "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/context"
+	pkgModel "github.com/oidc-mytoken/server/shared/model"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/utils"
@@ -78,7 +79,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 	if !ok {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.APIErrorUnknownIssuer,
+			Response: api.APIErrorUnknownIssuer,
 		}
 	}
 	exp := req.Restrictions.GetExpires()
@@ -102,13 +103,13 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 	authFlowInfo := authcodeinforepo.AuthFlowInfo{
 		AuthFlowInfoOut: authFlowInfoO,
 	}
-	res := response.AuthCodeFlowResponse{
+	res := api.AuthCodeFlowResponse{
 		AuthorizationURL: utils.CombineURLPath(consentEndpoint, consentCode.String()),
 	}
 	if req.Native() && config.Get().Features.Polling.Enabled {
 		poll := authFlowInfo.State.PollingCode()
 		authFlowInfo.PollingCode = transfercoderepo.CreatePollingCode(poll, req.ResponseType)
-		res.PollingInfo = response.PollingInfo{
+		res.PollingInfo = api.PollingInfo{
 			PollingCode:          poll,
 			PollingCodeExpiresIn: config.Get().Features.Polling.PollingCodeExpiresAfter,
 			PollingInterval:      config.Get().Features.Polling.PollingInterval,
@@ -124,14 +125,14 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 }
 
 // CodeExchange performs an oidc code exchange it creates the mytoken and stores it in the database
-func CodeExchange(oState *state.State, code string, networkData model.ClientMetaData) *model.Response {
+func CodeExchange(oState *state.State, code string, networkData api.ClientMetaData) *model.Response {
 	log.Debug("Handle code exchange")
 	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(oState)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &model.Response{
 				Status:   fiber.StatusBadRequest,
-				Response: pkgModel.APIErrorStateMismatch,
+				Response: api.APIErrorStateMismatch,
 			}
 		}
 		return model.ErrorToInternalServerErrorResponse(err)
@@ -140,7 +141,7 @@ func CodeExchange(oState *state.State, code string, networkData model.ClientMeta
 	if !ok {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.APIErrorUnknownIssuer,
+			Response: api.APIErrorUnknownIssuer,
 		}
 	}
 	oauth2Config := oauth2.Config{
@@ -167,7 +168,7 @@ func CodeExchange(oState *state.State, code string, networkData model.ClientMeta
 	if token.RefreshToken == "" {
 		return &model.Response{
 			Status:   fiber.StatusInternalServerError,
-			Response: pkgModel.APIErrorNoRefreshToken,
+			Response: api.APIErrorNoRefreshToken,
 		}
 	}
 	scopes := authInfo.Restrictions.GetScopes()
@@ -250,7 +251,7 @@ func CodeExchange(oState *state.State, code string, networkData model.ClientMeta
 	}
 }
 
-func createMytokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut, token *oauth2.Token, oidcSub string, networkData model.ClientMetaData) (*mytokenrepo.MytokenEntry, error) {
+func createMytokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut, token *oauth2.Token, oidcSub string, networkData api.ClientMetaData) (*mytokenrepo.MytokenEntry, error) {
 	ste := mytokenrepo.NewMytokenEntry(
 		mytoken.NewMytoken(
 			oidcSub,

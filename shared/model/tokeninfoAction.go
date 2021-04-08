@@ -4,17 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"gopkg.in/yaml.v3"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // TokeninfoAction is an enum like type for tokeninfo actions
 type TokeninfoAction int
 
 // AllTokeninfoActions holds all defined TokenInfo strings
-var AllTokeninfoActions = [...]string{"introspect", "event_history", "subtoken_tree", "list_mytokens"}
+var AllTokeninfoActions = api.AllTokeninfoActions
 
 // TokeninfoActions
-const (
+const ( // assert that these are in the same order as api.AllTokeninfoActions
 	TokeninfoActionIntrospect TokeninfoAction = iota
 	TokeninfoActionEventHistory
 	TokeninfoActionSubtokenTree

@@ -5,6 +5,7 @@ import (
 )
 
 type TokeninfoTreeResponse struct {
+	// un update check api.TokeninforTeeResponse
 	Tokens tree.MytokenEntryTree `json:"mytokens"`
 }
 

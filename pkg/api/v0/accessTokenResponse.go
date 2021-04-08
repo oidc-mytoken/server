@@ -1,4 +1,4 @@
-package v0
+package api
 
 // AccessTokenResponse is the response to a access token request
 type AccessTokenResponse struct {

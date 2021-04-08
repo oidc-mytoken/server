@@ -4,18 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"gopkg.in/yaml.v3"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // OIDCFlow is a enum like type for oidc flows
 type OIDCFlow int
 
-var oidcFlows = [...]string{"authorization_code", "device"}
+var oidcFlows = [...]string{api.OIDCFlowAuthorizationCode}
 
 // OIDCFlows
 const (
 	OIDCFlowAuthorizationCode OIDCFlow = iota
-	OIDCFlowDevice
+	// OIDCFlowDevice
 	maxFlow
 )
 

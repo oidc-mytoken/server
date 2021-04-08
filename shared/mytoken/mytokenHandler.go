@@ -22,7 +22,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/oidc/revoke"
 	"github.com/oidc-mytoken/server/internal/server/httpStatus"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
-	pkgModel "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	pkgModel "github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
@@ -51,14 +52,14 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 		if !status.Found {
 			errorRes = &model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: pkgModel.APIErrorBadTransferCode,
+				Response: api.APIErrorBadTransferCode,
 			}
 			return fmt.Errorf("error_res")
 		}
 		if status.Expired {
 			errorRes = &model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: pkgModel.APIErrorTransferCodeExpired,
+				Response: api.APIErrorTransferCodeExpired,
 			}
 			return fmt.Errorf("error_res")
 		}
@@ -86,9 +87,11 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 	return &model.Response{
 		Status: fiber.StatusOK,
 		Response: response.MytokenResponse{
-			Mytoken:              tokenStr,
+			MytokenResponse: api.MytokenResponse{
+				Mytoken:   tokenStr,
+				ExpiresIn: mt.ExpiresIn(),
+			},
 			MytokenType:          tokenType,
-			ExpiresIn:            mt.ExpiresIn(),
 			Restrictions:         mt.Restrictions,
 			Capabilities:         mt.Capabilities,
 			SubtokenCapabilities: mt.SubtokenCapabilities,
@@ -143,14 +146,14 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	if ok := mt.VerifyCapabilities(capabilities.CapabilityCreateMT); !ok {
 		return &model.Response{
 			Status:   fiber.StatusForbidden,
-			Response: pkgModel.APIErrorInsufficientCapabilities,
+			Response: api.APIErrorInsufficientCapabilities,
 		}
 	}
 	log.Trace("Checked mytoken capabilities")
 	if ok := mt.Restrictions.VerifyForOther(nil, ctx.IP(), mt.ID); !ok {
 		return &model.Response{
 			Status:   fiber.StatusForbidden,
-			Response: pkgModel.APIErrorUsageRestricted,
+			Response: api.APIErrorUsageRestricted,
 		}
 	}
 	log.Trace("Checked mytoken restrictions")
@@ -170,7 +173,7 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	return handleMytokenFromMytoken(mt, req, ctxUtils.ClientMetaData(ctx), req.ResponseType)
 }
 
-func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData *model.ClientMetaData, responseType pkgModel.ResponseType) *model.Response {
+func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData *api.ClientMetaData, responseType pkgModel.ResponseType) *model.Response {
 	ste, errorResponse := createMytokenEntry(parent, req, *networkData)
 	if errorResponse != nil {
 		return errorResponse
@@ -202,7 +205,7 @@ func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFrom
 	}
 }
 
-func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData model.ClientMetaData) (*mytokenrepo.MytokenEntry, *model.Response) {
+func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData api.ClientMetaData) (*mytokenrepo.MytokenEntry, *model.Response) {
 	rtID, dbErr := refreshtokenrepo.GetRTID(nil, parent.ID)
 	rtFound, err := dbhelper.ParseError(dbErr)
 	if err != nil {
@@ -270,7 +273,7 @@ func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, token token.Token, recursive bool,
 	if !ok {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.APIErrorUnknownIssuer,
+			Response: api.APIErrorUnknownIssuer,
 		}
 	}
 	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
@@ -296,7 +299,7 @@ func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, token token.Token, recursive bool,
 			return nil
 		}
 		if e := revoke.RefreshToken(provider, rt); e != nil {
-			apiError := e.Response.(pkgModel.APIError)
+			apiError := e.Response.(api.APIError)
 			return fmt.Errorf("%s: %s", apiError.Error, apiError.ErrorDescription)
 		}
 		return refreshtokenrepo.DeleteRefreshToken(tx, rtID)

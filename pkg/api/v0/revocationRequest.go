@@ -1,4 +1,4 @@
-package pkg
+package api
 
 // RevocationRequest holds the information for a token revocation request
 type RevocationRequest struct {

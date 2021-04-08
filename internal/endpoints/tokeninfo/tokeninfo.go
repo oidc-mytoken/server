@@ -10,7 +10,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
-	model2 "github.com/oidc-mytoken/server/pkg/model"
+	model2 "github.com/oidc-mytoken/server/shared/model"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 

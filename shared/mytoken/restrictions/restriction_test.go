@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
@@ -29,7 +30,9 @@ func TestTighten_RestrictEmpty(t *testing.T) {
 	base := Restrictions{}
 	wanted := Restrictions{
 		{
-			Scope:     "a b c",
+			Restriction: api.Restriction{
+				Scope: "a b c",
+			},
 			ExpiresAt: 100,
 		},
 	}
@@ -41,11 +44,15 @@ func TestTighten_RestrictEmpty2(t *testing.T) {
 	base := Restrictions{}
 	wanted := Restrictions{
 		{
-			Scope:     "a b c",
+			Restriction: api.Restriction{
+				Scope: "a b c",
+			},
 			ExpiresAt: 100,
 		},
 		{
-			Scope:     "d",
+			Restriction: api.Restriction{
+				Scope: "d",
+			},
 			ExpiresAt: 100,
 		},
 	}
@@ -56,15 +63,21 @@ func TestTighten_RestrictEmpty2(t *testing.T) {
 func TestTighten_RequestEmpty(t *testing.T) {
 	base := Restrictions{
 		{
-			Scope:     "a b c",
+			Restriction: api.Restriction{
+				Scope: "a b c",
+			},
 			ExpiresAt: 500,
 		},
 		{
-			Scope:     "a",
+			Restriction: api.Restriction{
+				Scope: "a",
+			},
 			ExpiresAt: 1000,
 		},
 		{
-			Scope:     "d",
+			Restriction: api.Restriction{
+				Scope: "d",
+			},
 			ExpiresAt: 50,
 		},
 	}
@@ -76,21 +89,29 @@ func TestTighten_RequestEmpty(t *testing.T) {
 func TestTighten_RestrictToOne(t *testing.T) {
 	base := Restrictions{
 		{
-			Scope:     "a b c",
+			Restriction: api.Restriction{
+				Scope: "a b c",
+			},
 			ExpiresAt: 500,
 		},
 		{
-			Scope:     "a",
+			Restriction: api.Restriction{
+				Scope: "a",
+			},
 			ExpiresAt: 1000,
 		},
 		{
-			Scope:     "d",
+			Restriction: api.Restriction{
+				Scope: "d",
+			},
 			ExpiresAt: 50,
 		},
 	}
 	wanted := Restrictions{
 		{
-			Scope:     "a b c",
+			Restriction: api.Restriction{
+				Scope: "a b c",
+			},
 			ExpiresAt: 100,
 		},
 	}
@@ -102,25 +123,35 @@ func TestTighten_RestrictToOne(t *testing.T) {
 func TestTighten_RestrictToTwo(t *testing.T) {
 	base := Restrictions{
 		{
-			Scope:     "a b c",
+			Restriction: api.Restriction{
+				Scope: "a b c",
+			},
 			ExpiresAt: 500,
 		},
 		{
-			Scope:     "a",
+			Restriction: api.Restriction{
+				Scope: "a",
+			},
 			ExpiresAt: 1000,
 		},
 		{
-			Scope:     "d",
+			Restriction: api.Restriction{
+				Scope: "d",
+			},
 			ExpiresAt: 50,
 		},
 	}
 	wanted := Restrictions{
 		{
-			Scope:     "a b c",
+			Restriction: api.Restriction{
+				Scope: "a b c",
+			},
 			ExpiresAt: 100,
 		},
 		{
-			Scope:     "d",
+			Restriction: api.Restriction{
+				Scope: "d",
+			},
 			ExpiresAt: 50,
 		},
 	}
@@ -131,17 +162,23 @@ func TestTighten_RestrictToTwo(t *testing.T) {
 func TestTighten_RestrictToTwo2(t *testing.T) {
 	base := Restrictions{
 		{
-			Scope:     "a b c",
+			Restriction: api.Restriction{
+				Scope: "a b c",
+			},
 			ExpiresAt: 500,
 		},
 	}
 	wanted := Restrictions{
 		{
-			Scope:     "a c",
+			Restriction: api.Restriction{
+				Scope: "a c",
+			},
 			ExpiresAt: 100,
 		},
 		{
-			Scope:     "b",
+			Restriction: api.Restriction{
+				Scope: "b",
+			},
 			ExpiresAt: 50,
 		},
 	}
@@ -152,21 +189,29 @@ func TestTighten_RestrictToTwo2(t *testing.T) {
 func TestTighten_RestrictConflict(t *testing.T) {
 	base := Restrictions{
 		{
-			Scope:     "a b c",
+			Restriction: api.Restriction{
+				Scope: "a b c",
+			},
 			ExpiresAt: 500,
 		},
 		{
-			Scope:     "a",
+			Restriction: api.Restriction{
+				Scope: "a",
+			},
 			ExpiresAt: 1000,
 		},
 		{
-			Scope:     "d",
+			Restriction: api.Restriction{
+				Scope: "d",
+			},
 			ExpiresAt: 50,
 		},
 	}
 	wanted := Restrictions{
 		{
-			Scope:     "a b c d",
+			Restriction: api.Restriction{
+				Scope: "a b c d",
+			},
 			ExpiresAt: 100,
 		},
 	}
@@ -177,17 +222,23 @@ func TestTighten_RestrictConflict(t *testing.T) {
 func TestTighten_RestrictDontCombineTwo(t *testing.T) {
 	base := Restrictions{
 		{
-			Scope:     "a b c",
+			Restriction: api.Restriction{
+				Scope: "a b c",
+			},
 			ExpiresAt: 500,
 		},
 		{
-			Scope:     "d",
+			Restriction: api.Restriction{
+				Scope: "d",
+			},
 			ExpiresAt: 50,
 		},
 	}
 	wanted := Restrictions{
 		{
-			Scope:     "a b c d", // This is semantically different from base, because it allows a token with all the scopes combined. One might want to not allow this.
+			Restriction: api.Restriction{
+				Scope: "a b c d", // This is semantically different from base, because it allows a token with all the scopes combined. One might want to not allow this.
+			},
 			ExpiresAt: 50,
 		},
 	}
@@ -198,12 +249,16 @@ func TestTighten_RestrictDontCombineTwo(t *testing.T) {
 func TestTighten_RestrictDontExtendUsages1(t *testing.T) {
 	base := Restrictions{
 		{
-			UsagesAT: utils.NewInt64(10),
+			Restriction: api.Restriction{
+				UsagesAT: utils.NewInt64(10),
+			},
 		},
 	}
 	wanted := Restrictions{
 		{
-			UsagesAT: utils.NewInt64(11),
+			Restriction: api.Restriction{
+				UsagesAT: utils.NewInt64(11),
+			},
 		},
 	}
 	expected := base
@@ -213,26 +268,38 @@ func TestTighten_RestrictDontExtendUsages1(t *testing.T) {
 func TestTighten_RestrictDontExtendUsages2(t *testing.T) {
 	base := Restrictions{
 		{
-			UsagesAT: utils.NewInt64(10),
+			Restriction: api.Restriction{
+				UsagesAT: utils.NewInt64(10),
+			},
 		},
 	}
 	wanted := Restrictions{
 		{
-			UsagesAT: utils.NewInt64(4),
+			Restriction: api.Restriction{
+				UsagesAT: utils.NewInt64(4),
+			},
 		},
 		{
-			UsagesAT: utils.NewInt64(4),
+			Restriction: api.Restriction{
+				UsagesAT: utils.NewInt64(4),
+			},
 		},
 		{
-			UsagesAT: utils.NewInt64(4),
+			Restriction: api.Restriction{
+				UsagesAT: utils.NewInt64(4),
+			},
 		},
 	}
 	expected := Restrictions{
 		{
-			UsagesAT: utils.NewInt64(4),
+			Restriction: api.Restriction{
+				UsagesAT: utils.NewInt64(4),
+			},
 		},
 		{
-			UsagesAT: utils.NewInt64(4),
+			Restriction: api.Restriction{
+				UsagesAT: utils.NewInt64(4),
+			},
 		},
 	}
 	res, ok := Tighten(base, wanted)
@@ -241,18 +308,26 @@ func TestTighten_RestrictDontExtendUsages2(t *testing.T) {
 func TestTighten_RestrictSplitUsages(t *testing.T) {
 	base := Restrictions{
 		{
-			UsagesAT: utils.NewInt64(10),
+			Restriction: api.Restriction{
+				UsagesAT: utils.NewInt64(10),
+			},
 		},
 	}
 	wanted := Restrictions{
 		{
-			UsagesAT: utils.NewInt64(5),
+			Restriction: api.Restriction{
+				UsagesAT: utils.NewInt64(5),
+			},
 		},
 		{
-			UsagesAT: utils.NewInt64(3),
+			Restriction: api.Restriction{
+				UsagesAT: utils.NewInt64(3),
+			},
 		},
 		{
-			UsagesAT: utils.NewInt64(2),
+			Restriction: api.Restriction{
+				UsagesAT: utils.NewInt64(2),
+			},
 		},
 	}
 	expected := wanted
@@ -277,7 +352,7 @@ func TestIsTighterThanBothEmpty(t *testing.T) {
 }
 func TestIsTighterThanOneEmpty(t *testing.T) {
 	a := Restriction{}
-	b := Restriction{Scope: "some"}
+	b := Restriction{Restriction: api.Restriction{Scope: "some"}}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
@@ -306,10 +381,10 @@ func TestIsTighterThanExpiresAtOneEmpty(t *testing.T) {
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanScope(t *testing.T) {
-	a := Restriction{Scope: "some scopes"}
-	b := Restriction{Scope: "some"}
-	c := Restriction{Scope: "some other"}
-	d := Restriction{Scope: "completely different"}
+	a := Restriction{Restriction: api.Restriction{Scope: "some scope"}}
+	b := Restriction{Restriction: api.Restriction{Scope: "some"}}
+	c := Restriction{Restriction: api.Restriction{Scope: "some other"}}
+	d := Restriction{Restriction: api.Restriction{Scope: "completely different"}}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 	testIsTighter(t, a, c, false)
@@ -321,16 +396,16 @@ func TestIsTighterThanScope(t *testing.T) {
 }
 func TestIsTighterThanScopeOneEmpty(t *testing.T) {
 	a := Restriction{}
-	b := Restriction{Scope: "some scopes"}
+	b := Restriction{Restriction: api.Restriction{Scope: "some scopes"}}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanIP(t *testing.T) {
-	a := Restriction{IPs: []string{"192.168.0.12"}}
-	b := Restriction{IPs: []string{"192.168.0.12", "192.168.0.14"}}
-	c := Restriction{IPs: []string{"192.168.0.0/24"}}
-	d := Restriction{IPs: []string{"192.168.1.2", "192.168.0.12"}}
-	e := Restriction{IPs: []string{"192.168.0.0/24", "192.168.1.2"}}
+	a := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}}
+	b := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12", "192.168.0.14"}}}
+	c := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}}
+	d := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.1.2", "192.168.0.12"}}}
+	e := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24", "192.168.1.2"}}}
 	testIsTighter(t, a, b, true)
 	testIsTighter(t, b, a, false)
 	testIsTighter(t, a, c, true)
@@ -346,15 +421,15 @@ func TestIsTighterThanIP(t *testing.T) {
 }
 func TestIsTighterThanIPOneEmpty(t *testing.T) {
 	a := Restriction{}
-	b := Restriction{IPs: []string{"192.168.0.12", "192.168.0.14"}}
+	b := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12", "192.168.0.14"}}}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanGeoIPAllow(t *testing.T) {
-	a := Restriction{GeoIPAllow: []string{"Germany", "USA"}}
-	b := Restriction{GeoIPAllow: []string{"Germany"}}
-	c := Restriction{GeoIPAllow: []string{"France", "Germany"}}
-	d := Restriction{GeoIPAllow: []string{"Japan", "China"}}
+	a := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"de", "us"}}}
+	b := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"de"}}}
+	c := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"fr", "de"}}}
+	d := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"jp", "cn"}}}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 	testIsTighter(t, a, c, false)
@@ -366,15 +441,15 @@ func TestIsTighterThanGeoIPAllow(t *testing.T) {
 }
 func TestIsTighterThanGeoIPAllowOneEmpty(t *testing.T) {
 	a := Restriction{}
-	b := Restriction{GeoIPAllow: []string{"Germany", "USA"}}
+	b := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"de", "us"}}}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanGeoIPDisallow(t *testing.T) {
-	a := Restriction{GeoIPDisallow: []string{"Germany", "USA"}}
-	b := Restriction{GeoIPDisallow: []string{"Germany"}}
-	c := Restriction{GeoIPDisallow: []string{"France", "Germany"}}
-	d := Restriction{GeoIPDisallow: []string{"Japan", "China"}}
+	a := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"de", "us"}}}
+	b := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"de"}}}
+	c := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"fr", "de"}}}
+	d := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"jp", "cn"}}}
 	testIsTighter(t, a, b, true)
 	testIsTighter(t, b, a, false)
 	testIsTighter(t, a, c, false)
@@ -386,89 +461,105 @@ func TestIsTighterThanGeoIPDisallow(t *testing.T) {
 }
 func TestIsTighterThanGeoIPDisallowOneEmpty(t *testing.T) {
 	a := Restriction{}
-	b := Restriction{GeoIPDisallow: []string{"Germany", "USA"}}
+	b := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"de", "us"}}}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanUsagesAT(t *testing.T) {
-	a := Restriction{UsagesAT: utils.NewInt64(20)}
-	b := Restriction{UsagesAT: utils.NewInt64(10)}
+	a := Restriction{Restriction: api.Restriction{UsagesAT: utils.NewInt64(20)}}
+	b := Restriction{Restriction: api.Restriction{UsagesAT: utils.NewInt64(10)}}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanUsagesATOneEmpty(t *testing.T) {
 	a := Restriction{}
-	b := Restriction{UsagesAT: utils.NewInt64(10)}
+	b := Restriction{Restriction: api.Restriction{UsagesAT: utils.NewInt64(10)}}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanUsagesOther(t *testing.T) {
-	a := Restriction{UsagesOther: utils.NewInt64(20)}
-	b := Restriction{UsagesOther: utils.NewInt64(10)}
+	a := Restriction{Restriction: api.Restriction{UsagesOther: utils.NewInt64(20)}}
+	b := Restriction{Restriction: api.Restriction{UsagesOther: utils.NewInt64(10)}}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanUsagesOtherOneEmpty(t *testing.T) {
 	a := Restriction{}
-	b := Restriction{UsagesOther: utils.NewInt64(20)}
+	b := Restriction{Restriction: api.Restriction{UsagesOther: utils.NewInt64(20)}}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanMultiple1(t *testing.T) {
 	a := Restriction{}
 	b := Restriction{
-		Scope:       "a",
-		UsagesAT:    utils.NewInt64(50),
-		UsagesOther: utils.NewInt64(100),
+		Restriction: api.Restriction{
+			Scope:       "a",
+			UsagesAT:    utils.NewInt64(50),
+			UsagesOther: utils.NewInt64(100),
+		},
 	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanMultiple2(t *testing.T) {
 	a := Restriction{
-		Scope:       "a",
-		UsagesAT:    utils.NewInt64(20),
-		UsagesOther: utils.NewInt64(20),
+		Restriction: api.Restriction{
+			Scope:       "a",
+			UsagesAT:    utils.NewInt64(20),
+			UsagesOther: utils.NewInt64(20),
+		},
 	}
 	b := Restriction{
-		Scope:       "a b",
-		UsagesAT:    utils.NewInt64(50),
-		UsagesOther: utils.NewInt64(100),
+		Restriction: api.Restriction{
+			Scope:       "a b",
+			UsagesAT:    utils.NewInt64(50),
+			UsagesOther: utils.NewInt64(100),
+		},
 	}
 	testIsTighter(t, a, b, true)
 	testIsTighter(t, b, a, false)
 }
 func TestIsTighterThanMultiple3(t *testing.T) {
 	a := Restriction{
-		UsagesAT:    utils.NewInt64(100),
-		UsagesOther: utils.NewInt64(50),
+		Restriction: api.Restriction{
+			UsagesAT:    utils.NewInt64(100),
+			UsagesOther: utils.NewInt64(50),
+		},
 	}
 	b := Restriction{
-		UsagesAT:    utils.NewInt64(50),
-		UsagesOther: utils.NewInt64(100),
+		Restriction: api.Restriction{
+			UsagesAT:    utils.NewInt64(50),
+			UsagesOther: utils.NewInt64(100),
+		},
 	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, false)
 }
 func TestIsTighterThanMultiple4(t *testing.T) {
 	a := Restriction{
-		Scope:       "a b c",
-		UsagesAT:    utils.NewInt64(20),
-		UsagesOther: utils.NewInt64(20),
+		Restriction: api.Restriction{
+			Scope:       "a b c",
+			UsagesAT:    utils.NewInt64(20),
+			UsagesOther: utils.NewInt64(20),
+		},
 	}
 	b := Restriction{
-		Scope:       "a c b d",
-		UsagesAT:    utils.NewInt64(50),
-		UsagesOther: utils.NewInt64(100),
+		Restriction: api.Restriction{
+			Scope:       "a c b d",
+			UsagesAT:    utils.NewInt64(50),
+			UsagesOther: utils.NewInt64(100),
+		},
 	}
 	testIsTighter(t, a, b, true)
 	testIsTighter(t, b, a, false)
 }
 func TestIsTighterThanMultipleE(t *testing.T) {
 	a := Restriction{
-		Scope:       "a b c",
-		UsagesAT:    utils.NewInt64(20),
-		UsagesOther: utils.NewInt64(20),
+		Restriction: api.Restriction{
+			Scope:       "a b c",
+			UsagesAT:    utils.NewInt64(20),
+			UsagesOther: utils.NewInt64(20),
+		},
 	}
 	b := a
 	testIsTighter(t, a, b, true)
@@ -476,15 +567,17 @@ func TestIsTighterThanMultipleE(t *testing.T) {
 }
 func TestIsTighterThanAll1(t *testing.T) {
 	a := Restriction{
-		NotBefore:     500,
-		ExpiresAt:     1000,
-		Scope:         "a b c",
-		Audiences:     []string{"a", "b", "c"},
-		IPs:           []string{"a", "b", "c"},
-		GeoIPAllow:    []string{"a", "b", "c"},
-		GeoIPDisallow: []string{"a", "b", "c"},
-		UsagesAT:      utils.NewInt64(20),
-		UsagesOther:   utils.NewInt64(20),
+		NotBefore: 500,
+		ExpiresAt: 1000,
+		Restriction: api.Restriction{
+			Scope:         "a b c",
+			Audiences:     []string{"a", "b", "c"},
+			IPs:           []string{"a", "b", "c"},
+			GeoIPAllow:    []string{"a", "b", "c"},
+			GeoIPDisallow: []string{"a", "b", "c"},
+			UsagesAT:      utils.NewInt64(20),
+			UsagesOther:   utils.NewInt64(20),
+		},
 	}
 	b := a
 	testIsTighter(t, a, b, true)
@@ -492,78 +585,90 @@ func TestIsTighterThanAll1(t *testing.T) {
 }
 func TestIsTighterThanAll2(t *testing.T) {
 	a := Restriction{
-		NotBefore:     500,
-		ExpiresAt:     1000,
-		Scope:         "a b c",
-		Audiences:     []string{"a", "b", "c"},
-		IPs:           []string{"a", "b", "c"},
-		GeoIPAllow:    []string{"a", "b", "c"},
-		GeoIPDisallow: []string{"a", "b", "c"},
-		UsagesAT:      utils.NewInt64(20),
-		UsagesOther:   utils.NewInt64(20),
+		NotBefore: 500,
+		ExpiresAt: 1000,
+		Restriction: api.Restriction{
+			Scope:         "a b c",
+			Audiences:     []string{"a", "b", "c"},
+			IPs:           []string{"a", "b", "c"},
+			GeoIPAllow:    []string{"a", "b", "c"},
+			GeoIPDisallow: []string{"a", "b", "c"},
+			UsagesAT:      utils.NewInt64(20),
+			UsagesOther:   utils.NewInt64(20),
+		},
 	}
 	b := Restriction{
-		NotBefore:     700,
-		ExpiresAt:     1000,
-		Scope:         "a b c",
-		Audiences:     []string{"a", "b", "c"},
-		IPs:           []string{"a", "b", "c"},
-		GeoIPAllow:    []string{"a", "b", "c"},
-		GeoIPDisallow: []string{"a", "b", "c"},
-		UsagesAT:      utils.NewInt64(20),
-		UsagesOther:   utils.NewInt64(20),
+		NotBefore: 700,
+		ExpiresAt: 1000,
+		Restriction: api.Restriction{
+			Scope:         "a b c",
+			Audiences:     []string{"a", "b", "c"},
+			IPs:           []string{"a", "b", "c"},
+			GeoIPAllow:    []string{"a", "b", "c"},
+			GeoIPDisallow: []string{"a", "b", "c"},
+			UsagesAT:      utils.NewInt64(20),
+			UsagesOther:   utils.NewInt64(20),
+		},
 	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanAll3(t *testing.T) {
 	a := Restriction{
-		NotBefore:     500,
-		ExpiresAt:     1000,
-		Scope:         "a c",
-		Audiences:     []string{"a", "b", "c"},
-		IPs:           []string{"a", "b", "c"},
-		GeoIPAllow:    []string{"a", "b", "c"},
-		GeoIPDisallow: []string{"a", "b", "c"},
-		UsagesAT:      utils.NewInt64(20),
-		UsagesOther:   utils.NewInt64(20),
+		NotBefore: 500,
+		ExpiresAt: 1000,
+		Restriction: api.Restriction{
+			Scope:         "a c",
+			Audiences:     []string{"a", "b", "c"},
+			IPs:           []string{"a", "b", "c"},
+			GeoIPAllow:    []string{"a", "b", "c"},
+			GeoIPDisallow: []string{"a", "b", "c"},
+			UsagesAT:      utils.NewInt64(20),
+			UsagesOther:   utils.NewInt64(20),
+		},
 	}
 	b := Restriction{
-		NotBefore:     700,
-		ExpiresAt:     1000,
-		Scope:         "a b c",
-		Audiences:     []string{"a", "b", "c"},
-		IPs:           []string{"a", "b", "c"},
-		GeoIPAllow:    []string{"a", "b", "c"},
-		GeoIPDisallow: []string{"a", "b", "c"},
-		UsagesAT:      utils.NewInt64(20),
-		UsagesOther:   utils.NewInt64(20),
+		NotBefore: 700,
+		ExpiresAt: 1000,
+		Restriction: api.Restriction{
+			Scope:         "a b c",
+			Audiences:     []string{"a", "b", "c"},
+			IPs:           []string{"a", "b", "c"},
+			GeoIPAllow:    []string{"a", "b", "c"},
+			GeoIPDisallow: []string{"a", "b", "c"},
+			UsagesAT:      utils.NewInt64(20),
+			UsagesOther:   utils.NewInt64(20),
+		},
 	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, false)
 }
 func TestIsTighterThanAll4(t *testing.T) {
 	a := Restriction{
-		NotBefore:     500,
-		ExpiresAt:     1000,
-		Scope:         "a b c",
-		Audiences:     []string{"a", "b", "c"},
-		IPs:           []string{"a", "b", "c"},
-		GeoIPAllow:    []string{"a", "b", "c"},
-		GeoIPDisallow: []string{"a", "b", "c"},
-		UsagesAT:      utils.NewInt64(20),
-		UsagesOther:   utils.NewInt64(20),
+		NotBefore: 500,
+		ExpiresAt: 1000,
+		Restriction: api.Restriction{
+			Scope:         "a b c",
+			Audiences:     []string{"a", "b", "c"},
+			IPs:           []string{"a", "b", "c"},
+			GeoIPAllow:    []string{"a", "b", "c"},
+			GeoIPDisallow: []string{"a", "b", "c"},
+			UsagesAT:      utils.NewInt64(20),
+			UsagesOther:   utils.NewInt64(20),
+		},
 	}
 	b := Restriction{
-		NotBefore:     700,
-		ExpiresAt:     900,
-		Scope:         "b c",
-		Audiences:     []string{"a", "c"},
-		IPs:           []string{"b", "c"},
-		GeoIPAllow:    []string{"a"},
-		GeoIPDisallow: []string{"a", "b"},
-		UsagesAT:      utils.NewInt64(10),
-		UsagesOther:   utils.NewInt64(0),
+		NotBefore: 700,
+		ExpiresAt: 900,
+		Restriction: api.Restriction{
+			Scope:         "b c",
+			Audiences:     []string{"a", "c"},
+			IPs:           []string{"b", "c"},
+			GeoIPAllow:    []string{"a"},
+			GeoIPDisallow: []string{"a", "b"},
+			UsagesAT:      utils.NewInt64(10),
+			UsagesOther:   utils.NewInt64(0),
+		},
 	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, false)
@@ -681,8 +786,10 @@ func TestRestriction_Hash(t *testing.T) {
 	r := Restriction{
 		NotBefore: 1599939600,
 		ExpiresAt: 1599948600,
-		IPs:       []string{"192.168.0.31"},
-		UsagesAT:  utils.NewInt64(11),
+		Restriction: api.Restriction{
+			IPs:      []string{"192.168.0.31"},
+			UsagesAT: utils.NewInt64(11),
+		},
 	}
 
 	j, err := json.Marshal(r)

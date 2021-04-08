@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/Songmu/prompter"
-	"github.com/jessevdk/go-flags"
+	flags "github.com/jessevdk/go-flags"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
@@ -20,7 +20,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/internal/utils/zipdownload"
-	model2 "github.com/oidc-mytoken/server/pkg/model"
+	model2 "github.com/oidc-mytoken/server/shared/model"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 )

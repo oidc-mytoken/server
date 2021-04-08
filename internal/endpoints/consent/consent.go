@@ -16,7 +16,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
-	model2 "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	model2 "github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
@@ -115,7 +116,7 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 	if !ok {
 		return model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model2.APIErrorUnknownIssuer,
+			Response: api.APIErrorUnknownIssuer,
 		}.Send(ctx)
 	}
 	authURL := authcode.GetAuthorizationURL(provider, oState.State(), req.Restrictions)

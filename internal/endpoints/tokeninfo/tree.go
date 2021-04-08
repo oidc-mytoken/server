@@ -11,7 +11,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/tree"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
-	pkgModel "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
@@ -19,13 +19,13 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 )
 
-func handleTokenInfoTree(mt *mytoken.Mytoken, clientMetadata *model.ClientMetaData) model.Response {
+func handleTokenInfoTree(mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
 	// If we call this function it means the token is valid.
 
 	if !mt.Capabilities.Has(capabilities.CapabilityTokeninfoTree) {
 		return model.Response{
 			Status:   fiber.StatusForbidden,
-			Response: pkgModel.APIErrorInsufficientCapabilities,
+			Response: api.APIErrorInsufficientCapabilities,
 		}
 	}
 
@@ -35,7 +35,7 @@ func handleTokenInfoTree(mt *mytoken.Mytoken, clientMetadata *model.ClientMetaDa
 		if len(possibleRestrictions) == 0 {
 			return model.Response{
 				Status:   fiber.StatusForbidden,
-				Response: pkgModel.APIErrorUsageRestricted,
+				Response: api.APIErrorUsageRestricted,
 			}
 		}
 		usedRestriction = &possibleRestrictions[0]

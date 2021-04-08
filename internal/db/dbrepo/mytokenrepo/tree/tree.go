@@ -4,7 +4,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
@@ -12,12 +12,18 @@ import (
 // MytokenEntry holds the information of a MytokenEntry as stored in the
 // database
 type MytokenEntry struct {
-	ID        mtid.MTID         `json:"-"`
-	ParentID  mtid.MTID         `db:"parent_id" json:"-"`
-	RootID    mtid.MTID         `db:"root_id" json:"-"`
-	Name      db.NullString     `json:"name,omitempty"`
-	CreatedAt unixtime.UnixTime `db:"created" json:"created"`
-	model.ClientMetaData
+	api.MytokenEntry `json:",inline"`
+	ID               mtid.MTID         `json:"-"`
+	ParentID         mtid.MTID         `db:"parent_id" json:"-"`
+	RootID           mtid.MTID         `db:"root_id" json:"-"`
+	Name             db.NullString     `json:"name,omitempty"`
+	CreatedAt        unixtime.UnixTime `db:"created" json:"created"`
+}
+
+// MytokenEntryTree is a tree of MytokenEntry
+type MytokenEntryTree struct {
+	Token    MytokenEntry       `json:"token"`
+	Children []MytokenEntryTree `json:"children,omitempty"`
 }
 
 // Root checks if this MytokenEntry is a root token
@@ -26,12 +32,6 @@ func (ste *MytokenEntry) Root() bool {
 		return true
 	}
 	return !ste.RootID.HashValid()
-}
-
-// MytokenEntryTree is a tree of MytokenEntry
-type MytokenEntryTree struct {
-	Token    MytokenEntry       `json:"token"`
-	Children []MytokenEntryTree `json:"children,omitempty"`
 }
 
 func GetUserID(tx *sqlx.Tx, tokenID mtid.MTID) (uid int64, err error) {

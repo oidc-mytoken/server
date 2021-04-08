@@ -19,7 +19,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/server/routes"
-	model2 "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 )
 
 var server *fiber.App
@@ -73,7 +73,7 @@ func Init() {
 		}
 		return model.Response{
 			Status: fiber.StatusNotFound,
-			Response: model2.APIError{
+			Response: api.APIError{
 				Error: "not_found",
 			},
 		}.Send(ctx)

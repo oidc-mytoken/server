@@ -10,7 +10,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
-	pkgModel "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	pkgModel "github.com/oidc-mytoken/server/shared/model"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
@@ -19,7 +20,7 @@ import (
 func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
 	token := ctxUtils.GetAuthHeaderToken(ctx)
 	if token == "" {
-		var req pkg.CreateTransferCodeRequest
+		var req api.CreateTransferCodeRequest
 		if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 			return model.Response{
 				Status:   fiber.StatusBadRequest,
@@ -84,9 +85,11 @@ func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
 	res := &model.Response{
 		Status: fiber.StatusOK,
 		Response: pkg.TransferCodeResponse{
-			MytokenType:  pkgModel.ResponseTypeTransferCode,
-			TransferCode: transferCode,
-			ExpiresIn:    expiresIn,
+			MytokenType: pkgModel.ResponseTypeTransferCode,
+			TransferCodeResponse: api.TransferCodeResponse{
+				TransferCode: transferCode,
+				ExpiresIn:    expiresIn,
+			},
 		},
 	}
 	return res.Send(ctx)

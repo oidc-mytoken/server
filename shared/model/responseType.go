@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"gopkg.in/yaml.v3"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // ResponseType is a enum like type for response types
 type ResponseType int
 
-var responseTypes = [...]string{"token", "short_token", "transfer_code"}
+var responseTypes = [...]string{api.ResponseTypeToken, api.ResponseTypeShortToken, api.ResponseTypeTransferCode}
 
 // ResponseTypes
 const (

@@ -10,7 +10,7 @@ import (
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
-	pkgModel "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
@@ -23,7 +23,7 @@ func HandlePollingCode(ctx *fiber.Ctx) error {
 	return handlePollingCode(req, *ctxUtils.ClientMetaData(ctx)).Send(ctx)
 }
 
-func handlePollingCode(req response.PollingCodeRequest, networkData model.ClientMetaData) *model.Response {
+func handlePollingCode(req response.PollingCodeRequest, networkData api.ClientMetaData) *model.Response {
 	pollingCode := req.PollingCode
 	log.WithField("polling_code", pollingCode).Debug("Handle polling code")
 	pollingCodeStatus, err := transfercoderepo.CheckTransferCode(nil, pollingCode)
@@ -34,21 +34,21 @@ func handlePollingCode(req response.PollingCodeRequest, networkData model.Client
 		log.WithField("polling_code", pollingCode).Debug("Polling code not known")
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: pkgModel.APIErrorBadTransferCode,
+			Response: api.APIErrorBadTransferCode,
 		}
 	}
 	if pollingCodeStatus.ConsentDeclined {
 		log.WithField("polling_code", pollingCode).Debug("Consent declined")
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: pkgModel.APIErrorConsentDeclined,
+			Response: api.APIErrorConsentDeclined,
 		}
 	}
 	if pollingCodeStatus.Expired {
 		log.WithField("polling_code", pollingCode).Debug("Polling code expired")
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: pkgModel.APIErrorTransferCodeExpired,
+			Response: api.APIErrorTransferCodeExpired,
 		}
 	}
 	token, err := transfercoderepo.PopTokenForTransferCode(nil, pollingCode, networkData)
@@ -59,7 +59,7 @@ func handlePollingCode(req response.PollingCodeRequest, networkData model.Client
 	if token == "" {
 		return &model.Response{
 			Status:   fiber.StatusPreconditionRequired,
-			Response: pkgModel.APIErrorAuthorizationPending,
+			Response: api.APIErrorAuthorizationPending,
 		}
 	}
 	mt, err := mytoken.ParseJWT(token)

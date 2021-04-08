@@ -2,7 +2,7 @@ package state
 
 import (
 	"github.com/oidc-mytoken/server/internal/utils/singleasciiencode"
-	pkgModel "github.com/oidc-mytoken/server/pkg/model"
+	pkgModel "github.com/oidc-mytoken/server/shared/model"
 )
 
 type Info struct {

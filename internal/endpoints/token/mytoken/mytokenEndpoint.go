@@ -12,7 +12,8 @@ import (
 	serverModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
-	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken"
 )
 
@@ -47,7 +48,7 @@ func HandleMytokenEndpoint(ctx *fiber.Ctx) error {
 	}
 	res := serverModel.Response{
 		Status:   fiber.StatusBadRequest,
-		Response: model.APIErrorUnsupportedGrantType,
+		Response: api.APIErrorUnsupportedGrantType,
 	}
 	return res.Send(ctx)
 }
@@ -61,18 +62,18 @@ func handleOIDCFlow(ctx *fiber.Ctx) error {
 	if !ok {
 		return serverModel.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model.APIErrorUnknownIssuer,
+			Response: api.APIErrorUnknownIssuer,
 		}.Send(ctx)
 	}
 	switch req.OIDCFlow {
 	case model.OIDCFlowAuthorizationCode:
 		return authcode.StartAuthCodeFlow(ctx, *req).Send(ctx)
-	case model.OIDCFlowDevice:
-		return serverModel.ResponseNYI.Send(ctx)
+	// case model.OIDCFlowDevice:
+	// 	return serverModel.ResponseNYI.Send(ctx)
 	default:
 		res := serverModel.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model.APIErrorUnsupportedOIDCFlow,
+			Response: api.APIErrorUnsupportedOIDCFlow,
 		}
 		return res.Send(ctx)
 	}

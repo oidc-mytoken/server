@@ -3,7 +3,7 @@ package state
 import (
 	"testing"
 
-	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/shared/model"
 )
 
 func TestParseState(t *testing.T) {

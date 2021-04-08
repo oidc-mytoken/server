@@ -1,4 +1,4 @@
-package v0
+package api
 
 var AllGrantTypes = [...]string{GrantTypeMytoken, GrantTypeOIDCFlow, GrantTypePollingCode, GrantTypeAccessToken, GrantTypePrivateKeyJWT, GrantTypeTransferCode}
 

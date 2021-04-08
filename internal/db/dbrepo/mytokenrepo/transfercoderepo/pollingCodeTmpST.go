@@ -8,8 +8,8 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
-	model2 "github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/server/shared/model"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
@@ -41,7 +41,7 @@ func CheckTransferCode(tx *sqlx.Tx, pollingCode string) (TransferCodeStatus, err
 }
 
 // PopTokenForTransferCode returns the decrypted token for a polling code and then deletes the entry
-func PopTokenForTransferCode(tx *sqlx.Tx, pollingCode string, clientMetadata model2.ClientMetaData) (jwt string, err error) {
+func PopTokenForTransferCode(tx *sqlx.Tx, pollingCode string, clientMetadata api.ClientMetaData) (jwt string, err error) {
 	pt := createProxyToken(pollingCode)
 	var valid bool
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {

@@ -13,6 +13,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/utils/geoip"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
@@ -23,16 +24,9 @@ type Restrictions []Restriction
 
 // Restriction describes a token usage restriction
 type Restriction struct {
-	NotBefore     unixtime.UnixTime `json:"nbf,omitempty"`
-	ExpiresAt     unixtime.UnixTime `json:"exp,omitempty"`
-	Scope         string            `json:"scope,omitempty"`
-	Audiences     []string          `json:"audience,omitempty"`
-	IPs           []string          `json:"ip,omitempty"`
-	GeoIPAllow    []string          `json:"geoip_allow,omitempty"`
-	GeoIPDisallow []string          `json:"geoip_disallow,omitempty"`
-	UsagesAT      *int64            `json:"usages_AT,omitempty"`
-	UsagesOther   *int64            `json:"usages_other,omitempty"`
-	// Usages    *int64   `json:"usages,omitempty"`
+	NotBefore       unixtime.UnixTime `json:"nbf,omitempty"`
+	ExpiresAt       unixtime.UnixTime `json:"exp,omitempty"`
+	api.Restriction `json:",inline"`
 }
 
 // hash returns the hash of this restriction

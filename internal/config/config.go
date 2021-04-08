@@ -7,9 +7,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v3"
 
-	"github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
 	"github.com/oidc-mytoken/server/shared/context"
+	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
@@ -271,9 +271,9 @@ func validate() error {
 		return fmt.Errorf("invalid config: tokensigningalg not set")
 	}
 	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(&conf.Features.EnabledOIDCFlows)
-	if model.OIDCFlowIsInSlice(model.OIDCFlowDevice, conf.Features.EnabledOIDCFlows) && !conf.Features.Polling.Enabled {
-		return fmt.Errorf("oidc flow device flow requires polling_codes to be enabled")
-	}
+	// if model.OIDCFlowIsInSlice(model.OIDCFlowDevice, conf.Features.EnabledOIDCFlows) && !conf.Features.Polling.Enabled {
+	// 	return fmt.Errorf("oidc flow device flow requires polling_codes to be enabled")
+	// }
 	if !conf.Features.TokenInfo.Introspect.Enabled && conf.Features.WebInterface.Enabled {
 		return fmt.Errorf("web interface requires tokeninfo.introspect to be enabled")
 	}

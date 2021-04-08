@@ -1,4 +1,4 @@
-package pkg
+package api
 
 // AuthCodeFlowResponse is the response to an authorization code flow request
 type AuthCodeFlowResponse struct {

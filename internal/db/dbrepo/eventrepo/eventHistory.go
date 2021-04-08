@@ -4,7 +4,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
@@ -12,11 +12,9 @@ import (
 type EventHistory []EventEntry
 
 type EventEntry struct {
-	MTID    mtid.MTID         `db:"MT_id" json:"-"`
-	Event   string            `db:"event" json:"event"`
-	Time    unixtime.UnixTime `db:"time" json:"time"`
-	Comment string            `db:"comment" json:"comment,omitempty"`
-	model.ClientMetaData
+	api.EventEntry `json:",inline"`
+	MTID           mtid.MTID         `db:"MT_id" json:"-"`
+	Time           unixtime.UnixTime `db:"time" json:"time"`
 }
 
 func GetEventHistory(tx *sqlx.Tx, id mtid.MTID) (history EventHistory, err error) {

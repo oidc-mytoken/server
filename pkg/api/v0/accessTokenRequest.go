@@ -1,4 +1,4 @@
-package v0
+package api
 
 // AccessTokenRequest holds an request for an access token
 type AccessTokenRequest struct {

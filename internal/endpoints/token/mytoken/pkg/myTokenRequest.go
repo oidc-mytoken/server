@@ -3,7 +3,8 @@ package pkg
 import (
 	"encoding/json"
 
-	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/mytoken/token"
@@ -11,15 +12,13 @@ import (
 
 // MytokenFromMytokenRequest is a request to create a new Mytoken from an existing Mytoken
 type MytokenFromMytokenRequest struct {
-	Issuer                       string                    `json:"oidc_issuer"`
-	GrantType                    model.GrantType           `json:"grant_type"`
-	Mytoken                      token.Token               `json:"mytoken"`
-	Restrictions                 restrictions.Restrictions `json:"restrictions"`
-	Capabilities                 capabilities.Capabilities `json:"capabilities"`
-	SubtokenCapabilities         capabilities.Capabilities `json:"subtoken_capabilities"`
-	Name                         string                    `json:"name"`
-	ResponseType                 model.ResponseType        `json:"response_type"`
-	FailOnRestrictionsNotTighter bool                      `json:"error_on_restrictions"`
+	api.MytokenFromMytokenRequest `json:",inline"`
+	GrantType                     model.GrantType           `json:"grant_type"`
+	Mytoken                       token.Token               `json:"mytoken"`
+	Restrictions                  restrictions.Restrictions `json:"restrictions"`
+	Capabilities                  capabilities.Capabilities `json:"capabilities"`
+	SubtokenCapabilities          capabilities.Capabilities `json:"subtoken_capabilities"`
+	ResponseType                  model.ResponseType        `json:"response_type"`
 }
 
 // NewMytokenRequest creates a MytokenFromMytokenRequest with the default values where they can be omitted

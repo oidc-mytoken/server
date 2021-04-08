@@ -5,13 +5,13 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/mytoken/token"
 )
 
 // GetMytokenStr checks a fiber.Ctx for a mytoken and returns the token string as passed to the request
 func GetMytokenStr(ctx *fiber.Ctx) string {
-	req := pkg.CreateTransferCodeRequest{}
+	req := api.CreateTransferCodeRequest{}
 	if err := json.Unmarshal(ctx.Body(), &req); err == nil {
 		if req.Mytoken != "" {
 			return req.Mytoken

@@ -4,8 +4,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcReqRes"
-	pkgModel "github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/httpClient"
+	pkgModel "github.com/oidc-mytoken/server/shared/model"
 )
 
 // RefreshToken revokes a refresh token

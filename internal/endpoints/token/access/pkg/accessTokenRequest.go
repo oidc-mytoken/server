@@ -1,8 +1,8 @@
 package pkg
 
 import (
-	api "github.com/oidc-mytoken/server/pkg/api/v0"
-	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken/token"
 )
 

@@ -12,9 +12,9 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
-	request "github.com/oidc-mytoken/server/internal/endpoints/revocation/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
-	pkgModel "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	sharedModel "github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken"
 	mytokenPkg "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/token"
@@ -24,7 +24,7 @@ import (
 // HandleRevoke handles requests to the revocation endpoint
 func HandleRevoke(ctx *fiber.Ctx) error {
 	log.Debug("Handle revocation request")
-	req := request.RevocationRequest{}
+	req := api.RevocationRequest{}
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
@@ -89,7 +89,7 @@ func revokeMytoken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *mod
 	if issuer != "" && mt.OIDCIssuer != issuer {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.BadRequestError("token not for specified issuer"),
+			Response: sharedModel.BadRequestError("token not for specified issuer"),
 		}
 	}
 	return mytoken.RevokeMytoken(tx, mt.ID, token.Token(jwt), recursive, mt.OIDCIssuer)

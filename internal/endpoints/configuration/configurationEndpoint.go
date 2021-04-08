@@ -8,7 +8,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/routes"
-	pkgModel "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	pkgModel "github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
@@ -23,9 +24,9 @@ func HandleConfiguration(ctx *fiber.Ctx) error {
 
 var mytokenConfig *pkg.MytokenConfiguration
 
-func getProvidersFromConfig() (providers []pkg.SupportedProviderConfig) {
+func getProvidersFromConfig() (providers []api.SupportedProviderConfig) {
 	for _, p := range config.Get().Providers {
-		providers = append(providers, pkg.SupportedProviderConfig{
+		providers = append(providers, api.SupportedProviderConfig{
 			Issuer:          p.Issuer,
 			ScopesSupported: p.Scopes,
 		})
@@ -49,20 +50,22 @@ func basicConfiguration() *pkg.MytokenConfiguration {
 	apiPaths := routes.GetCurrentAPIPaths()
 	otherPaths := routes.GetGeneralPaths()
 	return &pkg.MytokenConfiguration{
-		Issuer:                                 config.Get().IssuerURL,
-		AccessTokenEndpoint:                    utils.CombineURLPath(config.Get().IssuerURL, apiPaths.AccessTokenEndpoint),
-		MytokenEndpoint:                        utils.CombineURLPath(config.Get().IssuerURL, apiPaths.MytokenEndpoint),
-		TokeninfoEndpoint:                      utils.CombineURLPath(config.Get().IssuerURL, apiPaths.TokenInfoEndpoint),
-		UserSettingsEndpoint:                   utils.CombineURLPath(config.Get().IssuerURL, apiPaths.UserSettingEndpoint),
-		JWKSURI:                                utils.CombineURLPath(config.Get().IssuerURL, otherPaths.JWKSEndpoint),
-		ProvidersSupported:                     getProvidersFromConfig(),
-		TokenSigningAlgValue:                   config.Get().Signing.Alg,
+		MytokenConfiguration: api.MytokenConfiguration{
+			Issuer:               config.Get().IssuerURL,
+			AccessTokenEndpoint:  utils.CombineURLPath(config.Get().IssuerURL, apiPaths.AccessTokenEndpoint),
+			MytokenEndpoint:      utils.CombineURLPath(config.Get().IssuerURL, apiPaths.MytokenEndpoint),
+			TokeninfoEndpoint:    utils.CombineURLPath(config.Get().IssuerURL, apiPaths.TokenInfoEndpoint),
+			UserSettingsEndpoint: utils.CombineURLPath(config.Get().IssuerURL, apiPaths.UserSettingEndpoint),
+			JWKSURI:              utils.CombineURLPath(config.Get().IssuerURL, otherPaths.JWKSEndpoint),
+			ProvidersSupported:   getProvidersFromConfig(),
+			TokenSigningAlgValue: config.Get().Signing.Alg,
+			ServiceDocumentation: config.Get().ServiceDocumentation,
+			Version:              version.VERSION(),
+		},
 		AccessTokenEndpointGrantTypesSupported: []pkgModel.GrantType{pkgModel.GrantTypeMytoken},
 		MytokenEndpointGrantTypesSupported:     []pkgModel.GrantType{pkgModel.GrantTypeOIDCFlow, pkgModel.GrantTypeMytoken},
 		MytokenEndpointOIDCFlowsSupported:      config.Get().Features.EnabledOIDCFlows,
 		ResponseTypesSupported:                 []pkgModel.ResponseType{pkgModel.ResponseTypeToken},
-		ServiceDocumentation:                   config.Get().ServiceDocumentation,
-		Version:                                version.VERSION(),
 	}
 }
 

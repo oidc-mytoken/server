@@ -4,7 +4,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
@@ -13,7 +13,7 @@ import (
 type EventDBObject struct {
 	*event.Event
 	MTID mtid.MTID
-	model.ClientMetaData
+	api.ClientMetaData
 }
 
 // Store stores the EventDBObject in the database

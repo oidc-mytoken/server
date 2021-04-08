@@ -1,30 +1,28 @@
 package mytokenlib
 
 import (
-	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
-	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/httpClient"
-	"github.com/oidc-mytoken/server/shared/mytoken/token"
 )
 
-func (my *MytokenProvider) TokeninfoIntrospect(mytoken string) (*pkg.TokeninfoIntrospectResponse, error) {
-	req := pkg.TokenInfoRequest{
-		Action:  model.TokeninfoActionIntrospect,
-		Mytoken: token.Token(mytoken),
+func (my *MytokenProvider) TokeninfoIntrospect(mytoken string) (*api.TokeninfoIntrospectResponse, error) {
+	req := api.TokenInfoRequest{
+		Action:  api.TokeninfoActionIntrospect,
+		Mytoken: mytoken,
 	}
-	resp, err := httpClient.Do().R().SetBody(req).SetResult(&pkg.TokeninfoIntrospectResponse{}).SetError(&model.APIError{}).Post(my.TokeninfoEndpoint)
+	resp, err := httpClient.Do().R().SetBody(req).SetResult(&api.TokeninfoIntrospectResponse{}).SetError(&api.APIError{}).Post(my.TokeninfoEndpoint)
 	if err != nil {
 		return nil, newMytokenErrorFromError(errorWhileHttp, err)
 	}
 	if eRes := resp.Error(); eRes != nil {
-		if errRes := eRes.(*model.APIError); errRes != nil && errRes.Error != "" {
+		if errRes := eRes.(*api.APIError); errRes != nil && errRes.Error != "" {
 			return nil, &MytokenError{
 				err:          errRes.Error,
 				errorDetails: errRes.ErrorDescription,
 			}
 		}
 	}
-	res, ok := resp.Result().(*pkg.TokeninfoIntrospectResponse)
+	res, ok := resp.Result().(*api.TokeninfoIntrospectResponse)
 	if !ok {
 		return nil, &MytokenError{
 			err: unexpectedResponse,
@@ -32,24 +30,24 @@ func (my *MytokenProvider) TokeninfoIntrospect(mytoken string) (*pkg.TokeninfoIn
 	}
 	return res, nil
 }
-func (my *MytokenProvider) TokeninfoHistory(mytoken string) (*pkg.TokeninfoHistoryResponse, error) {
-	req := pkg.TokenInfoRequest{
-		Action:  model.TokeninfoActionEventHistory,
-		Mytoken: token.Token(mytoken),
+func (my *MytokenProvider) TokeninfoHistory(mytoken string) (*api.TokeninfoHistoryResponse, error) {
+	req := api.TokenInfoRequest{
+		Action:  api.TokeninfoActionEventHistory,
+		Mytoken: mytoken,
 	}
-	resp, err := httpClient.Do().R().SetBody(req).SetResult(&pkg.TokeninfoHistoryResponse{}).SetError(&model.APIError{}).Post(my.TokeninfoEndpoint)
+	resp, err := httpClient.Do().R().SetBody(req).SetResult(&api.TokeninfoHistoryResponse{}).SetError(&api.APIError{}).Post(my.TokeninfoEndpoint)
 	if err != nil {
 		return nil, newMytokenErrorFromError(errorWhileHttp, err)
 	}
 	if eRes := resp.Error(); eRes != nil {
-		if errRes := eRes.(*model.APIError); errRes != nil && errRes.Error != "" {
+		if errRes := eRes.(*api.APIError); errRes != nil && errRes.Error != "" {
 			return nil, &MytokenError{
 				err:          errRes.Error,
 				errorDetails: errRes.ErrorDescription,
 			}
 		}
 	}
-	res, ok := resp.Result().(*pkg.TokeninfoHistoryResponse)
+	res, ok := resp.Result().(*api.TokeninfoHistoryResponse)
 	if !ok {
 		return nil, &MytokenError{
 			err: unexpectedResponse,
@@ -57,24 +55,24 @@ func (my *MytokenProvider) TokeninfoHistory(mytoken string) (*pkg.TokeninfoHisto
 	}
 	return res, nil
 }
-func (my *MytokenProvider) TokeninfoSubtokens(mytoken string) (*pkg.TokeninfoTreeResponse, error) {
-	req := pkg.TokenInfoRequest{
-		Action:  model.TokeninfoActionSubtokenTree,
-		Mytoken: token.Token(mytoken),
+func (my *MytokenProvider) TokeninfoSubtokens(mytoken string) (*api.TokeninfoTreeResponse, error) {
+	req := api.TokenInfoRequest{
+		Action:  api.TokeninfoActionSubtokenTree,
+		Mytoken: mytoken,
 	}
-	resp, err := httpClient.Do().R().SetBody(req).SetResult(&pkg.TokeninfoTreeResponse{}).SetError(&model.APIError{}).Post(my.TokeninfoEndpoint)
+	resp, err := httpClient.Do().R().SetBody(req).SetResult(&api.TokeninfoTreeResponse{}).SetError(&api.APIError{}).Post(my.TokeninfoEndpoint)
 	if err != nil {
 		return nil, newMytokenErrorFromError(errorWhileHttp, err)
 	}
 	if eRes := resp.Error(); eRes != nil {
-		if errRes := eRes.(*model.APIError); errRes != nil && errRes.Error != "" {
+		if errRes := eRes.(*api.APIError); errRes != nil && errRes.Error != "" {
 			return nil, &MytokenError{
 				err:          errRes.Error,
 				errorDetails: errRes.ErrorDescription,
 			}
 		}
 	}
-	res, ok := resp.Result().(*pkg.TokeninfoTreeResponse)
+	res, ok := resp.Result().(*api.TokeninfoTreeResponse)
 	if !ok {
 		return nil, &MytokenError{
 			err: unexpectedResponse,
@@ -82,24 +80,24 @@ func (my *MytokenProvider) TokeninfoSubtokens(mytoken string) (*pkg.TokeninfoTre
 	}
 	return res, nil
 }
-func (my *MytokenProvider) TokeninfoListMytokens(mytoken string) (*pkg.TokeninfoListResponse, error) {
-	req := pkg.TokenInfoRequest{
-		Action:  model.TokeninfoActionListMytokens,
-		Mytoken: token.Token(mytoken),
+func (my *MytokenProvider) TokeninfoListMytokens(mytoken string) (*api.TokeninfoListResponse, error) {
+	req := api.TokenInfoRequest{
+		Action:  api.TokeninfoActionListMytokens,
+		Mytoken: mytoken,
 	}
-	resp, err := httpClient.Do().R().SetBody(req).SetResult(&pkg.TokeninfoListResponse{}).SetError(&model.APIError{}).Post(my.TokeninfoEndpoint)
+	resp, err := httpClient.Do().R().SetBody(req).SetResult(&api.TokeninfoListResponse{}).SetError(&api.APIError{}).Post(my.TokeninfoEndpoint)
 	if err != nil {
 		return nil, newMytokenErrorFromError(errorWhileHttp, err)
 	}
 	if eRes := resp.Error(); eRes != nil {
-		if errRes := eRes.(*model.APIError); errRes != nil && errRes.Error != "" {
+		if errRes := eRes.(*api.APIError); errRes != nil && errRes.Error != "" {
 			return nil, &MytokenError{
 				err:          errRes.Error,
 				errorDetails: errRes.ErrorDescription,
 			}
 		}
 	}
-	res, ok := resp.Result().(*pkg.TokeninfoListResponse)
+	res, ok := resp.Result().(*api.TokeninfoListResponse)
 	if !ok {
 		return nil, &MytokenError{
 			err: unexpectedResponse,

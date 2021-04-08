@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/shared/model"
 )
 
 type oidcFlowReqObj struct {

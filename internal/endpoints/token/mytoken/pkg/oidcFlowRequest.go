@@ -5,20 +5,20 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 )
 
 // OIDCFlowRequest holds the request for an OIDC Flow request
 type OIDCFlowRequest struct {
-	Issuer               string                    `json:"oidc_issuer"`
+	api.OIDCFlowRequest  `json:",inline"`
 	GrantType            model.GrantType           `json:"grant_type"`
 	OIDCFlow             model.OIDCFlow            `json:"oidc_flow"`
 	Restrictions         restrictions.Restrictions `json:"restrictions"`
 	Capabilities         capabilities.Capabilities `json:"capabilities"`
 	SubtokenCapabilities capabilities.Capabilities `json:"subtoken_capabilities"`
-	Name                 string                    `json:"name"`
 	ResponseType         model.ResponseType        `json:"response_type"`
 	redirectType         string
 }

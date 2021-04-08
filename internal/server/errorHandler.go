@@ -7,7 +7,7 @@ import (
 	fiberUtils "github.com/gofiber/fiber/v2/utils"
 
 	"github.com/oidc-mytoken/server/internal/model"
-	model2 "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 )
 
 func handleError(ctx *fiber.Ctx, err error) error {
@@ -53,7 +53,7 @@ func handleErrorHTML(ctx *fiber.Ctx, code int, msg string) error {
 func handleErrorJSON(ctx *fiber.Ctx, code int, msg string) error {
 	return model.Response{
 		Status: code,
-		Response: model2.APIError{
+		Response: api.APIError{
 			Error:            fiberUtils.StatusMessage(code),
 			ErrorDescription: msg,
 		},
