@@ -2,11 +2,9 @@ package authcode
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gofiber/fiber/v2"
@@ -19,67 +17,34 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/accesstokenrepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/supertokenrepo/transfercoderepo"
-	response "github.com/oidc-mytoken/server/internal/endpoints/token/super/pkg"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
+	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/issuer"
 	"github.com/oidc-mytoken/server/internal/server/routes"
-	"github.com/oidc-mytoken/server/internal/utils/oidcUtils"
-	"github.com/oidc-mytoken/server/internal/utils/singleasciiencode"
-	pkgModel "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/context"
-	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
-	"github.com/oidc-mytoken/server/shared/supertoken/restrictions"
+	pkgModel "github.com/oidc-mytoken/server/shared/model"
+	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
+	"github.com/oidc-mytoken/server/shared/utils/jwtutils"
+	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
 var redirectURL string
-var nativeRedirectEndpoint string
+var consentEndpoint string
 
 // Init initializes the authcode component
 func Init() {
 	generalPaths := routes.GetGeneralPaths()
 	redirectURL = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.OIDCRedirectEndpoint)
-	nativeRedirectEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.NativeRedirectEndpoint)
+	consentEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.ConsentEndpoint)
 }
 
-const stateLen = 16
-const pollingCodeLen = 32
-
-type stateInfo struct {
-	Native       bool
-	ResponseType pkgModel.ResponseType
-}
-
-const stateFmt = "%d:%d:%s"
-
-// StateInfoFlags
-const (
-	flagNative = 0x01
-)
-
-func createState(info stateInfo) *state.State {
-	r := utils.RandASCIIString(stateLen)
-	fe := singleasciiencode.NewFlagEncoder()
-	fe.Set("native", info.Native)
-	flags := fe.Encode()
-	responseType := singleasciiencode.EncodeNumber64(byte(info.ResponseType))
-	s := string(append([]byte(r), flags, responseType))
-	return state.NewState(s)
-}
-
-func parseState(state *state.State) stateInfo {
-	info := stateInfo{}
-	responseType, _ := singleasciiencode.DecodeNumber64(state.State()[len(state.State())-1])
-	flags := singleasciiencode.Decode(state.State()[len(state.State())-2], "native")
-	info.ResponseType = pkgModel.ResponseType(responseType)
-	info.Native, _ = flags.Get("native")
-	return info
-}
-
-func authorizationURL(provider *config.ProviderConf, restrictions restrictions.Restrictions, native bool) (string, *state.State) {
+func GetAuthorizationURL(provider *config.ProviderConf, oState string, restrictions restrictions.Restrictions) string {
 	log.Debug("Generating authorization url")
 	scopes := restrictions.GetScopes()
 	if len(scopes) <= 0 {
@@ -92,7 +57,6 @@ func authorizationURL(provider *config.ProviderConf, restrictions restrictions.R
 		RedirectURL:  redirectURL,
 		Scopes:       scopes,
 	}
-	state := createState(stateInfo{Native: native})
 	additionalParams := []oauth2.AuthCodeOption{oauth2.ApprovalForce}
 	if issuerUtils.CompareIssuerURLs(provider.Issuer, issuer.GOOGLE) {
 		additionalParams = append(additionalParams, oauth2.AccessTypeOffline)
@@ -101,37 +65,35 @@ func authorizationURL(provider *config.ProviderConf, restrictions restrictions.R
 	}
 	auds := restrictions.GetAudiences()
 	if len(auds) > 0 {
-		additionalParams = append(additionalParams, oauth2.SetAuthURLParam("audience", strings.Join(auds, " ")))
+		additionalParams = append(additionalParams, oauth2.SetAuthURLParam(provider.AudienceRequestParameter, strings.Join(auds, " ")))
 	}
 
-	return oauth2Config.AuthCodeURL(state.State(), additionalParams...), state
+	return oauth2Config.AuthCodeURL(oState, additionalParams...)
 }
 
 // StartAuthCodeFlow starts an authorization code flow
-func StartAuthCodeFlow(body []byte) *model.Response {
+func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.Response {
 	log.Debug("Handle authcode")
-	req := response.NewAuthCodeFlowRequest()
-	if err := json.Unmarshal(body, &req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err)
-	}
+	req := oidcReq.ToAuthCodeFlowRequest()
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
 	if !ok {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.APIErrorUnknownIssuer,
+			Response: api.APIErrorUnknownIssuer,
 		}
 	}
 	exp := req.Restrictions.GetExpires()
-	if exp > 0 && exp < time.Now().Unix() {
+	if exp > 0 && exp < unixtime.Now() {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: pkgModel.BadRequestError("token would already be expired"),
 		}
 	}
 
-	authURL, state := authorizationURL(provider, req.Restrictions, req.Native())
+	req.Restrictions.ReplaceThisIp(ctx.IP())
+	oState, consentCode := state.CreateState(state.Info{Native: req.Native()})
 	authFlowInfoO := authcodeinforepo.AuthFlowInfoOut{
-		State:                state,
+		State:                oState,
 		Issuer:               provider.Issuer,
 		Restrictions:         req.Restrictions,
 		Capabilities:         req.Capabilities,
@@ -141,19 +103,16 @@ func StartAuthCodeFlow(body []byte) *model.Response {
 	authFlowInfo := authcodeinforepo.AuthFlowInfo{
 		AuthFlowInfoOut: authFlowInfoO,
 	}
-	res := response.AuthCodeFlowResponse{
-		AuthorizationURL: authURL,
+	res := api.AuthCodeFlowResponse{
+		AuthorizationURL: utils.CombineURLPath(consentEndpoint, consentCode.String()),
 	}
 	if req.Native() && config.Get().Features.Polling.Enabled {
 		poll := authFlowInfo.State.PollingCode()
-		authFlowInfo.PollingCode = transfercoderepo.CreatePollingCode(poll, req.ResponseType, authURL)
-		res = response.AuthCodeFlowResponse{
-			AuthorizationURL: utils.CombineURLPath(nativeRedirectEndpoint, poll),
-			PollingInfo: response.PollingInfo{
-				PollingCode:          poll,
-				PollingCodeExpiresIn: config.Get().Features.Polling.PollingCodeExpiresAfter,
-				PollingInterval:      config.Get().Features.Polling.PollingInterval,
-			},
+		authFlowInfo.PollingCode = transfercoderepo.CreatePollingCode(poll, req.ResponseType)
+		res.PollingInfo = api.PollingInfo{
+			PollingCode:          poll,
+			PollingCodeExpiresIn: config.Get().Features.Polling.PollingCodeExpiresAfter,
+			PollingInterval:      config.Get().Features.Polling.PollingInterval,
 		}
 	}
 	if err := authFlowInfo.Store(nil); err != nil {
@@ -165,15 +124,15 @@ func StartAuthCodeFlow(body []byte) *model.Response {
 	}
 }
 
-// CodeExchange performs an oidc code exchange it creates the super token and stores it in the database
-func CodeExchange(state *state.State, code string, networkData model.ClientMetaData) *model.Response {
+// CodeExchange performs an oidc code exchange it creates the mytoken and stores it in the database
+func CodeExchange(oState *state.State, code string, networkData api.ClientMetaData) *model.Response {
 	log.Debug("Handle code exchange")
-	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(state)
+	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(oState)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &model.Response{
 				Status:   fiber.StatusBadRequest,
-				Response: pkgModel.APIErrorStateMismatch,
+				Response: api.APIErrorStateMismatch,
 			}
 		}
 		return model.ErrorToInternalServerErrorResponse(err)
@@ -182,7 +141,7 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 	if !ok {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.APIErrorUnknownIssuer,
+			Response: api.APIErrorUnknownIssuer,
 		}
 	}
 	oauth2Config := oauth2.Config{
@@ -209,7 +168,7 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 	if token.RefreshToken == "" {
 		return &model.Response{
 			Status:   fiber.StatusInternalServerError,
-			Response: pkgModel.APIErrorNoRefreshToken,
+			Response: api.APIErrorNoRefreshToken,
 		}
 	}
 	scopes := authInfo.Restrictions.GetScopes()
@@ -219,7 +178,7 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 		authInfo.Restrictions.SetMaxScopes(scopes) // Update restrictions with correct scopes
 	}
 	audiences := authInfo.Restrictions.GetAudiences()
-	if tmp, ok := oidcUtils.GetAudiencesFromJWT(token.AccessToken); ok {
+	if tmp, ok := jwtutils.GetAudiencesFromJWT(token.AccessToken); ok {
 		audiences = tmp
 	}
 	authInfo.Restrictions.SetMaxAudiences(audiences) // Update restrictions with correct audiences
@@ -228,19 +187,19 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	var ste *supertokenrepo.SuperTokenEntry
+	var ste *mytokenrepo.MytokenEntry
 	if err = db.Transact(func(tx *sqlx.Tx) error {
-		ste, err = createSuperTokenEntry(tx, authInfo, token, oidcSub, networkData)
+		ste, err = createMytokenEntry(tx, authInfo, token, oidcSub, networkData)
 		if err != nil {
 			return err
 		}
 		at := accesstokenrepo.AccessToken{
-			Token:      token.AccessToken,
-			IP:         networkData.IP,
-			Comment:    "Initial Access Token from authorization code flow",
-			SuperToken: ste.Token,
-			Scopes:     scopes,
-			Audiences:  audiences,
+			Token:     token.AccessToken,
+			IP:        networkData.IP,
+			Comment:   "Initial Access Token from authorization code flow",
+			Mytoken:   ste.Token,
+			Scopes:    scopes,
+			Audiences: audiences,
 		}
 		if err = at.Store(tx); err != nil {
 			return err
@@ -250,32 +209,28 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 			if err != nil {
 				return err
 			}
-			if err = transfercoderepo.LinkPollingCodeToST(tx, state.PollingCode(), jwt); err != nil {
+			if err = transfercoderepo.LinkPollingCodeToMT(tx, oState.PollingCode(), jwt, ste.ID); err != nil {
 				return err
 			}
 		}
-		if err = authcodeinforepo.DeleteAuthFlowInfoByState(tx, state); err != nil {
-			return err
-		}
-		return nil
+		return authcodeinforepo.DeleteAuthFlowInfoByState(tx, oState)
 	}); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	//TODO on the response the idea was to redirect to a correct side, that has the response
 	if authInfo.PollingCode {
 		return &model.Response{
-			Status:   fiber.StatusOK,
-			Response: "Success! Please go back to the application that started this flow.", // TODO
+			Status:   fiber.StatusSeeOther,
+			Response: "/native",
 		}
 	}
-	stateInf := parseState(state)
+	stateInf := oState.Parse()
 	res, err := ste.Token.ToTokenResponse(stateInf.ResponseType, networkData, "")
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	cookieName := "mytoken-supertoken"
-	cookieValue := res.SuperToken
-	cookieAge := 3600 //TODO from config
+	cookieName := "mytoken"
+	cookieValue := res.Mytoken
+	cookieAge := 3600 * 24 //TODO from config, same as in js
 	if stateInf.ResponseType == pkgModel.ResponseTypeTransferCode {
 		cookieName = "mytoken-transfercode"
 		cookieValue = res.TransferCode
@@ -283,7 +238,7 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 	}
 	return &model.Response{
 		Status:   fiber.StatusSeeOther,
-		Response: "/", //TODO redirect
+		Response: "/home",
 		Cookies: []*fiber.Cookie{{
 			Name:     cookieName,
 			Value:    cookieValue,
@@ -296,18 +251,19 @@ func CodeExchange(state *state.State, code string, networkData model.ClientMetaD
 	}
 }
 
-func createSuperTokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut, token *oauth2.Token, oidcSub string, networkData model.ClientMetaData) (*supertokenrepo.SuperTokenEntry, error) {
-	ste := supertokenrepo.NewSuperTokenEntry(
-		supertoken.NewSuperToken(
+func createMytokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut, token *oauth2.Token, oidcSub string, networkData api.ClientMetaData) (*mytokenrepo.MytokenEntry, error) {
+	ste := mytokenrepo.NewMytokenEntry(
+		mytoken.NewMytoken(
 			oidcSub,
 			authFlowInfo.Issuer,
 			authFlowInfo.Restrictions,
 			authFlowInfo.Capabilities,
 			authFlowInfo.SubtokenCapabilities),
 		authFlowInfo.Name, networkData)
-	ste.RefreshToken = token.RefreshToken
-	err := ste.Store(tx, "Used grant_type oidc_flow authorization_code")
-	if err != nil {
+	if err := ste.InitRefreshToken(token.RefreshToken); err != nil {
+		return nil, err
+	}
+	if err := ste.Store(tx, "Used grant_type oidc_flow authorization_code"); err != nil {
 		return nil, err
 	}
 	return ste, nil

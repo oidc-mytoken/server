@@ -1,23 +1,21 @@
 package accesstokenrepo
 
 import (
-	"database/sql"
-
 	"github.com/jmoiron/sqlx"
-	uuid "github.com/satori/go.uuid"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model"
-	supertoken "github.com/oidc-mytoken/server/shared/supertoken/pkg"
+	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 
 // AccessToken holds database information about an access token
 type AccessToken struct {
-	Token      string
-	IP         string
-	Comment    string
-	SuperToken *supertoken.SuperToken
+	Token   string
+	IP      string
+	Comment string
+	Mytoken *mytoken.Mytoken
 
 	Scopes    []string
 	Audiences []string
@@ -26,12 +24,12 @@ type AccessToken struct {
 type accessToken struct {
 	Token   string
 	IP      string `db:"ip_created"`
-	Comment sql.NullString
-	STID    uuid.UUID `db:"ST_id"`
+	Comment db.NullString
+	MTID    mtid.MTID `db:"MT_id"`
 }
 
 func (t *AccessToken) toDBObject() (*accessToken, error) {
-	stJWT, err := t.SuperToken.ToJWT()
+	stJWT, err := t.Mytoken.ToJWT()
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +41,7 @@ func (t *AccessToken) toDBObject() (*accessToken, error) {
 		Token:   token,
 		IP:      t.IP,
 		Comment: db.NewNullString(t.Comment),
-		STID:    t.SuperToken.ID,
+		MTID:    t.Mytoken.ID,
 	}, nil
 }
 
@@ -80,7 +78,7 @@ func (t *AccessToken) Store(tx *sqlx.Tx) error {
 		return err
 	}
 	storeFnc := func(tx *sqlx.Tx) error {
-		res, err := tx.NamedExec(`INSERT INTO AccessTokens (token, ip_created, comment, ST_id) VALUES (:token, :ip_created, :comment, :ST_id)`, store)
+		res, err := tx.NamedExec(`INSERT INTO AccessTokens (token, ip_created, comment, MT_id) VALUES (:token, :ip_created, :comment, :MT_id)`, store)
 		if err != nil {
 			return err
 		}

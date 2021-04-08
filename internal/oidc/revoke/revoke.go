@@ -4,13 +4,13 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcReqRes"
-	pkgModel "github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/httpClient"
+	pkgModel "github.com/oidc-mytoken/server/shared/model"
 )
 
 // RefreshToken revokes a refresh token
 func RefreshToken(provider *config.ProviderConf, rt string) *model.Response {
-	if len(provider.Endpoints.Revocation) == 0 {
+	if provider.Endpoints.Revocation == "" {
 		return nil
 	}
 	req := oidcReqRes.NewRTRevokeRequest(rt)
@@ -18,7 +18,7 @@ func RefreshToken(provider *config.ProviderConf, rt string) *model.Response {
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	if errRes, ok := httpRes.Error().(*oidcReqRes.OIDCErrorResponse); ok && errRes != nil && len(errRes.Error) > 0 {
+	if errRes, ok := httpRes.Error().(*oidcReqRes.OIDCErrorResponse); ok && errRes != nil && errRes.Error != "" {
 		return &model.Response{
 			Status:   httpRes.RawResponse.StatusCode,
 			Response: pkgModel.OIDCError(errRes.Error, errRes.ErrorDescription),

@@ -21,5 +21,5 @@ func SHA512Str(data []byte) string {
 func HMACSHA512Str(data, secret []byte) string {
 	h := hmac.New(sha512.New, secret)
 	hmac := h.Sum(data)
-	return base64.StdEncoding.EncodeToString(hmac[:])
+	return base64.StdEncoding.EncodeToString(hmac)
 }

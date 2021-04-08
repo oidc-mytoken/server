@@ -8,7 +8,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/routes"
-	pkgModel "github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	pkgModel "github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
@@ -23,9 +24,9 @@ func HandleConfiguration(ctx *fiber.Ctx) error {
 
 var mytokenConfig *pkg.MytokenConfiguration
 
-func getProvidersFromConfig() (providers []pkg.SupportedProviderConfig) {
+func getProvidersFromConfig() (providers []api.SupportedProviderConfig) {
 	for _, p := range config.Get().Providers {
-		providers = append(providers, pkg.SupportedProviderConfig{
+		providers = append(providers, api.SupportedProviderConfig{
 			Issuer:          p.Issuer,
 			ScopesSupported: p.Scopes,
 		})
@@ -35,42 +36,86 @@ func getProvidersFromConfig() (providers []pkg.SupportedProviderConfig) {
 
 // Init initializes the configuration endpoint
 func Init() {
+	mytokenConfig = basicConfiguration()
+	addTokenRevocation(mytokenConfig)
+	addShortTokens(mytokenConfig)
+	addTransferCodes(mytokenConfig)
+	addPollingCodes(mytokenConfig)
+	addAccessTokenGrant(mytokenConfig)
+	addSignedJWTGrant(mytokenConfig)
+	addTokenInfo(mytokenConfig)
+}
+
+func basicConfiguration() *pkg.MytokenConfiguration {
 	apiPaths := routes.GetCurrentAPIPaths()
 	otherPaths := routes.GetGeneralPaths()
-	mytokenConfig = &pkg.MytokenConfiguration{
-		Issuer:                                 config.Get().IssuerURL,
-		AccessTokenEndpoint:                    utils.CombineURLPath(config.Get().IssuerURL, apiPaths.AccessTokenEndpoint),
-		SuperTokenEndpoint:                     utils.CombineURLPath(config.Get().IssuerURL, apiPaths.SuperTokenEndpoint),
-		TokeninfoEndpoint:                      utils.CombineURLPath(config.Get().IssuerURL, apiPaths.TokenInfoEndpoint),
-		UserSettingsEndpoint:                   utils.CombineURLPath(config.Get().IssuerURL, apiPaths.UserSettingEndpoint),
-		JWKSURI:                                utils.CombineURLPath(config.Get().IssuerURL, otherPaths.JWKSEndpoint),
-		ProvidersSupported:                     getProvidersFromConfig(),
-		TokenSigningAlgValue:                   config.Get().Signing.Alg,
-		AccessTokenEndpointGrantTypesSupported: []pkgModel.GrantType{pkgModel.GrantTypeSuperToken},
-		SuperTokenEndpointGrantTypesSupported:  []pkgModel.GrantType{pkgModel.GrantTypeOIDCFlow, pkgModel.GrantTypeSuperToken},
-		SuperTokenEndpointOIDCFlowsSupported:   config.Get().Features.EnabledOIDCFlows,
+	return &pkg.MytokenConfiguration{
+		MytokenConfiguration: api.MytokenConfiguration{
+			Issuer:               config.Get().IssuerURL,
+			AccessTokenEndpoint:  utils.CombineURLPath(config.Get().IssuerURL, apiPaths.AccessTokenEndpoint),
+			MytokenEndpoint:      utils.CombineURLPath(config.Get().IssuerURL, apiPaths.MytokenEndpoint),
+			TokeninfoEndpoint:    utils.CombineURLPath(config.Get().IssuerURL, apiPaths.TokenInfoEndpoint),
+			UserSettingsEndpoint: utils.CombineURLPath(config.Get().IssuerURL, apiPaths.UserSettingEndpoint),
+			JWKSURI:              utils.CombineURLPath(config.Get().IssuerURL, otherPaths.JWKSEndpoint),
+			ProvidersSupported:   getProvidersFromConfig(),
+			TokenSigningAlgValue: config.Get().Signing.Alg,
+			ServiceDocumentation: config.Get().ServiceDocumentation,
+			Version:              version.VERSION(),
+		},
+		AccessTokenEndpointGrantTypesSupported: []pkgModel.GrantType{pkgModel.GrantTypeMytoken},
+		MytokenEndpointGrantTypesSupported:     []pkgModel.GrantType{pkgModel.GrantTypeOIDCFlow, pkgModel.GrantTypeMytoken},
+		MytokenEndpointOIDCFlowsSupported:      config.Get().Features.EnabledOIDCFlows,
 		ResponseTypesSupported:                 []pkgModel.ResponseType{pkgModel.ResponseTypeToken},
-		ServiceDocumentation:                   config.Get().ServiceDocumentation,
-		Version:                                version.VERSION,
 	}
+}
+
+func addTokenRevocation(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.TokenRevocation.Enabled {
-		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(config.Get().IssuerURL, apiPaths.RevocationEndpoint)
+		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(config.Get().IssuerURL, routes.GetCurrentAPIPaths().RevocationEndpoint)
 	}
-	if config.Get().Features.TransferCodes.Enabled {
+}
+func addShortTokens(mytokenConfig *pkg.MytokenConfiguration) {
+	if config.Get().Features.ShortTokens.Enabled {
 		pkgModel.ResponseTypeShortToken.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
 	}
+}
+func addTransferCodes(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.TransferCodes.Enabled {
-		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(config.Get().IssuerURL, apiPaths.TokenTransferEndpoint)
-		pkgModel.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(config.Get().IssuerURL, routes.GetCurrentAPIPaths().TokenTransferEndpoint)
+		pkgModel.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 		pkgModel.ResponseTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
 	}
+}
+func addPollingCodes(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.Polling.Enabled {
-		pkgModel.GrantTypePollingCode.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+		pkgModel.GrantTypePollingCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 	}
+}
+func addAccessTokenGrant(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.AccessTokenGrant.Enabled {
-		pkgModel.GrantTypeAccessToken.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+		pkgModel.GrantTypeAccessToken.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 	}
+}
+func addSignedJWTGrant(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.SignedJWTGrant.Enabled {
-		pkgModel.GrantTypePrivateKeyJWT.AddToSliceIfNotFound(&mytokenConfig.SuperTokenEndpointGrantTypesSupported)
+		pkgModel.GrantTypePrivateKeyJWT.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
+	}
+}
+func addTokenInfo(mytokenConfig *pkg.MytokenConfiguration) {
+	if !config.Get().Features.TokenInfo.Enabled {
+		mytokenConfig.TokeninfoEndpoint = ""
+	} else {
+		if config.Get().Features.TokenInfo.Introspect.Enabled {
+			pkgModel.TokeninfoActionIntrospect.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
+		}
+		if config.Get().Features.TokenInfo.History.Enabled {
+			pkgModel.TokeninfoActionEventHistory.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
+		}
+		if config.Get().Features.TokenInfo.Tree.Enabled {
+			pkgModel.TokeninfoActionSubtokenTree.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
+		}
+		if config.Get().Features.TokenInfo.List.Enabled {
+			pkgModel.TokeninfoActionListMytokens.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
+		}
 	}
 }

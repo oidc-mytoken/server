@@ -1,20 +1,25 @@
 package server
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/template/mustache"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints"
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration"
-	"github.com/oidc-mytoken/server/internal/endpoints/nativeredirect"
+	"github.com/oidc-mytoken/server/internal/endpoints/consent"
 	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
+	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/server/routes"
-	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 )
 
 var server *fiber.App
@@ -25,25 +30,75 @@ var serverConfig = fiber.Config{
 	IdleTimeout:    150 * time.Second,
 	ReadBufferSize: 8192,
 	// WriteBufferSize: 4096,
+	ErrorHandler: handleError,
+}
+
+//go:embed web/sites web/layouts
+var _webFiles embed.FS
+var webFiles fs.FS
+
+//go:embed web/partials
+var _partials embed.FS
+var partials fs.FS
+
+func init() {
+	var err error
+	webFiles, err = fs.Sub(_webFiles, "web")
+	if err != nil {
+		log.WithError(err).Fatal()
+	}
+	partials, err = fs.Sub(_partials, "web/partials")
+	if err != nil {
+		log.WithError(err).Fatal()
+	}
+}
+
+func initTemplateEngine() {
+	engine := mustache.NewFileSystemPartials(http.FS(webFiles), ".mustache", http.FS(partials))
+	// engine.Reload(version.DEV)
+	serverConfig.Views = engine
 }
 
 // Init initializes the server
 func Init() {
+	initTemplateEngine()
 	server = fiber.New(serverConfig)
 	addMiddlewares(server)
 	addRoutes(server)
+	server.Use(func(ctx *fiber.Ctx) error {
+		if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" {
+			return ctx.Render("sites/404", map[string]interface{}{
+				"empty-navbar": true,
+			}, "layouts/main")
+		}
+		return model.Response{
+			Status: fiber.StatusNotFound,
+			Response: api.APIError{
+				Error: "not_found",
+			},
+		}.Send(ctx)
+	})
 }
 
 func addRoutes(s fiber.Router) {
-	s.Get("/", handleTest)
+	addWebRoutes(s)
 	s.Get(routes.GetGeneralPaths().ConfigurationEndpoint, configuration.HandleConfiguration)
 	s.Get("/.well-known/openid-configuration", func(ctx *fiber.Ctx) error {
 		return ctx.Redirect(routes.GetGeneralPaths().ConfigurationEndpoint)
 	})
 	s.Get(routes.GetGeneralPaths().JWKSEndpoint, endpoints.HandleJWKS)
 	s.Get(routes.GetGeneralPaths().OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
-	s.Get(utils.CombineURLPath(routes.GetGeneralPaths().NativeRedirectEndpoint, ":poll"), nativeredirect.HandleNativeRedirect)
+	s.Get("/c/:consent_code", consent.HandleConsent)
+	s.Post("/c/:consent_code", consent.HandleConsentPost)
+	s.Get("/native", handleNativeCallback)
+	s.Get("/native/abort", handleNativeConsentAbortCallback)
+	s.Get(routes.GetGeneralPaths().Privacy, handlePrivacy)
 	addAPIRoutes(s)
+}
+
+func addWebRoutes(s fiber.Router) {
+	s.Get("/", handleIndex)
+	s.Get("/home", handleHome)
 }
 
 func start(s *fiber.App) {

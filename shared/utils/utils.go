@@ -41,7 +41,7 @@ func RandASCIIString(n int) string {
 		cache >>= letterIdxBits
 		remain--
 	}
-	return *(*string)(unsafe.Pointer(&b))
+	return *(*string)(unsafe.Pointer(&b)) // unsafe is fine here skipcq: GSC-G103
 }
 
 // IntersectSlices returns the common elements of two slices
@@ -62,6 +62,21 @@ func StringInSlice(key string, slice []string) bool {
 		}
 	}
 	return false
+}
+
+// ReplaceStringInSlice replaces all occurrences of a string in a slice with another string
+func ReplaceStringInSlice(s *[]string, o, n string, caseSensitive bool) {
+	if !caseSensitive {
+		o = strings.ToLower(o)
+	}
+	for i, ss := range *s {
+		if !caseSensitive {
+			ss = strings.ToLower(ss)
+		}
+		if o == ss {
+			(*s)[i] = n
+		}
+	}
 }
 
 // IsSubSet checks if all strings of a slice 'a' are contained in the slice 'b'
@@ -96,11 +111,10 @@ func IPIsIn(ip string, ips []string) bool {
 			if ipNetB != nil && ipNetB.Contains(ipA) {
 				return true
 			}
-		} else {
-			if ip == ipp {
-				return true
-			}
+		} else if ip == ipp {
+			return true
 		}
+
 	}
 	return false
 }
@@ -153,11 +167,6 @@ func GetTimeIn(seconds int64) time.Time {
 	return time.Now().Add(time.Duration(seconds) * time.Second)
 }
 
-// GetUnixTimeIn returns the unix time stamp for the current time + the number of passed seconds
-func GetUnixTimeIn(seconds int64) int64 {
-	return GetTimeIn(seconds).Unix()
-}
-
 // CompareNullableIntsWithNilAsInfinity compare two *int64 and handles nil as infinity. It returns 0 if both are equal, a positive value if a is greater than b, a negative value is a is less than b
 func CompareNullableIntsWithNilAsInfinity(a, b *int64) int {
 	if a == nil && b == nil {
@@ -184,6 +193,11 @@ func NewInt64(i int64) *int64 {
 	return &i
 }
 
+// NewInt creates a new *int
+func NewInt(i int) *int {
+	return &i
+}
+
 // SplitIgnoreEmpty splits a string at the specified delimiter without generating empty parts
 func SplitIgnoreEmpty(s, del string) (ret []string) {
 	tmp := strings.Split(s, del)
@@ -202,9 +216,9 @@ func StructToStringMap(st interface{}, tag string) map[string]string {
 	m := make(map[string]string)
 	for k, v := range s.Map() {
 		var str string
-		switch v.(type) {
+		switch v := v.(type) {
 		case string:
-			str = v.(string)
+			str = v
 		default:
 			str = fmt.Sprintf("%v", v)
 		}
@@ -247,7 +261,7 @@ func IsJWT(token string) bool {
 		return false
 	}
 	for i, segment := range arr {
-		if len(segment) > 0 || i < 2 { // first two segments must not be empty
+		if segment != "" || i < 2 { // first two segments must not be empty
 			if _, err := base64.URLEncoding.DecodeString(arr[2]); err != nil {
 				return false
 			}
@@ -264,4 +278,14 @@ func ORErrors(errs ...error) error {
 		}
 	}
 	return nil
+}
+
+// OR logically ORs multiple bools
+func OR(bools ...bool) bool {
+	for _, b := range bools {
+		if b {
+			return b
+		}
+	}
+	return false
 }

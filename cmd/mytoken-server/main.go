@@ -25,9 +25,7 @@ func main() {
 	server.Init()
 	configurationEndpoint.Init()
 	authcode.Init()
-	if err := db.Connect(); err != nil {
-		log.WithError(err).Fatal()
-	}
+	db.Connect()
 	jws.LoadKey()
 	httpClient.Init(config.Get().IssuerURL)
 	geoip.Init()
@@ -56,9 +54,7 @@ func reload() {
 	config.Load()
 	loggerUtils.SetOutput()
 	loggerUtils.MustUpdateAccessLogger()
-	if err := db.Connect(); err != nil {
-		log.WithError(err).Fatal()
-	}
+	db.Connect()
 	jws.LoadKey()
 	geoip.Init()
 }

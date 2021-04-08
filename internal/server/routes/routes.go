@@ -13,7 +13,7 @@ func init() {
 	routes = &paths{
 		api: map[int]APIPaths{
 			0: {
-				SuperTokenEndpoint:    utils.CombineURLPath(apiPath.V0, "/token/super"),
+				MytokenEndpoint:       utils.CombineURLPath(apiPath.V0, "/token/my"),
 				AccessTokenEndpoint:   utils.CombineURLPath(apiPath.V0, "/token/access"),
 				TokenInfoEndpoint:     utils.CombineURLPath(apiPath.V0, "/tokeninfo"),
 				RevocationEndpoint:    utils.CombineURLPath(apiPath.V0, "/token/revoke"),
@@ -22,10 +22,11 @@ func init() {
 			},
 		},
 		other: GeneralPaths{
-			ConfigurationEndpoint:  "/.well-known/mytoken-configuration",
-			OIDCRedirectEndpoint:   "/redirect",
-			JWKSEndpoint:           "/jwks",
-			NativeRedirectEndpoint: "/n",
+			ConfigurationEndpoint: "/.well-known/mytoken-configuration",
+			OIDCRedirectEndpoint:  "/redirect",
+			JWKSEndpoint:          "/jwks",
+			ConsentEndpoint:       "/c",
+			Privacy:               "/privacy",
 		},
 	}
 }
@@ -37,15 +38,16 @@ type paths struct {
 
 // GeneralPaths holds all non-api route paths
 type GeneralPaths struct {
-	ConfigurationEndpoint  string
-	OIDCRedirectEndpoint   string
-	JWKSEndpoint           string
-	NativeRedirectEndpoint string
+	ConfigurationEndpoint string
+	OIDCRedirectEndpoint  string
+	JWKSEndpoint          string
+	ConsentEndpoint       string
+	Privacy               string
 }
 
 // APIPaths holds all api route paths
 type APIPaths struct {
-	SuperTokenEndpoint    string
+	MytokenEndpoint       string
 	AccessTokenEndpoint   string
 	TokenInfoEndpoint     string
 	RevocationEndpoint    string

@@ -5,16 +5,17 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 
-	"github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
 	"github.com/oidc-mytoken/server/shared/context"
+	"github.com/oidc-mytoken/server/shared/model"
+	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 )
 
-var defaultConfig = config{
+var defaultConfig = Config{
 	Server: serverConf{
 		Port: 8000,
 		TLS: tlsConf{
@@ -22,11 +23,12 @@ var defaultConfig = config{
 			RedirectHTTP: true,
 		},
 	},
-	DB: dbConf{
-		Host:     "localhost",
-		User:     "mytoken",
-		Password: "mytoken",
-		DB:       "mytoken",
+	DB: DBConf{
+		Hosts:             []string{"localhost"},
+		User:              "mytoken",
+		Password:          "mytoken",
+		DB:                "mytoken",
+		ReconnectInterval: 60,
 	},
 	Signing: signingConf{
 		Alg:       oidc.ES512,
@@ -43,7 +45,7 @@ var defaultConfig = config{
 			Level:  "error",
 		},
 	},
-	ServiceDocumentation: "https://github.com/oidc-mytoken/server",
+	ServiceDocumentation: "https://docs-sdm.scc.kit.edu/mytoken/",
 	Features: featuresConf{
 		EnabledOIDCFlows: []model.OIDCFlow{
 			model.OIDCFlowAuthorizationCode,
@@ -62,6 +64,13 @@ var defaultConfig = config{
 		},
 		AccessTokenGrant: onlyEnable{true},
 		SignedJWTGrant:   onlyEnable{true},
+		TokenInfo: tokeninfoConfig{
+			Introspect: onlyEnable{true},
+			History:    onlyEnable{true},
+			Tree:       onlyEnable{true},
+			List:       onlyEnable{true},
+		},
+		WebInterface: onlyEnable{true},
 	},
 	ProviderByIssuer: make(map[string]*ProviderConf),
 	API: apiConf{
@@ -69,19 +78,20 @@ var defaultConfig = config{
 	},
 }
 
-// config holds the server configuration
-type config struct {
+// Config holds the server configuration
+type Config struct {
 	IssuerURL            string                   `yaml:"issuer"`
 	Server               serverConf               `yaml:"server"`
 	GeoIPDBFile          string                   `yaml:"geo_ip_db_file"`
 	API                  apiConf                  `yaml:"api"`
-	DB                   dbConf                   `yaml:"database"`
+	DB                   DBConf                   `yaml:"database"`
 	Signing              signingConf              `yaml:"signing"`
 	Logging              loggingConf              `yaml:"logging"`
 	ServiceDocumentation string                   `yaml:"service_documentation"`
 	Features             featuresConf             `yaml:"features"`
 	Providers            []*ProviderConf          `yaml:"providers"`
 	ProviderByIssuer     map[string]*ProviderConf `yaml:"-"`
+	ServiceOperator      ServiceOperatorConf      `yaml:"service_operator"`
 }
 
 type apiConf struct {
@@ -96,6 +106,16 @@ type featuresConf struct {
 	Polling          pollingConf      `yaml:"polling_codes"`
 	AccessTokenGrant onlyEnable       `yaml:"access_token_grant"`
 	SignedJWTGrant   onlyEnable       `yaml:"signed_jwt_grant"`
+	TokenInfo        tokeninfoConfig  `yaml:"tokeninfo"`
+	WebInterface     onlyEnable       `yaml:"web_interface"`
+}
+
+type tokeninfoConfig struct {
+	Enabled    bool       `yaml:"-"`
+	Introspect onlyEnable `yaml:"introspect"`
+	History    onlyEnable `yaml:"event_history"`
+	Tree       onlyEnable `yaml:"subtoken_tree"`
+	List       onlyEnable `yaml:"list_mytokens"`
 }
 
 type shortTokenConfig struct {
@@ -126,11 +146,12 @@ type pollingConf struct {
 	PollingInterval         int64 `yaml:"polling_interval"`
 }
 
-type dbConf struct {
-	Host     string `yaml:"host"`
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	DB       string `yaml:"db"`
+type DBConf struct {
+	Hosts             []string `yaml:"hosts"`
+	User              string   `yaml:"user"`
+	Password          string   `yaml:"password"`
+	DB                string   `yaml:"db"`
+	ReconnectInterval int64    `yaml:"try_reconnect_interval"`
 }
 
 type serverConf struct {
@@ -154,18 +175,40 @@ type signingConf struct {
 
 // ProviderConf holds information about a provider
 type ProviderConf struct {
-	Issuer       string             `yaml:"issuer"`
-	ClientID     string             `yaml:"client_id"`
-	ClientSecret string             `yaml:"client_secret"`
-	Scopes       []string           `yaml:"scopes"`
-	Endpoints    *oauth2x.Endpoints `yaml:"-"`
-	Provider     *oidc.Provider     `yaml:"-"`
+	Issuer                   string             `yaml:"issuer"`
+	ClientID                 string             `yaml:"client_id"`
+	ClientSecret             string             `yaml:"client_secret"`
+	Scopes                   []string           `yaml:"scopes"`
+	Endpoints                *oauth2x.Endpoints `yaml:"-"`
+	Provider                 *oidc.Provider     `yaml:"-"`
+	Name                     string             `yaml:"name"`
+	AudienceRequestParameter string             `yaml:"audience_request_parameter"`
 }
 
-var conf *config
+type ServiceOperatorConf struct {
+	Name     string `yaml:"name"`
+	Homepage string `yaml:"homepage"`
+	Contact  string `yaml:"mail_contact"`
+	Privacy  string `yaml:"mail_privacy"`
+}
 
-// Get returns the config
-func Get() *config {
+func (so *ServiceOperatorConf) validate() error {
+	if so.Name == "" {
+		return fmt.Errorf("invalid config: service_operator.name not set")
+	}
+	if so.Contact == "" {
+		return fmt.Errorf("invalid config: service_operator.mail_contact not set")
+	}
+	if so.Privacy == "" {
+		so.Privacy = so.Contact
+	}
+	return nil
+}
+
+var conf *Config
+
+// Get returns the Config
+func Get() *Config {
 	return conf
 }
 
@@ -177,11 +220,14 @@ func validate() error {
 		return fmt.Errorf("invalid config: server.hostname not set")
 	}
 	if conf.Server.TLS.Enabled {
-		if len(conf.Server.TLS.Key) > 0 && len(conf.Server.TLS.Cert) > 0 {
+		if conf.Server.TLS.Key != "" && conf.Server.TLS.Cert != "" {
 			conf.Server.Port = 443
 		} else {
 			conf.Server.TLS.Enabled = false
 		}
+	}
+	if err := conf.ServiceOperator.validate(); err != nil {
+		return err
 	}
 	if len(conf.Providers) <= 0 {
 		return fmt.Errorf("invalid config: providers must have at least one entry")
@@ -211,6 +257,9 @@ func validate() error {
 		iss0, iss1 := issuerUtils.GetIssuerWithAndWithoutSlash(p.Issuer)
 		conf.ProviderByIssuer[iss0] = p
 		conf.ProviderByIssuer[iss1] = p
+		if p.AudienceRequestParameter == "" {
+			p.AudienceRequestParameter = "resource"
+		}
 	}
 	if conf.IssuerURL == "" {
 		return fmt.Errorf("invalid config: issuerurl not set")
@@ -222,9 +271,18 @@ func validate() error {
 		return fmt.Errorf("invalid config: tokensigningalg not set")
 	}
 	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(&conf.Features.EnabledOIDCFlows)
-	if model.OIDCFlowIsInSlice(model.OIDCFlowDevice, conf.Features.EnabledOIDCFlows) && conf.Features.Polling.Enabled == false {
-		return fmt.Errorf("oidc flow device flow requires polling_codes to be enabled")
+	// if model.OIDCFlowIsInSlice(model.OIDCFlowDevice, conf.Features.EnabledOIDCFlows) && !conf.Features.Polling.Enabled {
+	// 	return fmt.Errorf("oidc flow device flow requires polling_codes to be enabled")
+	// }
+	if !conf.Features.TokenInfo.Introspect.Enabled && conf.Features.WebInterface.Enabled {
+		return fmt.Errorf("web interface requires tokeninfo.introspect to be enabled")
 	}
+	conf.Features.TokenInfo.Enabled = utils.OR(
+		conf.Features.TokenInfo.Introspect.Enabled,
+		conf.Features.TokenInfo.History.Enabled,
+		conf.Features.TokenInfo.Tree.Enabled,
+		conf.Features.TokenInfo.List.Enabled,
+	)
 	return nil
 }
 
@@ -233,7 +291,7 @@ var possibleConfigLocations = []string{
 	"/etc/mytoken",
 }
 
-// Load reads the config file and populates the config struct; then validates the config
+// Load reads the config file and populates the Config struct; then validates the Config
 func Load() {
 	load()
 	if err := validate(); err != nil {
@@ -251,7 +309,7 @@ func load() {
 	}
 }
 
-// LoadForSetup reads the config file and populates the config struct; it does not validate the config, since this is not required for setup
+// LoadForSetup reads the config file and populates the Config struct; it does not validate the Config, since this is not required for setup
 func LoadForSetup() {
 	load()
 }

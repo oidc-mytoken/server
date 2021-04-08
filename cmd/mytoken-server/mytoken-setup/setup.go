@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -8,19 +9,19 @@ import (
 	"strings"
 
 	"github.com/Songmu/prompter"
-	"github.com/jessevdk/go-flags"
+	flags "github.com/jessevdk/go-flags"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
-	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/cluster"
 	"github.com/oidc-mytoken/server/internal/db/dbdefinition"
 	"github.com/oidc-mytoken/server/internal/jws"
 	"github.com/oidc-mytoken/server/internal/model"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/internal/utils/zipdownload"
-	model2 "github.com/oidc-mytoken/server/pkg/model"
-	event "github.com/oidc-mytoken/server/shared/supertoken/event/pkg"
+	model2 "github.com/oidc-mytoken/server/shared/model"
+	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 )
 
@@ -35,11 +36,19 @@ func main() {
 	loggerUtils.Init()
 
 	parser := flags.NewNamedParser("mytoken", flags.HelpFlag|flags.PassDoubleDash)
-	parser.AddCommand("signing-key", "Generates a new signing key", "Generates a new signing key according to the properties specified in the config file and stores it.", &genSigningKeyComm)
-	parser.AddCommand("db", "Setups the database", "Setups the database as needed and specified in the config file.", &createDBComm)
-	parser.AddCommand("install", "Installs needed dependencies", "", &installComm)
-	_, err := parser.Parse()
-	if err != nil {
+	if _, err := parser.AddCommand("signing-key", "Generates a new signing key", "Generates a new signing key according to the properties specified in the config file and stores it.", &genSigningKeyComm); err != nil {
+		log.WithError(err).Fatal()
+		os.Exit(1)
+	}
+	if _, err := parser.AddCommand("db", "Setups the database", "Setups the database as needed and specified in the config file.", &createDBComm); err != nil {
+		log.WithError(err).Fatal()
+		os.Exit(1)
+	}
+	if _, err := parser.AddCommand("install", "Installs needed dependencies", "", &installComm); err != nil {
+		log.WithError(err).Fatal()
+		os.Exit(1)
+	}
+	if _, err := parser.Parse(); err != nil {
 		var flagError *flags.Error
 		if errors.As(err, &flagError) {
 			if flagError.Type == flags.ErrHelp {
@@ -100,15 +109,15 @@ func (c *commandGenSigningKey) Execute(args []string) error {
 // Execute implements the flags.Commander interface
 func (c *commandCreateDB) Execute(args []string) error {
 	password := ""
-	if c.Password != nil && len(*c.Password) == 0 { // -p specified without argument
+	if c.Password != nil && *c.Password == "" { // -p specified without argument
 		password = prompter.Password("Database Password")
 	}
-	dsn := fmt.Sprintf("%s:%s@%s(%s)/", c.Username, password, "tcp", config.Get().DB.Host)
-	if err := db.ConnectDSN(dsn); err != nil {
-		return err
-	}
-	log.WithField("user", c.Username).Debug("Connected to database")
-	if err := checkDB(); err != nil {
+	db := cluster.NewFromConfig(config.DBConf{
+		Hosts:    config.Get().DB.Hosts,
+		User:     c.Username,
+		Password: password,
+	})
+	if err := checkDB(db); err != nil {
 		return err
 	}
 	err := db.Transact(func(tx *sqlx.Tx) error {
@@ -121,7 +130,7 @@ func (c *commandCreateDB) Execute(args []string) error {
 		if err := createTables(tx); err != nil {
 			return err
 		}
-		if err := addPredefinedValues(tx); err != nil {
+		if err := addPredefinedValues(tx); err != nil { // skipcq RVV-B0005
 			return err
 		}
 		return nil
@@ -160,7 +169,7 @@ func createTables(tx *sqlx.Tx) error {
 	}
 	for _, cmd := range dbdefinition.DDL {
 		cmd = strings.TrimSpace(cmd)
-		if len(cmd) > 0 && !strings.HasPrefix(cmd, "--") {
+		if cmd != "" && !strings.HasPrefix(cmd, "--") {
 			log.Trace(cmd)
 			if _, err := tx.Exec(cmd); err != nil {
 				return err
@@ -199,16 +208,21 @@ func createUser(tx *sqlx.Tx) error {
 	return nil
 }
 
-func checkDB() error {
+func checkDB(db *cluster.Cluster) error {
 	log.WithField("database", config.Get().DB.DB).Debug("Check if database already exists")
-	rows, err := db.DB().Query(`SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME=?`, config.Get().DB.DB)
-	if err != nil {
+	var rows *sql.Rows
+	if err := db.Transact(func(tx *sqlx.Tx) error {
+		var err error
+		rows, err = tx.Query(`SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME=?`, config.Get().DB.DB)
+		return err
+	}); err != nil {
 		return err
 	}
 	defer rows.Close()
 	if rows.Next() {
 		if !prompter.YesNo("The database already exists. If we continue all data will be deleted. Do you want to continue?", false) {
-			os.Exit(1)
+			_ = rows.Close()
+			os.Exit(1) // skipcq CRT-D0011
 		}
 	}
 	return nil

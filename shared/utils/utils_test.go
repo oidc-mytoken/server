@@ -82,7 +82,7 @@ func TestIntersectSlicesOneEmpty(t *testing.T) {
 }
 func TestIntersectSlicesNoIntersection(t *testing.T) {
 	a := []string{"some", "values"}
-	b := []string{"completly", "different"}
+	b := []string{"completely", "different"}
 	expected := []string{}
 	testIntersectList(t, a, b, expected)
 	testIntersectList(t, b, a, expected)
@@ -235,6 +235,51 @@ func TestStringInSliceNotFound(t *testing.T) {
 	if found != false {
 		t.Errorf("'%s' not found in slice '%v'", str, slice)
 	}
+}
+
+func TestReplaceStringInSlice_Normal(t *testing.T) {
+	strs := []string{"a", "b", "c"}
+	o := "a"
+	n := "b"
+	exp := []string{"b", "b", "c"}
+	ReplaceStringInSlice(&strs, o, n, true)
+	checkSlice(t, strs, exp)
+}
+func TestReplaceStringInSlice_Multiple(t *testing.T) {
+	strs := []string{"a", "b", "d", "a", "c"}
+	o := "a"
+	n := "b"
+	exp := []string{"b", "b", "d", "b", "c"}
+	ReplaceStringInSlice(&strs, o, n, true)
+	checkSlice(t, strs, exp)
+}
+func TestReplaceStringInSlice_CaseSensitivity(t *testing.T) {
+	strs := []string{"a", "b", "A", "b"}
+	o := "a"
+	n := "c"
+	exp := []string{"c", "b", "A", "b"}
+	ReplaceStringInSlice(&strs, o, n, true)
+	checkSlice(t, strs, exp)
+	strs = []string{"a", "b", "A", "b"}
+	exp = []string{"c", "b", "c", "b"}
+	ReplaceStringInSlice(&strs, o, n, false)
+	checkSlice(t, strs, exp)
+}
+func TestReplaceStringInSlice_Empty(t *testing.T) {
+	strs := []string{}
+	o := "a"
+	n := "b"
+	exp := []string{}
+	ReplaceStringInSlice(&strs, o, n, true)
+	checkSlice(t, strs, exp)
+}
+func TestReplaceStringInSlice_NotFound(t *testing.T) {
+	strs := []string{"a", "b", "c"}
+	o := "d"
+	n := "b"
+	exp := []string{"a", "b", "c"}
+	ReplaceStringInSlice(&strs, o, n, true)
+	checkSlice(t, strs, exp)
 }
 
 func failSlice(t *testing.T, a, exp []string) {

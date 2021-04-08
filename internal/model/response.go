@@ -4,7 +4,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/valyala/fasthttp"
 
-	"github.com/oidc-mytoken/server/pkg/model"
+	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/server/shared/model"
 )
 
 // Response models a http server response
@@ -19,10 +20,8 @@ type Response struct {
 
 // Send sends this response using the passed fiber.Ctx
 func (r Response) Send(ctx *fiber.Ctx) error {
-	if r.Cookies != nil && len(r.Cookies) > 0 {
-		for _, c := range r.Cookies {
-			ctx.Cookie(c)
-		}
+	for _, c := range r.Cookies {
+		ctx.Cookie(c)
 	}
 	if fasthttp.StatusCodeIsRedirect(r.Status) {
 		return ctx.Redirect(r.Response.(string), r.Status)
@@ -47,4 +46,4 @@ func ErrorToBadRequestErrorResponse(err error) *Response {
 }
 
 // ResponseNYI is the server response when something is not yet implemented
-var ResponseNYI = Response{Status: fiber.StatusNotImplemented, Response: model.APIErrorNYI}
+var ResponseNYI = Response{Status: fiber.StatusNotImplemented, Response: api.APIErrorNYI}
