@@ -4,17 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
+
+	api "github.com/oidc-mytoken/server/pkg/api/v0"
 )
 
 // GrantType is an enum like type for grant types
 type GrantType int
 
 // AllGrantTypes holds all defined GrantType strings
-var AllGrantTypes = [...]string{"mytoken", "oidc_flow", "polling_code", "access_token", "private_key_jwt", "transfer_code"}
+var AllGrantTypes = api.AllGrantTypes
 
 // GrantTypes
-const (
+const ( // assert that these are in the same order as api.AllGrantTypes
 	GrantTypeMytoken GrantType = iota
 	GrantTypeOIDCFlow
 	GrantTypePollingCode

@@ -1,24 +1,14 @@
 package mytokenlib
 
 import (
-	"strings"
-
-	"github.com/oidc-mytoken/server/internal/endpoints/token/access/pkg"
+	api "github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/httpClient"
-	"github.com/oidc-mytoken/server/shared/mytoken/token"
 )
 
 func (my *MytokenProvider) GetAccessToken(mytoken, oidcIssuer string, scopes, audiences []string, comment string) (string, error) {
-	req := pkg.AccessTokenRequest{
-		Issuer:    oidcIssuer,
-		GrantType: model.GrantTypeMytoken,
-		Mytoken:   token.Token(mytoken),
-		Scope:     strings.Join(scopes, " "),
-		Audience:  strings.Join(audiences, " "),
-		Comment:   comment,
-	}
-	resp, err := httpClient.Do().R().SetBody(req).SetResult(&pkg.AccessTokenResponse{}).SetError(&model.APIError{}).Post(my.AccessTokenEndpoint)
+	req := NewAccessTokenRequest(oidcIssuer, mytoken, scopes, audiences, comment)
+	resp, err := httpClient.Do().R().SetBody(req).SetResult(&api.AccessTokenResponse{}).SetError(&model.APIError{}).Post(my.AccessTokenEndpoint)
 	if err != nil {
 		return "", newMytokenErrorFromError("error while sending http request", err)
 	}
@@ -30,10 +20,10 @@ func (my *MytokenProvider) GetAccessToken(mytoken, oidcIssuer string, scopes, au
 			}
 		}
 	}
-	atRes, ok := resp.Result().(*pkg.AccessTokenResponse)
+	atRes, ok := resp.Result().(*api.AccessTokenResponse)
 	if !ok {
 		return "", &MytokenError{
-			err: "unexpected response from mytoken server",
+			err: unexpectedResponse,
 		}
 	}
 	return atRes.AccessToken, nil

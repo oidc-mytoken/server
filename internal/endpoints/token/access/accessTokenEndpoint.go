@@ -17,6 +17,7 @@ import (
 	serverModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/refresh"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	api "github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/pkg/model"
 	"github.com/oidc-mytoken/server/shared/mytoken/capabilities"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
@@ -193,7 +194,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 	}
 	return &serverModel.Response{
 		Status: fiber.StatusOK,
-		Response: request.AccessTokenResponse{
+		Response: api.AccessTokenResponse{
 			AccessToken: oidcRes.AccessToken,
 			TokenType:   oidcRes.TokenType,
 			ExpiresIn:   oidcRes.ExpiresIn,

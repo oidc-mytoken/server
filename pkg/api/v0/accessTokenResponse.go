@@ -1,4 +1,4 @@
-package pkg
+package v0
 
 // AccessTokenResponse is the response to a access token request
 type AccessTokenResponse struct {
