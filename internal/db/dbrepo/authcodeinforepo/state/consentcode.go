@@ -39,7 +39,7 @@ func (c *ConsentCode) String() string {
 
 func (c *ConsentCode) GetState() string {
 	if c.state == "" {
-		c.state = hashUtils.HMACSHA512Str([]byte(c.r), []byte("state"))[:stateLen] + c.encodedInfo
+		c.state = hashUtils.HMACSHA512Str([]byte("state"), []byte(c.r))[:stateLen] + c.encodedInfo
 	}
 	return c.state
 }
