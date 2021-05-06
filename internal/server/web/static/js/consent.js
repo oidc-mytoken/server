@@ -40,7 +40,7 @@ function parseRestriction() {
     let iconScope = $('#r-icon-scope');
     let iconAud = $('#r-icon-aud');
     let iconUsages = $('#r-icon-usages');
-    if (howManyClausesRestrictIP===restrictions.length) {
+    if (howManyClausesRestrictIP===restrictions.length && restrictions.length > 0) {
         iconIP.addClass( 'text-success');
         iconIP.removeClass( 'text-warning');
         iconIP.removeClass( 'text-danger');
@@ -51,7 +51,7 @@ function parseRestriction() {
         iconIP.removeClass( 'text-danger');
         iconIP.attr('data-original-title', "This token can be used from any IP.");
     }
-    if (howManyClausesRestrictScope===restrictions.length) {
+    if (howManyClausesRestrictScope===restrictions.length && restrictions.length > 0) {
         iconScope.addClass( 'text-success');
        iconScope.removeClass( 'text-warning');
        iconScope.removeClass( 'text-danger');
@@ -62,7 +62,7 @@ function parseRestriction() {
        iconScope.removeClass( 'text-danger');
        iconScope.attr('data-original-title', "This token can use all configured scopes.");
     }
-    if (howManyClausesRestrictAud===restrictions.length) {
+    if (howManyClausesRestrictAud===restrictions.length && restrictions.length > 0) {
         iconAud.addClass( 'text-success');
       iconAud.removeClass( 'text-warning');
       iconAud.removeClass( 'text-danger');
@@ -73,7 +73,7 @@ function parseRestriction() {
        iconAud.removeClass( 'text-danger');
        iconAud.attr('data-original-title', "This token can obtain access tokens with any audiences.");
     }
-    if (howManyClausesRestrictUsages===restrictions.length) {
+    if (howManyClausesRestrictUsages===restrictions.length && restrictions.length > 0) {
        iconUsages.addClass( 'text-success');
        iconUsages.removeClass( 'text-warning');
        iconUsages.removeClass( 'text-danger');
