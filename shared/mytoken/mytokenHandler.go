@@ -229,11 +229,17 @@ func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytoke
 	if !rootID.HashValid() {
 		rootID = parent.ID
 	}
+	if changed := req.Restrictions.EnforceMaxLifetime(parent.OIDCIssuer); changed && req.FailOnRestrictionsNotTighter {
+		return nil, &model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: pkgModel.BadRequestError("requested restrictions do not respect maximum mytoken lifetime"),
+		}
+	}
 	r, ok := restrictions.Tighten(parent.Restrictions, req.Restrictions)
 	if !ok && req.FailOnRestrictionsNotTighter {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.BadRequestError("requested restrictions are not superset of original restrictions"),
+			Response: pkgModel.BadRequestError("requested restrictions are not subset of original restrictions"),
 		}
 	}
 	capsFromParent := parent.SubtokenCapabilities

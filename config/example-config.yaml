@@ -78,7 +78,6 @@ features:
   # The supported oidc flows
   oidc_flows:
     - "authorization_code" # Always enabled
-    - "device" # Requires polling_codes to be enabled
 
   # Revocation for tokens issued by mytoken. Only disable this if you have good reasons for it.
   token_revocation:
@@ -137,3 +136,7 @@ providers:
     scopes:
       - openid
       - profile
+    # Maximum lifetime for mytokens for this issuer, given in seconds. On default the lifetime of mytokens is not restricted.
+    # Setting this value to 0, means that there is no maximum lifetime.
+    mytokens_max_lifetime: 0
+

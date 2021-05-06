@@ -8,6 +8,7 @@ import (
 
 	"github.com/jinzhu/copier"
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/server/internal/config"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
@@ -325,6 +326,28 @@ func (r *Restrictions) SetMaxAudiences(mAud []string) {
 	for _, rr := range *r {
 		rr.Audiences = utils.IntersectSlices(mAud, rr.Audiences)
 	}
+}
+
+// EnforceMaxLifetime enforces the maximum mytoken lifetime set by server admins. Returns true if the restrictions was changed.
+func (r *Restrictions) EnforceMaxLifetime(issuer string) (changed bool) {
+	maxLifetime := config.Get().ProviderByIssuer[issuer].MytokensMaxLifetime
+	if maxLifetime == 0 {
+		return
+	}
+	exp := unixtime.InSeconds(maxLifetime)
+	if len(*r) == 0 {
+		*r = append(*r, Restriction{ExpiresAt: exp})
+		changed = true
+		return
+	}
+	for i, rr := range *r {
+		if rr.ExpiresAt == 0 || rr.ExpiresAt > exp {
+			rr.ExpiresAt = exp
+			(*r)[i] = rr
+			changed = true
+		}
+	}
+	return
 }
 
 // Tighten tightens/restricts a Restrictions with another set; if the wanted Restrictions are not tighter the original ones are returned

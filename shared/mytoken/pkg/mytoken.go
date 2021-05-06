@@ -87,6 +87,7 @@ func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.
 		Capabilities:         c,
 		SubtokenCapabilities: sc,
 	}
+	r.EnforceMaxLifetime(oidcIss)
 	if len(r) > 0 {
 		mt.Restrictions = r
 		exp := r.GetExpires()

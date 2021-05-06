@@ -179,6 +179,7 @@ type ProviderConf struct {
 	ClientID                 string             `yaml:"client_id"`
 	ClientSecret             string             `yaml:"client_secret"`
 	Scopes                   []string           `yaml:"scopes"`
+	MytokensMaxLifetime      int64              `yaml:"mytokens_max_lifetime"`
 	Endpoints                *oauth2x.Endpoints `yaml:"-"`
 	Provider                 *oidc.Provider     `yaml:"-"`
 	Name                     string             `yaml:"name"`
