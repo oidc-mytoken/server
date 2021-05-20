@@ -46,7 +46,7 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 				Value:    "",
 				Path:     "/api",
 				Expires:  time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC),
-				Secure:   config.Get().Server.TLS.Enabled,
+				Secure:   config.Get().Server.Secure,
 				HTTPOnly: true,
 				SameSite: "Strict",
 			}},

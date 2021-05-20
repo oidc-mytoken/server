@@ -244,7 +244,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 			Value:    cookieValue,
 			Path:     "/api",
 			MaxAge:   cookieAge,
-			Secure:   config.Get().Server.TLS.Enabled,
+			Secure:   config.Get().Server.Secure,
 			HTTPOnly: true,
 			SameSite: "Strict",
 		}},

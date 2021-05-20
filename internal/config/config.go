@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	log "github.com/sirupsen/logrus"
@@ -22,6 +23,7 @@ var defaultConfig = Config{
 			Enabled:      true, // The default is that TLS is enabled if cert and key are given, this is checked later; we must set true here, because otherwise we cannot distinct this from a false set by the user
 			RedirectHTTP: true,
 		},
+		Secure: true,
 	},
 	DB: DBConf{
 		Hosts:             []string{"localhost"},
@@ -158,6 +160,7 @@ type serverConf struct {
 	Hostname string  `yaml:"hostname"`
 	Port     int     `yaml:"port"`
 	TLS      tlsConf `yaml:"tls"`
+	Secure   bool    `yaml:"-"` // Secure indicates if the connection to the mytoken server is secure. This is independent of TLS, e.g. a Proxy can be used.
 }
 
 type tlsConf struct {
@@ -216,6 +219,12 @@ func Get() *Config {
 func validate() error {
 	if conf == nil {
 		return fmt.Errorf("config not set")
+	}
+	if conf.IssuerURL == "" {
+		return fmt.Errorf("invalid config:issuer_url not set")
+	}
+	if strings.HasPrefix(conf.IssuerURL, "http://") {
+		conf.Server.Secure = false
 	}
 	if conf.Server.Hostname == "" {
 		return fmt.Errorf("invalid config: server.hostname not set")
