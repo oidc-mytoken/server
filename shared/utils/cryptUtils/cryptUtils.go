@@ -20,6 +20,9 @@ const (
 	keyIterations = 8
 )
 
+const malFormedCiphertext = "malformed ciphertext"
+const malFormedCiphertextFmt = malFormedCiphertext + ": %s"
+
 func RandomBytes(size int) []byte {
 	r := make([]byte, size)
 	if _, err := rand.Read(r); err != nil {
@@ -76,7 +79,7 @@ func aesDecrypt(cipher, password string, keyLen int) (string, error) {
 	arr := strings.SplitN(cipher, "-", 2)
 	salt, err := base64.StdEncoding.DecodeString(arr[0])
 	if err != nil {
-		return "", fmt.Errorf("malformed ciphertext: %s", err)
+		return "", fmt.Errorf(malFormedCiphertextFmt, err)
 	}
 	key, _ := deriveKey(password, salt, keyLen)
 	return AESDecrypt(arr[1], key)
@@ -85,15 +88,15 @@ func aesDecrypt(cipher, password string, keyLen int) (string, error) {
 func AESDecrypt(cipher string, key []byte) (string, error) {
 	arr := strings.Split(cipher, "-")
 	if len(arr) != 2 {
-		return "", fmt.Errorf("malformed ciphertext")
+		return "", fmt.Errorf(malFormedCiphertext)
 	}
 	nonce, err := base64.StdEncoding.DecodeString(arr[0])
 	if err != nil {
-		return "", fmt.Errorf("malformed ciphertext: %s", err)
+		return "", fmt.Errorf(malFormedCiphertextFmt, err)
 	}
 	data, err := base64.StdEncoding.DecodeString(arr[1])
 	if err != nil {
-		return "", fmt.Errorf("malformed ciphertext: %s", err)
+		return "", fmt.Errorf(malFormedCiphertextFmt, err)
 	}
 	return aesD(data, nonce, key)
 }
