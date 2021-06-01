@@ -85,6 +85,58 @@ nfpms:
     release: 1
     section: misc
     bindir: /usr/bin
+dockers:
+  - goos: linux
+    goarch: amd64
+    ids:
+      - server
+    image_templates:
+      - "oidcmytoken/mytoken-server:latest"
+      - "oidcmytoken/mytoken-server:{{ .Tag }}"
+      - "oidcmytoken/mytoken-server:v{{ .Major }}"
+      - "oidcmytoken/mytoken-server:v{{ .Major }}.{{ .Minor }}"
+    skip_push: true
+    dockerfile: cmd/mytoken-server/Dockerfile
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title=mytoken-server"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+  - goos: linux
+    goarch: amd64
+    ids:
+      - setup
+    image_templates:
+      - "oidcmytoken/mytoken-setup:latest"
+      - "oidcmytoken/mytoken-setup:{{ .Tag }}"
+      - "oidcmytoken/mytoken-setup:v{{ .Major }}"
+      - "oidcmytoken/mytoken-setup:v{{ .Major }}.{{ .Minor }}"
+    skip_push: true
+    dockerfile: cmd/mytoken-server/mytoken-setup/Dockerfile
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title=mytoken-setup"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+  - goos: linux
+    goarch: amd64
+    ids:
+      - garbage
+    image_templates:
+      - "oidcmytoken/mytoken-dbgc:latest"
+      - "oidcmytoken/mytoken-dbgc:{{ .Tag }}"
+      - "oidcmytoken/mytoken-dbgc:v{{ .Major }}"
+      - "oidcmytoken/mytoken-dbgc:v{{ .Major }}.{{ .Minor }}"
+    skip_push: true
+    dockerfile: cmd/mytoken-server/mytoken-dbGarbageCollector/Dockerfile
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title=mytoken-dbgc"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
 checksum:
   name_template: 'checksums.txt'
 snapshot:
