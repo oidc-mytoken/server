@@ -13,4 +13,5 @@ type MytokenConfiguration struct {
 	MytokenEndpointGrantTypesSupported     []model.GrantType       `json:"mytoken_endpoint_grant_types_supported"`
 	MytokenEndpointOIDCFlowsSupported      []model.OIDCFlow        `json:"mytoken_endpoint_oidc_flows_supported"`
 	ResponseTypesSupported                 []model.ResponseType    `json:"response_types_supported"`
+	TokenEndpoint                          string                  `json:"token_endpoint"` // For compatibility with OIDC
 }

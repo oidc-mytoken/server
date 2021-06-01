@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/oidc-mytoken/server/pkg/api/v0"
 	yaml "gopkg.in/yaml.v3"
-
-	api "github.com/oidc-mytoken/server/pkg/api/v0"
 )
 
 // GrantType is an enum like type for grant types
@@ -32,6 +31,9 @@ func NewGrantType(s string) GrantType {
 		if f == s {
 			return GrantType(i)
 		}
+	}
+	if s == "refresh_token" { // RT=MT compatibility
+		return GrantTypeMytoken
 	}
 	return -1
 }
@@ -67,6 +69,16 @@ func (g *GrantType) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
+	*g = NewGrantType(s)
+	if !g.Valid() {
+		return fmt.Errorf("value '%s' not valid for GrantType", s)
+	}
+	return nil
+}
+
+// UnmarshalText implements the encoding.TextUnmarshaler interface
+func (g *GrantType) UnmarshalText(data []byte) error {
+	s := string(data)
 	*g = NewGrantType(s)
 	if !g.Valid() {
 		return fmt.Errorf("value '%s' not valid for GrantType", s)

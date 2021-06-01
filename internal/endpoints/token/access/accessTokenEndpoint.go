@@ -1,7 +1,6 @@
 package access
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -32,10 +31,13 @@ import (
 func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	log.Debug("Handle access token request")
 	req := request.AccessTokenRequest{}
-	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
+	if err := ctx.BodyParser(&req); err != nil {
 		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	log.Trace("Parsed access token request")
+	if req.Mytoken == "" {
+		req.Mytoken = req.RefreshToken
+	}
 
 	if req.GrantType != model.GrantTypeMytoken {
 		res := serverModel.Response{
