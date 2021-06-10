@@ -388,8 +388,9 @@ github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWb
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nishanths/exhaustive v0.0.0-20200525081945-8e46705b6132 h1:NjznefjSrral0MiR4KlB41io/d3OklvhcgQUdfZTqJE=
 github.com/nishanths/exhaustive v0.0.0-20200525081945-8e46705b6132/go.mod h1:wBEpHwM2OdmeNpdCvRPUlkEbBuaFmcK4Wv8Q7FuGW3c=
-github.com/oidc-mytoken/api v0.0.0-20210604072940-156be40bab89 h1:sCjNUJwCUo+8mp/DTQxxUes4/Uchf76oS8+mDqzGQTU=
 github.com/oidc-mytoken/api v0.0.0-20210604072940-156be40bab89/go.mod h1:S8t1XA42EFAgc3vUfis0g1LPGA4TXH0nfDynvgo6cwk=
+github.com/oidc-mytoken/api v0.0.0-20210610132321-76897d5a4e26 h1:chFG84gu/7yNiv20s8VFgrfOXJtzWGPrU2ueE7l7g2g=
+github.com/oidc-mytoken/api v0.0.0-20210610132321-76897d5a4e26/go.mod h1:S8t1XA42EFAgc3vUfis0g1LPGA4TXH0nfDynvgo6cwk=
 github.com/oidc-mytoken/lib v0.2.1-0.20210604073533-566d9af1210e h1:UHswGI8MNr4dUh98rNOiNfNQHUK44va0d6wQwcFGa2c=
 github.com/oidc-mytoken/lib v0.2.1-0.20210604073533-566d9af1210e/go.mod h1:vjpAk3Fn5Ow0MJMfy5lmLox29zQ89rhTNuvGjf/ql54=
 github.com/oidc-mytoken/server v0.2.0/go.mod h1:6uFm+Za9NMK3gq4OOIeX3gs3T6leluVIWsGiM1zlQbA=

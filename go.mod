@@ -17,7 +17,7 @@ require (
 	github.com/jinzhu/copier v0.1.0
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/lestrrat-go/jwx v1.0.8
-	github.com/oidc-mytoken/api v0.0.0-20210604072940-156be40bab89
+	github.com/oidc-mytoken/api v0.0.0-20210610132321-76897d5a4e26
 	github.com/oidc-mytoken/lib v0.2.1-0.20210604073533-566d9af1210e
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.7.0

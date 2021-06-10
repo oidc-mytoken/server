@@ -26,6 +26,7 @@ import (
 type Mytoken struct {
 	// On update also update api.Mytoken
 	Version              api.TokenVersion          `json:"ver"`
+	TokenType            string                    `json:"token_type"`
 	Issuer               string                    `json:"iss"`
 	Subject              string                    `json:"sub"`
 	ExpiresAt            unixtime.UnixTime         `json:"exp,omitempty"`
@@ -75,6 +76,7 @@ func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.
 	now := unixtime.Now()
 	mt := &Mytoken{
 		Version:              api.TokenVer,
+		TokenType:            api.TokenType,
 		ID:                   mtid.New(),
 		SeqNo:                1,
 		IssuedAt:             now,
