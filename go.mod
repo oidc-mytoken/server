@@ -14,7 +14,7 @@ require (
 	github.com/gofiber/template v1.6.11
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/ip2location/ip2location-go v8.3.0+incompatible
-	github.com/jessevdk/go-flags v1.4.0
+	github.com/jessevdk/go-flags v1.5.0
 	github.com/jinzhu/copier v0.1.0
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/lestrrat-go/backoff/v2 v2.0.7 // indirect
