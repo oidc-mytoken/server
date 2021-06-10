@@ -48,7 +48,7 @@ func HandleMytokenEndpoint(ctx *fiber.Ctx) error {
 	}
 	res := serverModel.Response{
 		Status:   fiber.StatusBadRequest,
-		Response: api.APIErrorUnsupportedGrantType,
+		Response: api.ErrorUnsupportedGrantType,
 	}
 	return res.Send(ctx)
 }
@@ -62,7 +62,7 @@ func handleOIDCFlow(ctx *fiber.Ctx) error {
 	if !ok {
 		return serverModel.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: api.APIErrorUnknownIssuer,
+			Response: api.ErrorUnknownIssuer,
 		}.Send(ctx)
 	}
 	switch req.OIDCFlow {
@@ -73,7 +73,7 @@ func handleOIDCFlow(ctx *fiber.Ctx) error {
 	default:
 		res := serverModel.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: api.APIErrorUnsupportedOIDCFlow,
+			Response: api.ErrorUnsupportedOIDCFlow,
 		}
 		return res.Send(ctx)
 	}

@@ -67,6 +67,7 @@ func basicConfiguration() *pkg.MytokenConfiguration {
 		MytokenEndpointOIDCFlowsSupported:      config.Get().Features.EnabledOIDCFlows,
 		ResponseTypesSupported:                 []pkgModel.ResponseType{pkgModel.ResponseTypeToken},
 		TokenEndpoint:                          utils.CombineURLPath(config.Get().IssuerURL, apiPaths.AccessTokenEndpoint),
+		SupportedRestrictionKeys:               model.AllRestrictionKeys.Disable(config.Get().Features.DisabledRestrictionKeys),
 	}
 }
 

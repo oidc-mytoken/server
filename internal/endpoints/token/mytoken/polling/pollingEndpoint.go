@@ -34,21 +34,21 @@ func handlePollingCode(req response.PollingCodeRequest, networkData api.ClientMe
 		log.WithField("polling_code", pollingCode).Debug("Polling code not known")
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: api.APIErrorBadTransferCode,
+			Response: api.ErrorBadTransferCode,
 		}
 	}
 	if pollingCodeStatus.ConsentDeclined {
 		log.WithField("polling_code", pollingCode).Debug("Consent declined")
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: api.APIErrorConsentDeclined,
+			Response: api.ErrorConsentDeclined,
 		}
 	}
 	if pollingCodeStatus.Expired {
 		log.WithField("polling_code", pollingCode).Debug("Polling code expired")
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: api.APIErrorTransferCodeExpired,
+			Response: api.ErrorTransferCodeExpired,
 		}
 	}
 	token, err := transfercoderepo.PopTokenForTransferCode(nil, pollingCode, networkData)
@@ -59,7 +59,7 @@ func handlePollingCode(req response.PollingCodeRequest, networkData api.ClientMe
 	if token == "" {
 		return &model.Response{
 			Status:   fiber.StatusPreconditionRequired,
-			Response: api.APIErrorAuthorizationPending,
+			Response: api.ErrorAuthorizationPending,
 		}
 	}
 	mt, err := mytoken.ParseJWT(token)

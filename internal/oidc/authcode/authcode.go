@@ -75,11 +75,13 @@ func GetAuthorizationURL(provider *config.ProviderConf, oState string, restricti
 func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.Response {
 	log.Debug("Handle authcode")
 	req := oidcReq.ToAuthCodeFlowRequest()
+	req.Restrictions.ReplaceThisIp(ctx.IP())
+	req.Restrictions.ClearUnsupportedKeys()
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
 	if !ok {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: api.APIErrorUnknownIssuer,
+			Response: api.ErrorUnknownIssuer,
 		}
 	}
 	exp := req.Restrictions.GetExpires()
@@ -90,7 +92,6 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 		}
 	}
 
-	req.Restrictions.ReplaceThisIp(ctx.IP())
 	oState, consentCode := state.CreateState(state.Info{Native: req.Native()})
 	authFlowInfoO := authcodeinforepo.AuthFlowInfoOut{
 		State:                oState,
@@ -132,7 +133,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 		if errors.Is(err, sql.ErrNoRows) {
 			return &model.Response{
 				Status:   fiber.StatusBadRequest,
-				Response: api.APIErrorStateMismatch,
+				Response: api.ErrorStateMismatch,
 			}
 		}
 		return model.ErrorToInternalServerErrorResponse(err)
@@ -141,7 +142,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 	if !ok {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: api.APIErrorUnknownIssuer,
+			Response: api.ErrorUnknownIssuer,
 		}
 	}
 	oauth2Config := oauth2.Config{
@@ -168,7 +169,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 	if token.RefreshToken == "" {
 		return &model.Response{
 			Status:   fiber.StatusInternalServerError,
-			Response: api.APIErrorNoRefreshToken,
+			Response: api.ErrorNoRefreshToken,
 		}
 	}
 	scopes := authInfo.Restrictions.GetScopes()

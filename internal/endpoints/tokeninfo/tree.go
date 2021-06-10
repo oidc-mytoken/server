@@ -24,7 +24,7 @@ func handleTokenInfoTree(mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData
 	if !mt.Capabilities.Has(api.CapabilityTokeninfoTree) {
 		return model.Response{
 			Status:   fiber.StatusForbidden,
-			Response: api.APIErrorInsufficientCapabilities,
+			Response: api.ErrorInsufficientCapabilities,
 		}
 	}
 
@@ -34,7 +34,7 @@ func handleTokenInfoTree(mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData
 		if len(possibleRestrictions) == 0 {
 			return model.Response{
 				Status:   fiber.StatusForbidden,
-				Response: api.APIErrorUsageRestricted,
+				Response: api.ErrorUsageRestricted,
 			}
 		}
 		usedRestriction = &possibleRestrictions[0]

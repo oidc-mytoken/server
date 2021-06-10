@@ -42,7 +42,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	if req.GrantType != model.GrantTypeMytoken {
 		res := serverModel.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: api.APIErrorUnsupportedGrantType,
+			Response: api.ErrorUnsupportedGrantType,
 		}
 		return res.Send(ctx)
 	}
@@ -82,14 +82,14 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	if ok := mt.Restrictions.VerifyForAT(nil, ctx.IP(), mt.ID); !ok {
 		return (&serverModel.Response{
 			Status:   fiber.StatusForbidden,
-			Response: api.APIErrorUsageRestricted,
+			Response: api.ErrorUsageRestricted,
 		}).Send(ctx)
 	}
 	log.Trace("Checked mytoken restrictions")
 	if ok := mt.VerifyCapabilities(api.CapabilityAT); !ok {
 		res := serverModel.Response{
 			Status:   fiber.StatusForbidden,
-			Response: api.APIErrorInsufficientCapabilities,
+			Response: api.ErrorInsufficientCapabilities,
 		}
 		return res.Send(ctx)
 	}
@@ -113,7 +113,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 	if !ok {
 		return &serverModel.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: api.APIErrorUnknownIssuer,
+			Response: api.ErrorUnknownIssuer,
 		}
 	}
 
@@ -125,7 +125,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 		if len(possibleRestrictions) == 0 {
 			return &serverModel.Response{
 				Status:   fiber.StatusForbidden,
-				Response: api.APIErrorUsageRestricted,
+				Response: api.ErrorUsageRestricted,
 			}
 		}
 		usedRestriction = &possibleRestrictions[0]

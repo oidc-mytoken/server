@@ -75,7 +75,7 @@ func Init() {
 		}
 		return model.Response{
 			Status: fiber.StatusNotFound,
-			Response: api.APIError{
+			Response: api.Error{
 				Error: "not_found",
 			},
 		}.Send(ctx)

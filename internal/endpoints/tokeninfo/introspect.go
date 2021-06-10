@@ -19,7 +19,7 @@ func handleTokenInfoIntrospect(mt *mytoken.Mytoken, clientMetadata *api.ClientMe
 	if !mt.Capabilities.Has(api.CapabilityTokeninfoIntrospect) {
 		return model.Response{
 			Status:   fiber.StatusForbidden,
-			Response: api.APIErrorInsufficientCapabilities,
+			Response: api.ErrorInsufficientCapabilities,
 		}
 	}
 	var usedToken mytoken.UsedMytoken

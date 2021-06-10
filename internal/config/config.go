@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	model2 "github.com/oidc-mytoken/server/internal/model"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v3"
 
@@ -102,15 +103,16 @@ type apiConf struct {
 }
 
 type featuresConf struct {
-	EnabledOIDCFlows []model.OIDCFlow `yaml:"enabled_oidc_flows"`
-	TokenRevocation  onlyEnable       `yaml:"token_revocation"`
-	ShortTokens      shortTokenConfig `yaml:"short_tokens"`
-	TransferCodes    onlyEnable       `yaml:"transfer_codes"`
-	Polling          pollingConf      `yaml:"polling_codes"`
-	AccessTokenGrant onlyEnable       `yaml:"access_token_grant"`
-	SignedJWTGrant   onlyEnable       `yaml:"signed_jwt_grant"`
-	TokenInfo        tokeninfoConfig  `yaml:"tokeninfo"`
-	WebInterface     onlyEnable       `yaml:"web_interface"`
+	EnabledOIDCFlows        []model.OIDCFlow       `yaml:"enabled_oidc_flows"`
+	TokenRevocation         onlyEnable             `yaml:"token_revocation"`
+	ShortTokens             shortTokenConfig       `yaml:"short_tokens"`
+	TransferCodes           onlyEnable             `yaml:"transfer_codes"`
+	Polling                 pollingConf            `yaml:"polling_codes"`
+	AccessTokenGrant        onlyEnable             `yaml:"access_token_grant"`
+	SignedJWTGrant          onlyEnable             `yaml:"signed_jwt_grant"`
+	TokenInfo               tokeninfoConfig        `yaml:"tokeninfo"`
+	WebInterface            onlyEnable             `yaml:"web_interface"`
+	DisabledRestrictionKeys model2.RestrictionKeys `yaml:"unsupported_restrictions"`
 }
 
 type tokeninfoConfig struct {

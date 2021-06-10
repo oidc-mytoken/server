@@ -53,7 +53,7 @@ func handleErrorHTML(ctx *fiber.Ctx, code int, msg string) error {
 func handleErrorJSON(ctx *fiber.Ctx, code int, msg string) error {
 	return model.Response{
 		Status: code,
-		Response: api.APIError{
+		Response: api.Error{
 			Error:            fiberUtils.StatusMessage(code),
 			ErrorDescription: msg,
 		},

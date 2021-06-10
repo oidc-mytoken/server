@@ -82,6 +82,18 @@ features:
   oidc_flows:
     - "authorization_code" # Always enabled
 
+  # Specify restriction keys to disable support for them; on default all restriction keys are supported.
+  unsupported_restrictions:
+#    - nbf
+#    - exp
+#    - scope
+#    - audience
+#    - ip
+#    - geoip_allow
+#    - geoip_disallow
+#    - usages_AT
+#    - usages_other
+
   # Revocation for tokens issued by mytoken. Only disable this if you have good reasons for it.
   token_revocation:
     enabled: true

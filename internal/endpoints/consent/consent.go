@@ -115,7 +115,7 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 	if !ok {
 		return model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: api.APIErrorUnknownIssuer,
+			Response: api.ErrorUnknownIssuer,
 		}.Send(ctx)
 	}
 	authURL := authcode.GetAuthorizationURL(provider, oState.State(), req.Restrictions)

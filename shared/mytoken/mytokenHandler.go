@@ -51,14 +51,14 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 		if !status.Found {
 			errorRes = &model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: api.APIErrorBadTransferCode,
+				Response: api.ErrorBadTransferCode,
 			}
 			return fmt.Errorf("error_res")
 		}
 		if status.Expired {
 			errorRes = &model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: api.APIErrorTransferCodeExpired,
+				Response: api.ErrorTransferCodeExpired,
 			}
 			return fmt.Errorf("error_res")
 		}
@@ -106,6 +106,8 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
+	req.Restrictions.ReplaceThisIp(ctx.IP())
+	req.Restrictions.ClearUnsupportedKeys()
 	log.Trace("Parsed mytoken request")
 
 	// GrantType already checked
@@ -145,14 +147,14 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	if ok := mt.VerifyCapabilities(api.CapabilityCreateMT); !ok {
 		return &model.Response{
 			Status:   fiber.StatusForbidden,
-			Response: api.APIErrorInsufficientCapabilities,
+			Response: api.ErrorInsufficientCapabilities,
 		}
 	}
 	log.Trace("Checked mytoken capabilities")
 	if ok := mt.Restrictions.VerifyForOther(nil, ctx.IP(), mt.ID); !ok {
 		return &model.Response{
 			Status:   fiber.StatusForbidden,
-			Response: api.APIErrorUsageRestricted,
+			Response: api.ErrorUsageRestricted,
 		}
 	}
 	log.Trace("Checked mytoken restrictions")
@@ -168,7 +170,6 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 		}
 		log.Trace("Checked issuer")
 	}
-	req.Restrictions.ReplaceThisIp(ctx.IP())
 	return handleMytokenFromMytoken(mt, req, ctxUtils.ClientMetaData(ctx), req.ResponseType)
 }
 
@@ -278,7 +279,7 @@ func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, token token.Token, recursive bool,
 	if !ok {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: api.APIErrorUnknownIssuer,
+			Response: api.ErrorUnknownIssuer,
 		}
 	}
 	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
@@ -304,7 +305,7 @@ func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, token token.Token, recursive bool,
 			return nil
 		}
 		if e := revoke.RefreshToken(provider, rt); e != nil {
-			apiError := e.Response.(api.APIError)
+			apiError := e.Response.(api.Error)
 			return fmt.Errorf("%s: %s", apiError.Error, apiError.ErrorDescription)
 		}
 		return refreshtokenrepo.DeleteRefreshToken(tx, rtID)
