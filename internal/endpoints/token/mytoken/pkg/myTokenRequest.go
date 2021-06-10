@@ -3,7 +3,7 @@ package pkg
 import (
 	"encoding/json"
 
-	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/mytoken/token"

@@ -1,9 +1,7 @@
-package dbdefinition
+package dbmigrate
 
-// DDL holds all commands to create the necessary database tables
-var DDL = []string{
-	"" +
-		"/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;",
+var v0_2_0_Before = []string{
+	"/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;",
 	"/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;",
 	"/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;",
 	"/*!40101 SET NAMES utf8mb4 */;",
@@ -13,15 +11,11 @@ var DDL = []string{
 	"/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;",
 	"/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;",
 	"/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;",
-	"" +
-		"--",
+
 	"-- Table structure for table `AT_Attributes`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `AT_Attributes`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `AT_Attributes` (" +
+	"CREATE TABLE IF NOT EXISTS `AT_Attributes` (" +
 		"  `AT_id` bigint(20) unsigned NOT NULL," +
 		"  `attribute_id` int(10) unsigned NOT NULL," +
 		"  `attribute` text NOT NULL," +
@@ -31,15 +25,11 @@ var DDL = []string{
 		"  CONSTRAINT `AT_Attributes_FK_1` FOREIGN KEY (`attribute_id`) REFERENCES `Attributes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE" +
 		") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Table structure for table `AccessTokens`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `AccessTokens`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `AccessTokens` (" +
+	"CREATE TABLE IF NOT EXISTS `AccessTokens` (" +
 		"  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT," +
 		"  `token` text NOT NULL," +
 		"  `created` datetime NOT NULL DEFAULT current_timestamp()," +
@@ -51,30 +41,22 @@ var DDL = []string{
 		"  CONSTRAINT `AccessTokens_FK` FOREIGN KEY (`MT_id`) REFERENCES `MTokens` (`id`) ON DELETE CASCADE ON UPDATE CASCADE" +
 		") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Table structure for table `Attributes`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `Attributes`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `Attributes` (" +
+	"CREATE TABLE IF NOT EXISTS `Attributes` (" +
 		"  `id` int(10) unsigned NOT NULL AUTO_INCREMENT," +
 		"  `attribute` varchar(100) NOT NULL," +
 		"  PRIMARY KEY (`id`)," +
 		"  UNIQUE KEY `Attributes_UN` (`attribute`)" +
 		") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Table structure for table `AuthInfo`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `AuthInfo`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `AuthInfo` (" +
+	"CREATE TABLE IF NOT EXISTS `AuthInfo` (" +
 		"  `state_h` varchar(128) NOT NULL," +
 		"  `iss` text NOT NULL," +
 		"  `restrictions` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`restrictions`))," +
@@ -88,31 +70,22 @@ var DDL = []string{
 		"  PRIMARY KEY (`state_h`)" +
 		") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Table structure for table `EncryptionKeys`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `EncryptionKeys`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `EncryptionKeys` (" +
+	"CREATE TABLE IF NOT EXISTS `EncryptionKeys` (" +
 		"  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT," +
 		"  `encryption_key` text NOT NULL," +
 		"  `created` datetime NOT NULL DEFAULT current_timestamp()," +
 		"  PRIMARY KEY (`id`)" +
 		") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Temporary table structure for view `EventHistory`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `EventHistory`;",
-	"/*!50001 DROP VIEW IF EXISTS `EventHistory`*/;",
 	"SET @saved_cs_client     = @@character_set_client;",
 	"SET character_set_client = utf8;",
-	"/*!50001 CREATE TABLE `EventHistory` (" +
+	"/*!50001 CREATE TABLE IF NOT EXISTS `EventHistory` (" +
 		"  `time` tinyint NOT NULL," +
 		"  `MT_id` tinyint NOT NULL," +
 		"  `event` tinyint NOT NULL," +
@@ -121,45 +94,33 @@ var DDL = []string{
 		"  `user_agent` tinyint NOT NULL" +
 		") ENGINE=MyISAM */;",
 	"SET character_set_client = @saved_cs_client;",
-	"" +
-		"--",
+
 	"-- Table structure for table `Events`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `Events`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `Events` (" +
+	"CREATE TABLE IF NOT EXISTS `Events` (" +
 		"  `id` int(10) unsigned NOT NULL AUTO_INCREMENT," +
 		"  `event` varchar(100) NOT NULL," +
 		"  PRIMARY KEY (`id`)," +
 		"  UNIQUE KEY `Events_UN` (`event`)" +
 		") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Table structure for table `Grants`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `Grants`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `Grants` (" +
+	"CREATE TABLE IF NOT EXISTS `Grants` (" +
 		"  `id` int(10) unsigned NOT NULL AUTO_INCREMENT," +
 		"  `grant_type` varchar(100) NOT NULL," +
 		"  PRIMARY KEY (`id`)," +
 		"  UNIQUE KEY `Grants_UN` (`grant_type`)" +
 		") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Table structure for table `MT_Events`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `MT_Events`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `MT_Events` (" +
+	"CREATE TABLE IF NOT EXISTS `MT_Events` (" +
 		"  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT," +
 		"  `MT_id` varchar(128) NOT NULL," +
 		"  `time` datetime NOT NULL DEFAULT current_timestamp()," +
@@ -174,15 +135,11 @@ var DDL = []string{
 		"  CONSTRAINT `MT_Events_FK_3` FOREIGN KEY (`event_id`) REFERENCES `Events` (`id`) ON DELETE CASCADE ON UPDATE CASCADE" +
 		") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Table structure for table `MTokens`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `MTokens`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `MTokens` (" +
+	"CREATE TABLE IF NOT EXISTS `MTokens` (" +
 		"  `id` varchar(128) NOT NULL," +
 		"  `parent_id` varchar(128) DEFAULT NULL," +
 		"  `root_id` varchar(128) DEFAULT NULL," +
@@ -212,7 +169,7 @@ var DDL = []string{
 	"/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;",
 	"/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;",
 	"/*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;",
-	"/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`%`*/ /*!50003 TRIGGER updtrigger BEFORE UPDATE ON MTokens" +
+	"/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`%`*/ /*!50003 TRIGGER IF NOT EXISTS updtrigger BEFORE UPDATE ON MTokens" +
 		"     FOR EACH ROW" +
 		"     BEGIN" +
 		"     IF NOT NEW.seqno <=> OLD.seqno THEN" +
@@ -223,16 +180,11 @@ var DDL = []string{
 	"/*!50003 SET character_set_client  = @saved_cs_client */ ;",
 	"/*!50003 SET character_set_results = @saved_cs_results */ ;",
 	"/*!50003 SET collation_connection  = @saved_col_connection */ ;",
-	"" +
-		"--",
+
 	"-- Temporary table structure for view `MyTokens`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `MyTokens`;",
-	"/*!50001 DROP VIEW IF EXISTS `MyTokens`*/;",
 	"SET @saved_cs_client     = @@character_set_client;",
 	"SET character_set_client = utf8;",
-	"/*!50001 CREATE TABLE `MyTokens` (" +
+	"/*!50001 CREATE TABLE IF NOT EXISTS `MyTokens` (" +
 		"  `id` tinyint NOT NULL," +
 		"  `seqno` tinyint NOT NULL," +
 		"  `parent_id` tinyint NOT NULL," +
@@ -247,15 +199,11 @@ var DDL = []string{
 		"  `encryption_key` tinyint NOT NULL" +
 		") ENGINE=MyISAM */;",
 	"SET character_set_client = @saved_cs_client;",
-	"" +
-		"--",
+
 	"-- Table structure for table `ProxyTokens`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `ProxyTokens`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `ProxyTokens` (" +
+	"CREATE TABLE IF NOT EXISTS `ProxyTokens` (" +
 		"  `id` varchar(128) NOT NULL," +
 		"  `jwt` text NOT NULL," +
 		"  `MT_id` varchar(128) DEFAULT NULL," +
@@ -264,15 +212,11 @@ var DDL = []string{
 		"  CONSTRAINT `ProxyTokens_FK` FOREIGN KEY (`MT_id`) REFERENCES `MTokens` (`id`) ON DELETE CASCADE ON UPDATE CASCADE" +
 		") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Table structure for table `RT_EncryptionKeys`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `RT_EncryptionKeys`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `RT_EncryptionKeys` (" +
+	"CREATE TABLE IF NOT EXISTS `RT_EncryptionKeys` (" +
 		"  `rt_id` bigint(20) unsigned NOT NULL," +
 		"  `MT_id` varchar(128) NOT NULL," +
 		"  `key_id` bigint(20) unsigned NOT NULL," +
@@ -282,15 +226,11 @@ var DDL = []string{
 		"  CONSTRAINT `RT_EncryptionKeys_FK_1` FOREIGN KEY (`rt_id`) REFERENCES `RefreshTokens` (`id`) ON DELETE CASCADE ON UPDATE CASCADE" +
 		") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Table structure for table `RefreshTokens`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `RefreshTokens`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `RefreshTokens` (" +
+	"CREATE TABLE IF NOT EXISTS `RefreshTokens` (" +
 		"  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT," +
 		"  `rt` text NOT NULL," +
 		"  `created` datetime NOT NULL DEFAULT current_timestamp()," +
@@ -298,15 +238,11 @@ var DDL = []string{
 		"  PRIMARY KEY (`id`)" +
 		") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Table structure for table `TokenUsages`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `TokenUsages`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `TokenUsages` (" +
+	"CREATE TABLE IF NOT EXISTS `TokenUsages` (" +
 		"  `MT_id` varchar(128) NOT NULL," +
 		"  `restriction` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`restriction`))," +
 		"  `usages_AT` int(10) unsigned NOT NULL DEFAULT 0," +
@@ -316,16 +252,11 @@ var DDL = []string{
 		"  CONSTRAINT `TokenUsages_FK` FOREIGN KEY (`MT_id`) REFERENCES `MTokens` (`id`) ON DELETE CASCADE ON UPDATE CASCADE" +
 		") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Temporary table structure for view `TransferCodes`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `TransferCodes`;",
-	"/*!50001 DROP VIEW IF EXISTS `TransferCodes`*/;",
 	"SET @saved_cs_client     = @@character_set_client;",
 	"SET character_set_client = utf8;",
-	"/*!50001 CREATE TABLE `TransferCodes` (" +
+	"/*!50001 CREATE TABLE IF NOT EXISTS `TransferCodes` (" +
 		"  `id` tinyint NOT NULL," +
 		"  `jwt` tinyint NOT NULL," +
 		"  `created` tinyint NOT NULL," +
@@ -336,15 +267,11 @@ var DDL = []string{
 		"  `consent_declined` tinyint NOT NULL" +
 		") ENGINE=MyISAM */;",
 	"SET character_set_client = @saved_cs_client;",
-	"" +
-		"--",
+
 	"-- Table structure for table `TransferCodesAttributes`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `TransferCodesAttributes`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `TransferCodesAttributes` (" +
+	"CREATE TABLE IF NOT EXISTS `TransferCodesAttributes` (" +
 		"  `id` varchar(128) NOT NULL," +
 		"  `created` datetime NOT NULL DEFAULT current_timestamp()," +
 		"  `expires_in` int(11) NOT NULL," +
@@ -356,15 +283,11 @@ var DDL = []string{
 		"  CONSTRAINT `TransferCodesAttributes_FK` FOREIGN KEY (`id`) REFERENCES `ProxyTokens` (`id`) ON DELETE CASCADE ON UPDATE CASCADE" +
 		") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Table structure for table `UserGrant_Attributes`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `UserGrant_Attributes`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `UserGrant_Attributes` (" +
+	"CREATE TABLE IF NOT EXISTS `UserGrant_Attributes` (" +
 		"  `user_id` bigint(20) unsigned NOT NULL," +
 		"  `grant_id` int(10) unsigned NOT NULL," +
 		"  `attribute_id` int(10) unsigned NOT NULL," +
@@ -377,15 +300,11 @@ var DDL = []string{
 		"  CONSTRAINT `UserGrant_Attributes_FK_3` FOREIGN KEY (`attribute_id`) REFERENCES `Attributes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE" +
 		") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Table structure for table `UserGrants`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `UserGrants`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `UserGrants` (" +
+	"CREATE TABLE IF NOT EXISTS `UserGrants` (" +
 		"  `user_id` bigint(20) unsigned NOT NULL," +
 		"  `grant_id` int(10) unsigned NOT NULL," +
 		"  `enabled` bit(1) NOT NULL," +
@@ -395,15 +314,11 @@ var DDL = []string{
 		"  CONSTRAINT `UserGrants_FK_1` FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE" +
 		") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
 	"-- Table structure for table `Users`",
-	"--",
-	"" +
-		"DROP TABLE IF EXISTS `Users`;",
 	"/*!40101 SET @saved_cs_client     = @@character_set_client */;",
 	"/*!40101 SET character_set_client = utf8 */;",
-	"CREATE TABLE `Users` (" +
+	"CREATE TABLE IF NOT EXISTS `Users` (" +
 		"  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT," +
 		"  `sub` varchar(512) NOT NULL," +
 		"  `iss` varchar(256) NOT NULL," +
@@ -413,12 +328,17 @@ var DDL = []string{
 		"  UNIQUE KEY `Users_UN` (`sub`,`iss`)" +
 		") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;",
 	"/*!40101 SET character_set_client = @saved_cs_client */;",
-	"" +
-		"--",
+
+	"-- Table structure for table `version`",
+	"CREATE TABLE IF NOT EXISTS `version` (" +
+		"`version` varchar(64) NOT NULL," +
+		"`bef` datetime DEFAULT NULL," +
+		"`aft` datetime DEFAULT NULL," +
+		"PRIMARY KEY (`version`)" +
+		") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
 	"-- Final view structure for view `EventHistory`",
-	"--",
-	"" +
-		"/*!50001 DROP TABLE IF EXISTS `EventHistory`*/;",
+	"/*!50001 DROP TABLE IF EXISTS `EventHistory`*/;",
 	"/*!50001 DROP VIEW IF EXISTS `EventHistory`*/;",
 	"/*!50001 SET @saved_cs_client          = @@character_set_client */;",
 	"/*!50001 SET @saved_cs_results         = @@character_set_results */;",
@@ -431,12 +351,9 @@ var DDL = []string{
 	"/*!50001 SET character_set_client      = @saved_cs_client */;",
 	"/*!50001 SET character_set_results     = @saved_cs_results */;",
 	"/*!50001 SET collation_connection      = @saved_col_connection */;",
-	"" +
-		"--",
+
 	"-- Final view structure for view `MyTokens`",
-	"--",
-	"" +
-		"/*!50001 DROP TABLE IF EXISTS `MyTokens`*/;",
+	"/*!50001 DROP TABLE IF EXISTS `MyTokens`*/;",
 	"/*!50001 DROP VIEW IF EXISTS `MyTokens`*/;",
 	"/*!50001 SET @saved_cs_client          = @@character_set_client */;",
 	"/*!50001 SET @saved_cs_results         = @@character_set_results */;",
@@ -449,12 +366,9 @@ var DDL = []string{
 	"/*!50001 SET character_set_client      = @saved_cs_client */;",
 	"/*!50001 SET character_set_results     = @saved_cs_results */;",
 	"/*!50001 SET collation_connection      = @saved_col_connection */;",
-	"" +
-		"--",
+
 	"-- Final view structure for view `TransferCodes`",
-	"--",
-	"" +
-		"/*!50001 DROP TABLE IF EXISTS `TransferCodes`*/;",
+	"/*!50001 DROP TABLE IF EXISTS `TransferCodes`*/;",
 	"/*!50001 DROP VIEW IF EXISTS `TransferCodes`*/;",
 	"/*!50001 SET @saved_cs_client          = @@character_set_client */;",
 	"/*!50001 SET @saved_cs_results         = @@character_set_results */;",
@@ -468,12 +382,43 @@ var DDL = []string{
 	"/*!50001 SET character_set_results     = @saved_cs_results */;",
 	"/*!50001 SET collation_connection      = @saved_col_connection */;",
 	"/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;",
-	"" +
-		"/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;",
+	"/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;",
 	"/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;",
 	"/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;",
 	"/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;",
 	"/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;",
 	"/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;",
 	"/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;",
+
+	// Predefined Values
+	"INSERT IGNORE INTO Attributes(attribute) VALUES('scope')",
+	"INSERT IGNORE INTO Attributes(attribute) VALUES('audience')",
+	"INSERT IGNORE INTO Attributes(attribute) VALUES('capability')",
+
+	"INSERT IGNORE INTO Events (event) VALUES('unknown')",
+	"INSERT IGNORE INTO Events (event) VALUES('created')",
+	"INSERT IGNORE INTO Events (event) VALUES('AT_created')",
+	"INSERT IGNORE INTO Events (event) VALUES('MT_created')",
+	"INSERT IGNORE INTO Events (event) VALUES('tokeninfo_introspect')",
+	"INSERT IGNORE INTO Events (event) VALUES('tokeninfo_history')",
+	"INSERT IGNORE INTO Events (event) VALUES('tokeninfo_tree')",
+	"INSERT IGNORE INTO Events (event) VALUES('tokeninfo_list_mytokens')",
+	"INSERT IGNORE INTO Events (event) VALUES('mng_enabled_AT_grant')",
+	"INSERT IGNORE INTO Events (event) VALUES('mng_disabled_AT_grant')",
+	"INSERT IGNORE INTO Events (event) VALUES('mng_enabled_JWT_grant')",
+	"INSERT IGNORE INTO Events (event) VALUES('mng_disabled_JWT_grant')",
+	"INSERT IGNORE INTO Events (event) VALUES('mng_linked_grant')",
+	"INSERT IGNORE INTO Events (event) VALUES('mng_unlinked_grant')",
+	"INSERT IGNORE INTO Events (event) VALUES('mng_enabled_tracing')",
+	"INSERT IGNORE INTO Events (event) VALUES('mng_disabled_tracing')",
+	"INSERT IGNORE INTO Events (event) VALUES('inherited_RT')",
+	"INSERT IGNORE INTO Events (event) VALUES('transfer_code_created')",
+	"INSERT IGNORE INTO Events (event) VALUES('transfer_code_used')",
+
+	"INSERT IGNORE INTO Grants (grant_type) VALUES('mytoken')",
+	"INSERT IGNORE INTO Grants (grant_type) VALUES('oidc_flow')",
+	"INSERT IGNORE INTO Grants (grant_type) VALUES('polling_code')",
+	"INSERT IGNORE INTO Grants (grant_type) VALUES('access_token')",
+	"INSERT IGNORE INTO Grants (grant_type) VALUES('private_key_jwt')",
+	"INSERT IGNORE INTO Grants (grant_type) VALUES('transfer_code')",
 }

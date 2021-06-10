@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/template/mustache"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints"
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration"
@@ -19,7 +20,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/server/routes"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 )
 
 var server *fiber.App
@@ -31,6 +31,7 @@ var serverConfig = fiber.Config{
 	ReadBufferSize: 8192,
 	// WriteBufferSize: 4096,
 	ErrorHandler: handleError,
+	// ProxyHeader is set later from config
 }
 
 //go:embed web/sites web/layouts
@@ -62,6 +63,7 @@ func initTemplateEngine() {
 // Init initializes the server
 func Init() {
 	initTemplateEngine()
+	serverConfig.ProxyHeader = config.Get().Server.ProxyHeader
 	server = fiber.New(serverConfig)
 	addMiddlewares(server)
 	addRoutes(server)

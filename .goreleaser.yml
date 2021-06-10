@@ -4,7 +4,7 @@ before:
     - go mod tidy
 builds:
   - id: server
-    main: ./cmd/mytoken-server/main.go
+    main: ./cmd/mytoken-server
     binary: mytoken-server
     env:
       - CGO_ENABLED=0
@@ -13,14 +13,21 @@ builds:
   #      - windows
   #      - darwin
   - id: setup
-    main: ./cmd/mytoken-server/mytoken-setup/setup.go
+    main: ./cmd/mytoken-server/mytoken-setup
     binary: mytoken-setup
     env:
       - CGO_ENABLED=0
     goos:
       - linux
+  - id: migratedb
+    main: ./cmd/mytoken-server/mytoken-migratedb
+    binary: mytoken-migratedb
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
   - id: garbage
-    main: ./cmd/mytoken-server/mytoken-dbGarbageCollector/main.go
+    main: ./cmd/mytoken-server/mytoken-dbGarbageCollector
     binary: mytoken-dbgc
     env:
       - CGO_ENABLED=0
@@ -64,6 +71,20 @@ nfpms:
     homepage: https://mytoken-doc.data.kit.edu/server/intro
     maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
     description: A setup utility for the mytoken-server
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    release: 1
+    section: misc
+    bindir: /usr/bin
+  - id: migratedb-pkg
+    package_name: mytoken-server-migratedb
+    builds:
+      - migratedb
+    homepage: https://mytoken-doc.data.kit.edu/server/intro
+    maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
+    description: A tool for migrating the database between versions
     license: MIT
     formats:
       - deb
@@ -118,6 +139,23 @@ dockers:
       - "--pull"
       - "--label=org.opencontainers.image.created={{.Date}}"
       - "--label=org.opencontainers.image.title=mytoken-setup"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+  - goos: linux
+    goarch: amd64
+    ids:
+      - migratedb
+    image_templates:
+      - "oidcmytoken/mytoken-migratedb:latest"
+      - "oidcmytoken/mytoken-migratedb:{{ .Tag }}"
+      - "oidcmytoken/mytoken-migratedb:v{{ .Major }}"
+      - "oidcmytoken/mytoken-migratedb:v{{ .Major }}.{{ .Minor }}"
+    skip_push: true
+    dockerfile: cmd/mytoken-server/mytoken-migratedb/Dockerfile
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title=mytoken-migratedb"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - "--label=org.opencontainers.image.version={{.Version}}"
   - goos: linux

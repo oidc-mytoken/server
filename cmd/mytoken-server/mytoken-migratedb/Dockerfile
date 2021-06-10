@@ -1,5 +1,5 @@
 FROM oidcmytoken/debian-wait-for:latest
 WORKDIR /mytoken
-COPY mytoken-server /usr/bin/mytoken-server
+COPY mytoken-migratedb /usr/bin/mytoken-migratedb
 ENTRYPOINT ["/opt/mytoken/scripts/run.sh"]
-CMD ["mytoken-server"]
+CMD ["mytoken-migratedb"]

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/api/v0"
 )
 
 // InternalServerError creates an APIError for internal server errors

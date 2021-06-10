@@ -3,12 +3,12 @@ package configuration
 import (
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/routes"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	pkgModel "github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/utils"
 )

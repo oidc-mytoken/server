@@ -1,27 +1,19 @@
 package main
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	"github.com/Songmu/prompter"
 	flags "github.com/jessevdk/go-flags"
-	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
-	"github.com/oidc-mytoken/server/internal/db/cluster"
-	"github.com/oidc-mytoken/server/internal/db/dbdefinition"
 	"github.com/oidc-mytoken/server/internal/jws"
-	"github.com/oidc-mytoken/server/internal/model"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/internal/utils/zipdownload"
-	model2 "github.com/oidc-mytoken/server/shared/model"
-	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 )
 
@@ -106,124 +98,124 @@ func (c *commandGenSigningKey) Execute(args []string) error {
 	return nil
 }
 
-// Execute implements the flags.Commander interface
-func (c *commandCreateDB) Execute(args []string) error {
-	password := ""
-	if c.Password != nil && *c.Password == "" { // -p specified without argument
-		password = prompter.Password("Database Password")
-	}
-	db := cluster.NewFromConfig(config.DBConf{
-		Hosts:    config.Get().DB.Hosts,
-		User:     c.Username,
-		Password: password,
-	})
-	if err := checkDB(db); err != nil {
-		return err
-	}
-	err := db.Transact(func(tx *sqlx.Tx) error {
-		if err := createDB(tx); err != nil {
-			return err
-		}
-		if err := createUser(tx); err != nil {
-			return err
-		}
-		if err := createTables(tx); err != nil {
-			return err
-		}
-		if err := addPredefinedValues(tx); err != nil { // skipcq RVV-B0005
-			return err
-		}
-		return nil
-	})
-	if err == nil {
-		fmt.Println("Prepared database.")
-	}
-	return err
-}
-
-func addPredefinedValues(tx *sqlx.Tx) error {
-	for _, attr := range model.Attributes {
-		if _, err := tx.Exec(`INSERT IGNORE INTO Attributes (attribute) VALUES(?)`, attr); err != nil {
-			return err
-		}
-	}
-	log.WithField("database", config.Get().DB.DB).Debug("Added attribute values")
-	for _, evt := range event.AllEvents {
-		if _, err := tx.Exec(`INSERT IGNORE INTO Events (event) VALUES(?)`, evt); err != nil {
-			return err
-		}
-	}
-	log.WithField("database", config.Get().DB.DB).Debug("Added event values")
-	for _, grt := range model2.AllGrantTypes {
-		if _, err := tx.Exec(`INSERT IGNORE INTO Grants (grant_type) VALUES(?)`, grt); err != nil {
-			return err
-		}
-	}
-	log.WithField("database", config.Get().DB.DB).Debug("Added grant_type values")
-	return nil
-}
-
-func createTables(tx *sqlx.Tx) error {
-	if _, err := tx.Exec(`USE ` + config.Get().DB.DB); err != nil {
-		return err
-	}
-	for _, cmd := range dbdefinition.DDL {
-		cmd = strings.TrimSpace(cmd)
-		if cmd != "" && !strings.HasPrefix(cmd, "--") {
-			log.Trace(cmd)
-			if _, err := tx.Exec(cmd); err != nil {
-				return err
-			}
-		}
-	}
-	log.WithField("database", config.Get().DB.DB).Debug("Created tables")
-	return nil
-}
-
-func createDB(tx *sqlx.Tx) error {
-	if _, err := tx.Exec(`DROP DATABASE IF EXISTS ` + config.Get().DB.DB); err != nil {
-		return err
-	}
-	log.WithField("database", config.Get().DB.DB).Debug("Dropped database")
-	if _, err := tx.Exec(`CREATE DATABASE ` + config.Get().DB.DB); err != nil {
-		return err
-	}
-	log.WithField("database", config.Get().DB.DB).Debug("Created database")
-	return nil
-}
-
-func createUser(tx *sqlx.Tx) error {
-	log.WithField("user", config.Get().DB.User).Debug("Creating user")
-	if _, err := tx.Exec(`CREATE USER IF NOT EXISTS '` + config.Get().DB.User + `' IDENTIFIED BY '` + config.Get().DB.Password + `'`); err != nil {
-		return err
-	}
-	log.WithField("user", config.Get().DB.User).Debug("Created user")
-	if _, err := tx.Exec(`GRANT INSERT, UPDATE, DELETE, SELECT ON ` + config.Get().DB.DB + `.* TO '` + config.Get().DB.User + `'`); err != nil {
-		return err
-	}
-	if _, err := tx.Exec(`FLUSH PRIVILEGES `); err != nil {
-		return err
-	}
-	log.WithField("user", config.Get().DB.User).WithField("database", config.Get().DB.DB).Debug("Granted privileges")
-	return nil
-}
-
-func checkDB(db *cluster.Cluster) error {
-	log.WithField("database", config.Get().DB.DB).Debug("Check if database already exists")
-	var rows *sql.Rows
-	if err := db.Transact(func(tx *sqlx.Tx) error {
-		var err error
-		rows, err = tx.Query(`SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME=?`, config.Get().DB.DB)
-		return err
-	}); err != nil {
-		return err
-	}
-	defer rows.Close()
-	if rows.Next() {
-		if !prompter.YesNo("The database already exists. If we continue all data will be deleted. Do you want to continue?", false) {
-			_ = rows.Close()
-			os.Exit(1) // skipcq CRT-D0011
-		}
-	}
-	return nil
-}
+// // Execute implements the flags.Commander interface
+// func (c *commandCreateDB) Execute(args []string) error {
+// 	password := ""
+// 	if c.Password != nil && *c.Password == "" { // -p specified without argument
+// 		password = prompter.Password("Database Password")
+// 	}
+// 	db := cluster.NewFromConfig(config.DBConf{
+// 		Hosts:    config.Get().DB.Hosts,
+// 		User:     c.Username,
+// 		Password: password,
+// 	})
+// 	if err := checkDB(db); err != nil {
+// 		return err
+// 	}
+// 	err := db.Transact(func(tx *sqlx.Tx) error {
+// 		if err := createDB(tx); err != nil {
+// 			return err
+// 		}
+// 		if err := createUser(tx); err != nil {
+// 			return err
+// 		}
+// 		if err := createTables(tx); err != nil {
+// 			return err
+// 		}
+// 		if err := addPredefinedValues(tx); err != nil { // skipcq RVV-B0005
+// 			return err
+// 		}
+// 		return nil
+// 	})
+// 	if err == nil {
+// 		fmt.Println("Prepared database.")
+// 	}
+// 	return err
+// }
+//
+// func addPredefinedValues(tx *sqlx.Tx) error {
+// 	for _, attr := range model.Attributes {
+// 		if _, err := tx.Exec(`INSERT IGNORE INTO Attributes (attribute) VALUES(?)`, attr); err != nil {
+// 			return err
+// 		}
+// 	}
+// 	log.WithField("database", config.Get().DB.DB).Debug("Added attribute values")
+// 	for _, evt := range event.AllEvents {
+// 		if _, err := tx.Exec(`INSERT IGNORE INTO Events (event) VALUES(?)`, evt); err != nil {
+// 			return err
+// 		}
+// 	}
+// 	log.WithField("database", config.Get().DB.DB).Debug("Added event values")
+// 	for _, grt := range model2.AllGrantTypes {
+// 		if _, err := tx.Exec(`INSERT IGNORE INTO Grants (grant_type) VALUES(?)`, grt); err != nil {
+// 			return err
+// 		}
+// 	}
+// 	log.WithField("database", config.Get().DB.DB).Debug("Added grant_type values")
+// 	return nil
+// }
+//
+// func createTables(tx *sqlx.Tx) error {
+// 	if _, err := tx.Exec(`USE ` + config.Get().DB.DB); err != nil {
+// 		return err
+// 	}
+// 	for _, cmd := range dbmigrate.DDL {
+// 		cmd = strings.TrimSpace(cmd)
+// 		if cmd != "" && !strings.HasPrefix(cmd, "--") {
+// 			log.Trace(cmd)
+// 			if _, err := tx.Exec(cmd); err != nil {
+// 				return err
+// 			}
+// 		}
+// 	}
+// 	log.WithField("database", config.Get().DB.DB).Debug("Created tables")
+// 	return nil
+// }
+//
+// func createDB(tx *sqlx.Tx) error {
+// 	if _, err := tx.Exec(`DROP DATABASE IF EXISTS ` + config.Get().DB.DB); err != nil {
+// 		return err
+// 	}
+// 	log.WithField("database", config.Get().DB.DB).Debug("Dropped database")
+// 	if _, err := tx.Exec(`CREATE DATABASE ` + config.Get().DB.DB); err != nil {
+// 		return err
+// 	}
+// 	log.WithField("database", config.Get().DB.DB).Debug("Created database")
+// 	return nil
+// }
+//
+// func createUser(tx *sqlx.Tx) error {
+// 	log.WithField("user", config.Get().DB.User).Debug("Creating user")
+// 	if _, err := tx.Exec(`CREATE USER IF NOT EXISTS '` + config.Get().DB.User + `' IDENTIFIED BY '` + config.Get().DB.Password + `'`); err != nil {
+// 		return err
+// 	}
+// 	log.WithField("user", config.Get().DB.User).Debug("Created user")
+// 	if _, err := tx.Exec(`GRANT INSERT, UPDATE, DELETE, SELECT ON ` + config.Get().DB.DB + `.* TO '` + config.Get().DB.User + `'`); err != nil {
+// 		return err
+// 	}
+// 	if _, err := tx.Exec(`FLUSH PRIVILEGES `); err != nil {
+// 		return err
+// 	}
+// 	log.WithField("user", config.Get().DB.User).WithField("database", config.Get().DB.DB).Debug("Granted privileges")
+// 	return nil
+// }
+//
+// func checkDB(db *cluster.Cluster) error {
+// 	log.WithField("database", config.Get().DB.DB).Debug("Check if database already exists")
+// 	var rows *sql.Rows
+// 	if err := db.Transact(func(tx *sqlx.Tx) error {
+// 		var err error
+// 		rows, err = tx.Query(`SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME=?`, config.Get().DB.DB)
+// 		return err
+// 	}); err != nil {
+// 		return err
+// 	}
+// 	defer rows.Close()
+// 	if rows.Next() {
+// 		if !prompter.YesNo("The database already exists. If we continue all data will be deleted. Do you want to continue?", false) {
+// 			_ = rows.Close()
+// 			os.Exit(1) // skipcq CRT-D0011
+// 		}
+// 	}
+// 	return nil
+// }

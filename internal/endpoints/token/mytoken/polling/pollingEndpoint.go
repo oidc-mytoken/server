@@ -6,11 +6,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 

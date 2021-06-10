@@ -9,11 +9,11 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	sharedModel "github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken"
 	mytokenPkg "github.com/oidc-mytoken/server/shared/mytoken/pkg"

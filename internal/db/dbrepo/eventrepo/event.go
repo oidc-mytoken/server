@@ -3,8 +3,8 @@ package eventrepo
 import (
 	"github.com/jmoiron/sqlx"
 
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )

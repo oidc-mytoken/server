@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
@@ -16,7 +17,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	model2 "github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/utils"
 )

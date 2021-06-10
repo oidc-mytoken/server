@@ -11,6 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo"
@@ -22,7 +23,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/oidc/revoke"
 	"github.com/oidc-mytoken/server/internal/server/httpStatus"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	pkgModel "github.com/oidc-mytoken/server/shared/model"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"

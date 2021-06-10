@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -152,15 +153,16 @@ type DBConf struct {
 	Hosts             []string `yaml:"hosts"`
 	User              string   `yaml:"user"`
 	Password          string   `yaml:"password"`
+	PasswordFile      string   `yaml:"password_file"`
 	DB                string   `yaml:"db"`
 	ReconnectInterval int64    `yaml:"try_reconnect_interval"`
 }
 
 type serverConf struct {
-	Hostname string  `yaml:"hostname"`
-	Port     int     `yaml:"port"`
-	TLS      tlsConf `yaml:"tls"`
-	Secure   bool    `yaml:"-"` // Secure indicates if the connection to the mytoken server is secure. This is independent of TLS, e.g. a Proxy can be used.
+	Port        int     `yaml:"port"`
+	TLS         tlsConf `yaml:"tls"`
+	Secure      bool    `yaml:"-"` // Secure indicates if the connection to the mytoken server is secure. This is independent of TLS, e.g. a Proxy can be used.
+	ProxyHeader string  `yaml:"proxy_header"`
 }
 
 type tlsConf struct {
@@ -196,6 +198,23 @@ type ServiceOperatorConf struct {
 	Privacy  string `yaml:"mail_privacy"`
 }
 
+// GetPassword returns the password for this database config. If necessary it reads it from the password file.
+func (conf *DBConf) GetPassword() string {
+	if conf.Password != "" {
+		return conf.Password
+	}
+	if conf.PasswordFile == "" {
+		return ""
+	}
+	content, err := ioutil.ReadFile(conf.PasswordFile)
+	if err != nil {
+		log.WithError(err).Error()
+		return ""
+	}
+	conf.Password = strings.Split(string(content), "\n")[0]
+	return conf.Password
+}
+
 func (so *ServiceOperatorConf) validate() error {
 	if so.Name == "" {
 		return fmt.Errorf("invalid config: service_operator.name not set")
@@ -225,9 +244,6 @@ func validate() error {
 	}
 	if strings.HasPrefix(conf.IssuerURL, "http://") {
 		conf.Server.Secure = false
-	}
-	if conf.Server.Hostname == "" {
-		return fmt.Errorf("invalid config: server.hostname not set")
 	}
 	if conf.Server.TLS.Enabled {
 		if conf.Server.TLS.Key != "" && conf.Server.TLS.Cert != "" {

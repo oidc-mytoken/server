@@ -17,12 +17,17 @@ var db *cluster.Cluster
 
 // Connect connects to the database using the mytoken config
 func Connect() {
+	ConnectConfig(config.Get().DB)
+}
+
+// ConnectConfig connects to the database using the passed config
+func ConnectConfig(conf config.DBConf) {
 	if db != nil {
 		log.Debug("Closing existing db connections")
 		db.Close()
 		log.Debug("Done")
 	}
-	db = cluster.NewFromConfig(config.Get().DB)
+	db = cluster.NewFromConfig(conf)
 }
 
 // NullString extends the sql.NullString

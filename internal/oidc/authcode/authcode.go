@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/accesstokenrepo"
@@ -23,7 +24,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/issuer"
 	"github.com/oidc-mytoken/server/internal/server/routes"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/context"
 	pkgModel "github.com/oidc-mytoken/server/shared/model"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"

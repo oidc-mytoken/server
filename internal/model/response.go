@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/valyala/fasthttp"
 
-	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/shared/model"
 )
 

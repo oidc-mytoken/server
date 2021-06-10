@@ -1,7 +1,7 @@
 package pkg
 
 import (
-	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 )
 

@@ -14,7 +14,7 @@ service_operator:
 # Configuration for the mytoken server
 server:
   # If TLS is not enabled, mytoken will listen on this port, default: 8000
-  port: 8000
+  port: 80
   tls:
     # Unless false TLS is enabled if 'cert' and 'key' are given
     enabled: true
@@ -25,10 +25,10 @@ server:
     # The TLS certificate key file
     key:
   # If behind a load balancer or reverse proxy, set this option. Mytoken will read the client's ip address from this header.
-  # proxy_header: "X-FORWARDED-FOR"
+  proxy_header: "X-FORWARDED-FOR"
 
 # The database file for ip geo location. Will be installed by setup to this location.
-geo_ip_db_file: "/IP2LOCATION-LITE-DB1.IPV6.BIN"
+geo_ip_db_file: "/root/mytoken/IP2LOCATION-LITE-DB1.IPV6.BIN"
 
 # Configuration of the mytoken API
 api:
@@ -38,11 +38,13 @@ api:
 # Configuration for the database
 database:
   hosts:
-    - "localhost"
+    - "db_1"
+    - "db_2"
+    - "db_3"
   user: "mytoken"
-  password: "mytoken"
+  password:
   # Read the db password from this file
-  password_file:
+  password_file: "/run/secrets/db_password"
   db: "mytoken"
   # The interval (in seconds) in which mytoken tries to reconnect to db nodes that are down
   try_reconnect_interval: 60
@@ -52,24 +54,24 @@ signing:
   # The used algorithm
   alg: "ES512"
   # The file with the signing key
-  key_file: "/mytoken.key"
+  key_file: "/run/secrets/signing_key"
   # If an RSA-based algorithm is used, this is the key len. Only needed when generating a new rsa key.
-   rsa_key_len: 2048
+  rsa_key_len: 2048
 
 # Configuration for logging
 logging:
   # The web server access logs
   access:
     # The directory where the log file should be placed
-    dir: "/var/log/mytoken"
+    dir: "/root/mytoken/logs"
     # Indicates if mytoken should log additionally to stderr
-    stderr: false
+    stderr: true
   # The mytoken internal logs
   internal:
     # The directory where the log file should be placed
-    dir: "/var/log/mytoken"
+    dir: "/root/mytoken/logs"
     # Indicates if mytoken should log additionally to stderr
-    stderr: false
+    stderr: true
     # The minimal log level that should be logged
     level: "error"
 
@@ -105,7 +107,7 @@ features:
   # Support for short mytokens
   short_tokens:
     enabled: true
-    len: 64 # Default 64, min 32
+    len: 64 # Default 64, max 256
 
   # Support for transfer codes for mytokens; transfer codes have the same len as polling codes and expire after the same time
   transfer_codes:
@@ -114,7 +116,7 @@ features:
   # Support for polling codes that are used by native applications. Only disable this if you have good reasons for it.
   polling_codes:
     enabled: true
-    len: 8 # Default 8, max 64, MUST be different from short_tokens len
+    len: 8 # Default 8, max 64
     expires_after: 300 # The time in seconds how long a polling code can be used
     polling_interval: 5 # The interval in seconds the native application should wait between two polling attempts
 
@@ -142,4 +144,3 @@ providers:
     # Maximum lifetime for mytokens for this issuer, given in seconds. On default the lifetime of mytokens is not restricted.
     # Setting this value to 0, means that there is no maximum lifetime.
     mytokens_max_lifetime: 0
-

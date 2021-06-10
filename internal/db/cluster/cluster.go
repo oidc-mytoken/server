@@ -15,20 +15,20 @@ import (
 )
 
 func NewFromConfig(conf config.DBConf) *Cluster {
-	c := New(len(conf.Hosts))
-	c.AddNodes(conf)
+	c := newCluster(len(conf.Hosts))
 	c.conf = &conf
+	c.startReconnector()
+	c.AddNodes()
 	log.Debug("Created db cluster")
 	return c
 }
 
-func New(size int) *Cluster {
+func newCluster(size int) *Cluster {
 	c := &Cluster{
 		active: make(chan *node, size),
 		down:   make(chan *node, size),
 		stop:   make(chan interface{}),
 	}
-	c.startReconnector()
 	return c
 }
 
@@ -54,17 +54,17 @@ func (n *node) close() {
 	}
 }
 
-func (c *Cluster) AddNodes(conf config.DBConf) {
-	for _, host := range conf.Hosts {
-		if err := c.AddNode(conf, host); err != nil {
+func (c *Cluster) AddNodes() {
+	for _, host := range c.conf.Hosts {
+		if err := c.AddNode(host); err != nil {
 			log.WithError(err).Error()
 		}
 	}
 }
 
-func (c *Cluster) AddNode(conf config.DBConf, host string) error {
+func (c *Cluster) AddNode(host string) error {
 	log.WithField("host", host).Debug("Adding node to db cluster")
-	dsn := fmt.Sprintf("%s:%s@%s(%s)/%s", conf.User, conf.Password, "tcp", host, conf.DB)
+	dsn := fmt.Sprintf("%s:%s@%s(%s)/%s", c.conf.User, c.conf.GetPassword(), "tcp", host, c.conf.DB)
 	return c.addNode(&node{
 		dsn: dsn,
 	})
