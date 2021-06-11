@@ -18,7 +18,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/lestrrat-go/jwx v1.0.8
 	github.com/oidc-mytoken/api v0.0.0-20210610140005-29f166a942ec
-	github.com/oidc-mytoken/lib v0.2.1-0.20210604073533-566d9af1210e
+	github.com/oidc-mytoken/lib v0.2.1-0.20210611134913-0c477174fc1f
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/valyala/fasthttp v1.22.0
