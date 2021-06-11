@@ -1,7 +1,7 @@
 package jwtutils
 
 import (
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -11,6 +11,7 @@ type ResultSet []struct {
 	Set   bool
 }
 
+// GetFromJWT returns the values for the requested keys from the JWT
 func GetFromJWT(token string, key ...string) (values ResultSet) {
 	if atJWT, _ := jwt.Parse(token, nil); atJWT != nil {
 		log.Trace("Parsed token")
@@ -27,6 +28,7 @@ func GetFromJWT(token string, key ...string) (values ResultSet) {
 	return values
 }
 
+// GetStringFromJWT returns a string value for the given key
 func GetStringFromJWT(token, key string) (string, bool) {
 	res := GetFromJWT(token, key)
 	if len(res) != 1 {

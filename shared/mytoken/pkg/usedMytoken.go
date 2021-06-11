@@ -12,6 +12,7 @@ type UsedMytoken struct {
 	Restrictions []restrictions.UsedRestriction `json:"restrictions,omitempty"`
 }
 
+// ToUsedMytoken turns a Mytoken into a UsedMytoken by adding information about its usages
 func (mt *Mytoken) ToUsedMytoken(tx *sqlx.Tx) (*UsedMytoken, error) {
 	umt := &UsedMytoken{
 		Mytoken: *mt,

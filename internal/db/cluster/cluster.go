@@ -14,6 +14,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+// NewFromConfig creates a new Cluster from the passed config.DBConf
 func NewFromConfig(conf config.DBConf) *Cluster {
 	c := newCluster(len(conf.Hosts))
 	c.conf = &conf
@@ -32,6 +33,7 @@ func newCluster(size int) *Cluster {
 	return c
 }
 
+// Cluster is a type for holding a db cluster
 type Cluster struct {
 	active chan *node
 	down   chan *node
@@ -54,6 +56,7 @@ func (n *node) close() {
 	}
 }
 
+// AddNodes adds the nodes specified for this Cluster to the cluster
 func (c *Cluster) AddNodes() {
 	for _, host := range c.conf.Hosts {
 		if err := c.AddNode(host); err != nil {
@@ -62,6 +65,7 @@ func (c *Cluster) AddNodes() {
 	}
 }
 
+// AddNode adds the passed host a a db node to the cluster
 func (c *Cluster) AddNode(host string) error {
 	log.WithField("host", host).Debug("Adding node to db cluster")
 	dsn := fmt.Sprintf("%s:%s@%s(%s)/%s?parseTime=true", c.conf.User, c.conf.GetPassword(), "tcp", host, c.conf.DB)
@@ -125,6 +129,7 @@ func (c *Cluster) checkNodesDown() bool {
 	return false
 }
 
+// Close closes the cluster
 func (c *Cluster) Close() {
 	c.stop <- struct{}{}
 	for {

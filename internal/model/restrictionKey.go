@@ -17,6 +17,7 @@ type RestrictionKeys []RestrictionKey
 // AllRestrictionKeyStrings holds all defined RestrictionKey strings
 var AllRestrictionKeyStrings = api.AllRestrictionKeys
 
+// AllRestrictionKeys holds all defined RestrictionKeys
 var AllRestrictionKeys RestrictionKeys
 
 func init() {
@@ -112,6 +113,7 @@ func (rks RestrictionKeys) Has(rk RestrictionKey) bool {
 	return false
 }
 
+// Disable subtracts the passed RestrictionKeys from this RestrictionKeys and returns the left RestrictionKeys
 func (rks RestrictionKeys) Disable(disable RestrictionKeys) (left RestrictionKeys) {
 	for _, r := range rks {
 		if !disable.Has(r) {

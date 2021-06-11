@@ -23,10 +23,12 @@ func New() MTID {
 	}
 }
 
+// Valid checks if the MTID is valid
 func (i *MTID) Valid() bool {
 	return i.UUID.String() != "00000000-0000-0000-0000-000000000000"
 }
 
+// HashValid checks if the MTID hash is valid
 func (i *MTID) HashValid() bool {
 	if i.hash != "" {
 		return true
@@ -37,6 +39,7 @@ func (i *MTID) HashValid() bool {
 	return i.Hash() != ""
 }
 
+// Hash returns the MTID's hash
 func (i *MTID) Hash() string {
 	if i.hash == "" && i.Valid() {
 		i.hash = hashUtils.SHA512Str(i.Bytes())
@@ -64,10 +67,12 @@ func (i *MTID) Scan(src interface{}) error {
 	return nil
 }
 
+// MarshalJSON implements the json.Marshaler interface
 func (i MTID) MarshalJSON() ([]byte, error) {
 	return json.Marshal(i.String())
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface
 func (i *MTID) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, &i.UUID)
 }

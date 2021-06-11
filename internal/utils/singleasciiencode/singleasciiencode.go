@@ -8,16 +8,19 @@ import (
 
 const maxFlags = 6
 
+// NewFlagEncoder creates a new FlagEncoder
 func NewFlagEncoder() *FlagEncoder {
 	return &FlagEncoder{}
 }
 
+// FlagEncoder is type for encoding multiple binary (bool) flags into a single character
 type FlagEncoder struct {
 	names     [maxFlags]string
 	f         [maxFlags]bool
 	nextIndex int
 }
 
+// Set sets a name value pair that should be encoded
 func (fe *FlagEncoder) Set(name string, value bool) bool {
 	for i, n := range fe.names {
 		if i >= fe.nextIndex {
@@ -37,6 +40,7 @@ func (fe *FlagEncoder) Set(name string, value bool) bool {
 	return true
 }
 
+// Sets sets multiple name values
 func (fe *FlagEncoder) Sets(values map[string]bool) bool {
 	names := []string{}
 	for n := range values {
@@ -54,6 +58,7 @@ func (fe *FlagEncoder) Sets(values map[string]bool) bool {
 	return true
 }
 
+// Get returns the value for a given name
 func (fe FlagEncoder) Get(name string) (value, found bool) {
 	var index int
 	var n string
@@ -69,6 +74,7 @@ func (fe FlagEncoder) Get(name string) (value, found bool) {
 
 const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$#"
 
+// Encode encodes the values into a single character
 func (fe FlagEncoder) Encode() byte {
 	var flags byte
 	for i, v := range fe.f {
@@ -94,6 +100,7 @@ func (fe FlagEncoder) Encode() byte {
 	return EncodeNumber64(flags)
 }
 
+// Decode decodes the flags
 func Decode(flags byte, names ...string) *FlagEncoder {
 	fe := &FlagEncoder{
 		nextIndex: len(names),
@@ -124,10 +131,12 @@ func Decode(flags byte, names ...string) *FlagEncoder {
 	return fe
 }
 
+// EncodeNumber64 encodes a number up to 64 into a single character
 func EncodeNumber64(n byte) byte {
 	return chars[n]
 }
 
+// DecodeNumber64 decodes the passed character as a number
 func DecodeNumber64(e byte) (byte, bool) {
 	for i, c := range chars {
 		if e == byte(c) {

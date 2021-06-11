@@ -44,6 +44,7 @@ func Init() {
 	consentEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.ConsentEndpoint)
 }
 
+// GetAuthorizationURL creates a authorization url
 func GetAuthorizationURL(provider *config.ProviderConf, oState string, restrictions restrictions.Restrictions) string {
 	log.Debug("Generating authorization url")
 	scopes := restrictions.GetScopes()

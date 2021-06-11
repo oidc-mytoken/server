@@ -27,6 +27,7 @@ func UpdateRefreshToken(tx *sqlx.Tx, tokenID mtid.MTID, newRT, jwt string) error
 	})
 }
 
+// GetEncryptionKey returns the encryption key and its id for a mytoken
 func GetEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID, jwt string) ([]byte, uint64, error) {
 	var key []byte
 	var rtID uint64

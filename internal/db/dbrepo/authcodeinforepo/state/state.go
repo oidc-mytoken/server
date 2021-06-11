@@ -11,18 +11,21 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
 )
 
+// State is a type for the oidc state
 type State struct {
 	state       string
 	hash        string
 	pollingCode string
 }
 
+// NewState creates a new State from a state string
 func NewState(state string) *State {
 	return &State{
 		state: state,
 	}
 }
 
+// Hash returns the hash for this State
 func (s *State) Hash() string {
 	if s.hash == "" {
 		s.hash = hashUtils.SHA512Str([]byte(s.state))
@@ -30,6 +33,7 @@ func (s *State) Hash() string {
 	return s.hash
 }
 
+// PollingCode returns the polling code for this State
 func (s *State) PollingCode() string {
 	if s.pollingCode == "" {
 		s.pollingCode = hashUtils.HMACSHA512Str([]byte("polling_code"), []byte(s.state))[:config.Get().Features.Polling.Len]
@@ -38,6 +42,7 @@ func (s *State) PollingCode() string {
 	return s.pollingCode
 }
 
+// State returns the state string for this State
 func (s State) State() string {
 	return s.state
 }

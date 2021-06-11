@@ -13,6 +13,7 @@ import (
 	"golang.org/x/mod/semver"
 )
 
+// SetVersionBefore sets that the before db migration commands for the passed version were executed
 func SetVersionBefore(tx *sqlx.Tx, version string) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`INSERT INTO version (version, bef) VALUES(?, current_timestamp()) ON DUPLICATE KEY UPDATE bef=current_timestamp()`, version)
@@ -20,6 +21,7 @@ func SetVersionBefore(tx *sqlx.Tx, version string) error {
 	})
 }
 
+// SetVersionAfter sets that the after db migration commands for the passed version were executed
 func SetVersionAfter(tx *sqlx.Tx, version string) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`INSERT INTO version (version, aft) VALUES(?, current_timestamp()) ON DUPLICATE KEY UPDATE aft=current_timestamp()`, version)
@@ -27,21 +29,29 @@ func SetVersionAfter(tx *sqlx.Tx, version string) error {
 	})
 }
 
+// UpdateTimes is a type for checking if the db migration commands for different mytoken version have been executed
 type UpdateTimes struct {
 	Version string
 	Before  mysql.NullTime `db:"bef"`
 	After   mysql.NullTime `db:"aft"`
 }
 
+// DBVersionState describes the version state of the db
 type DBVersionState []UpdateTimes
 
-func (state DBVersionState) Len() int      { return len(state) }
+// Len returns the len of DBVersionState
+func (state DBVersionState) Len() int { return len(state) }
+
+// Swap swaps to elements of DBVersionState
 func (state DBVersionState) Swap(i, j int) { state[i], state[j] = state[j], state[i] }
+
+// Less checks if a version is less than another
 func (state DBVersionState) Less(i, j int) bool {
 	a, b := state[i].Version, state[j].Version
 	return semver.Compare(a, b) < 0
 }
 
+// Sort sorts this DBVersionState by the version
 func (state DBVersionState) Sort() {
 	sort.Sort(state)
 }
@@ -74,6 +84,7 @@ func (state DBVersionState) dBHasVersion(v string, cmds dbmigrate.Commands) bool
 	return ok
 }
 
+// GetVersionState returns the DBVersionState
 func GetVersionState(tx *sqlx.Tx) (state DBVersionState, err error) {
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		return tx.Select(&state, `SELECT version, bef, aft FROM version`)

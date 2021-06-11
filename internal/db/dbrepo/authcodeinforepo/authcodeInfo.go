@@ -99,6 +99,7 @@ func DeleteAuthFlowInfoByState(tx *sqlx.Tx, state *state.State) error {
 	})
 }
 
+// UpdateTokenInfoByState updates the stored AuthFlowInfo for the given state
 func UpdateTokenInfoByState(tx *sqlx.Tx, state *state.State, r restrictions.Restrictions, c, sc api.Capabilities) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`UPDATE AuthInfo SET restrictions=?, capabilities=?, subtoken_capabilities=? WHERE state_h=?`, r, c, sc, state)

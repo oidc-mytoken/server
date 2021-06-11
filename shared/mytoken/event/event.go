@@ -9,6 +9,7 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
 
+// MTEvent is type for mytoken events
 type MTEvent struct {
 	*pkg.Event
 	MTID mtid.MTID

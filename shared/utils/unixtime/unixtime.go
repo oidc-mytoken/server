@@ -8,14 +8,20 @@ import (
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
+// UnixTime is a type for a Unix Timestamp
 type UnixTime int64
 
+// Time returns the UnixTime as time.Time
 func (t UnixTime) Time() time.Time {
 	return time.Unix(int64(t), 0)
 }
+
+// New creates a new UnixTime from a time.Time
 func New(t time.Time) UnixTime {
 	return UnixTime(t.Unix())
 }
+
+// Now returns the current time as UnixTime
 func Now() UnixTime {
 	return New(time.Now())
 }

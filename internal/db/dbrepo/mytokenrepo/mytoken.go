@@ -35,6 +35,7 @@ type MytokenEntry struct {
 	networkData            api.ClientMetaData
 }
 
+// InitRefreshToken links a refresh token to this MytokenEntry
 func (ste *MytokenEntry) InitRefreshToken(rt string) error {
 	ste.refreshToken = rt
 	ste.encryptionKey = cryptUtils.RandomBytes(32)
@@ -55,6 +56,7 @@ func (ste *MytokenEntry) InitRefreshToken(rt string) error {
 	return nil
 }
 
+// SetRefreshToken updates the refresh token for this MytokenEntry
 func (ste *MytokenEntry) SetRefreshToken(rtID uint64, key []byte) error {
 	ste.encryptionKey = key
 	jwt, err := ste.Token.ToJWT()

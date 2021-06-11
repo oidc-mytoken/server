@@ -14,6 +14,7 @@ type UsedRestriction struct {
 	UsagesOtherDone *int64 `json:"usages_other_done,omitempty"`
 }
 
+// ToUsedRestrictions turns a Restrictions into a slice of UsedRestriction
 func (r Restrictions) ToUsedRestrictions(tx *sqlx.Tx, id mtid.MTID) (ur []UsedRestriction, err error) {
 	var u UsedRestriction
 	for _, rr := range r {
@@ -26,6 +27,7 @@ func (r Restrictions) ToUsedRestrictions(tx *sqlx.Tx, id mtid.MTID) (ur []UsedRe
 	return
 }
 
+// ToUsedRestriction turns a Restriction into an UsedRestriction
 func (r Restriction) ToUsedRestriction(tx *sqlx.Tx, id mtid.MTID) (UsedRestriction, error) {
 	ur := UsedRestriction{
 		Restriction: r,

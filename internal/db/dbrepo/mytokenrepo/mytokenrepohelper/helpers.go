@@ -12,6 +12,7 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 )
 
+// ParseError parses the passed error for a sql.ErrNoRows
 func ParseError(err error) (bool, error) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

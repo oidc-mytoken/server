@@ -14,6 +14,7 @@ import (
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
+// HandleTokenInfo handles requests to the tokeninfo endpoint
 func HandleTokenInfo(ctx *fiber.Ctx) error {
 	var req pkg.TokenInfoRequest
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {

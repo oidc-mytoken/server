@@ -8,6 +8,7 @@ import (
 const stateLen = 16
 const consentCodeLen = 8
 
+// NewConsentCode creates a new ConsentCode
 func NewConsentCode(info Info) *ConsentCode {
 	return &ConsentCode{
 		r:           utils.RandASCIIString(consentCodeLen),
@@ -15,6 +16,7 @@ func NewConsentCode(info Info) *ConsentCode {
 	}
 }
 
+// ParseConsentCode parses a string into a ConsentCode
 func ParseConsentCode(cc string) *ConsentCode {
 	return &ConsentCode{
 		r:           cc[:len(cc)-infoAsciiLen],
@@ -23,6 +25,7 @@ func ParseConsentCode(cc string) *ConsentCode {
 	}
 }
 
+// ConsentCode is type for the code used for giving consent to mytoken
 type ConsentCode struct {
 	r           string
 	encodedInfo string
@@ -37,6 +40,7 @@ func (c *ConsentCode) String() string {
 	return c.public
 }
 
+// GetState returns the state linked to a ConsentCode
 func (c *ConsentCode) GetState() string {
 	if c.state == "" {
 		c.state = hashUtils.HMACSHA512Str([]byte("state"), []byte(c.r))[:stateLen] + c.encodedInfo

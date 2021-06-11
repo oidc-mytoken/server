@@ -65,6 +65,7 @@ func (r *OIDCFlowRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// ToAuthCodeFlowRequest creates a AuthCodeFlowRequest from the OIDCFlowRequest
 func (r OIDCFlowRequest) ToAuthCodeFlowRequest() AuthCodeFlowRequest {
 	return AuthCodeFlowRequest{
 		OIDCFlowRequest: r,

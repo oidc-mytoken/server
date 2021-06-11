@@ -5,11 +5,13 @@ import (
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
+// WebCapability is type for representing api.Capability in the consent screen
 type WebCapability struct {
 	api.Capability
 	intClass *int
 }
 
+// WebCapabilities creates a slice of WebCapability from api.Capabilities
 func WebCapabilities(cc api.Capabilities) (wc []WebCapability) {
 	for _, c := range cc {
 		wc = append(wc, WebCapability{c, nil})
@@ -57,10 +59,12 @@ func (c WebCapability) getDangerLevel() int {
 	return c.getIntClass()
 }
 
+// ColorClass returns the html class for coloring this Capability
 func (c WebCapability) ColorClass() string {
 	return textColorByDanger(c.getDangerLevel())
 }
 
+// CapabilityLevel returns a string describing the power of this capability
 func (c WebCapability) CapabilityLevel() string {
 	intClass := c.getIntClass()
 	switch intClass {
@@ -74,6 +78,7 @@ func (c WebCapability) CapabilityLevel() string {
 	return ""
 }
 
+// IsCreateMT checks if this WebCapability is api.CapabilityCreateMT
 func (c WebCapability) IsCreateMT() bool {
 	return c.Name == api.CapabilityCreateMT.Name
 }

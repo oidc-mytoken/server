@@ -152,6 +152,7 @@ type pollingConf struct {
 	PollingInterval         int64 `yaml:"polling_interval"`
 }
 
+// DBConf is type for holding configuration for a db
 type DBConf struct {
 	Hosts             []string `yaml:"hosts"`
 	User              string   `yaml:"user"`
@@ -194,6 +195,7 @@ type ProviderConf struct {
 	AudienceRequestParameter string             `yaml:"audience_request_parameter"`
 }
 
+// ServiceOperatorConf is type holding the configuration for the service operator of this mytoken instance
 type ServiceOperatorConf struct {
 	Name     string `yaml:"name"`
 	Homepage string `yaml:"homepage"`
