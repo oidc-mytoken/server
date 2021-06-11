@@ -64,7 +64,7 @@ func (c *Cluster) AddNodes() {
 
 func (c *Cluster) AddNode(host string) error {
 	log.WithField("host", host).Debug("Adding node to db cluster")
-	dsn := fmt.Sprintf("%s:%s@%s(%s)/%s", c.conf.User, c.conf.GetPassword(), "tcp", host, c.conf.DB)
+	dsn := fmt.Sprintf("%s:%s@%s(%s)/%s?parseTime=true", c.conf.User, c.conf.GetPassword(), "tcp", host, c.conf.DB)
 	return c.addNode(&node{
 		dsn: dsn,
 	})
