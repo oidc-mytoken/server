@@ -45,8 +45,8 @@ services:
     env_file:
       - db.env
     environment:
-      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
       - MARIADB_PASSWORD_FILE=/run/secrets/db_password
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
       - MARIADB_GALERA_MARIABACKUP_PASSWORD_FILE=/run/secrets/db_backup_password
       - MARIADB_REPLICATION_PASSWORD_FILE=/run/secrets/db_replication_password
     secrets:
@@ -78,10 +78,14 @@ services:
       - db.env
     environment:
       - MARIADB_GALERA_CLUSTER_ADDRESS=gcomm://db-bootstrap,db_1,db_2,db_3
+      - MARIADB_PASSWORD_FILE=/run/secrets/db_password
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
       - MARIADB_GALERA_MARIABACKUP_PASSWORD_FILE=/run/secrets/db_backup_password
       - MARIADB_REPLICATION_PASSWORD_FILE=/run/secrets/db_replication_password
       - WAIT_FOR_NODES=db-bootstrap:3306,db_1:3306,db_2:3306,db_3:3306
     secrets:
+      - db_password
+      - db_root_password
       - db_backup_password
       - db_replication_password
     deploy:
@@ -112,7 +116,6 @@ services:
     networks:
       - backend
     environment:
-      - DB_PASSWORD=password
       - DB_PASSWORD_FILE=/run/secrets/db_root_password
       - DB_DATABASE=mytoken
       - DB_NODES=db_1,db_2,db_3
