@@ -1,10 +1,10 @@
 package versionrepo
 
 import (
+	"database/sql"
 	"sort"
 	"strings"
 
-	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbmigrate"
@@ -32,8 +32,8 @@ func SetVersionAfter(tx *sqlx.Tx, version string) error {
 // UpdateTimes is a type for checking if the db migration commands for different mytoken version have been executed
 type UpdateTimes struct {
 	Version string
-	Before  mysql.NullTime `db:"bef"`
-	After   mysql.NullTime `db:"aft"`
+	Before  sql.NullTime `db:"bef"`
+	After   sql.NullTime `db:"aft"`
 }
 
 // DBVersionState describes the version state of the db
