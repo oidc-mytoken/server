@@ -11,7 +11,7 @@ import (
 	"io/ioutil"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/lestrrat-go/jwx/jwk"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -85,7 +85,7 @@ func exportRSAPrivateKeyAsPemStr(privkey *rsa.PrivateKey) string {
 
 var privateKey interface{}
 var publicKey interface{}
-var jwks jwk.Set
+var jwks = jwk.NewSet()
 
 // GetPrivateKey returns the private key
 func GetPrivateKey() interface{} {
@@ -136,5 +136,5 @@ func LoadKey() {
 	if err = key.Set(jwk.KeyUsageKey, string(jwk.ForSignature)); err != nil {
 		panic(err)
 	}
-	jwks = jwk.Set{Keys: []jwk.Key{key}}
+	jwks.Add(key)
 }

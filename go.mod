@@ -9,6 +9,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/go-sql-driver/mysql v1.5.0
+	github.com/goccy/go-json v0.6.1 // indirect
 	github.com/gofiber/fiber/v2 v2.12.0
 	github.com/gofiber/helmet/v2 v2.1.5
 	github.com/gofiber/template v1.6.11
@@ -17,10 +18,7 @@ require (
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/jinzhu/copier v0.1.0
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/lestrrat-go/backoff/v2 v2.0.7 // indirect
-	github.com/lestrrat-go/httpcc v1.0.0 // indirect
-	github.com/lestrrat-go/iter v1.0.0 // indirect
-	github.com/lestrrat-go/jwx v1.0.8
+	github.com/lestrrat-go/jwx v1.2.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/valyala/fasthttp v1.26.0
