@@ -15,7 +15,7 @@ require (
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/ip2location/ip2location-go v8.3.0+incompatible
 	github.com/jessevdk/go-flags v1.5.0
-	github.com/jinzhu/copier v0.1.0
+	github.com/jinzhu/copier v0.3.2
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/lestrrat-go/backoff/v2 v2.0.7 // indirect
 	github.com/lestrrat-go/httpcc v1.0.0 // indirect
