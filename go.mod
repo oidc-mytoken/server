@@ -3,7 +3,7 @@ module github.com/oidc-mytoken/server
 go 1.16
 
 require (
-	github.com/Songmu/prompter v0.4.0
+	github.com/Songmu/prompter v0.5.0
 	github.com/coreos/go-oidc/v3 v3.0.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fatih/structs v1.1.0
@@ -26,7 +26,6 @@ require (
 	github.com/valyala/fasthttp v1.26.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/oauth2 v0.0.0-20210125201302-af13f521f196
-	golang.org/x/term v0.0.0-20201210144234-2321bbc49cbf // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
