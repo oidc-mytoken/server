@@ -1,10 +1,9 @@
 package unixtime
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"time"
-
-	"github.com/go-sql-driver/mysql"
 
 	"github.com/oidc-mytoken/server/shared/utils"
 )
@@ -28,7 +27,7 @@ func InSeconds(s int64) UnixTime {
 
 // Value implements the driver.Valuer interface
 func (t UnixTime) Value() (driver.Value, error) {
-	return mysql.NullTime{
+	return sql.NullTime{
 		Time:  t.Time(),
 		Valid: true,
 	}.Value()
@@ -36,7 +35,7 @@ func (t UnixTime) Value() (driver.Value, error) {
 
 // Scan implements the sql.Scanner interface
 func (t *UnixTime) Scan(src interface{}) error {
-	var tmp mysql.NullTime
+	var tmp sql.NullTime
 	if err := tmp.Scan(src); err != nil {
 		return err
 	}
