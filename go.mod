@@ -8,7 +8,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fatih/structs v1.1.0
 	github.com/go-resty/resty/v2 v2.6.0
-	github.com/go-sql-driver/mysql v1.5.0
+	github.com/go-sql-driver/mysql v1.6.0
 	github.com/goccy/go-json v0.6.1 // indirect
 	github.com/gofiber/fiber/v2 v2.12.0
 	github.com/gofiber/helmet/v2 v2.1.5
