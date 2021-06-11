@@ -2,8 +2,6 @@ version: "3.9"
 services:
   mytoken:
     hostname: 'mytoken_{{.Task.Slot}}'
-#    depends_on:
-#      - db
     image: oidcmytoken/mytoken-server
     working_dir: /root/mytoken
     volumes:
@@ -24,7 +22,7 @@ services:
 #      placement:
       #        max_replicas_per_node: 1
       restart_policy:
-        condition: on-failure
+        condition: any
         delay: 120s
         window: 60s
       rollback_config:
