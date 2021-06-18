@@ -157,11 +157,10 @@ github.com/gobwas/glob v0.2.3/go.mod h1:d3Ez4x06l9bZtSvzIay5+Yzi0fmZzPgnTbPcKjJA
 github.com/goccy/go-json v0.4.8/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
 github.com/goccy/go-json v0.6.1 h1:O7xC9WR7B09imThbRIEMIWK4MVcxOsLzWtGe16cv5SU=
 github.com/goccy/go-json v0.6.1/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
-github.com/gofiber/fiber/v2 v2.12.0/go.mod h1:oZTLWqYnqpMMuF922SjGbsYZsdpE1MCfh416HNdweIM=
 github.com/gofiber/fiber/v2 v2.13.0 h1:jJBCPwq+hlsfHRDVsmfu6pbgW85Y8jL9dE+VmTzfE6I=
 github.com/gofiber/fiber/v2 v2.13.0/go.mod h1:oZTLWqYnqpMMuF922SjGbsYZsdpE1MCfh416HNdweIM=
-github.com/gofiber/helmet/v2 v2.1.5 h1:r1r7gfjqQNkXwpN8CsW0+ma0Wfndw54JEmcpIuCuWZw=
-github.com/gofiber/helmet/v2 v2.1.5/go.mod h1:f8mGuWGNAY5mOtPCkiO8Rf5UFjpU2dxUvflkyw1UXgk=
+github.com/gofiber/helmet/v2 v2.1.6 h1:4GrQSf6GqFH0aQz8x5t5fJ3kICqpHpu9+/A6PHAbUE8=
+github.com/gofiber/helmet/v2 v2.1.6/go.mod h1:TbSOhjiSVwniy7aG3T7403VChgf/1SaBx19ybBkN8dQ=
 github.com/gofiber/template v1.6.12 h1:xFFp3cXNR8fiiNk7fLvQ17JAzt+M0E4ume4TACcpGy4=
 github.com/gofiber/template v1.6.12/go.mod h1:Ewlj7ZHAno12VPabFZa1dWKkD5ilaBEnN2pXb0QoqBs=
 github.com/gofrs/flock v0.7.1 h1:DP+LD/t0njgoPBvT5MJLeliUIVQR03hiKR6vezdwHlc=
