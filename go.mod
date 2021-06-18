@@ -11,7 +11,7 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/goccy/go-json v0.6.1 // indirect
 	github.com/gofiber/fiber/v2 v2.13.0
-	github.com/gofiber/helmet/v2 v2.1.5
+	github.com/gofiber/helmet/v2 v2.1.6
 	github.com/gofiber/template v1.6.12
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/ip2location/ip2location-go v8.3.0+incompatible
