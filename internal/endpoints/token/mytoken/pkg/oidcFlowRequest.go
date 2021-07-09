@@ -28,6 +28,7 @@ func NewOIDCFlowRequest() *OIDCFlowRequest {
 		},
 		ResponseType: model.ResponseTypeToken,
 		redirectType: redirectTypeWeb,
+		GrantType:    -1,
 	}
 }
 

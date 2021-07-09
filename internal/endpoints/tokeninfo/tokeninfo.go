@@ -20,20 +20,20 @@ func HandleTokenInfo(ctx *fiber.Ctx) error {
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	st, errRes := testMytoken(ctx, &req)
+	mt, errRes := testMytoken(ctx, &req)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
 	clientMetadata := ctxUtils.ClientMetaData(ctx)
 	switch req.Action {
 	case model2.TokeninfoActionIntrospect:
-		return handleTokenInfoIntrospect(st, clientMetadata).Send(ctx)
+		return handleTokenInfoIntrospect(req, mt, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionEventHistory:
-		return handleTokenInfoHistory(st, clientMetadata).Send(ctx)
+		return handleTokenInfoHistory(req, mt, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionSubtokenTree:
-		return handleTokenInfoTree(st, clientMetadata).Send(ctx)
+		return handleTokenInfoTree(req, mt, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionListMytokens:
-		return handleTokenInfoList(st, clientMetadata).Send(ctx)
+		return handleTokenInfoList(req, mt, clientMetadata).Send(ctx)
 	default:
 		return model.Response{
 			Status:   fiber.StatusBadRequest,
@@ -43,7 +43,7 @@ func HandleTokenInfo(ctx *fiber.Ctx) error {
 }
 
 func testMytoken(ctx *fiber.Ctx, req *pkg.TokenInfoRequest) (*mytoken.Mytoken, *model.Response) {
-	if req.Mytoken == "" {
+	if req.Mytoken.JWT == "" {
 		if t := ctxUtils.GetMytoken(ctx); t != nil {
 			req.Mytoken = *t
 		} else {
@@ -54,7 +54,7 @@ func testMytoken(ctx *fiber.Ctx, req *pkg.TokenInfoRequest) (*mytoken.Mytoken, *
 		}
 	}
 
-	mt, err := mytoken.ParseJWT(string(req.Mytoken))
+	mt, err := mytoken.ParseJWT(req.Mytoken.JWT)
 	if err != nil {
 		return nil, &model.Response{
 			Status:   fiber.StatusUnauthorized,

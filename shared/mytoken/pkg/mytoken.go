@@ -17,7 +17,6 @@ import (
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
@@ -40,8 +39,20 @@ type Mytoken struct {
 	Restrictions         restrictions.Restrictions `json:"restrictions,omitempty"`
 	Capabilities         api.Capabilities          `json:"capabilities"`
 	SubtokenCapabilities api.Capabilities          `json:"subtoken_capabilities,omitempty"`
-	Rotation             *rotation.Rotation        `json:"rotation,omitempty"`
+	Rotation             *api.Rotation             `json:"rotation,omitempty"`
 	jwt                  string
+}
+
+func (mt Mytoken) Rotate() *Mytoken {
+	rotated := mt
+	rotated.SeqNo++
+	if rotated.Rotation.Lifetime > 0 {
+		rotated.ExpiresAt = unixtime.InSeconds(int64(rotated.Rotation.Lifetime))
+	}
+	rotated.IssuedAt = unixtime.Now()
+	rotated.NotBefore = rotated.IssuedAt
+	rotated.jwt = ""
+	return &rotated
 }
 
 func (mt *Mytoken) verifyID() bool {
@@ -72,7 +83,7 @@ func (mt *Mytoken) VerifyCapabilities(required ...api.Capability) bool {
 }
 
 // NewMytoken creates a new Mytoken
-func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.Capabilities) *Mytoken {
+func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation) *Mytoken {
 	now := unixtime.Now()
 	mt := &Mytoken{
 		Version:              api.TokenVer,
@@ -88,6 +99,7 @@ func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.
 		OIDCSubject:          oidcSub,
 		Capabilities:         c,
 		SubtokenCapabilities: sc,
+		Rotation:             rot,
 	}
 	r.EnforceMaxLifetime(oidcIss)
 	if len(r) > 0 {
@@ -171,6 +183,7 @@ func (mt *Mytoken) toTokenResponse() response.MytokenResponse {
 			ExpiresIn:            mt.ExpiresIn(),
 			Capabilities:         mt.Capabilities,
 			SubtokenCapabilities: mt.SubtokenCapabilities,
+			Rotation:             mt.Rotation,
 		},
 		Restrictions: mt.Restrictions,
 	}
@@ -235,8 +248,9 @@ func ParseJWT(token string) (*Mytoken, error) {
 		return nil, err
 	}
 
-	if st, ok := tok.Claims.(*Mytoken); ok && tok.Valid {
-		return st, nil
+	if mt, ok := tok.Claims.(*Mytoken); ok && tok.Valid {
+		mt.jwt = token
+		return mt, nil
 	}
 	return nil, fmt.Errorf("token not valid")
 }

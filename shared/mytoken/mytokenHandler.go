@@ -9,6 +9,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
+	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
@@ -29,14 +31,13 @@ import (
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/mytoken/token"
-	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 )
 
 // HandleMytokenFromTransferCode handles requests to return the mytoken for a transfer code
 func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 	log.Debug("Handle mytoken from transfercode")
-	req := response.ExchangeTransferCodeRequest{}
+	req := response.NewExchangeTransferCodeRequest()
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
@@ -71,15 +72,11 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 
-	tokenType := pkgModel.ResponseTypeToken
-	if !utils.IsJWT(tokenStr) {
-		tokenType = pkgModel.ResponseTypeShortToken
-	}
-	jwt, err := token.GetLongMytoken(tokenStr)
+	token, err := universalmytoken.Parse(tokenStr)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	mt, err := mytoken.ParseJWT(string(jwt))
+	mt, err := mytoken.ParseJWT(token.JWT)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
@@ -87,12 +84,12 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 		Status: fiber.StatusOK,
 		Response: response.MytokenResponse{
 			MytokenResponse: api.MytokenResponse{
-				Mytoken:              tokenStr,
+				Mytoken:              token.OriginalToken,
 				ExpiresIn:            mt.ExpiresIn(),
 				Capabilities:         mt.Capabilities,
 				SubtokenCapabilities: mt.SubtokenCapabilities,
 			},
-			MytokenType:  tokenType,
+			MytokenType:  token.OriginalTokenType,
 			Restrictions: mt.Restrictions,
 		},
 	}
@@ -112,9 +109,9 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 
 	// GrantType already checked
 
-	if len(req.Mytoken) == 0 {
+	if req.Mytoken.JWT == "" {
 		var err error
-		req.Mytoken, err = token.GetLongMytoken(ctx.Cookies("mytoken"))
+		req.Mytoken, err = universalmytoken.Parse(ctx.Cookies("mytoken"))
 		if err != nil {
 			return &model.Response{
 				Status:   fiber.StatusUnauthorized,
@@ -123,7 +120,7 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 		}
 	}
 
-	mt, err := mytoken.ParseJWT(string(req.Mytoken))
+	mt, err := mytoken.ParseJWT(req.Mytoken.JWT)
 	if err != nil {
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
@@ -178,14 +175,19 @@ func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFrom
 	if errorResponse != nil {
 		return errorResponse
 	}
-	if err := db.Transact(func(tx *sqlx.Tx) error {
+	var tokenUpdate *response.MytokenResponse
+	if err := db.Transact(func(tx *sqlx.Tx) (err error) {
 		if len(parent.Restrictions) > 0 {
-			if err := parent.Restrictions.GetValidForOther(tx, networkData.IP, parent.ID)[0].UsedOther(tx, parent.ID); err != nil {
-				return err
+			if err = parent.Restrictions.GetValidForOther(tx, networkData.IP, parent.ID)[0].UsedOther(tx, parent.ID); err != nil {
+				return
 			}
 		}
-		if err := ste.Store(tx, "Used grant_type mytoken"); err != nil {
-			return err
+		tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(tx, req.Mytoken.JWT, parent, *networkData, req.Mytoken.OriginalTokenType)
+		if err != nil {
+			return
+		}
+		if err = ste.Store(tx, "Used grant_type mytoken"); err != nil {
+			return
 		}
 		return eventService.LogEvents(tx, []eventService.MTEvent{
 			{event.FromNumber(event.MTEventInheritedRT, "Got RT from parent"), ste.ID},
@@ -199,9 +201,16 @@ func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFrom
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
+	var cake []*fiber.Cookie
+	if tokenUpdate != nil {
+		res.TokenUpdate = tokenUpdate
+		cookie := cookies.MytokenCookie(tokenUpdate.Mytoken)
+		cake = []*fiber.Cookie{&cookie}
+	}
 	return &model.Response{
 		Status:   fiber.StatusOK,
 		Response: res,
+		Cookies:  cake,
 	}
 }
 
@@ -209,6 +218,7 @@ func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytoke
 	rtID, dbErr := refreshtokenrepo.GetRTID(nil, parent.ID)
 	rtFound, err := dbhelper.ParseError(dbErr)
 	if err != nil {
+		log.WithError(dbErr).Error()
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
 	}
 	if !rtFound {
@@ -219,6 +229,7 @@ func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytoke
 	}
 	rootID, rootFound, dbErr := dbhelper.GetMTRootID(parent.ID)
 	if dbErr != nil {
+		log.WithError(dbErr).Error()
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
 	}
 	if !rootFound {
@@ -259,13 +270,15 @@ func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytoke
 		sc = api.Tighten(capsFromParent, req.SubtokenCapabilities)
 	}
 	ste := mytokenrepo.NewMytokenEntry(
-		mytoken.NewMytoken(parent.OIDCSubject, parent.OIDCIssuer, r, c, sc),
+		mytoken.NewMytoken(parent.OIDCSubject, parent.OIDCIssuer, r, c, sc, req.Rotation),
 		req.Name, networkData)
-	encryptionKey, _, err := refreshtokenrepo.GetEncryptionKey(nil, parent.ID, string(req.Mytoken))
+	encryptionKey, _, err := refreshtokenrepo.GetEncryptionKey(nil, parent.ID, req.Mytoken.JWT)
 	if err != nil {
+		log.WithError(err).Error()
 		return ste, model.ErrorToInternalServerErrorResponse(err)
 	}
 	if err = ste.SetRefreshToken(rtID, encryptionKey); err != nil {
+		log.WithError(err).Error()
 		return ste, model.ErrorToInternalServerErrorResponse(err)
 	}
 	ste.ParentID = parent.ID
@@ -274,7 +287,7 @@ func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytoke
 }
 
 // RevokeMytoken revokes a Mytoken
-func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, token token.Token, recursive bool, issuer string) *model.Response {
+func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, jwt string, recursive bool, issuer string) *model.Response {
 	provider, ok := config.Get().ProviderByIssuer[issuer]
 	if !ok {
 		return &model.Response{
@@ -290,7 +303,7 @@ func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, token token.Token, recursive bool,
 			}
 			return err
 		}
-		rt, _, err := refreshtokenrepo.GetRefreshToken(tx, id, string(token))
+		rt, _, err := refreshtokenrepo.GetRefreshToken(tx, id, jwt)
 		if err != nil {
 			return err
 		}

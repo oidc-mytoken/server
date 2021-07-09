@@ -9,6 +9,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
@@ -101,6 +102,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 		Capabilities:         req.Capabilities,
 		SubtokenCapabilities: req.SubtokenCapabilities,
 		Name:                 req.Name,
+		Rotation:             req.Rotation,
 	}
 	authFlowInfo := authcodeinforepo.AuthFlowInfo{
 		AuthFlowInfoOut: authFlowInfoO,
@@ -230,26 +232,16 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	cookieName := "mytoken"
-	cookieValue := res.Mytoken
-	cookieAge := 3600 * 24 //TODO from config, same as in js
+	var cookie fiber.Cookie
 	if stateInf.ResponseType == pkgModel.ResponseTypeTransferCode {
-		cookieName = "mytoken-transfercode"
-		cookieValue = res.TransferCode
-		cookieAge = int(res.ExpiresIn)
+		cookie = cookies.TransferCodeCookie(res.TransferCode, int(res.ExpiresIn))
+	} else {
+		cookie = cookies.MytokenCookie(res.Mytoken)
 	}
 	return &model.Response{
 		Status:   fiber.StatusSeeOther,
 		Response: "/home",
-		Cookies: []*fiber.Cookie{{
-			Name:     cookieName,
-			Value:    cookieValue,
-			Path:     "/api",
-			MaxAge:   cookieAge,
-			Secure:   config.Get().Server.Secure,
-			HTTPOnly: true,
-			SameSite: "Strict",
-		}},
+		Cookies:  []*fiber.Cookie{&cookie},
 	}
 }
 
@@ -260,7 +252,8 @@ func createMytokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfo
 			authFlowInfo.Issuer,
 			authFlowInfo.Restrictions,
 			authFlowInfo.Capabilities,
-			authFlowInfo.SubtokenCapabilities),
+			authFlowInfo.SubtokenCapabilities,
+			authFlowInfo.Rotation),
 		authFlowInfo.Name, networkData)
 	if err := ste.InitRefreshToken(token.RefreshToken); err != nil {
 		return nil, err

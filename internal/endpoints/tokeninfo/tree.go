@@ -6,6 +6,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
+	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/db"
@@ -18,7 +21,7 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 )
 
-func handleTokenInfoTree(mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
+func handleTokenInfoTree(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
 	// If we call this function it means the token is valid.
 
 	if !mt.Capabilities.Has(api.CapabilityTokeninfoTree) {
@@ -41,6 +44,7 @@ func handleTokenInfoTree(mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData
 	}
 
 	var tokenTree tree.MytokenEntryTree
+	var tokenUpdate *response.MytokenResponse
 	if err := db.Transact(func(tx *sqlx.Tx) error {
 		var err error
 		tokenTree, err = tree.TokenSubTree(tx, mt.ID)
@@ -53,6 +57,10 @@ func handleTokenInfoTree(mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData
 		if err = usedRestriction.UsedOther(tx, mt.ID); err != nil {
 			return err
 		}
+		tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(tx, req.Mytoken.JWT, mt, *clientMetadata, req.Mytoken.OriginalTokenType)
+		if err != nil {
+			return err
+		}
 		return eventService.LogEvent(tx, eventService.MTEvent{
 			Event: event.FromNumber(event.MTEventTokenInfoTree, ""),
 			MTID:  mt.ID,
@@ -61,8 +69,16 @@ func handleTokenInfoTree(mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData
 		return *model.ErrorToInternalServerErrorResponse(err)
 	}
 
+	rsp := pkg.NewTokeninfoTreeResponse(tokenTree)
+	var cake []*fiber.Cookie
+	if tokenUpdate != nil {
+		rsp.TokenUpdate = tokenUpdate
+		cookie := cookies.MytokenCookie(tokenUpdate.Mytoken)
+		cake = []*fiber.Cookie{&cookie}
+	}
 	return model.Response{
 		Status:   fiber.StatusOK,
-		Response: pkg.NewTokeninfoTreeResponse(tokenTree),
+		Response: rsp,
+		Cookies:  cake,
 	}
 }

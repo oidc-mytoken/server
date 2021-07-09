@@ -5,6 +5,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
+	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
@@ -22,7 +25,7 @@ import (
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/mytoken/token"
+	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/jwtutils"
 )
@@ -30,12 +33,12 @@ import (
 // HandleAccessTokenEndpoint handles request on the access token endpoint
 func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	log.Debug("Handle access token request")
-	req := request.AccessTokenRequest{}
+	req := request.NewAccessTokenRequest()
 	if err := ctx.BodyParser(&req); err != nil {
 		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	log.Trace("Parsed access token request")
-	if req.Mytoken == "" {
+	if req.Mytoken.JWT == "" {
 		req.Mytoken = req.RefreshToken
 	}
 
@@ -47,9 +50,9 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		return res.Send(ctx)
 	}
 	log.Trace("Checked grant type")
-	if len(req.Mytoken) == 0 {
+	if req.Mytoken.JWT == "" {
 		var err error
-		req.Mytoken, err = token.GetLongMytoken(ctx.Cookies("mytoken"))
+		req.Mytoken, err = universalmytoken.Parse(ctx.Cookies("mytoken"))
 		if err != nil {
 			return serverModel.Response{
 				Status:   fiber.StatusUnauthorized,
@@ -58,7 +61,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		}
 	}
 
-	mt, err := mytoken.ParseJWT(string(req.Mytoken))
+	mt, err := mytoken.ParseJWT(req.Mytoken.JWT)
 	if err != nil {
 		return (&serverModel.Response{
 			Status:   fiber.StatusUnauthorized,
@@ -140,7 +143,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 			auds = strings.Join(usedRestriction.Audiences, " ")
 		}
 	}
-	rt, rtFound, dbErr := refreshtokenrepo.GetRefreshToken(nil, mt.ID, string(req.Mytoken))
+	rt, rtFound, dbErr := refreshtokenrepo.GetRefreshToken(nil, mt.ID, req.Mytoken.JWT)
 	if dbErr != nil {
 		return serverModel.ErrorToInternalServerErrorResponse(dbErr)
 	}
@@ -151,7 +154,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 		}
 	}
 
-	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, mt.ID, string(req.Mytoken), rt, scopes, auds)
+	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds)
 	if err != nil {
 		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}
@@ -174,6 +177,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 		Scopes:    utils.SplitIgnoreEmpty(retScopes, " "),
 		Audiences: retAudiences,
 	}
+	var tokenUpdate *response.MytokenResponse
 	if err = db.Transact(func(tx *sqlx.Tx) error {
 		if err = at.Store(tx); err != nil {
 			return err
@@ -189,18 +193,30 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 				return err
 			}
 		}
-		return nil
+		tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(tx, req.Mytoken.JWT, mt, networkData, req.Mytoken.OriginalTokenType)
+		return err
 	}); err != nil {
 		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}
-	return &serverModel.Response{
-		Status: fiber.StatusOK,
-		Response: api.AccessTokenResponse{
+
+	rsp := request.AccessTokenResponse{
+		AccessTokenResponse: api.AccessTokenResponse{
 			AccessToken: oidcRes.AccessToken,
 			TokenType:   oidcRes.TokenType,
 			ExpiresIn:   oidcRes.ExpiresIn,
 			Scope:       retScopes,
 			Audiences:   retAudiences,
 		},
+	}
+	var cake []*fiber.Cookie
+	if tokenUpdate != nil {
+		rsp.TokenUpdate = tokenUpdate
+		cookie := cookies.MytokenCookie(tokenUpdate.Mytoken)
+		cake = []*fiber.Cookie{&cookie}
+	}
+	return &serverModel.Response{
+		Status:   fiber.StatusOK,
+		Response: rsp,
+		Cookies:  cake,
 	}
 }

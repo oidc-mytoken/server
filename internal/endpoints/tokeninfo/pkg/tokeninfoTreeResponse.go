@@ -2,12 +2,14 @@ package pkg
 
 import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/tree"
+	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 )
 
 // TokeninfoTreeResponse is type for responses to tokeninfo tree requests
 type TokeninfoTreeResponse struct {
-	// un update check api.TokeninforTeeResponse
-	Tokens tree.MytokenEntryTree `json:"mytokens"`
+	// on update check api.TokeninfoTreeResponse
+	Tokens      tree.MytokenEntryTree `json:"mytokens"`
+	TokenUpdate *my.MytokenResponse   `json:"token_update,omitempty"`
 }
 
 // NewTokeninfoTreeResponse creates a new TokeninfoTreeResponse

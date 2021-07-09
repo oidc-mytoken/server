@@ -67,6 +67,7 @@ var defaultConfig = Config{
 			PollingCodeExpiresAfter: 300,
 			PollingInterval:         5,
 		},
+		TokenRotation:    onlyEnable{true},
 		AccessTokenGrant: onlyEnable{true},
 		SignedJWTGrant:   onlyEnable{true},
 		TokenInfo: tokeninfoConfig{
@@ -109,6 +110,7 @@ type featuresConf struct {
 	ShortTokens             shortTokenConfig       `yaml:"short_tokens"`
 	TransferCodes           onlyEnable             `yaml:"transfer_codes"`
 	Polling                 pollingConf            `yaml:"polling_codes"`
+	TokenRotation           onlyEnable             `yaml:"token_rotation"`
 	AccessTokenGrant        onlyEnable             `yaml:"access_token_grant"`
 	SignedJWTGrant          onlyEnable             `yaml:"signed_jwt_grant"`
 	TokenInfo               tokeninfoConfig        `yaml:"tokeninfo"`

@@ -6,22 +6,23 @@ import (
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/mytoken/token"
+	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 )
 
 // MytokenFromMytokenRequest is a request to create a new Mytoken from an existing Mytoken
 type MytokenFromMytokenRequest struct {
 	api.MytokenFromMytokenRequest `json:",inline"`
-	GrantType                     model.GrantType           `json:"grant_type"`
-	Mytoken                       token.Token               `json:"mytoken"`
-	Restrictions                  restrictions.Restrictions `json:"restrictions"`
-	ResponseType                  model.ResponseType        `json:"response_type"`
+	GrantType                     model.GrantType                   `json:"grant_type"`
+	Mytoken                       universalmytoken.UniversalMytoken `json:"mytoken"`
+	Restrictions                  restrictions.Restrictions         `json:"restrictions"`
+	ResponseType                  model.ResponseType                `json:"response_type"`
 }
 
 // NewMytokenRequest creates a MytokenFromMytokenRequest with the default values where they can be omitted
 func NewMytokenRequest() *MytokenFromMytokenRequest {
 	return &MytokenFromMytokenRequest{
 		ResponseType: model.ResponseTypeToken,
+		GrantType:    -1,
 	}
 }
 

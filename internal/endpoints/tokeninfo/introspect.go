@@ -13,7 +13,7 @@ import (
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
-func handleTokenInfoIntrospect(mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
+func handleTokenInfoIntrospect(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
 	// If we call this function it means the token is valid.
 
 	if !mt.Capabilities.Has(api.CapabilityTokeninfoIntrospect) {

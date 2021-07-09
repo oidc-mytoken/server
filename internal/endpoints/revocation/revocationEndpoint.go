@@ -17,7 +17,6 @@ import (
 	sharedModel "github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken"
 	mytokenPkg "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/token"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
@@ -92,7 +91,7 @@ func revokeMytoken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *mod
 			Response: sharedModel.BadRequestError("token not for specified issuer"),
 		}
 	}
-	return mytoken.RevokeMytoken(tx, mt.ID, token.Token(jwt), recursive, mt.OIDCIssuer)
+	return mytoken.RevokeMytoken(tx, mt.ID, jwt, recursive, mt.OIDCIssuer)
 }
 
 func revokeTransferCode(tx *sqlx.Tx, token, issuer string) (errRes *model.Response) {

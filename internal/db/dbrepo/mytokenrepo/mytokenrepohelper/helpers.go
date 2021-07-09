@@ -5,11 +5,11 @@ import (
 	"errors"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 )
 
 // ParseError parses the passed error for a sql.ErrNoRows
@@ -62,7 +62,7 @@ func recursiveRevokeMT(tx *sqlx.Tx, id mtid.MTID) error {
 }
 
 // CheckTokenRevoked checks if a Mytoken has been revoked.
-func CheckTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64, rot *rotation.Rotation) (bool, error) {
+func CheckTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64, rot *api.Rotation) (bool, error) {
 	if rot != nil && rot.Lifetime > 0 {
 		return checkRotatingTokenRevoked(tx, id, seqno, rot.Lifetime)
 	}
@@ -93,6 +93,14 @@ func checkRotatingTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno, rotationLifetim
 		return false, nil
 	}
 	return true, nil
+}
+
+// UpdateSeqNo updates the sequence number of a mytoken, i.e. it rotates the mytoken. Don't forget to update the encryption key
+func UpdateSeqNo(tx *sqlx.Tx, id mtid.MTID, seqno uint64) error {
+	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		_, err := tx.Exec(`UPDATE MTokens SET seqno=?, last_rotated=current_timestamp() WHERE id=?`, seqno, id)
+		return err
+	})
 }
 
 // revokeMT revokes the passed mytoken but no children

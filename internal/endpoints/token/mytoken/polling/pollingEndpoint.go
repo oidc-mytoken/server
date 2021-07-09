@@ -16,7 +16,7 @@ import (
 
 // HandlePollingCode handles a request on the polling endpoint
 func HandlePollingCode(ctx *fiber.Ctx) error {
-	req := response.PollingCodeRequest{}
+	req := response.NewPollingCodeRequest()
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}

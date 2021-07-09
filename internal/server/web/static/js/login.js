@@ -6,7 +6,7 @@ $('#login-form').on('submit', function(e){
     let data = $(this).serializeObject()
     data['restrictions'] = [
         {
-            "exp": Math.floor(Date.now() / 1000) + 3600*24, // TODO configurable
+            "exp": Math.floor(Date.now() / 1000) + 3600*24*7, // TODO configurable
             "ip": ["this"],
             "usages_AT": 1,
             "usages_other": 50,
@@ -23,6 +23,10 @@ $('#login-form').on('submit', function(e){
         // "settings",
         "list_mytokens"
     ]
+    data['rotation'] = {
+        "on_other": true,
+        "lifetime": 3600*24,
+    }
     data['name'] = "mytoken-web";
     data = JSON.stringify(data);
     $.ajax({

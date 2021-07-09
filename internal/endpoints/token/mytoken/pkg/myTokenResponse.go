@@ -11,4 +11,5 @@ type MytokenResponse struct {
 	api.MytokenResponse `json:",inline"`
 	MytokenType         model.ResponseType        `json:"mytoken_type"`
 	Restrictions        restrictions.Restrictions `json:"restrictions,omitempty"`
+	TokenUpdate         *MytokenResponse          `json:"token_update,omitempty"`
 }

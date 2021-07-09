@@ -429,7 +429,7 @@ func Tighten(old, wanted Restrictions) (res Restrictions, ok bool) {
 		return
 	}
 	base := Restrictions{}
-	if err := copier.Copy(&base, &old); err != nil {
+	if err := copier.CopyWithOption(&base, &old, copier.Option{DeepCopy: true}); err != nil {
 		log.WithError(err).Error()
 	}
 	var droppedRestrictionsFromWanted bool
