@@ -4,6 +4,8 @@ import (
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/base64"
+
+	"golang.org/x/crypto/sha3"
 )
 
 // SHA512 hashes the passed data with sha512
@@ -17,9 +19,21 @@ func SHA512Str(data []byte) string {
 	return base64.StdEncoding.EncodeToString(hash[:])
 }
 
-// HMACSHA512Str creates a hmac using sha512
-func HMACSHA512Str(data, secret []byte) string {
-	h := hmac.New(sha512.New, secret)
+// HMACSHA3Str creates a hmac using sha512
+func HMACSHA3Str(data, secret []byte) string {
+	h := hmac.New(sha3.New512, secret)
 	hmac := h.Sum(data)
 	return base64.StdEncoding.EncodeToString(hmac)
+}
+
+// SHA3_256Str hashes the passed data with SHA3 256
+func SHA3_256Str(data []byte) string {
+	hash := sha3.Sum256(data)
+	return base64.StdEncoding.EncodeToString(hash[:])
+}
+
+// SHA3_512Str hashes the passed data with SHA3 512
+func SHA3_512Str(data []byte) string {
+	hash := sha3.Sum512(data)
+	return base64.StdEncoding.EncodeToString(hash[:])
 }

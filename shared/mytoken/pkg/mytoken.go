@@ -5,6 +5,7 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/server/internal/utils"
 
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/config"
@@ -17,7 +18,6 @@ import (
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
@@ -63,7 +63,7 @@ func (mt *Mytoken) verifySubject() bool {
 	if mt.Subject == "" {
 		return false
 	}
-	if mt.Subject != issuerUtils.CombineSubIss(mt.OIDCSubject, mt.OIDCIssuer) {
+	if mt.Subject != utils.CreateMytokenSubject(mt.OIDCSubject, mt.OIDCIssuer) {
 		return false
 	}
 	return true
@@ -93,7 +93,7 @@ func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.
 		IssuedAt:             now,
 		NotBefore:            now,
 		Issuer:               config.Get().IssuerURL,
-		Subject:              issuerUtils.CombineSubIss(oidcSub, oidcIss),
+		Subject:              utils.CreateMytokenSubject(oidcSub, oidcIss),
 		Audience:             config.Get().IssuerURL,
 		OIDCIssuer:           oidcIss,
 		OIDCSubject:          oidcSub,

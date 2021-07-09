@@ -43,7 +43,7 @@ func (c *ConsentCode) String() string {
 // GetState returns the state linked to a ConsentCode
 func (c *ConsentCode) GetState() string {
 	if c.state == "" {
-		c.state = hashUtils.HMACSHA512Str([]byte("state"), []byte(c.r))[:stateLen] + c.encodedInfo
+		c.state = hashUtils.HMACSHA3Str([]byte("state"), []byte(c.r))[:stateLen] + c.encodedInfo
 	}
 	return c.state
 }
