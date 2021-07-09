@@ -43,7 +43,7 @@ type Cluster struct {
 
 type node struct {
 	db     *sqlx.DB
-	dsn    string
+	host   string
 	active bool
 	// lock   sync.RWMutex
 }
@@ -68,19 +68,19 @@ func (c *Cluster) AddNodes() {
 // AddNode adds the passed host a a db node to the cluster
 func (c *Cluster) AddNode(host string) error {
 	log.WithField("host", host).Debug("Adding node to db cluster")
-	dsn := fmt.Sprintf("%s:%s@%s(%s)/%s?parseTime=true", c.conf.User, c.conf.GetPassword(), "tcp", host, c.conf.DB)
 	return c.addNode(&node{
-		dsn: dsn,
+		host: host,
 	})
 }
 
 func (c *Cluster) addNode(n *node) error {
 	n.close()
-	db, err := connectDSN(n.dsn)
+	dsn := fmt.Sprintf("%s:%s@%s(%s)/%s?parseTime=true", c.conf.User, c.conf.GetPassword(), "tcp", n.host, c.conf.DB)
+	db, err := connectDSN(dsn)
 	if err != nil {
 		n.active = false
 		c.down <- n
-		log.WithField("dsn", n.dsn).Debug("Could not connect node")
+		log.WithField("dsn", dsn).Debug("Could not connect node")
 		return err
 	}
 	n.db = db
@@ -179,7 +179,7 @@ func (n *node) transact(fn func(*sqlx.Tx) error) (bool, error) {
 		case e == "sql: database is closed",
 			strings.HasPrefix(e, "dial tcp"),
 			strings.HasSuffix(e, "closing bad idle connection: EOF"):
-			log.WithField("dsn", n.dsn).Error("Node is down")
+			log.WithField("host", n.host).Error("Node is down")
 			return true, err
 		}
 	}
@@ -201,15 +201,15 @@ func (n *node) trans(fn func(*sqlx.Tx) error) error {
 }
 
 func (c *Cluster) next() *node {
-	log.Debug("Selecting a node")
+	log.Trace("Selecting a node")
 	select {
 	case n := <-c.active:
 		if n.active {
 			c.active <- n
-			log.WithField("dsn", n.dsn).Debug("Selected active node")
+			log.WithField("host", n.host).Trace("Selected active node")
 			return n
 		}
-		log.WithField("dsn", n.dsn).Debug("Found inactive node")
+		log.WithField("host", n.host).Trace("Found inactive node")
 		go c.addNode(n) // try to add node again, if it does not work, will add to down nodes
 		return c.next()
 	default:
