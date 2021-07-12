@@ -6,8 +6,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
-
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
@@ -45,8 +45,8 @@ func GetMTRootID(id mtid.MTID) (mtid.MTID, bool, error) {
 // recursiveRevokeMT revokes the passed mytoken as well as all children
 func recursiveRevokeMT(tx *sqlx.Tx, id mtid.MTID) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`
-			DELETE FROM MTokens WHERE id=ANY(
+		var effectedMTIDs []mtid.MTID
+		if err := tx.Select(&effectedMTIDs, `
 			WITH Recursive childs
 			AS
 			(
@@ -55,8 +55,21 @@ func recursiveRevokeMT(tx *sqlx.Tx, id mtid.MTID) error {
 				SELECT mt.id, mt.parent_id FROM MTokens mt INNER JOIN childs c WHERE mt.parent_id=c.id
 			)
 			SELECT id
-			FROM   childs
-			)`, id)
+			FROM   childs`, id); err != nil {
+			return err
+		}
+		query, args, err := sqlx.In(`DELETE FROM EncryptionKeys WHERE id=ANY(SELECT key_id FROM RT_EncryptionKeys WHERE MT_id IN (?))`, effectedMTIDs)
+		if err != nil {
+			return err
+		}
+		if _, err = tx.Exec(query, args...); err != nil {
+			return err
+		}
+		query, args, err = sqlx.In(`DELETE FROM MTokens WHERE id IN (?)`, effectedMTIDs)
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(query, args...)
 		return err
 	})
 }
@@ -106,6 +119,9 @@ func UpdateSeqNo(tx *sqlx.Tx, id mtid.MTID, seqno uint64) error {
 // revokeMT revokes the passed mytoken but no children
 func revokeMT(tx *sqlx.Tx, id mtid.MTID) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		if err := encryptionkeyrepo.DeleteEncryptionKey(tx, id); err != nil {
+			return err
+		}
 		_, err := tx.Exec(`DELETE FROM MTokens WHERE id=?`, id)
 		return err
 	})

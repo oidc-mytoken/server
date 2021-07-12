@@ -4,8 +4,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
 	helper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/model"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
@@ -23,7 +23,7 @@ func rotateMytoken(tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaD
 		if err = helper.UpdateSeqNo(tx, rotated.ID, rotated.SeqNo); err != nil {
 			return err
 		}
-		if err = refreshtokenrepo.ReencryptEncryptionKey(tx, rotated.ID, oldJWT, jwt); err != nil {
+		if err = encryptionkeyrepo.ReencryptEncryptionKey(tx, rotated.ID, oldJWT, jwt); err != nil {
 			return err
 		}
 		return eventService.LogEvent(tx, eventService.MTEvent{

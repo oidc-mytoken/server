@@ -9,6 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 	log "github.com/sirupsen/logrus"
@@ -272,7 +273,7 @@ func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytoke
 	ste := mytokenrepo.NewMytokenEntry(
 		mytoken.NewMytoken(parent.OIDCSubject, parent.OIDCIssuer, r, c, sc, req.Rotation),
 		req.Name, networkData)
-	encryptionKey, _, err := refreshtokenrepo.GetEncryptionKey(nil, parent.ID, req.Mytoken.JWT)
+	encryptionKey, _, err := encryptionkeyrepo.GetEncryptionKey(nil, parent.ID, req.Mytoken.JWT)
 	if err != nil {
 		log.WithError(err).Error()
 		return ste, model.ErrorToInternalServerErrorResponse(err)
