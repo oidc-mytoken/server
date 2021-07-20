@@ -1,0 +1,170 @@
+
+<div id="mt-config">
+        <div>
+            <div class="row">
+                <div class="col">
+                    <div class="form-group alert border">
+                        <h5>Token Name</h5>
+                        <input type="text" class="form-control" id="tokenName" aria-describedby="tokenNameHelp" placeholder="Name">
+                        <small id="tokenNameHelp" class="form-text text-muted">Give the Mytoken a name, so you can identify it better.</small>
+                    </div>
+
+                    <div class="form-group alert border">
+                        <h5>Token Type</h5>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" aria-describedby="shortTokenHelp" id="shortToken">
+                            <label class="custom-control-label" for="shortToken">Get Short Mytoken</label>
+                        </div>
+                        <small id="shortTokenHelp" class="form-text text-muted">The Mytoken can be returned as a JWT or as a Short Mytoken.</small>
+                    </div>
+                </div>
+
+                <div class="col-8 form-group">
+                    <div class="form-row alert border">
+                        <div class="col">
+                            <h5>Token Rotation</h5>
+                            <div class="form-group">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" aria-describedby="rotationATHelp" id="rotationAT">
+                                    <label class="custom-control-label" for="rotationAT">On Access Token requests</label>
+                                </div>
+                                <small id="rotationATHelp" class="form-text text-muted">If the mytoken is used to request an Access Token, a new mytoken will be returned.</small>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" aria-describedby="rotationOtherHelp" id="rotationOther">
+                                    <label class="custom-control-label" for="rotationOther">On other requests</label>
+                                </div>
+                                <small id="rotationOtherHelp" class="form-text text-muted">If the mytoken is used for other requests than requesting an Access Token, a new mytoken will be returned.</small>
+                            </div>
+
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="rotationLifetime">Lifetime</label>
+                                <input type="number" class="form-control" id="rotationLifetime" aria-describedby="rotationLifetimeHelp" min=0 value=0 disabled>
+                                <small id="rotationLifetimeHelp" class="form-text text-muted">The lifetime of a single Mytoken given in seconds. (Infinite lifetime if set to 0)</small>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" aria-describedby="rotationAutoRevokeHelp" id="rotationAutoRevoke" disabled>
+                                    <label class="custom-control-label" for="rotationAutoRevoke">Automatic revocation</label>
+                                </div>
+                                <small id="rotationAutoRevokeHelp" class="form-text text-muted">If the mytoken server detects a misuse, the mytoken will be automatically revoked.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="alert border">
+                    <h4 class="text-center">Choose Capabilities</h4>
+                    <table class="table table-hover table-bordered col-md table-secondary">
+                        <tbody>
+                        {{#capabilities}}
+                            <tr>
+                                <td class="text-center">
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" class="custom-control-input capability-check" value="{{Name}}" id="cp-{{Name}}">
+                                        <label class="custom-control-label" for="cp-{{Name}}"><span class="sr-only"></span></label>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex justify-content-between">
+                                        <h5>{{Name}}</h5>
+                                        <i class="fas fa-exclamation-circle {{ColorClass}}" data-toggle="tooltip" data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
+                                    </div>
+                                    <div>{{Description}}</div>
+
+                                    {{#IsCreateMT}}
+                                        <div id="subtokenCapabilities" class="mt-2 row d-none" style="margin-bottom: -1rem;">
+                                            <div class="col-1"></div>
+                                            <div class="col">
+                                                <p style="font-size: 1.0rem;">The mytoken you are going to create, can create mytokens with the following capabilities:</p>
+                                                <table class="table table-hover table-grey">
+                                                    <tbody>
+                                                    {{#subtoken-capabilities}}
+                                                        <tr>
+                                                            <td class="text-center">
+                                                                <div class="custom-control custom-switch">
+                                                                    <input type="checkbox" class="custom-control-input subtoken-capability-check" value="{{Name}}" id="scp-{{Name}}" disabled>
+                                                                    <label class="custom-control-label" for="scp-{{Name}}"><span class="sr-only"></span></label>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="d-flex justify-content-between">
+                                                                    <h5>{{Name}}</h5>
+                                                                    <i class="fas fa-exclamation-circle {{ColorClass}}" data-toggle="tooltip" data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
+                                                                </div>
+                                                                <div>{{Description}}</div>
+                                                            </td>
+                                                        </tr>
+                                                    {{/subtoken-capabilities}}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    {{/IsCreateMT}}
+                                </td>
+                            </tr>
+                        {{/capabilities}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="alert border">
+                    <div class="pb-3 row">
+                    <h4 class="col">Set Restrictions</h4>
+                    <input class="col" id="restr-editor-mode" type="checkbox" checked data-size="sm" data-toggle="toggle" data-onstyle="success" data-offstyle="info" data-on="Easy Editor" data-off="JSON Editor">
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <i id="r-icon-time" class="fas fa-clock fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
+                        <i id="r-icon-ip" class="fas fa-network-wired fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
+                        <i id="r-icon-scope" class="fas fa-shield-alt fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
+                        <i id="r-icon-aud" class="fas fa-server fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
+                        <i id="r-icon-usages" class="fas fa-less-than-equal fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
+                    </div>
+
+                    {{>restrictions-gui-editor}}
+
+                    <div id="restr-json-editor" class="justify-content-center d-none">
+                        <textarea class="mt-5 form-control" id="restrictionsArea" autocomplete="off" cols=50 rows=20 onkeyup="updateRestrFromJSONEditor()"></textarea>
+                    </div>
+                </div>
+                <script>if (typeof restrictions==='undefined') {restrictions = {{&restrictions.Text}};}</script>
+            </div>
+        </div>
+
+        <a href="#mt" class="btn btn-primary" id="get-mt">Create new Mytoken</a>
+</div>
+
+<div id="mt-result" class="d-none">
+    <div id="mt-instructions">
+        <p>
+            To obtain your Mytoken follow the following link and authenticate:
+            <a id="authorization-url" target="_blank" rel="noopener noreferrer" href="" ></a>
+        </p>
+    </div>
+    <div id="mt-result-color" class="alert" role="alert">
+        <h4 id="mt-result-heading-success" class="alert-heading d-none">Your Mytoken</h4>
+        <h4 id="mt-result-heading-error" class="alert-heading d-none">Error</h4>
+        <h4 id="mt-result-heading-pending" class="alert-heading d-none">Authorization Pending</h4>
+        <div id="pending-spinner" class="spinner-border text-primary d-none" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+        <button class="btn btn-copy d-none" id="mt-result-copy" data-toggle="tooltip" data-placement="bottom" title="Copy to clipboard" data-clipboard-target="#mt-result-msg">
+            <i class="far fa-copy"></i>
+        </button>
+        <pre class="card-text" id="mt-result-msg"></pre>
+    </div>
+    <a href="#mt" class="btn btn-primary" id="next-mt">Configure another Mytoken</a>
+</div>

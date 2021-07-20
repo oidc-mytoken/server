@@ -4,7 +4,8 @@ const configElements = [
     "mytoken_endpoint",
     "usersettings_endpoint",
     "revocation_endpoint",
-    "tokeninfo_endpoint"
+    "tokeninfo_endpoint",
+    "providers_supported"
 ]
 
 function discovery() {

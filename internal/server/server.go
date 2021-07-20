@@ -56,7 +56,6 @@ func init() {
 
 func initTemplateEngine() {
 	engine := mustache.NewFileSystemPartials(http.FS(webFiles), ".mustache", http.FS(partials))
-	// engine.Reload(version.DEV)
 	serverConfig.Views = engine
 }
 

@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/jmoiron/sqlx"
-
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
@@ -87,7 +86,7 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 				JWT  string    `db:"jwt"`
 				MTID mtid.MTID `db:"MT_id"`
 			}
-			if err := tx.Get(&res, `SELECT jwt, MT_id FROM ProxyTokens WHERE id=?`, pt.id); err != nil {
+			if err = tx.Get(&res, `SELECT jwt, MT_id FROM ProxyTokens WHERE id=?`, pt.id); err != nil {
 				return err
 			}
 			pt.encryptedJWT = res.JWT

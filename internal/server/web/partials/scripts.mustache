@@ -1,7 +1,7 @@
+<script src="/static/js/utils.js"></script>
 {{^empty-navbar}}
     <script src="/static/js/storage.js"></script>
     <script src="/static/js/discovery.js"></script>
-    <script src="/static/js/utils.js"></script>
     <script src="/static/js/login-check.js"></script>
 
 
@@ -13,11 +13,24 @@
         <script src="/static/js/lib/user-agent.min.js"></script>
         <script src="/static/js/tokens.js"></script>
         <script src="/static/js/tokeninfo.js"></script>
+        <script src="/static/js/create-mt.js"></script>
+        <script src="/static/js/lib/behave.min.js"></script>
+        <script src="/static/js/restrictions.js"></script>
+        <script src="/static/js/lib/bootstrap4-toggle.min.js"></script>
         <script src="/static/js/logout.js"></script>
     {{/logged-in}}
 {{/empty-navbar}}
 {{#consent}}
-    <script src="/static/js/utils.js"></script>
     <script src="/static/js/lib/behave.min.js"></script>
+    <script src="/static/js/capabilities.js"></script>
+    <script src="/static/js/restrictions.js"></script>
+    <script src="/static/js/lib/bootstrap4-toggle.min.js"></script>
     <script src="/static/js/consent.js"></script>
 {{/consent}}
+{{#restr-gui}}
+    <script src="/static/js/storage.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment-with-locales.min.js" integrity="sha512-LGXaggshOkD/at6PFNcp2V2unf9LzFq6LE+sChH7ceMTDP0g2kn6Vxwgg7wkPP7AAtX+lmPqPdxB47A0Nz0cMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/js/tempusdominus-bootstrap-4.min.js" integrity="sha512-k6/Bkb8Fxf/c1Tkyl39yJwcOZ1P4cRrJu77p83zJjN2Z55prbFHxPs9vN7q3l3+tSMGPDdoH51AEU8Vgo1cgAA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="/static/js/countries.js"></script>
+    <script src="/static/js/restr-gui.js"></script>
+{{/restr-gui}}

@@ -36,7 +36,7 @@ func (s *State) Hash() string {
 // PollingCode returns the polling code for this State
 func (s *State) PollingCode() string {
 	if s.pollingCode == "" {
-		s.pollingCode = hashUtils.HMACSHA3Str([]byte("polling_code"), []byte(s.state))[:config.Get().Features.Polling.Len]
+		s.pollingCode = hashUtils.HMACBasedHash([]byte(s.state))[:config.Get().Features.Polling.Len]
 		log.WithField("state", s.state).WithField("polling_code", s.pollingCode).Debug("Created polling_code for state")
 	}
 	return s.pollingCode

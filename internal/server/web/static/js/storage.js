@@ -4,9 +4,9 @@ function _storage() {
 }
 
 function storageGet(key) {
-    return _storage().getItem(key)
+    return JSON.parse(_storage().getItem(key));
 }
 
 function storageSet(key, value) {
-    return _storage().setItem(key, value)
+    return _storage().setItem(key, JSON.stringify(value));
 }

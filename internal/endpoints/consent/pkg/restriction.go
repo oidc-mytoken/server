@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/utils"
@@ -22,7 +21,6 @@ type WebRestrictions struct {
 // Text returns a textual (json) representation of this WebRestrictions
 func (r WebRestrictions) Text() string {
 	data, _ := json.Marshal(r.Restrictions)
-	fmt.Println(string(data))
 	return string(data)
 }
 

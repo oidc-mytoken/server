@@ -28,6 +28,7 @@ func handleConsent(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut) e
 	binding := map[string]interface{}{
 		"consent":      true,
 		"empty-navbar": true,
+		"restr-gui":    true,
 		"restrictions": pkg.WebRestrictions{Restrictions: authInfo.Restrictions},
 		"capabilities": pkg.WebCapabilities(c),
 		"iss":          authInfo.Issuer,

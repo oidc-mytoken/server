@@ -16,6 +16,14 @@ $.fn.serializeObject = function() {
     return o;
 };
 
+$.fn.showB= function() {
+    this.removeClass('d-none');
+}
+$.fn.hideB= function() {
+    this.addClass('d-none');
+}
+
+
 function getErrorMessage(e) {
     let errRes = e.responseJSON
     let err = errRes['error'];

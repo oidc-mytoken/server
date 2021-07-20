@@ -19,11 +19,16 @@ func SHA512Str(data []byte) string {
 	return base64.StdEncoding.EncodeToString(hash[:])
 }
 
-// HMACSHA3Str creates a hmac using sha512
+// HMACSHA3Str creates a hmac using sha3 512
 func HMACSHA3Str(data, secret []byte) string {
 	h := hmac.New(sha3.New512, secret)
 	hmac := h.Sum(data)
 	return base64.StdEncoding.EncodeToString(hmac)
+}
+
+// HMACBasedHash computes a hash-like value using HMAC
+func HMACBasedHash(data []byte) string {
+	return HMACSHA3Str(data, data)
 }
 
 // SHA3_256Str hashes the passed data with SHA3 256
