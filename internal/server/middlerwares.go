@@ -51,7 +51,7 @@ func addMiddlewares(s fiber.Router) {
 
 func addLoggerMiddleware(s fiber.Router) {
 	s.Use(logger.New(logger.Config{
-		Format:     "${time} ${ip} ${latency} - ${status} ${method} ${path}\n",
+		Format:     "${time} ${ip} ${ua} ${latency} - ${status} ${method} ${path}\n",
 		TimeFormat: "2006-01-02 15:04:05",
 		Output:     loggerUtils.MustGetAccessLogger(),
 	}))
