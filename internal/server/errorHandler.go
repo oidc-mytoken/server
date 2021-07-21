@@ -5,7 +5,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	fiberUtils "github.com/gofiber/fiber/v2/utils"
-
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/model"
 )
@@ -40,6 +39,7 @@ func handleErrorHTML(ctx *fiber.Ctx, code int, msg string) error {
 		fiber.StatusInternalServerError,
 		fiber.StatusNotImplemented,
 		fiber.StatusHTTPVersionNotSupported:
+		ctx.Status(code)
 		err = ctx.Render(fmt.Sprintf("sites/%d", code), errorTemplateData, "layouts/main")
 	default:
 		return handleErrorJSON(ctx, code, msg)

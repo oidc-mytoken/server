@@ -68,6 +68,7 @@ func Init() {
 	addRoutes(server)
 	server.Use(func(ctx *fiber.Ctx) error {
 		if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" {
+			ctx.Status(fiber.StatusNotFound)
 			return ctx.Render("sites/404", map[string]interface{}{
 				"empty-navbar": true,
 			}, "layouts/main")
