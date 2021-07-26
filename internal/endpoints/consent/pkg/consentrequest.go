@@ -11,4 +11,6 @@ type ConsentPostRequest struct {
 	Restrictions         restrictions.Restrictions `json:"restrictions"`
 	Capabilities         api.Capabilities          `json:"capabilities"`
 	SubtokenCapabilities api.Capabilities          `json:"subtoken_capabilities"`
+	TokenName            string                    `json:"name"`
+	Rotation             *api.Rotation             `json:"rotation,omitempty"`
 }

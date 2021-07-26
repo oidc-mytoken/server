@@ -414,8 +414,8 @@ github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLA
 github.com/nishanths/exhaustive v0.0.0-20200525081945-8e46705b6132 h1:NjznefjSrral0MiR4KlB41io/d3OklvhcgQUdfZTqJE=
 github.com/nishanths/exhaustive v0.0.0-20200525081945-8e46705b6132/go.mod h1:wBEpHwM2OdmeNpdCvRPUlkEbBuaFmcK4Wv8Q7FuGW3c=
 github.com/oidc-mytoken/api v0.0.0-20210610140005-29f166a942ec/go.mod h1:S8t1XA42EFAgc3vUfis0g1LPGA4TXH0nfDynvgo6cwk=
-github.com/oidc-mytoken/api v0.0.0-20210708152538-f4648ff470f6 h1:POIAmQRwpU3FZm5+84iDRSTdN5QB68jNTGEU/T+4cQU=
-github.com/oidc-mytoken/api v0.0.0-20210708152538-f4648ff470f6/go.mod h1:S8t1XA42EFAgc3vUfis0g1LPGA4TXH0nfDynvgo6cwk=
+github.com/oidc-mytoken/api v0.0.0-20210726073851-e15724197672 h1:RNiCa1u5Gu41jhIi7hEXaHhv3YZ71fbN1IAJeLFEmb0=
+github.com/oidc-mytoken/api v0.0.0-20210726073851-e15724197672/go.mod h1:S8t1XA42EFAgc3vUfis0g1LPGA4TXH0nfDynvgo6cwk=
 github.com/oidc-mytoken/lib v0.2.1-0.20210611134913-0c477174fc1f h1:EqbUYQ45C2iTLHZ0mqtAK9+SxMSemj9gaAv9/csN9D0=
 github.com/oidc-mytoken/lib v0.2.1-0.20210611134913-0c477174fc1f/go.mod h1:kwotzLmyV5WEsvU50JoF8Q5+rjLFhjQKAgBGoEw7FRE=
 github.com/oidc-mytoken/server v0.2.0/go.mod h1:6uFm+Za9NMK3gq4OOIeX3gs3T6leluVIWsGiM1zlQbA=

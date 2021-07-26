@@ -3,7 +3,7 @@ const usagesAT = $('#usages_AT');
 const usagesOther = $('#usages_other');
 const restrClauses = $('#restr-clauses');
 
-$(document).ready(function(){
+$(function(){
     let date_input=$('.datetimepicker-input');
     let options={
         format: 'YYYY-MM-DD HH:mm:ss',
@@ -44,9 +44,7 @@ $(document).ready(function(){
     }
     $(".country-select").prop("selectedIndex", -1);
 
-    const providers = storageGet("providers_supported");
-    console.log(providers);
-    const scopes = providers.find(x => x.issuer === storageGet("oidc_issuer")).scopes_supported;
+    const scopes = typeof(supported_scopes)!=='undefined' ? supported_scopes : getSupportedScopesFromStorage();
     for (const scope of scopes) {
         let html = `<tr>
                             <td><span class="table-item">`+scope+`</span></td>
@@ -85,12 +83,13 @@ $(document).ready(function(){
     })
 
     RestrToGUI();
-    // GUIToRestr_Exp();
-    // GUIToRestr_Nbf();
-    // GUIToRestr_UsagesAT();
-    // GUIToRestr_UsagesOther();
 })
 
+function getSupportedScopesFromStorage() {
+    const providers = storageGet("providers_supported");
+    const iss = typeof(issuer)!=='undefined' ? issuer : storageGet("oidc_issuer");
+    return  providers.find(x => x.issuer === iss).scopes_supported;
+}
 
 
 $('.btn-add-list-item').on("click", function (){
@@ -212,7 +211,7 @@ usagesAT.on('change', GUIToRestr_UsagesAT);
 usagesOther.on('change', GUIToRestr_UsagesOther);
 
 function _addListItem(value, tableBody) {
-    let html = `<tr><td><span class="table-item">`+value+`</span></td><td><button class="btn btn-small btn-delete-list-item"><i class="fas fa-minus"></i></button></td></tr>`;
+    let html = `<tr><td class="align-middle"><span class="table-item">`+value+`</span></td><td class="align-middle"><button class="btn btn-small btn-delete-list-item"><i class="fas fa-minus"></i></button></td></tr>`;
     tableBody.append(html);
     $('.btn-delete-list-item').off("click").on("click", function (){
         let tbodyId = $(this).parents('.list-table').attr("id");
@@ -242,7 +241,7 @@ function restrClauseToGUI() {
 
     if (restr.scope) {
         for (const s of restr.scope.split(' ')) {
-            $('#scope_'+s).click();
+            $('#scope_'+escapeSelector(s)).click();
         }
     }
     if (restr.ip) {
@@ -311,4 +310,11 @@ $('#del-restr-clause').on('click', function (){
     drawRestrictionClauseBtns();
     let newGuiIndex = index===0 ? 1 : index; // Activate the previous clause or the first one if no we deleted the first one
     $('#restr-clause-'+newGuiIndex).click();
+})
+
+$('#select-ip-based-restr').on('change', function (){
+    $('#restr-ip').hideB();
+    $('#restr-geoip_allow').hideB();
+    $('#restr-geoip_disallow').hideB();
+    $('#restr-'+$(this).val()).showB();
 })

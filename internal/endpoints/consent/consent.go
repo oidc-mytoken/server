@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
@@ -26,12 +27,15 @@ func handleConsent(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut) e
 	c := authInfo.Capabilities
 	sc := authInfo.SubtokenCapabilities
 	binding := map[string]interface{}{
-		"consent":      true,
-		"empty-navbar": true,
-		"restr-gui":    true,
-		"restrictions": pkg.WebRestrictions{Restrictions: authInfo.Restrictions},
-		"capabilities": pkg.WebCapabilities(c),
-		"iss":          authInfo.Issuer,
+		"consent":          true,
+		"empty-navbar":     true,
+		"restr-gui":        true,
+		"restrictions":     pkg.WebRestrictions{Restrictions: authInfo.Restrictions},
+		"capabilities":     pkg.WebCapabilities(c),
+		"iss":              authInfo.Issuer,
+		"supported_scopes": strings.Join(config.Get().ProviderByIssuer[authInfo.Issuer].Scopes, " "),
+		"token-name":       authInfo.Name,
+		"rotation":         authInfo.Rotation,
 	}
 	if c.Has(api.CapabilityCreateMT) {
 		if len(sc) == 0 {
@@ -39,7 +43,7 @@ func handleConsent(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut) e
 		}
 		binding["subtoken-capabilities"] = pkg.WebCapabilities(sc)
 	}
-	return ctx.Render("sites/consent", binding, "layouts/main")
+	return ctx.Render("sites/consent", binding, "layouts/main-no-container")
 }
 
 // HandleConsent displays a consent page
@@ -109,7 +113,7 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 			}.Send(ctx)
 		}
 	}
-	if err := authcodeinforepo.UpdateTokenInfoByState(nil, oState, req.Restrictions, req.Capabilities, req.SubtokenCapabilities); err != nil {
+	if err := authcodeinforepo.UpdateTokenInfoByState(nil, oState, req.Restrictions, req.Capabilities, req.SubtokenCapabilities, req.Rotation, req.TokenName); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]

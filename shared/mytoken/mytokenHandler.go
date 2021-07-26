@@ -259,7 +259,7 @@ func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytoke
 	if capsFromParent == nil {
 		capsFromParent = parent.Capabilities
 	}
-	c := api.Tighten(capsFromParent, req.Capabilities)
+	c := api.TightenCapabilities(capsFromParent, req.Capabilities)
 	if len(c) == 0 {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
@@ -268,7 +268,7 @@ func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytoke
 	}
 	var sc api.Capabilities = nil
 	if c.Has(api.CapabilityCreateMT) {
-		sc = api.Tighten(capsFromParent, req.SubtokenCapabilities)
+		sc = api.TightenCapabilities(capsFromParent, req.SubtokenCapabilities)
 	}
 	ste := mytokenrepo.NewMytokenEntry(
 		mytoken.NewMytoken(parent.OIDCSubject, parent.OIDCIssuer, r, c, sc, req.Rotation),

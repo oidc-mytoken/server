@@ -7,7 +7,7 @@
 
 
 
-<div class="card border-primary">
+<div class="card">
     <div class="card-header">
         <ul class="nav nav-tabs card-header-tabs">
             <li class="nav-item">
@@ -28,13 +28,15 @@
                 <i class="far fa-copy"></i>
             </button>
             <pre class="card-text" id="at-msg"></pre>
-            <a href="#" class="btn btn-primary" id="get-at">Get new Access Token</a>
+            <a href="#" class="btn btn-primary mx-auto d-block" id="get-at">Get new Access Token</a>
         </div>
         <div class="tab-pane" id="info" role="tabpanel" aria-labelledby="info-tab">
             {{> tokeninfo}}
         </div>
-        <div class="tab-pane" id="mt" role="tabpanel" aria-labelledby="mt-tab">
-            {{> mytoken}}
+        <div class="tab-pane bg-secondary break-out" id="mt" role="tabpanel" aria-labelledby="mt-tab">
+                <div class="bg-secondary ">
+                {{> mytoken}}
+                </div>
         </div>
     </div>
 </div>

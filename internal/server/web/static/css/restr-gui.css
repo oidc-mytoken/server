@@ -1,3 +1,12 @@
 .table-item{
     padding: 0.375rem 0.75rem;
 }
+.toggle{
+    width: 110px!important;
+}
+.btn-add-list-item{
+    padding: 0;
+}
+.btn-delete-list-item{
+    padding: 0;
+}

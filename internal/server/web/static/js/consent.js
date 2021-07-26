@@ -1,3 +1,15 @@
+$(function (){
+    $('.capability-check').click();
+    $('#tokenName').val(tokenName);
+    if (!rot_null) {
+        rotationAT.prop("checked", rot_onAT);
+        rotationOther.prop("checked", rot_onOther);
+        rotationLifetime.val(rot_lifetime);
+        rotationLifetime.prop("disabled", !rot_onAT && !rot_onOther);
+        rotationAutoRevoke.prop("checked", rot_autoRevoke);
+        rotationAutoRevoke.prop("disabled", !rot_onAT && !rot_onOther);
+    }
+})
 
 function approve() {
     let data = {
@@ -8,7 +20,9 @@ function approve() {
         }).get(),
         "subtoken_capabilities": $('.subtoken-capability-check:checked').map(function(_, el) {
             return $(el).val();
-        }).get()
+        }).get(),
+        "name": $('#tokenName').val(),
+        "rotation": getRotationFromForm()
     };
     data = JSON.stringify(data);
     console.log(data);

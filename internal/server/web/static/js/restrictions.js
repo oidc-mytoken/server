@@ -154,3 +154,4 @@ function updateRestrFromJSONEditor() {
     restrictions = r;
     updateRestrIcons();
 }
+

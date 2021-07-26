@@ -9,10 +9,6 @@ const successHeading = $('#mt-result-heading-success');
 const errorHeading = $('#mt-result-heading-error');
 const mtResultMsg = $('#mt-result-msg');
 const copyButton = $('#mt-result-copy');
-const rotationAT = $('#rotationAT');
-const rotationOther = $('#rotationOther');
-const rotationLifetime = $('#rotationLifetime');
-const rotationAutoRevoke = $('#rotationAutoRevoke');
 const authURL = $('#authorization-url');
 const capabilityCreateMytoken = $('#cp-create_mytoken');
 
@@ -20,10 +16,9 @@ const capabilityCreateMytoken = $('#cp-create_mytoken');
 $(function () {
     $('#cp-AT').prop('checked', true)
     $('#cp-tokeninfo_introspect').prop('checked', true)
-    if (capabilityCreateMytoken.prop("checked")) {
-        $('#subtokenCapabilities').showB();
+    if (!capabilityCreateMytoken.prop("checked")) {
+        $('#subtokenCapabilities').hideB();
     }
-
 })
 
 capabilityCreateMytoken.on("click", function() {
@@ -58,13 +53,9 @@ $('#get-mt').on('click', function(e){
             return $(el).val();
         }).get()
     };
-    if (rotationAT.prop("checked")||rotationOther.prop("checked")) {
-       data["rotation"] = {
-           "on_AT": rotationAT.prop("checked"),
-           "on_other": rotationOther.prop("checked"),
-           "lifetime": Number(rotationLifetime.val()),
-           "auto_revoke": rotationAutoRevoke.prop("checked")
-       };
+    let rot = getRotationFromForm();
+    if (rot) {
+       data["rotation"] = rot;
     }
     data = JSON.stringify(data);
     console.log(data);
@@ -100,7 +91,8 @@ function showPending() {
     copyButton.hideB();
     mtResultMsg.text('');
     mtResultColor.addClass('alert-warning');
-    mtResultColor.removeClass('alert-success', 'alert-danger');
+    mtResultColor.removeClass('alert-success');
+    mtResultColor.removeClass('alert-danger');
 }
 function showSuccess(msg) {
     pendingHeading.hideB();
@@ -110,7 +102,8 @@ function showSuccess(msg) {
     copyButton.showB();
     mtResultMsg.text(msg);
     mtResultColor.addClass('alert-success');
-    mtResultColor.removeClass('alert-warning', 'alert-danger');
+    mtResultColor.removeClass('alert-warning');
+    mtResultColor.removeClass('alert-danger');
 }
 function showError(msg) {
     pendingHeading.hideB();
@@ -120,7 +113,8 @@ function showError(msg) {
     copyButton.showB();
     mtResultMsg.text(msg);
     mtResultColor.addClass('alert-danger');
-    mtResultColor.removeClass('alert-success', 'alert-warning');
+    mtResultColor.removeClass('alert-success');
+    mtResultColor.removeClass('alert-warning');
 }
 
 var intervalID;
@@ -176,26 +170,3 @@ function polling(code, interval) {
     }, interval);
 }
 
-
-function checkRotation() {
-    let atEnabled = rotationAT.prop("checked");
-    let otherEnabled = rotationOther.prop("checked");
-    let rotationEnabled = atEnabled||otherEnabled;
-    rotationLifetime.prop("disabled", !rotationEnabled);
-    rotationAutoRevoke.prop("disabled", !rotationEnabled);
-    return [atEnabled, otherEnabled];
-}
-
-rotationAT.on("click", function() {
-    let en = checkRotation();
-    if (en[0]&&!en[1]) {
-        rotationAutoRevoke.prop("checked", true);
-    }
-});
-
-rotationOther.on("click", function() {
-    let en = checkRotation();
-    if (en[1]&&!en[0]) {
-        rotationAutoRevoke.prop("checked", true);
-    }
-});

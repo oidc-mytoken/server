@@ -1,78 +1,31 @@
+<div class="container-fluid p-5">
 <h3 class="text-center">Approval Required</h3>
 <p class="text-center lead">
-    Do you want to create a mytoken mytoken with the following properties?
+    Do you want to create a mytoken with the following properties?
 </p>
 
 <div class="row">
-    <div class="col-md">
-        <h4 class="text-center">Capabilities</h4>
-<table class="table table-hover table-bordered col-md table-secondary">
-    <tbody>
-    {{#capabilities}}
-        <tr>
-            <td class="text-center">
-                <div class="custom-control custom-switch">
-                <input type="checkbox" class="custom-control-input capability-check" value="{{Name}}" checked id="cp-{{Name}}">
-                <label class="custom-control-label" for="cp-{{Name}}"><span class="sr-only"></span></label>
-                </div>
-            </td>
-            <td>
-            <div class="d-flex justify-content-between">
-                <h5>{{Name}}</h5>
-                <i class="fas fa-exclamation-circle {{ColorClass}}" data-toggle="tooltip" data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
-            </div>
-            <div>{{Description}}</div>
+    <div class="col">
+        <div class="form-group alert border">
+            <h4>Token Name</h4>
+            <input type="text" class="form-control" id="tokenName" aria-describedby="tokenNameHelp" placeholder="Name">
+            <small id="tokenNameHelp" class="form-text text-muted">Give the Mytoken a name, so you can identify it better.</small>
+        </div>
 
-        {{#IsCreateMT}}
-                <div class="mt-2 row" style="margin-bottom: -1rem;">
-                    <div class="col-1"></div>
-                    <div class="col">
-                        <p style="font-size: 1.0rem;">The new mytoken can have the following capabilities:</p>
-                        <table class="table table-hover table-grey">
-                            <tbody>
-                            {{#subtoken-capabilities}}
-                            <tr>
-                                <td class="text-center">
-                                    <div class="custom-control custom-switch">
-                                        <input type="checkbox" class="custom-control-input subtoken-capability-check" value="{{Name}}" checked id="scp-{{Name}}">
-                                        <label class="custom-control-label" for="scp-{{Name}}"><span class="sr-only"></span></label>
-                                    </div>
-                                </td>
-                                <td>
-                                <div class="d-flex justify-content-between">
-                                    <h5>{{Name}}</h5>
-                                    <i class="fas fa-exclamation-circle {{ColorClass}}" data-toggle="tooltip" data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
-                                </div>
-                                <div>{{Description}}</div>
-                                </td>
-                            </tr>
-                            {{/subtoken-capabilities}}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            {{/IsCreateMT}}
-            </td>
-        </tr>
-    {{/capabilities}}
-    </tbody>
-</table>
+        <div class="alert border">
+            {{> rotation}}
+        </div>
 
     </div>
-    <div class="col-1"></div>
-        <div class="col-md">
-            <h4 class="pb-2 text-center">Restrictions</h4>
-            <div class="d-flex justify-content-between">
-                <i id="r-icon-time" class="fas fa-clock fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
-                <i id="r-icon-ip" class="fas fa-network-wired fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
-                <i id="r-icon-scope" class="fas fa-shield-alt fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
-                <i id="r-icon-aud" class="fas fa-server fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
-                <i id="r-icon-usages" class="fas fa-less-than-equal fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
-            </div>
-            <div class="d-flex justify-content-center">
-            <textarea class="mt-5 form-control" id="restrictionsArea" autocomplete="off" cols=50 rows=20 onkeyup="updateRestrFromJSONEditor()"></textarea>
-            </div>
-            <script>if (typeof restrictions==='undefined') {restrictions = {{&restrictions.Text}};}</script>
+    <div class="col">
+        <div class="alert border">
+            {{> capabilities}}
+        </div>
+    </div>
+    <div class="col">
+        <div class="alert border">
+            {{> restrictions}}
+        </div>
     </div>
 </div>
 
@@ -82,6 +35,18 @@
     <button class="btn btn-secondary" role="button" onclick="cancel()">Cancel</button>
 </div>
 
-<script>const issuer="{{iss}}";</script>
-
 {{> error-message }}
+</div>
+
+<script>
+    const issuer="{{iss}}";
+    const supported_scopes="{{supported_scopes}}".split(" ");
+    const tokenName = "{{token-name}}";
+    {{#rotation}}
+    const rot_onAT = {{rotation.OnAT}};
+    const rot_onOther = {{rotation.OnOther}};
+    const rot_lifetime = {{rotation.Lifetime}};
+    const rot_autoRevoke = {{rotation.AutoRevoke}};
+    {{/rotation}}
+    const rot_null = {{^rotation}}true{{/rotation}}{{#rotation}}false{{/rotation}};
+</script>

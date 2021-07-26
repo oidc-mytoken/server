@@ -34,3 +34,14 @@ function getErrorMessage(e) {
     let status = e.statusText
     return status + ": "+ err
 }
+
+function noLandscape(prefix) {
+    let landscaped = $('.'+prefix+'-landscape');
+    landscaped.removeClass('col');
+    landscaped.removeClass('row');
+    landscaped.removeClass('form-row');
+}
+
+function escapeSelector(s){
+    return s.replace( /(:|\.|\[|\]|\/)/g, "\\$1" );
+}
