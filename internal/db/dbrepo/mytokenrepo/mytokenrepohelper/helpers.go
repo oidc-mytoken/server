@@ -74,12 +74,34 @@ func recursiveRevokeMT(tx *sqlx.Tx, id mtid.MTID) error {
 	})
 }
 
-// CheckTokenRevoked checks if a Mytoken has been revoked.
+// CheckTokenRevoked checks if a Mytoken has been revoked. If it is a rotating mytoken and auto_revoke is enabled for this token, it might get triggered.
 func CheckTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64, rot *api.Rotation) (bool, error) {
-	if rot != nil && rot.Lifetime > 0 {
-		return checkRotatingTokenRevoked(tx, id, seqno, rot.Lifetime)
+	if rot == nil {
+		return checkTokenRevoked(tx, id, seqno)
 	}
-	return checkTokenRevoked(tx, id, seqno)
+	var revoked bool
+	var err error
+	if rot.Lifetime > 0 {
+		revoked, err = checkRotatingTokenRevoked(tx, id, seqno, rot.Lifetime)
+	} else {
+		revoked, err = checkTokenRevoked(tx, id, seqno)
+	}
+	if err != nil {
+		return revoked, err
+	}
+	if !revoked || !rot.AutoRevoke {
+		return revoked, nil
+	}
+	// At this point we know, that the token is not valid, we now check if it is not valid because of the seqno.
+	idFound, err := checkTokenID(tx, id)
+	if err != nil {
+		return true, err
+	}
+	if !idFound {
+		return true, nil
+	}
+	err = RevokeMT(tx, id, true)
+	return true, err
 }
 
 func checkTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64) (bool, error) {
@@ -93,6 +115,16 @@ func checkTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64) (bool, error) {
 		return false, nil
 	}
 	return true, nil
+}
+
+func checkTokenID(tx *sqlx.Tx, id mtid.MTID) (bool, error) {
+	var count int
+	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		return tx.Get(&count, `SELECT COUNT(1) FROM MTokens WHERE id=?`, id)
+	}); err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 func checkRotatingTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno, rotationLifetime uint64) (bool, error) {
