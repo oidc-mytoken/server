@@ -9,20 +9,19 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/go-sql-driver/mysql v1.6.0
-	github.com/goccy/go-json v0.6.1 // indirect
-	github.com/gofiber/fiber/v2 v2.12.0
-	github.com/gofiber/helmet/v2 v2.1.5
-	github.com/gofiber/template v1.6.11
+	github.com/gofiber/fiber/v2 v2.14.0
+	github.com/gofiber/helmet/v2 v2.1.7
+	github.com/gofiber/template v1.6.13
 	github.com/ip2location/ip2location-go v8.3.0+incompatible
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/jinzhu/copier v0.3.2
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/lestrrat-go/jwx v1.2.1
+	github.com/lestrrat-go/jwx v1.2.4
 	github.com/oidc-mytoken/api v0.0.0-20210726073851-e15724197672
 	github.com/oidc-mytoken/lib v0.2.1-0.20210611134913-0c477174fc1f
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/valyala/fasthttp v1.26.0
+	github.com/valyala/fasthttp v1.28.0
 	github.com/zachmann/cli/v2 v2.3.1-0.20210512144416-96dd678d93c7
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/mod v0.4.2
