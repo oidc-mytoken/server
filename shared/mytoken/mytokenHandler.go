@@ -104,6 +104,12 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
+	if req.Capabilities != nil && len(req.Capabilities) == 0 {
+		return &model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: api.Error{Error: api.ErrorStrInvalidRequest, ErrorDescription: "capabilities cannot be empty"},
+		}
+	}
 	req.Restrictions.ReplaceThisIp(ctx.IP())
 	req.Restrictions.ClearUnsupportedKeys()
 	log.Trace("Parsed mytoken request")

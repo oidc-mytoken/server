@@ -65,6 +65,12 @@ func handleOIDCFlow(ctx *fiber.Ctx) error {
 			Response: api.ErrorUnknownIssuer,
 		}.Send(ctx)
 	}
+	if req.Capabilities != nil && len(req.Capabilities) == 0 {
+		return serverModel.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: api.Error{Error: api.ErrorStrInvalidRequest, ErrorDescription: "capabilities cannot be empty"},
+		}.Send(ctx)
+	}
 	switch req.OIDCFlow {
 	case model.OIDCFlowAuthorizationCode:
 		return authcode.StartAuthCodeFlow(ctx, *req).Send(ctx)
