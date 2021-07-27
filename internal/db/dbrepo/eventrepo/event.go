@@ -19,7 +19,9 @@ type EventDBObject struct {
 // Store stores the EventDBObject in the database
 func (e *EventDBObject) Store(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`INSERT INTO MT_Events (MT_id, event_id, comment, ip, user_agent) VALUES(?, (SELECT id FROM Events WHERE event=?), ?, ?, ?)`,
+		_, err := tx.Exec(
+			`INSERT INTO MT_Events (MT_id, event_id, comment, ip, user_agent) 
+                      VALUES(?, (SELECT id FROM Events WHERE event=?), ?, ?, ?)`,
 			e.MTID, e.Event.String(), e.Event.Comment, e.ClientMetaData.IP, e.ClientMetaData.UserAgent)
 		return err
 	})

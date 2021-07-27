@@ -124,7 +124,9 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 	auds := ""                                   // default if no restrictions apply
 	var usedRestriction *restrictions.Restriction
 	if len(mt.Restrictions) > 0 {
-		possibleRestrictions := mt.Restrictions.GetValidForAT(nil, networkData.IP, mt.ID).WithScopes(utils.SplitIgnoreEmpty(req.Scope, " ")).WithAudiences(utils.SplitIgnoreEmpty(req.Audience, " "))
+		possibleRestrictions := mt.Restrictions.GetValidForAT(nil, networkData.IP, mt.ID).
+			WithScopes(utils.SplitIgnoreEmpty(req.Scope, " ")).
+			WithAudiences(utils.SplitIgnoreEmpty(req.Audience, " "))
 		if len(possibleRestrictions) == 0 {
 			return &serverModel.Response{
 				Status:   fiber.StatusForbidden,
@@ -193,7 +195,8 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 				return err
 			}
 		}
-		tokenUpdate, err = rotation.RotateMytokenAfterATForResponse(tx, req.Mytoken.JWT, mt, networkData, req.Mytoken.OriginalTokenType)
+		tokenUpdate, err = rotation.RotateMytokenAfterATForResponse(
+			tx, req.Mytoken.JWT, mt, networkData, req.Mytoken.OriginalTokenType)
 		return err
 	}); err != nil {
 		return serverModel.ErrorToInternalServerErrorResponse(err)

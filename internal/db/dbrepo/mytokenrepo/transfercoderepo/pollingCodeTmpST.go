@@ -29,7 +29,10 @@ func CheckTransferCode(tx *sqlx.Tx, pollingCode string) (TransferCodeStatus, err
 	pt := createProxyToken(pollingCode)
 	var p TransferCodeStatus
 	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if err := tx.Get(&p, `SELECT 1 as found, CURRENT_TIMESTAMP() > expires_at AS expired, response_type, consent_declined, max_token_len FROM TransferCodes WHERE id=?`, pt.ID()); err != nil {
+		if err := tx.Get(&p,
+			`SELECT 1 as found, CURRENT_TIMESTAMP() > expires_at AS expired,
+                      response_type, consent_declined, max_token_len FROM TransferCodes WHERE id=?`,
+			pt.ID()); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				err = nil  // polling code was not found, but this is fine
 				return err // p.Found is false

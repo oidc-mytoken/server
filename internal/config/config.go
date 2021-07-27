@@ -22,7 +22,8 @@ var defaultConfig = Config{
 	Server: serverConf{
 		Port: 8000,
 		TLS: tlsConf{
-			Enabled:      true, // The default is that TLS is enabled if cert and key are given, this is checked later; we must set true here, because otherwise we cannot distinct this from a false set by the user
+			Enabled: true, // The default is that TLS is enabled if cert and key are given, this is checked later;
+			// we must set true here, because otherwise we cannot distinct this from a false set by the user
 			RedirectHTTP: true,
 		},
 		Secure: true,
@@ -165,10 +166,11 @@ type DBConf struct {
 }
 
 type serverConf struct {
-	Port        int     `yaml:"port"`
-	TLS         tlsConf `yaml:"tls"`
-	Secure      bool    `yaml:"-"` // Secure indicates if the connection to the mytoken server is secure. This is independent of TLS, e.g. a Proxy can be used.
-	ProxyHeader string  `yaml:"proxy_header"`
+	Port   int     `yaml:"port"`
+	TLS    tlsConf `yaml:"tls"`
+	Secure bool    `yaml:"-"` // Secure indicates if the connection to the mytoken server is secure. This is
+	// independent of TLS, e.g. a Proxy can be used.
+	ProxyHeader string `yaml:"proxy_header"`
 }
 
 type tlsConf struct {
@@ -342,7 +344,8 @@ func load() {
 	}
 }
 
-// LoadForSetup reads the config file and populates the Config struct; it does not validate the Config, since this is not required for setup
+// LoadForSetup reads the config file and populates the Config struct; it does not validate the Config, since this is
+// not required for setup
 func LoadForSetup() {
 	load()
 }

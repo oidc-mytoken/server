@@ -14,6 +14,7 @@ type ExchangeTransferCodeRequest struct {
 // NewExchangeTransferCodeRequest returns a new ExchangeTransferCodeRequest
 func NewExchangeTransferCodeRequest() ExchangeTransferCodeRequest {
 	return ExchangeTransferCodeRequest{
-		GrantType: -1, // This value will remain if grant_type is not contained in the request. We have to set it to -1, because the default of 0 would be a valid GrantType
+		GrantType: -1, // This value will remain if grant_type is not contained in the request. We have to set it to -1,
+		// because the default of 0 would be a valid GrantType
 	}
 }

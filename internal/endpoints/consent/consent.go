@@ -121,7 +121,9 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 			}.Send(ctx)
 		}
 	}
-	if err = authcodeinforepo.UpdateTokenInfoByState(nil, oState, req.Restrictions, req.Capabilities, req.SubtokenCapabilities, req.Rotation, req.TokenName); err != nil {
+	if err = authcodeinforepo.UpdateTokenInfoByState(
+		nil, oState, req.Restrictions, req.Capabilities, req.SubtokenCapabilities, req.Rotation, req.TokenName,
+	); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]

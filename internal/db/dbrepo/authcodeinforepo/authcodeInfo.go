@@ -92,7 +92,12 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 				return err
 			}
 		}
-		_, err := tx.NamedExec(`INSERT INTO AuthInfo (state_h, iss, restrictions, capabilities, subtoken_capabilities, name, expires_in, polling_code, rotation, response_type, max_token_len) VALUES(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name, :expires_in, :polling_code, :rotation, :response_type, :max_token_len)`, store)
+		_, err := tx.NamedExec(
+			`INSERT INTO AuthInfo (state_h, iss, restrictions, capabilities, subtoken_capabilities, name, 
+                      expires_in, polling_code, rotation, response_type, max_token_len) 
+                      VALUES(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name,
+                             :expires_in, :polling_code, :rotation, :response_type, :max_token_len)`,
+			store)
 		return err
 	})
 }
@@ -101,7 +106,11 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
 	info := authFlowInfo{}
 	if err := db.Transact(func(tx *sqlx.Tx) error {
-		return tx.Get(&info, `SELECT state_h, iss, restrictions, capabilities, subtoken_capabilities, name, polling_code, rotation, response_type, max_token_len FROM AuthInfo WHERE state_h=? AND expires_at >= CURRENT_TIMESTAMP()`, state)
+		return tx.Get(&info,
+			`SELECT state_h, iss, restrictions, capabilities, subtoken_capabilities, 
+                      name, polling_code, rotation, response_type, max_token_len FROM AuthInfo 
+                      WHERE state_h=? AND expires_at >= CURRENT_TIMESTAMP()`,
+			state)
 	}); err != nil {
 		return nil, err
 	}
@@ -119,7 +128,10 @@ func DeleteAuthFlowInfoByState(tx *sqlx.Tx, state *state.State) error {
 // UpdateTokenInfoByState updates the stored AuthFlowInfo for the given state
 func UpdateTokenInfoByState(tx *sqlx.Tx, state *state.State, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation, tokenName string) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`UPDATE AuthInfo SET restrictions=?, capabilities=?, subtoken_capabilities=?, rotation=?, name=? WHERE state_h=?`, r, c, sc, rot, tokenName, state)
+		_, err := tx.Exec(
+			`UPDATE AuthInfo SET restrictions=?, capabilities=?, subtoken_capabilities=?, rotation=?, name=?
+                     WHERE state_h=?`,
+			r, c, sc, rot, tokenName, state)
 		return err
 	})
 }

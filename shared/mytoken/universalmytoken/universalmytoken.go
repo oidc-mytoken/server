@@ -9,7 +9,8 @@ import (
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
-// UniversalMytoken is a type used for Mytokens passed in http requests; these can be normal Mytoken or a short token. This type will always provide a jwt of the (long) Mytoken
+// UniversalMytoken is a type used for Mytokens passed in http requests; these can be normal Mytoken or a short token.
+// This type will always provide a jwt of the (long) Mytoken
 type UniversalMytoken struct {
 	JWT               string
 	OriginalToken     string

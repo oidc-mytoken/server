@@ -58,7 +58,8 @@ func RotateMytokenAfterOther(tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, c
 	return rotateMytoken(tx, oldJWT, old, clientMetaData)
 }
 
-// RotateMytokenAfterOtherForResponse rotates a mytoken after it was used for other usages than AT if rotation is enabled for that case and returns a pkg.MytokenResponse with the updated infos
+// RotateMytokenAfterOtherForResponse rotates a mytoken after it was used for other usages than AT if rotation is
+// enabled for that case and returns a pkg.MytokenResponse with the updated infos
 func RotateMytokenAfterOtherForResponse(tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData, responseType model.ResponseType) (*pkg.MytokenResponse, error) {
 	my, rotated, err := RotateMytokenAfterOther(tx, oldJWT, old, clientMetaData)
 	if err != nil {
@@ -71,7 +72,8 @@ func RotateMytokenAfterOtherForResponse(tx *sqlx.Tx, oldJWT string, old *mytoken
 	return &resp, err
 }
 
-// RotateMytokenAfterATForResponse rotates a mytoken after it was used for obtaining an AT if rotation is enabled for that case and returns a pkg.MytokenResponse with the updated infos
+// RotateMytokenAfterATForResponse rotates a mytoken after it was used for obtaining an AT if rotation is enabled for
+// that case and returns a pkg.MytokenResponse with the updated infos
 func RotateMytokenAfterATForResponse(tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData, responseType model.ResponseType) (*pkg.MytokenResponse, error) {
 	my, rotated, err := RotateMytokenAfterAT(tx, oldJWT, old, clientMetaData)
 	if err != nil {

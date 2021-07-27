@@ -19,14 +19,14 @@ import (
 func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 	log.Debug("Handle redirect")
 	oidcError := ctx.Query("error")
-	state := state.NewState(ctx.Query("state"))
+	oState := state.NewState(ctx.Query("state"))
 	if oidcError != "" {
-		if state.State() != "" {
+		if oState.State() != "" {
 			if err := db.Transact(func(tx *sqlx.Tx) error {
-				if err := transfercoderepo.DeleteTransferCodeByState(tx, state); err != nil {
+				if err := transfercoderepo.DeleteTransferCodeByState(tx, oState); err != nil {
 					return err
 				}
-				return authcodeinforepo.DeleteAuthFlowInfoByState(tx, state)
+				return authcodeinforepo.DeleteAuthFlowInfoByState(tx, oState)
 			}); err != nil {
 				log.WithError(err).Error()
 			}
@@ -39,6 +39,6 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 		return errorRes.Send(ctx)
 	}
 	code := ctx.Query("code")
-	res := authcode.CodeExchange(state, code, *ctxUtils.ClientMetaData(ctx))
+	res := authcode.CodeExchange(oState, code, *ctxUtils.ClientMetaData(ctx))
 	return res.Send(ctx)
 }

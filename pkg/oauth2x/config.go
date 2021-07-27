@@ -45,7 +45,8 @@ func (c *Config) Endpoints() (*Endpoints, error) {
 	return c.endpoints, err
 }
 
-// NewConfig creates a new Config for the passed issuer with the passed context.Context and performs the OAuth2/OpenID discovery
+// NewConfig creates a new Config for the passed issuer with the passed context.Context and performs the OAuth2/OpenID
+// discovery
 func NewConfig(ctx context.Context, issuer string) *Config {
 	c := &Config{
 		Issuer: issuer,

@@ -1,4 +1,6 @@
 
+const $editorMode = $('#restr-editor-mode');
+
 function updateRestrIcons() {
     let howManyClausesRestrictIP = 0;
     let howManyClausesRestrictScope = 0;
@@ -115,26 +117,6 @@ function newJSONEditor(textareaID) {
     });
 }
 
-updateRestrIcons();
-newJSONEditor('restrictionsArea');
-
-$(function (){
-    $('#restr-editor-mode').prop("checked", true);
-    $('#restr-editor-mode').on('change', function (){
-        let htmlEdit = $('#restr-easy-editor');
-        let jsonEdit = $('#restr-json-editor');
-        if ($(this).prop("checked")) { // easy editor
-            RestrToGUI();
-            jsonEdit.hideB();
-            htmlEdit.showB();
-        } else { // JSON editor
-            fillJSONEditor();
-            jsonEdit.showB();
-            htmlEdit.hideB();
-        }
-    });
-})
-
 function fillJSONEditor() {
     $('#restrictionsArea').val(JSON.stringify(restrictions, null, 4));
 }
@@ -155,3 +137,22 @@ function updateRestrFromJSONEditor() {
     updateRestrIcons();
 }
 
+updateRestrIcons();
+newJSONEditor('restrictionsArea');
+
+$(function (){
+    $editorMode.prop("checked", true);
+    $editorMode.on('change', function (){
+        let htmlEdit = $('#restr-easy-editor');
+        let jsonEdit = $('#restr-json-editor');
+        if ($(this).prop("checked")) { // easy editor
+            RestrToGUI();
+            jsonEdit.hideB();
+            htmlEdit.showB();
+        } else { // JSON editor
+            fillJSONEditor();
+            jsonEdit.showB();
+            htmlEdit.hideB();
+        }
+    });
+})

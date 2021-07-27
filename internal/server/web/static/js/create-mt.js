@@ -132,7 +132,7 @@ function showError(msg) {
     mtResultColor.removeClass('alert-warning');
 }
 
-var intervalID;
+let intervalID;
 
 function polling(code, interval) {
     interval = interval ? interval*1000 : 5000;
@@ -166,6 +166,7 @@ function polling(code, interval) {
             },
             error: function(errRes) {
                 let error = errRes.responseJSON['error'];
+                let message;
                 switch (error) {
                     case "authorization_pending":
                         message = "Authorization still pending.";

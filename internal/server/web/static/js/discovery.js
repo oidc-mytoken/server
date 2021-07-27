@@ -9,7 +9,7 @@ const configElements = [
 ]
 
 function discovery() {
-    if (storageGet('discovery') != undefined) {
+    if (storageGet('discovery') !== undefined) {
         return;
     }
     $.ajax({

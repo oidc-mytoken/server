@@ -78,7 +78,10 @@ func (t *AccessToken) Store(tx *sqlx.Tx) error {
 		return err
 	}
 	storeFnc := func(tx *sqlx.Tx) error {
-		res, err := tx.NamedExec(`INSERT INTO AccessTokens (token, ip_created, comment, MT_id) VALUES (:token, :ip_created, :comment, :MT_id)`, store)
+		res, err := tx.NamedExec(
+			`INSERT INTO AccessTokens (token, ip_created, comment, MT_id)
+                      VALUES (:token, :ip_created, :comment, :MT_id)`,
+			store)
 		if err != nil {
 			return err
 		}
@@ -91,7 +94,10 @@ func (t *AccessToken) Store(tx *sqlx.Tx) error {
 			if err != nil {
 				return err
 			}
-			if _, err = tx.NamedExec(`INSERT INTO AT_Attributes (AT_id, attribute_id, attribute) VALUES (:AT_id, :attribute_id, :attribute)`, attrs); err != nil {
+			if _, err = tx.NamedExec(
+				`INSERT INTO AT_Attributes (AT_id, attribute_id, attribute)
+                          VALUES (:AT_id, :attribute_id, :attribute)`,
+				attrs); err != nil {
 				return err
 			}
 		}

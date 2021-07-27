@@ -167,7 +167,8 @@ func GetTimeIn(seconds int64) time.Time {
 	return time.Now().Add(time.Duration(seconds) * time.Second)
 }
 
-// CompareNullableIntsWithNilAsInfinity compare two *int64 and handles nil as infinity. It returns 0 if both are equal, a positive value if a is greater than b, a negative value is a is less than b
+// CompareNullableIntsWithNilAsInfinity compare two *int64 and handles nil as infinity. It returns 0 if both are equal,
+// a positive value if a is greater than b, a negative value is a is less than b
 func CompareNullableIntsWithNilAsInfinity(a, b *int64) int {
 	if a == nil && b == nil {
 		return 0

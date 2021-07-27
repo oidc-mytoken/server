@@ -43,6 +43,7 @@ type Mytoken struct {
 	jwt                  string
 }
 
+// Rotate returns a Mytoken and returns the new *Mytoken
 func (mt Mytoken) Rotate() *Mytoken {
 	rotated := mt
 	rotated.SeqNo++
@@ -155,7 +156,9 @@ func (mt *Mytoken) Valid() error {
 	return nil
 }
 
-// ToMytokenResponse returns a MytokenResponse for this token. It requires that jwt is set or that the jwt is passed as argument; if not passed as argument toJWT must have been called earlier on this token to set jwt. This is always the case, if the token has been stored.
+// ToMytokenResponse returns a MytokenResponse for this token. It requires that jwt is set or that the jwt is passed as
+// argument; if not passed as argument toJWT must have been called earlier on this token to set jwt. This is always the
+// case, if the token has been stored.
 func (mt *Mytoken) toMytokenResponse(jwt string) response.MytokenResponse {
 	res := mt.toTokenResponse()
 	res.Mytoken = jwt

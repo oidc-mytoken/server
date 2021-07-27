@@ -57,7 +57,8 @@ func handleTokenInfoTree(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMe
 		if err = usedRestriction.UsedOther(tx, mt.ID); err != nil {
 			return err
 		}
-		tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(tx, req.Mytoken.JWT, mt, *clientMetadata, req.Mytoken.OriginalTokenType)
+		tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(
+			tx, req.Mytoken.JWT, mt, *clientMetadata, req.Mytoken.OriginalTokenType)
 		if err != nil {
 			return err
 		}

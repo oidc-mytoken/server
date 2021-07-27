@@ -150,10 +150,14 @@ type mytokenEntryStore struct {
 	Sub            string
 }
 
-// Store stores the mytokenEntryStore in the database; if this is the first token for this user, the user is also added to the db
+// Store stores the mytokenEntryStore in the database; if this is the first token for this user, the user is also added
+// to the db
 func (e *mytokenEntryStore) Store(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		stmt, err := tx.PrepareNamed(`INSERT INTO MTokens (id, seqno, parent_id, root_id, rt_id, name, ip_created, user_id) VALUES(:id, :seqno, :parent_id, :root_id, :rt_id, :name, :ip_created, (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
+		stmt, err := tx.PrepareNamed(
+			`INSERT INTO MTokens (id, seqno, parent_id, root_id, rt_id, name, ip_created, user_id)
+                      VALUES(:id, :seqno, :parent_id, :root_id, :rt_id, :name, :ip_created,
+                        (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
 		if err != nil {
 			return err
 		}

@@ -9,7 +9,8 @@ import (
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 
-// ReencryptEncryptionKey re-encrypts the encryption key for a mytoken. This is needed when the mytoken changes, e.g. on token rotation
+// ReencryptEncryptionKey re-encrypts the encryption key for a mytoken. This is needed when the mytoken changes, e.g. on
+// token rotation
 func ReencryptEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID, oldJWT, newJWT string) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		keyID, err := getEncryptionKeyID(tx, tokenID)
@@ -79,7 +80,9 @@ func (k EncryptionKey) Decrypt(jwt string) ([]byte, error) {
 // getEncryptionKeyID returns the id of the encryption key used for encrypting the RT linked to this mytoken
 func getEncryptionKeyID(tx *sqlx.Tx, myID mtid.MTID) (keyID uint64, err error) {
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&keyID, `SELECT key_id FROM RT_EncryptionKeys WHERE MT_id=? AND rt_id=(SELECT rt_id FROM MTokens WHERE id=?)`, myID, myID)
+		return tx.Get(&keyID,
+			`SELECT key_id FROM RT_EncryptionKeys WHERE MT_id=? AND rt_id=(SELECT rt_id FROM MTokens WHERE id=?)`,
+			myID, myID)
 	})
 	return
 }

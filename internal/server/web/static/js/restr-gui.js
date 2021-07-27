@@ -1,4 +1,3 @@
-
 const usagesAT = $('#usages_AT');
 const usagesOther = $('#usages_other');
 const restrClauses = $('#restr-clauses');

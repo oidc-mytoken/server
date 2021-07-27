@@ -1,8 +1,8 @@
 
 
 $.fn.serializeObject = function() {
-    var o = {};
-    var a = this.serializeArray();
+    let o = {};
+    let a = this.serializeArray();
     $.each(a, function() {
         if (o[this.name]) {
             if (!o[this.name].push) {
@@ -43,5 +43,5 @@ function noLandscape(prefix) {
 }
 
 function escapeSelector(s){
-    return s.replace( /(:|\.|\[|\]|\/)/g, "\\$1" );
+    return s.replace( /(:|\.|\[|]|\/)/g, "\\$1" );
 }

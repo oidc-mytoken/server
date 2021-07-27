@@ -59,7 +59,9 @@ func AllTokens(tx *sqlx.Tx, tokenID mtid.MTID) (trees []MytokenEntryTree, err er
 func allTokensForUser(tx *sqlx.Tx, uid int64) ([]MytokenEntryTree, error) {
 	var tokens []MytokenEntry
 	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Select(&tokens, `SELECT id, parent_id, root_id, name, created, ip_created AS ip FROM MTokens WHERE user_id=?`, uid)
+		return tx.Select(&tokens,
+			`SELECT id, parent_id, root_id, name, created, ip_created AS ip FROM MTokens WHERE user_id=?`,
+			uid)
 	}); err != nil {
 		return nil, err
 	}
@@ -69,7 +71,9 @@ func allTokensForUser(tx *sqlx.Tx, uid int64) ([]MytokenEntryTree, error) {
 func subtokens(tx *sqlx.Tx, rootID mtid.MTID) ([]MytokenEntry, error) {
 	var tokens []MytokenEntry
 	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Select(&tokens, `SELECT id, parent_id, root_id, name, created, ip_created AS ip FROM MTokens WHERE root_id=?`, rootID)
+		return tx.Select(&tokens,
+			`SELECT id, parent_id, root_id, name, created, ip_created AS ip FROM MTokens WHERE root_id=?`,
+			rootID)
 	})
 	return tokens, err
 }
@@ -80,7 +84,9 @@ func TokenSubTree(tx *sqlx.Tx, tokenID mtid.MTID) (MytokenEntryTree, error) {
 	var root MytokenEntry
 	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		var err error
-		if err = tx.Get(&root, `SELECT id, parent_id, root_id, name, created, ip_created AS ip FROM MTokens WHERE id=?`, tokenID); err != nil {
+		if err = tx.Get(&root,
+			`SELECT id, parent_id, root_id, name, created, ip_created AS ip FROM MTokens WHERE id=?`,
+			tokenID); err != nil {
 			return err
 		}
 		if root.Root() {

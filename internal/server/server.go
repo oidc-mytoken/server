@@ -108,7 +108,8 @@ func start(s *fiber.App) {
 		if config.Get().Server.TLS.RedirectHTTP {
 			httpServer := fiber.New(serverConfig)
 			httpServer.All("*", func(ctx *fiber.Ctx) error {
-				return ctx.Redirect(strings.Replace(ctx.Request().URI().String(), "http://", "https://", 1), fiber.StatusPermanentRedirect)
+				return ctx.Redirect(strings.Replace(ctx.Request().URI().String(), "http://", "https://", 1),
+					fiber.StatusPermanentRedirect)
 			})
 			go httpServer.Listen(":80")
 		}

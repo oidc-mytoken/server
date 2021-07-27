@@ -14,8 +14,9 @@
 
 `mytoken` is a central web service with the goal to easily obtain OpenID Connect access tokens across devices.
 
-A user can create a special string called `super token`. This super token then can be used to obtain OpenID Connect access tokens from any device.
-The power of a super token can be restricted by the user, so he can create exactly the token he needs for a certain use case.
+A user can create a special string called `mytoken`. This mytoken then can be used to obtain OpenID Connect access
+tokens from any device. The power of a mytoken can be restricted by the user, so they can create exactly the token they
+need for a certain use case.
 
 The mytoken command line client can be found at [https://github.com/oidc-mytoken/client](https://github.com/oidc-mytoken/client).
 

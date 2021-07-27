@@ -97,7 +97,8 @@ func Transact(fn func(*sqlx.Tx) error) error {
 	return db.Transact(fn)
 }
 
-// RunWithinTransaction runs the passed function using the passed transaction; if nil is passed as tx a new transaction is created. This is basically a wrapper function, that works with a possible nil-tx
+// RunWithinTransaction runs the passed function using the passed transaction; if nil is passed as tx a new transaction
+// is created. This is basically a wrapper function, that works with a possible nil-tx
 func RunWithinTransaction(tx *sqlx.Tx, fn func(*sqlx.Tx) error) error {
 	return db.RunWithinTransaction(tx, fn)
 }

@@ -68,8 +68,8 @@ func runUpdates(tx *sqlx.Tx, dbState versionrepo.DBVersionState, mytokenNodes []
 
 func runBeforeUpdates(tx *sqlx.Tx, cmds dbmigrate.VersionCommands, beforeDone map[string]bool) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		for version, cs := range cmds {
-			if err := updateCallback(tx, cs.Before, version, beforeDone, versionrepo.SetVersionBefore); err != nil {
+		for v, cs := range cmds {
+			if err := updateCallback(tx, cs.Before, v, beforeDone, versionrepo.SetVersionBefore); err != nil {
 				return err
 			}
 		}
@@ -77,8 +77,8 @@ func runBeforeUpdates(tx *sqlx.Tx, cmds dbmigrate.VersionCommands, beforeDone ma
 	})
 }
 func anyAfterUpdates(cmds dbmigrate.VersionCommands, afterDone map[string]bool) bool {
-	for version, cs := range cmds {
-		if len(cs.After) > 0 && !afterDone[version] {
+	for v, cs := range cmds {
+		if len(cs.After) > 0 && !afterDone[v] {
 			return true
 		}
 	}
@@ -86,8 +86,8 @@ func anyAfterUpdates(cmds dbmigrate.VersionCommands, afterDone map[string]bool) 
 }
 func runAfterUpdates(tx *sqlx.Tx, cmds dbmigrate.VersionCommands, afterDone map[string]bool) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		for version, cs := range cmds {
-			if err := updateCallback(tx, cs.After, version, afterDone, versionrepo.SetVersionAfter); err != nil {
+		for v, cs := range cmds {
+			if err := updateCallback(tx, cs.After, v, afterDone, versionrepo.SetVersionAfter); err != nil {
 				return err
 			}
 		}

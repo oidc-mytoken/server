@@ -106,7 +106,8 @@ func revokeTransferCode(tx *sqlx.Tx, token, issuer string) (errRes *model.Respon
 			if err != nil {
 				return err
 			}
-			if valid { // if !valid the jwt field could not decrypted correctly, so we can skip that, but still delete the TransferCode
+			if valid { // if !valid the jwt field could not decrypted correctly, so we can skip that, but still delete
+				// the TransferCode
 				errRes = revokeAnyToken(tx, jwt, issuer, true)
 				if errRes != nil {
 					return fmt.Errorf("placeholder")

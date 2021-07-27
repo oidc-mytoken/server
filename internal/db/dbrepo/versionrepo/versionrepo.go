@@ -16,7 +16,10 @@ import (
 // SetVersionBefore sets that the before db migration commands for the passed version were executed
 func SetVersionBefore(tx *sqlx.Tx, version string) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`INSERT INTO version (version, bef) VALUES(?, current_timestamp()) ON DUPLICATE KEY UPDATE bef=current_timestamp()`, version)
+		_, err := tx.Exec(
+			`INSERT INTO version (version, bef) VALUES(?, current_timestamp()) 
+                      ON DUPLICATE KEY UPDATE bef=current_timestamp()`,
+			version)
 		return err
 	})
 }
@@ -24,7 +27,10 @@ func SetVersionBefore(tx *sqlx.Tx, version string) error {
 // SetVersionAfter sets that the after db migration commands for the passed version were executed
 func SetVersionAfter(tx *sqlx.Tx, version string) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`INSERT INTO version (version, aft) VALUES(?, current_timestamp()) ON DUPLICATE KEY UPDATE aft=current_timestamp()`, version)
+		_, err := tx.Exec(
+			`INSERT INTO version (version, aft) VALUES(?, current_timestamp())
+                      ON DUPLICATE KEY UPDATE aft=current_timestamp()`,
+			version)
 		return err
 	})
 }
@@ -56,7 +62,8 @@ func (state DBVersionState) Sort() {
 	sort.Sort(state)
 }
 
-// dbHasAllVersions checks that the database is compatible with the current version; assumes that DBVersionState is ordered
+// dbHasAllVersions checks that the database is compatible with the current version; assumes that DBVersionState is
+// ordered
 func (state DBVersionState) dBHasAllVersions() (hasAllVersions bool, missingVersions []string) {
 	for v, cmds := range dbmigrate.Migrate {
 		if !state.dBHasVersion(v, cmds) {
@@ -105,6 +112,9 @@ func ConnectToVersion() {
 		log.WithError(err).Fatal()
 	}
 	if hasAllVersions, missingVersions := state.dBHasAllVersions(); !hasAllVersions {
-		log.WithField("server_version", version.VERSION()).WithField("missing_versions_in_db", missingVersions).Fatal("database schema not updated to this server version")
+		log.WithFields(log.Fields{
+			"server_version":         version.VERSION(),
+			"missing_versions_in_db": missingVersions,
+		}).Fatal("database schema not updated to this server version")
 	}
 }

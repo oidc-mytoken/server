@@ -120,8 +120,8 @@ func aesE(plain string, key []byte) ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 	nonce := []byte(utils.RandASCIIString(gcm.NonceSize()))
-	cipher := gcm.Seal(nil, nonce, []byte(plain), nil)
-	return cipher, nonce, nil
+	ciph := gcm.Seal(nil, nonce, []byte(plain), nil)
+	return ciph, nonce, nil
 }
 
 func aesD(cipher, nonce, key []byte) (string, error) {

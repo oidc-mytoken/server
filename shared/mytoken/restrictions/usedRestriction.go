@@ -7,7 +7,8 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
 
-// UsedRestriction is a type for a restriction that has been used and additionally has information how often is has been used
+// UsedRestriction is a type for a restriction that has been used and additionally has information how often is has been
+// used
 type UsedRestriction struct {
 	Restriction
 	UsagesATDone    *int64 `json:"usages_AT_done,omitempty"`

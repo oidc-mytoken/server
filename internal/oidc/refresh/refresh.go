@@ -20,12 +20,18 @@ func Refresh(provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scop
 	return RefreshFlowAndUpdate(provider, tokenID, mytoken, rt, scopes, audiences, nil)
 }
 
-// RefreshFlowAndUpdate uses an refresh token to obtain a new access token; if the refresh token changes, the UpdateChangedRT function is used to update the refresh token
+// RefreshFlowAndUpdate uses an refresh token to obtain a new access token; if the refresh token changes, the
+// UpdateChangedRT function is used to update the refresh token
 func RefreshFlowAndUpdate(provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes, audiences string, updateFnc UpdateChangedRT) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
 	req := oidcReqRes.NewRefreshRequest(rt, provider)
 	req.Scopes = scopes
 	req.Audiences = audiences
-	httpRes, err := httpClient.Do().R().SetBasicAuth(provider.ClientID, provider.ClientSecret).SetFormData(req.ToFormData()).SetResult(&oidcReqRes.OIDCTokenResponse{}).SetError(&oidcReqRes.OIDCErrorResponse{}).Post(provider.Endpoints.Token)
+	httpRes, err := httpClient.Do().R().
+		SetBasicAuth(provider.ClientID, provider.ClientSecret).
+		SetFormData(req.ToFormData()).
+		SetResult(&oidcReqRes.OIDCTokenResponse{}).
+		SetError(&oidcReqRes.OIDCErrorResponse{}).
+		Post(provider.Endpoints.Token)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -46,7 +52,8 @@ func RefreshFlowAndUpdate(provider *config.ProviderConf, tokenID mtid.MTID, myto
 	return res, nil, nil
 }
 
-// RefreshFlowAndUpdateDB uses an refresh token to obtain a new access token; if the refresh token changes, it is updated in the database
+// RefreshFlowAndUpdateDB uses an refresh token to obtain a new access token; if the refresh token changes, it is
+// updated in the database
 func RefreshFlowAndUpdateDB(provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes, audiences string) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
 	return RefreshFlowAndUpdate(provider, tokenID, mytoken, rt, scopes, audiences, updateChangedRTInDB)
 }

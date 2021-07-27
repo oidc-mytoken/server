@@ -218,7 +218,8 @@ func (r *Restriction) verifyOther(tx *sqlx.Tx, ip string, id mtid.MTID) bool {
 		r.verifyOtherUsageCounts(tx, id)
 }
 
-// UsedAT will update the usages_AT value for this restriction; it should be called after this restriction was used to obtain an access token;
+// UsedAT will update the usages_AT value for this restriction; it should be called after this restriction was used to
+// obtain an access token;
 func (r *Restriction) UsedAT(tx *sqlx.Tx, id mtid.MTID) error {
 	js, err := json.Marshal(r)
 	if err != nil {
@@ -227,7 +228,8 @@ func (r *Restriction) UsedAT(tx *sqlx.Tx, id mtid.MTID) error {
 	return mytokenrepohelper.IncreaseTokenUsageAT(tx, id, js)
 }
 
-// UsedOther will update the usages_other value for this restriction; it should be called after this restriction was used for other reasons than obtaining an access token;
+// UsedOther will update the usages_other value for this restriction; it should be called after this restriction was
+// used for other reasons than obtaining an access token;
 func (r *Restriction) UsedOther(tx *sqlx.Tx, id mtid.MTID) error {
 	js, err := json.Marshal(r)
 	if err != nil {
@@ -383,7 +385,8 @@ func (r *Restrictions) GetAudiences() (auds []string) {
 	return
 }
 
-// SetMaxScopes sets the maximum scopes, i.e. all scopes are stripped from the restrictions if not included in the passed argument. This is used to eliminate requested scopes that are dropped by the provider. Don't use it to eliminate scopes that are not enabled for the oidc client, because it also could be a custom scope.
+// SetMaxScopes sets the maximum scopes, i.e. all scopes are stripped from the restrictions if not included in the
+// passed argument. This is used to eliminate requested scopes that are dropped by the provider. Don't use it to eliminate scopes that are not enabled for the oidc client, because it also could be a custom scope.
 func (r *Restrictions) SetMaxScopes(mScopes []string) {
 	for _, rr := range *r {
 		rScopes := utils.SplitIgnoreEmpty(rr.Scope, " ")
@@ -392,14 +395,16 @@ func (r *Restrictions) SetMaxScopes(mScopes []string) {
 	}
 }
 
-// SetMaxAudiences sets the maximum audiences, i.e. all audiences are stripped from the restrictions if not included in the passed argument. This is used to eliminate requested audiences that are dropped by the provider.
+// SetMaxAudiences sets the maximum audiences, i.e. all audiences are stripped from the restrictions if not included in
+// the passed argument. This is used to eliminate requested audiences that are dropped by the provider.
 func (r *Restrictions) SetMaxAudiences(mAud []string) {
 	for _, rr := range *r {
 		rr.Audiences = utils.IntersectSlices(mAud, rr.Audiences)
 	}
 }
 
-// EnforceMaxLifetime enforces the maximum mytoken lifetime set by server admins. Returns true if the restrictions was changed.
+// EnforceMaxLifetime enforces the maximum mytoken lifetime set by server admins. Returns true if the restrictions was
+// changed.
 func (r *Restrictions) EnforceMaxLifetime(issuer string) (changed bool) {
 	maxLifetime := config.Get().ProviderByIssuer[issuer].MytokensMaxLifetime
 	if maxLifetime == 0 {
@@ -421,7 +426,8 @@ func (r *Restrictions) EnforceMaxLifetime(issuer string) (changed bool) {
 	return
 }
 
-// Tighten tightens/restricts a Restrictions with another set; if the wanted Restrictions are not tighter the original ones are returned
+// Tighten tightens/restricts a Restrictions with another set; if the wanted Restrictions are not tighter the original
+// ones are returned
 func Tighten(old, wanted Restrictions) (res Restrictions, ok bool) {
 	if len(old) == 0 {
 		ok = true
@@ -455,7 +461,8 @@ func Tighten(old, wanted Restrictions) (res Restrictions, ok bool) {
 	}
 	if len(res) == 0 { // if all from wanted are dropped, because they are not tighter than old, than use old
 		res = old
-		if len(wanted) == 0 { // the default for an empty restriction field is always using the parent's restrictions, so this is fine
+		if len(wanted) == 0 { // the default for an empty restriction field is always using the parent's restrictions,
+			// so this is fine
 			ok = true
 		}
 		return

@@ -14,7 +14,11 @@ func RefreshToken(provider *config.ProviderConf, rt string) *model.Response {
 		return nil
 	}
 	req := oidcReqRes.NewRTRevokeRequest(rt)
-	httpRes, err := httpClient.Do().R().SetBasicAuth(provider.ClientID, provider.ClientSecret).SetFormData(req.ToFormData()).SetError(&oidcReqRes.OIDCErrorResponse{}).Post(provider.Endpoints.Revocation)
+	httpRes, err := httpClient.Do().R().
+		SetBasicAuth(provider.ClientID, provider.ClientSecret).
+		SetFormData(req.ToFormData()).
+		SetError(&oidcReqRes.OIDCErrorResponse{}).
+		Post(provider.Endpoints.Revocation)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}

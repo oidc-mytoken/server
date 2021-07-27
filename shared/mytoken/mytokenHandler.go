@@ -189,7 +189,8 @@ func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFrom
 				return
 			}
 		}
-		tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(tx, req.Mytoken.JWT, parent, *networkData, req.Mytoken.OriginalTokenType)
+		tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(
+			tx, req.Mytoken.JWT, parent, *networkData, req.Mytoken.OriginalTokenType)
 		if err != nil {
 			return
 		}

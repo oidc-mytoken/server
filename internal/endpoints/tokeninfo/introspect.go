@@ -25,10 +25,10 @@ func handleTokenInfoIntrospect(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, cl
 	var usedToken mytoken.UsedMytoken
 	if err := db.RunWithinTransaction(nil, func(tx *sqlx.Tx) error {
 		tmp, err := mt.ToUsedMytoken(tx)
-		usedToken = *tmp
 		if err != nil {
 			return err
 		}
+		usedToken = *tmp
 		return eventService.LogEvent(tx, eventService.MTEvent{
 			Event: event.FromNumber(event.MTEventTokenInfoIntrospect, ""),
 			MTID:  mt.ID,

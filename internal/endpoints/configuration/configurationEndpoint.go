@@ -73,7 +73,8 @@ func basicConfiguration() *pkg.MytokenConfiguration {
 
 func addTokenRevocation(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.TokenRevocation.Enabled {
-		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(config.Get().IssuerURL, routes.GetCurrentAPIPaths().RevocationEndpoint)
+		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(config.Get().IssuerURL,
+			routes.GetCurrentAPIPaths().RevocationEndpoint)
 	}
 }
 func addShortTokens(mytokenConfig *pkg.MytokenConfiguration) {
@@ -83,7 +84,8 @@ func addShortTokens(mytokenConfig *pkg.MytokenConfiguration) {
 }
 func addTransferCodes(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.TransferCodes.Enabled {
-		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(config.Get().IssuerURL, routes.GetCurrentAPIPaths().TokenTransferEndpoint)
+		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(config.Get().IssuerURL,
+			routes.GetCurrentAPIPaths().TokenTransferEndpoint)
 		pkgModel.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 		pkgModel.ResponseTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
 	}

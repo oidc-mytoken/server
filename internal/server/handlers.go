@@ -27,9 +27,13 @@ func handleIndex(ctx *fiber.Ctx) error {
 
 func handleHome(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
-		loggedIn:                true,
-		restrictionsGUI:         true,
-		"restrictions":          consent.WebRestrictions{Restrictions: restrictions.Restrictions{{ExpiresAt: unixtime.InSeconds(3600 * 24 * 7)}}},
+		loggedIn:        true,
+		restrictionsGUI: true,
+		"restrictions": consent.WebRestrictions{
+			Restrictions: restrictions.Restrictions{
+				{ExpiresAt: unixtime.InSeconds(3600 * 24 * 7)},
+			},
+		},
 		"capabilities":          consent.WebCapabilities(api.AllCapabilities),
 		"subtoken-capabilities": consent.WebCapabilities(api.AllCapabilities),
 	}

@@ -46,19 +46,18 @@ func GetMTRootID(id mtid.MTID) (mtid.MTID, bool, error) {
 func recursiveRevokeMT(tx *sqlx.Tx, id mtid.MTID) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		var effectedMTIDs []mtid.MTID
-		if err := tx.Select(&effectedMTIDs, `
-			WITH Recursive childs
-			AS
-			(
-				SELECT id, parent_id FROM MTokens WHERE id=?
-				UNION ALL
-				SELECT mt.id, mt.parent_id FROM MTokens mt INNER JOIN childs c WHERE mt.parent_id=c.id
-			)
-			SELECT id
-			FROM   childs`, id); err != nil {
+		if err := tx.Select(&effectedMTIDs,
+			`WITH Recursive childs AS (
+                  SELECT id, parent_id FROM MTokens WHERE id=?
+                  UNION ALL
+                  SELECT mt.id, mt.parent_id FROM MTokens mt INNER JOIN childs c WHERE mt.parent_id=c.id
+                ) SELECT id FROM   childs`,
+			id); err != nil {
 			return err
 		}
-		query, args, err := sqlx.In(`DELETE FROM EncryptionKeys WHERE id=ANY(SELECT key_id FROM RT_EncryptionKeys WHERE MT_id IN (?))`, effectedMTIDs)
+		query, args, err := sqlx.In(
+			`DELETE FROM EncryptionKeys WHERE id=ANY(SELECT key_id FROM RT_EncryptionKeys WHERE MT_id IN (?))`,
+			effectedMTIDs)
 		if err != nil {
 			return err
 		}
@@ -74,7 +73,8 @@ func recursiveRevokeMT(tx *sqlx.Tx, id mtid.MTID) error {
 	})
 }
 
-// CheckTokenRevoked checks if a Mytoken has been revoked. If it is a rotating mytoken and auto_revoke is enabled for this token, it might get triggered.
+// CheckTokenRevoked checks if a Mytoken has been revoked. If it is a rotating mytoken and auto_revoke is enabled for
+// this token, it might get triggered.
 func CheckTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64, rot *api.Rotation) (bool, error) {
 	if rot == nil {
 		return checkTokenRevoked(tx, id, seqno)
@@ -130,7 +130,10 @@ func checkTokenID(tx *sqlx.Tx, id mtid.MTID) (bool, error) {
 func checkRotatingTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno, rotationLifetime uint64) (bool, error) {
 	var count int
 	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&count, `SELECT COUNT(1) FROM MTokens WHERE id=? AND seqno=? AND TIMESTAMPADD(SECOND, ?, last_rotated) >= CURRENT_TIMESTAMP()`, id, seqno, rotationLifetime)
+		return tx.Get(&count,
+			`SELECT COUNT(1) FROM MTokens WHERE id=? AND seqno=?
+                               AND TIMESTAMPADD(SECOND, ?, last_rotated) >= CURRENT_TIMESTAMP()`,
+			id, seqno, rotationLifetime)
 	}); err != nil {
 		return true, err
 	}
@@ -140,7 +143,8 @@ func checkRotatingTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno, rotationLifetim
 	return true, nil
 }
 
-// UpdateSeqNo updates the sequence number of a mytoken, i.e. it rotates the mytoken. Don't forget to update the encryption key
+// UpdateSeqNo updates the sequence number of a mytoken, i.e. it rotates the mytoken. Don't forget to update the
+// encryption key
 func UpdateSeqNo(tx *sqlx.Tx, id mtid.MTID, seqno uint64) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`UPDATE MTokens SET seqno=?, last_rotated=current_timestamp() WHERE id=?`, seqno, id)
@@ -172,7 +176,9 @@ func RevokeMT(tx *sqlx.Tx, id mtid.MTID, recursive bool) error {
 func GetTokenUsagesAT(tx *sqlx.Tx, myID mtid.MTID, restrictionHash string) (usages *int64, err error) {
 	var usageCount int64
 	if err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&usageCount, `SELECT usages_AT FROM TokenUsages WHERE restriction_hash=? AND MT_id=?`, restrictionHash, myID)
+		return tx.Get(&usageCount,
+			`SELECT usages_AT FROM TokenUsages WHERE restriction_hash=? AND MT_id=?`,
+			restrictionHash, myID)
 	}); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// No usage entry -> was not used before -> usages=nil
@@ -185,11 +191,14 @@ func GetTokenUsagesAT(tx *sqlx.Tx, myID mtid.MTID, restrictionHash string) (usag
 	return
 }
 
-// GetTokenUsagesOther returns how often a Mytoken was used with a specific restriction to do something else than obtaining an access token
+// GetTokenUsagesOther returns how often a Mytoken was used with a specific restriction to do something else than
+// obtaining an access token
 func GetTokenUsagesOther(tx *sqlx.Tx, myID mtid.MTID, restrictionHash string) (usages *int64, err error) {
 	var usageCount int64
 	if err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&usageCount, `SELECT usages_other FROM TokenUsages WHERE restriction_hash=? AND MT_id=?`, restrictionHash, myID)
+		return tx.Get(&usageCount,
+			`SELECT usages_other FROM TokenUsages WHERE restriction_hash=? AND MT_id=?`,
+			restrictionHash, myID)
 	}); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// No usage entry -> was not used before -> usages=nil
@@ -205,7 +214,10 @@ func GetTokenUsagesOther(tx *sqlx.Tx, myID mtid.MTID, restrictionHash string) (u
 // IncreaseTokenUsageAT increases the usage count for obtaining ATs with a Mytoken and the given restriction
 func IncreaseTokenUsageAT(tx *sqlx.Tx, myID mtid.MTID, jsonRestriction []byte) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`INSERT INTO TokenUsages (MT_id, restriction, restriction_hash, usages_AT) VALUES (?, ?, ?, 1) ON DUPLICATE KEY UPDATE usages_AT = usages_AT + 1`, myID, jsonRestriction, hashUtils.SHA512Str(jsonRestriction))
+		_, err := tx.Exec(
+			`INSERT INTO TokenUsages (MT_id, restriction, restriction_hash, usages_AT) VALUES (?, ?, ?, 1)
+                      ON DUPLICATE KEY UPDATE usages_AT = usages_AT + 1`,
+			myID, jsonRestriction, hashUtils.SHA512Str(jsonRestriction))
 		return err
 	})
 }
@@ -213,7 +225,10 @@ func IncreaseTokenUsageAT(tx *sqlx.Tx, myID mtid.MTID, jsonRestriction []byte) e
 // IncreaseTokenUsageOther increases the usage count for other usages with a Mytoken and the given restriction
 func IncreaseTokenUsageOther(tx *sqlx.Tx, myID mtid.MTID, jsonRestriction []byte) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`INSERT INTO TokenUsages (MT_id, restriction, restriction_hash, usages_other) VALUES (?, ?, ?, 1) ON DUPLICATE KEY UPDATE usages_other = usages_other + 1`, myID, jsonRestriction, hashUtils.SHA512Str(jsonRestriction))
+		_, err := tx.Exec(
+			`INSERT INTO TokenUsages (MT_id, restriction, restriction_hash, usages_other) VALUES (?, ?, ?, 1) 
+                      ON DUPLICATE KEY UPDATE usages_other = usages_other + 1`,
+			myID, jsonRestriction, hashUtils.SHA512Str(jsonRestriction))
 		return err
 	})
 }
