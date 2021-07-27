@@ -193,7 +193,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 				return err
 			}
 		}
-		tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(tx, req.Mytoken.JWT, mt, networkData, req.Mytoken.OriginalTokenType)
+		tokenUpdate, err = rotation.RotateMytokenAfterATForResponse(tx, req.Mytoken.JWT, mt, networkData, req.Mytoken.OriginalTokenType)
 		return err
 	}); err != nil {
 		return serverModel.ErrorToInternalServerErrorResponse(err)
