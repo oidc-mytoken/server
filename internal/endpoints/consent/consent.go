@@ -46,24 +46,30 @@ func handleConsent(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut) e
 	return ctx.Render("sites/consent", binding, "layouts/main-no-container")
 }
 
-// HandleConsent displays a consent page
-func HandleConsent(ctx *fiber.Ctx) error {
-	consentCode := state.ParseConsentCode(ctx.Params("consent_code"))
+func getAuthInfoFromConsentCodeStr(code string) (*authcodeinforepo.AuthFlowInfoOut, *state.State, error) {
+	consentCode := state.ConsentCodeFromStr(code)
 	oState := state.NewState(consentCode.GetState())
 	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(oState)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return fiber.ErrNotFound
+			err = fiber.ErrNotFound
 		}
+	}
+	return authInfo, oState, err
+}
+
+// HandleConsent displays a consent page
+func HandleConsent(ctx *fiber.Ctx) error {
+	authInfo, _, err := getAuthInfoFromConsentCodeStr(ctx.Params("consent_code"))
+	if err != nil {
 		return err
 	}
 	return handleConsent(ctx, authInfo)
 }
 
-func handleConsentDecline(ctx *fiber.Ctx, oState *state.State) error {
-	info := oState.Parse()
+func handleConsentDecline(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut, oState *state.State) error {
 	url := "/"
-	if info.Native {
+	if authInfo.PollingCode {
 		url = "/native/abort"
 	}
 	if err := authcodeinforepo.DeleteAuthFlowInfoByState(nil, oState); err != nil {
@@ -73,7 +79,7 @@ func handleConsentDecline(ctx *fiber.Ctx, oState *state.State) error {
 		res.Response = m
 		return res.Send(ctx)
 	}
-	if info.Native {
+	if authInfo.PollingCode {
 		if err := transfercoderepo.DeclineConsentByState(nil, oState); err != nil {
 			log.WithError(err).Error()
 		}
@@ -88,13 +94,15 @@ func handleConsentDecline(ctx *fiber.Ctx, oState *state.State) error {
 
 // HandleConsentPost handles consent confirmation requests
 func HandleConsentPost(ctx *fiber.Ctx) error {
-	consentCode := state.ParseConsentCode(ctx.Params("consent_code"))
-	oState := state.NewState(consentCode.GetState())
+	authInfo, oState, err := getAuthInfoFromConsentCodeStr(ctx.Params("consent_code"))
+	if err != nil {
+		return err
+	}
 	if len(ctx.Body()) == 0 {
-		return handleConsentDecline(ctx, oState)
+		return handleConsentDecline(ctx, authInfo, oState)
 	}
 	req := pkg.ConsentPostRequest{}
-	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
+	if err = json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	for _, c := range req.Capabilities {
@@ -113,7 +121,7 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 			}.Send(ctx)
 		}
 	}
-	if err := authcodeinforepo.UpdateTokenInfoByState(nil, oState, req.Restrictions, req.Capabilities, req.SubtokenCapabilities, req.Rotation, req.TokenName); err != nil {
+	if err = authcodeinforepo.UpdateTokenInfoByState(nil, oState, req.Restrictions, req.Capabilities, req.SubtokenCapabilities, req.Rotation, req.TokenName); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]

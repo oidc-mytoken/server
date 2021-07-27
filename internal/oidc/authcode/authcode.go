@@ -94,7 +94,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 		}
 	}
 
-	oState, consentCode := state.CreateState(state.Info{Native: req.Native()})
+	oState, consentCode := state.CreateState()
 	authFlowInfoO := authcodeinforepo.AuthFlowInfoOut{
 		State:                oState,
 		Issuer:               provider.Issuer,
@@ -103,6 +103,8 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 		SubtokenCapabilities: req.SubtokenCapabilities,
 		Name:                 req.Name,
 		Rotation:             req.Rotation,
+		ResponseType:         req.ResponseType,
+		MaxTokenLen:          req.MaxTokenLen,
 	}
 	authFlowInfo := authcodeinforepo.AuthFlowInfo{
 		AuthFlowInfoOut: authFlowInfoO,
@@ -112,7 +114,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 	}
 	if req.Native() && config.Get().Features.Polling.Enabled {
 		poll := authFlowInfo.State.PollingCode()
-		authFlowInfo.PollingCode = transfercoderepo.CreatePollingCode(poll, req.ResponseType)
+		authFlowInfo.PollingCode = transfercoderepo.CreatePollingCode(poll, req.ResponseType, req.MaxTokenLen)
 		res.PollingInfo = api.PollingInfo{
 			PollingCode:          poll,
 			PollingCodeExpiresIn: config.Get().Features.Polling.PollingCodeExpiresAfter,
@@ -227,13 +229,12 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 			Response: "/native",
 		}
 	}
-	stateInf := oState.Parse()
-	res, err := ste.Token.ToTokenResponse(stateInf.ResponseType, networkData, "")
+	res, err := ste.Token.ToTokenResponse(authInfo.ResponseType, authInfo.MaxTokenLen, networkData, "")
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	var cookie fiber.Cookie
-	if stateInf.ResponseType == pkgModel.ResponseTypeTransferCode {
+	if authInfo.ResponseType == pkgModel.ResponseTypeTransferCode {
 		cookie = cookies.TransferCodeCookie(res.TransferCode, int(res.ExpiresIn))
 	} else {
 		cookie = cookies.MytokenCookie(res.Mytoken)

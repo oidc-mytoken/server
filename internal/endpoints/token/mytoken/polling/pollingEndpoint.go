@@ -67,7 +67,11 @@ func handlePollingCode(req response.PollingCodeRequest, networkData api.ClientMe
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	log.Tracef("The JWT was parsed as '%+v'", mt)
-	res, err := mt.ToTokenResponse(pollingCodeStatus.ResponseType, networkData, token)
+	maxTokenLen := 0
+	if pollingCodeStatus.MaxTokenLen != nil {
+		maxTokenLen = *pollingCodeStatus.MaxTokenLen
+	}
+	res, err := mt.ToTokenResponse(pollingCodeStatus.ResponseType, maxTokenLen, networkData, token)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}

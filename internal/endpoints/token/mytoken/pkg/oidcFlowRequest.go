@@ -24,7 +24,9 @@ type OIDCFlowRequest struct {
 func NewOIDCFlowRequest() *OIDCFlowRequest {
 	return &OIDCFlowRequest{
 		OIDCFlowRequest: api.OIDCFlowRequest{
-			Capabilities: api.Capabilities{api.CapabilityAT},
+			GeneralMytokenRequest: api.GeneralMytokenRequest{
+				Capabilities: api.Capabilities{api.CapabilityAT},
+			},
 		},
 		ResponseType: model.ResponseTypeToken,
 		redirectType: redirectTypeWeb,

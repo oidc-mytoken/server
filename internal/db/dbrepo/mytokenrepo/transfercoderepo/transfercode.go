@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/server/shared/utils"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -20,8 +21,9 @@ type TransferCode struct {
 }
 
 type transferCodeAttributes struct {
-	NewMT db.BitBool
-	model.ResponseType
+	NewMT        db.BitBool
+	ResponseType model.ResponseType
+	MaxTokenLen  *int
 }
 
 // NewTransferCode creates a new TransferCode for the passed jwt
@@ -46,13 +48,14 @@ func ParseTransferCode(token string) *TransferCode {
 }
 
 // CreatePollingCode creates a polling code
-func CreatePollingCode(pollingCode string, responseType model.ResponseType) *TransferCode {
+func CreatePollingCode(pollingCode string, responseType model.ResponseType, maxTokenLen int) *TransferCode {
 	pt := createProxyToken(pollingCode)
 	return &TransferCode{
 		proxyToken: *pt,
 		Attributes: transferCodeAttributes{
 			NewMT:        true,
 			ResponseType: responseType,
+			MaxTokenLen:  utils.NewInt(maxTokenLen),
 		},
 	}
 }
@@ -64,7 +67,7 @@ func (tc TransferCode) Store(tx *sqlx.Tx) error {
 		if err := tc.proxyToken.Store(tx); err != nil {
 			return err
 		}
-		_, err := tx.Exec(`INSERT INTO TransferCodesAttributes (id, expires_in,  revoke_MT, response_type) VALUES(?,?,?,?)`, tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewMT, tc.Attributes.ResponseType)
+		_, err := tx.Exec(`INSERT INTO TransferCodesAttributes (id, expires_in,  revoke_MT, response_type, max_token_len) VALUES(?,?,?,?,?)`, tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewMT, tc.Attributes.ResponseType, tc.Attributes.MaxTokenLen)
 		return err
 	})
 }

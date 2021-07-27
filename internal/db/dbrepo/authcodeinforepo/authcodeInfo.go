@@ -2,6 +2,8 @@ package authcodeinforepo
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/server/shared/model"
+	"github.com/oidc-mytoken/server/shared/utils"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
@@ -28,6 +30,8 @@ type AuthFlowInfoOut struct {
 	Name                 string
 	PollingCode          bool
 	Rotation             *api.Rotation
+	ResponseType         model.ResponseType
+	MaxTokenLen          int
 }
 
 type authFlowInfo struct {
@@ -40,6 +44,8 @@ type authFlowInfo struct {
 	PollingCode          db.BitBool `db:"polling_code"`
 	ExpiresIn            int64      `db:"expires_in"`
 	Rotation             *api.Rotation
+	ResponseType         model.ResponseType `db:"response_type"`
+	MaxTokenLen          *int               `db:"max_token_len"`
 }
 
 func (i *AuthFlowInfo) toAuthFlowInfo() *authFlowInfo {
@@ -53,11 +59,13 @@ func (i *AuthFlowInfo) toAuthFlowInfo() *authFlowInfo {
 		ExpiresIn:            config.Get().Features.Polling.PollingCodeExpiresAfter,
 		PollingCode:          i.PollingCode != nil,
 		Rotation:             i.Rotation,
+		ResponseType:         i.ResponseType,
+		MaxTokenLen:          utils.NewInt(i.MaxTokenLen),
 	}
 }
 
 func (i *authFlowInfo) toAuthFlowInfo() *AuthFlowInfoOut {
-	return &AuthFlowInfoOut{
+	o := &AuthFlowInfoOut{
 		State:                i.State,
 		Issuer:               i.Issuer,
 		Restrictions:         i.Restrictions,
@@ -66,7 +74,12 @@ func (i *authFlowInfo) toAuthFlowInfo() *AuthFlowInfoOut {
 		Name:                 i.Name.String,
 		PollingCode:          bool(i.PollingCode),
 		Rotation:             i.Rotation,
+		ResponseType:         i.ResponseType,
 	}
+	if i.MaxTokenLen != nil {
+		o.MaxTokenLen = *i.MaxTokenLen
+	}
+	return o
 }
 
 // Store stores the AuthFlowInfoIn in the database as well as the linked polling code if it exists
@@ -79,7 +92,7 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 				return err
 			}
 		}
-		_, err := tx.NamedExec(`INSERT INTO AuthInfo (state_h, iss, restrictions, capabilities, subtoken_capabilities, name, expires_in, polling_code, rotation) VALUES(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name, :expires_in, :polling_code, :rotation)`, store)
+		_, err := tx.NamedExec(`INSERT INTO AuthInfo (state_h, iss, restrictions, capabilities, subtoken_capabilities, name, expires_in, polling_code, rotation, response_type, max_token_len) VALUES(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name, :expires_in, :polling_code, :rotation, :response_type, :max_token_len)`, store)
 		return err
 	})
 }
@@ -88,7 +101,7 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
 	info := authFlowInfo{}
 	if err := db.Transact(func(tx *sqlx.Tx) error {
-		return tx.Get(&info, `SELECT state_h, iss, restrictions, capabilities, subtoken_capabilities, name, polling_code, rotation FROM AuthInfo WHERE state_h=? AND expires_at >= CURRENT_TIMESTAMP()`, state)
+		return tx.Get(&info, `SELECT state_h, iss, restrictions, capabilities, subtoken_capabilities, name, polling_code, rotation, response_type, max_token_len FROM AuthInfo WHERE state_h=? AND expires_at >= CURRENT_TIMESTAMP()`, state)
 	}); err != nil {
 		return nil, err
 	}

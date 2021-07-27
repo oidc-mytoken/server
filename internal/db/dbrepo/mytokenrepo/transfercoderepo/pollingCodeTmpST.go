@@ -21,6 +21,7 @@ type TransferCodeStatus struct {
 	Expired         bool               `db:"expired"`
 	ResponseType    model.ResponseType `db:"response_type"`
 	ConsentDeclined db.BitBool         `db:"consent_declined"`
+	MaxTokenLen     *int               `db:"max_token_len"`
 }
 
 // CheckTransferCode checks the passed polling code in the database
@@ -28,7 +29,7 @@ func CheckTransferCode(tx *sqlx.Tx, pollingCode string) (TransferCodeStatus, err
 	pt := createProxyToken(pollingCode)
 	var p TransferCodeStatus
 	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if err := tx.Get(&p, `SELECT 1 as found, CURRENT_TIMESTAMP() > expires_at AS expired, response_type, consent_declined FROM TransferCodes WHERE id=?`, pt.ID()); err != nil {
+		if err := tx.Get(&p, `SELECT 1 as found, CURRENT_TIMESTAMP() > expires_at AS expired, response_type, consent_declined, max_token_len FROM TransferCodes WHERE id=?`, pt.ID()); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				err = nil  // polling code was not found, but this is fine
 				return err // p.Found is false

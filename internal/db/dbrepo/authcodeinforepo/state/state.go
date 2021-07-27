@@ -11,11 +11,20 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
 )
 
+const stateLen = 16
+
 // State is a type for the oidc state
 type State struct {
 	state       string
 	hash        string
 	pollingCode string
+}
+
+// CreateState creates a new State and ConsentCode from the passed Info
+func CreateState() (*State, *ConsentCode) {
+	consentCode := NewConsentCode()
+	s := consentCode.GetState()
+	return NewState(s), consentCode
 }
 
 // NewState creates a new State from a state string

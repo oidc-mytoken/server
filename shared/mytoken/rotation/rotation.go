@@ -67,7 +67,7 @@ func RotateMytokenAfterOtherForResponse(tx *sqlx.Tx, oldJWT string, old *mytoken
 	if !rotated {
 		return nil, nil
 	}
-	resp, err := my.ToTokenResponse(responseType, clientMetaData, "")
+	resp, err := my.ToTokenResponse(responseType, 0, clientMetaData, "")
 	return &resp, err
 }
 
@@ -80,6 +80,6 @@ func RotateMytokenAfterATForResponse(tx *sqlx.Tx, oldJWT string, old *mytoken.My
 	if !rotated {
 		return nil, nil
 	}
-	resp, err := my.ToTokenResponse(responseType, clientMetaData, "")
+	resp, err := my.ToTokenResponse(responseType, 0, clientMetaData, "")
 	return &resp, err
 }

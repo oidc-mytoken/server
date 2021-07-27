@@ -174,10 +174,10 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 		}
 		log.Trace("Checked issuer")
 	}
-	return handleMytokenFromMytoken(mt, req, ctxUtils.ClientMetaData(ctx), req.ResponseType)
+	return handleMytokenFromMytoken(mt, req, ctxUtils.ClientMetaData(ctx))
 }
 
-func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData *api.ClientMetaData, responseType pkgModel.ResponseType) *model.Response {
+func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData *api.ClientMetaData) *model.Response {
 	ste, errorResponse := createMytokenEntry(parent, req, *networkData)
 	if errorResponse != nil {
 		return errorResponse
@@ -204,7 +204,7 @@ func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFrom
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 
-	res, err := ste.Token.ToTokenResponse(responseType, *networkData, "")
+	res, err := ste.Token.ToTokenResponse(req.ResponseType, req.MaxTokenLen, *networkData, "")
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}

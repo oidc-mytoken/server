@@ -209,9 +209,20 @@ func CreateTransferCode(myID mtid.MTID, jwt string, newMT bool, responseType mod
 }
 
 // ToTokenResponse creates a MytokenResponse for this Mytoken according to the passed model.ResponseType
-func (mt *Mytoken) ToTokenResponse(responseType model.ResponseType, networkData api.ClientMetaData, jwt string) (response.MytokenResponse, error) {
+func (mt *Mytoken) ToTokenResponse(responseType model.ResponseType, maxTokenLen int, networkData api.ClientMetaData, jwt string) (response.MytokenResponse, error) {
 	if jwt == "" {
 		jwt = mt.jwt
+	}
+	if maxTokenLen > 0 {
+		if maxTokenLen >= len(jwt) {
+			responseType = model.ResponseTypeToken
+		} else if config.Get().Features.ShortTokens.Enabled && maxTokenLen >= config.Get().Features.ShortTokens.Len {
+			responseType = model.ResponseTypeShortToken
+		} else if config.Get().Features.TransferCodes.Enabled {
+			responseType = model.ResponseTypeTransferCode
+		} else {
+			responseType = model.ResponseTypeToken
+		}
 	}
 	switch responseType {
 	case model.ResponseTypeShortToken:
