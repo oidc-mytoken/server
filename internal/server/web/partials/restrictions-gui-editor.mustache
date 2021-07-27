@@ -16,17 +16,17 @@
 
     <div>
         <div class="form-row">
-        <div class="form-group restr-nbf col" style="position:relative">
-            <label for="nbf">Not Before</label>
-            <input type="text" class="form-control nbf datetimepicker-input" id="nbf" aria-describedby="nbf_help" data-toggle="datetimepicker" data-target="#nbf" placeholder="YYYY-MM-DD HH:mm:ss">
-            <small id="nbf_help" class="form-text text-muted">The mytoken cannot be used before this time.</small>
-        </div>
+            <div class="form-group restr-nbf col" style="position:relative">
+                <label for="nbf">Not Before</label>
+                <input type="text" class="form-control nbf datetimepicker-input" id="nbf" aria-describedby="nbf_help" data-toggle="datetimepicker" data-target="#nbf" placeholder="YYYY-MM-DD HH:mm:ss">
+                <small id="nbf_help" class="form-text text-muted">The mytoken cannot be used before this time.</small>
+            </div>
 
-        <div class="form-group restr-exp col" style="position:relative">
-            <label for="exp">Expires At</label>
-            <input type="text" class="form-control exp datetimepicker-input" id="exp" aria-describedby="exp_help" data-toggle="datetimepicker" data-target="#exp" placeholder="YYYY-MM-DD HH:mm:ss">
-            <small id="exp_help" class="form-text text-muted">The mytoken cannot be used after this time.</small>
-        </div>
+            <div class="form-group restr-exp col" style="position:relative">
+                <label for="exp">Expires At</label>
+                <input type="text" class="form-control exp datetimepicker-input" id="exp" aria-describedby="exp_help" data-toggle="datetimepicker" data-target="#exp" placeholder="YYYY-MM-DD HH:mm:ss">
+                <small id="exp_help" class="form-text text-muted">The mytoken cannot be used after this time.</small>
+            </div>
         </div>
 
         <div class="form-group restr-scope">
@@ -55,11 +55,11 @@
         <div>
             <div>
                 <label for="select-ip-based-restr">Restrict request location based on</label>
-            <select id="select-ip-based-restr" class="select custom-select mb-2" data-live-search="true">
-                <option value="ip">IP addresses</option>
-                <option selected value="geoip_allow">Allowed countries</option>
-                <option value="geoip_disallow">Forbidden countries</option>
-            </select>
+                <select id="select-ip-based-restr" class="select custom-select mb-2" data-live-search="true">
+                    <option value="ip">IP addresses</option>
+                    <option selected value="geoip_allow">Allowed countries</option>
+                    <option value="geoip_disallow">Forbidden countries</option>
+                </select>
             </div>
             <div class="ml-3">
                 <div id="restr-ip" class="form-group restr d-none">
@@ -111,20 +111,20 @@
                     <small id="geoip-disallow-table_help" class="form-text text-muted">The mytoken cannot be used from these countries.</small>
                 </div>
             </div>
-    </div>
-
-    <div class="form-row">
-        <div class="form-group restr-usages_AT col">
-            <label for="usages_AT">Usages AT</label>
-            <input type="number" class="form-control" id="usages_AT" aria-describedby="usages_AT_help" min=0>
-            <small id="usages_AT_help" class="form-text text-muted">The mytoken can only be used this often to request access tokens.</small>
         </div>
 
-        <div class="form-group restr-usages_other col">
-            <label for="usages_other">Usages Other</label>
-            <input type="number" class="form-control" id="usages_other" aria-describedby="usages_other_help" min=0>
-            <small id="usages_other_help" class="form-text text-muted">The mytoken can only be used this often for requests other than requesting access tokens.</small>
-        </div>
+        <div class="form-row">
+            <div class="form-group restr-usages_AT col">
+                <label for="usages_AT">Usages AT</label>
+                <input type="number" class="form-control" id="usages_AT" aria-describedby="usages_AT_help" min=0>
+                <small id="usages_AT_help" class="form-text text-muted">The mytoken can only be used this often to request access tokens.</small>
+            </div>
+
+            <div class="form-group restr-usages_other col">
+                <label for="usages_other">Usages Other</label>
+                <input type="number" class="form-control" id="usages_other" aria-describedby="usages_other_help" min=0>
+                <small id="usages_other_help" class="form-text text-muted">The mytoken can only be used this often for requests other than requesting access tokens.</small>
+            </div>
         </div>
     </div>
 </div>

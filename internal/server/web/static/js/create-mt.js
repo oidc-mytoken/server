@@ -11,6 +11,8 @@ const mtResultMsg = $('#mt-result-msg');
 const copyButton = $('#mt-result-copy');
 const authURL = $('#authorization-url');
 const capabilityCreateMytoken = $('#cp-create_mytoken');
+const maxTokenLenDiv = $('#max_token_len_div');
+const tokenTypeBadge = $('#token-badge');
 
 
 $(function () {
@@ -31,16 +33,23 @@ capabilityCreateMytoken.on("click", function() {
 });
 
 
-$('#next-mt').on('click', function(e){
+$('#next-mt').on('click', function(){
     window.clearInterval(intervalID);
     mtResult.hideB();
     mtConfig.showB();
 })
 
-$('#get-mt').on('click', function(e){
+$('#select-token-type').on('change', function (){
+    if ($(this).val()==="auto") {
+        maxTokenLenDiv.showB();
+    } else {
+        maxTokenLenDiv.hideB();
+    }
+})
+
+$('#get-mt').on('click', function(){
     let data = {
         "name": $('#tokenName').val(),
-        "response_type": $('#shortToken').prop("checked") ? "short_token":"token",
         "oidc_issuer": storageGet("oidc_issuer"),
         "grant_type": "oidc_flow",
         "oidc_flow": "authorization_code",
@@ -53,6 +62,12 @@ $('#get-mt').on('click', function(e){
             return $(el).val();
         }).get()
     };
+    let token_type = $('#select-token-type').val();
+    if (token_type==="auto") {
+        data['max_token_len'] = Number($('#max_token_len').val());
+    } else {
+        data['response_type'] = token_type;
+    }
     let rot = getRotationFromForm();
     if (rot) {
        data["rotation"] = rot;
@@ -132,7 +147,21 @@ function polling(code, interval) {
             url: storageGet("mytoken_endpoint"),
             data: data,
             success: function(res) {
-                showSuccess(res['mytoken']);
+                let token_type = res['mytoken_type'];
+                let token = res['mytoken'];
+                switch (token_type) {
+                    case "short_token":
+                        tokenTypeBadge.text("Short Token");
+                        break;
+                    case "transfer_code":
+                        tokenTypeBadge.text("Transfer Code");
+                        token = res['transfer_code'];
+                        break;
+                    case "token":
+                    default:
+                        tokenTypeBadge.text("JWT");
+                }
+                showSuccess(token);
                 window.clearInterval(intervalID);
             },
             error: function(errRes) {

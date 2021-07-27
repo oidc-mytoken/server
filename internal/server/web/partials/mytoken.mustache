@@ -11,11 +11,19 @@
 
                 <div class="form-group alert border">
                     <h4>Token Type</h4>
-                    <div class="custom-control custom-switch">
-                        <input type="checkbox" class="custom-control-input" aria-describedby="shortTokenHelp" id="shortToken">
-                        <label class="custom-control-label" for="shortToken">Get Short Mytoken</label>
+                    <div>
+                        <label for="select-token-type">Mytoken Type</label>
+                        <select id="select-token-type" class="select custom-select" data-live-search="true">
+                            <option selected value="token">JWT</option>
+                            <option value="short_token">Short Token</option>
+                            <option value="auto">Depending on size</option>
+                        </select>
+                        <div id="max_token_len_div" class="d-none">
+                            <label for="max_token_len">Maximum Token Length</label>
+                            <input type="number" class="form-control" id="max_token_len" aria-describedby="max_token_len_help" min=0>
+                            <small id="usages_AT_help" class="form-text text-muted">Adapt the mytoken type so that the returned mytoken is not longer than this value.</small>
+                        </div>
                     </div>
-                    <small id="shortTokenHelp" class="form-text text-muted">The Mytoken can be returned as a JWT or as a Short Mytoken.</small>
                 </div>
 
                 <div class="form-group">
@@ -51,7 +59,7 @@
         </p>
     </div>
     <div id="mt-result-color" class="alert" role="alert">
-        <h4 id="mt-result-heading-success" class="alert-heading d-none">Your Mytoken</h4>
+        <h4 id="mt-result-heading-success" class="alert-heading d-none">Your Mytoken <span class="ml-3 badge badge-pill bg-my_blue_dark" id="token-badge"></span></h4>
         <h4 id="mt-result-heading-error" class="alert-heading d-none">Error</h4>
         <h4 id="mt-result-heading-pending" class="alert-heading d-none">Authorization Pending</h4>
         <div id="pending-spinner" class="spinner-border text-primary d-none" role="status">
