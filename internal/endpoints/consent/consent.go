@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/oidc-mytoken/server/internal/server/httpStatus"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
@@ -85,7 +86,7 @@ func handleConsentDecline(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInf
 		}
 	}
 	return model.Response{
-		Status: 278,
+		Status: httpStatus.StatusOKForward,
 		Response: map[string]string{
 			"url": url,
 		},
@@ -135,7 +136,7 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 	}
 	authURL := authcode.GetAuthorizationURL(provider, oState.State(), req.Restrictions)
 	return model.Response{
-		Status: 278,
+		Status: httpStatus.StatusOKForward,
 		Response: map[string]string{
 			"authorization_url": authURL,
 		},
