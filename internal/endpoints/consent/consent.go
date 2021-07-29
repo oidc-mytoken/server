@@ -7,9 +7,12 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/oidc/pkce"
 	"github.com/oidc-mytoken/server/internal/server/httpStatus"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 
@@ -130,9 +133,15 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 			}.Send(ctx)
 		}
 	}
-	if err = authcodeinforepo.UpdateTokenInfoByState(
-		nil, oState, req.Restrictions, req.Capabilities, req.SubtokenCapabilities, req.Rotation, req.TokenName,
-	); err != nil {
+	pkceCode := pkce.NewS256PKCE(utils.RandASCIIString(32))
+	if err = db.Transact(func(tx *sqlx.Tx) error {
+		if err = authcodeinforepo.UpdateTokenInfoByState(
+			tx, oState, req.Restrictions, req.Capabilities, req.SubtokenCapabilities, req.Rotation, req.TokenName,
+		); err != nil {
+			return err
+		}
+		return authcodeinforepo.SetCodeVerifier(tx, oState, pkceCode.Verifier())
+	}); err != nil {
 		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
@@ -143,7 +152,8 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 			Response: api.ErrorUnknownIssuer,
 		}.Send(ctx)
 	}
-	authURL := authcode.GetAuthorizationURL(provider, oState.State(), req.Restrictions)
+	pkceChallenge, _ := pkceCode.Challenge()
+	authURL := authcode.GetAuthorizationURL(provider, oState.State(), pkceChallenge, req.Restrictions)
 	return model.Response{
 		Status: httpStatus.StatusOKForward,
 		Response: map[string]string{

@@ -2,12 +2,13 @@ package dbmigrate
 
 var v0_3_0_Before = []string{
 	// Tables
-	"ALTER TABLE AuthInfo ADD rotation json NULL",
 	"DROP TRIGGER updtrigger",
 	"ALTER TABLE RT_EncryptionKeys ADD CONSTRAINT RT_EncryptionKeys_FK_2 FOREIGN KEY (MT_id) REFERENCES MTokens(id) ON DELETE CASCADE ON UPDATE CASCADE",
 	"TRUNCATE TABLE AuthInfo",
+	"ALTER TABLE AuthInfo ADD rotation json NULL",
 	"ALTER TABLE AuthInfo ADD response_type varchar(128) NOT NULL",
 	"ALTER TABLE AuthInfo ADD max_token_len INT DEFAULT NULL NULL",
+	"ALTER TABLE AuthInfo ADD code_verifier varchar(128) NULL",
 	"ALTER TABLE TransferCodesAttributes ADD max_token_len INT NULL",
 	"CREATE OR REPLACE" +
 		"ALGORITHM = UNDEFINED VIEW `mytoken_test`.`TransferCodes` AS" +

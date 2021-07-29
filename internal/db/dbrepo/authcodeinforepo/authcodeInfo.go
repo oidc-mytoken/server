@@ -35,6 +35,7 @@ type AuthFlowInfoOut struct {
 	Rotation             *api.Rotation
 	ResponseType         model.ResponseType
 	MaxTokenLen          int
+	CodeVerifier         string
 }
 
 type authFlowInfo struct {
@@ -49,6 +50,7 @@ type authFlowInfo struct {
 	Rotation             *api.Rotation
 	ResponseType         model.ResponseType `db:"response_type"`
 	MaxTokenLen          *int               `db:"max_token_len"`
+	CodeVerifier         db.NullString      `db:"code_verifier"`
 }
 
 func (i *AuthFlowInfo) toAuthFlowInfo() *authFlowInfo {
@@ -78,6 +80,7 @@ func (i *authFlowInfo) toAuthFlowInfo() *AuthFlowInfoOut {
 		PollingCode:          bool(i.PollingCode),
 		Rotation:             i.Rotation,
 		ResponseType:         i.ResponseType,
+		CodeVerifier:         i.CodeVerifier.String,
 	}
 	if i.MaxTokenLen != nil {
 		o.MaxTokenLen = *i.MaxTokenLen
@@ -111,7 +114,7 @@ func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
 	if err := db.Transact(func(tx *sqlx.Tx) error {
 		return errors.WithStack(tx.Get(&info,
 			`SELECT state_h, iss, restrictions, capabilities, subtoken_capabilities, 
-                      name, polling_code, rotation, response_type, max_token_len FROM AuthInfo 
+                      name, polling_code, rotation, response_type, max_token_len, code_verifier FROM AuthInfo 
                       WHERE state_h=? AND expires_at >= CURRENT_TIMESTAMP()`,
 			state))
 	}); err != nil {
@@ -135,6 +138,14 @@ func UpdateTokenInfoByState(tx *sqlx.Tx, state *state.State, r restrictions.Rest
 			`UPDATE AuthInfo SET restrictions=?, capabilities=?, subtoken_capabilities=?, rotation=?, name=?
                      WHERE state_h=?`,
 			r, c, sc, rot, tokenName, state)
+		return errors.WithStack(err)
+	})
+}
+
+// SetCodeVerifier stores the passed PKCE code verifier
+func SetCodeVerifier(tx *sqlx.Tx, state *state.State, verifier string) error {
+	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		_, err := tx.Exec(`UPDATE AuthInfo SET code_verifier=? WHERE state_h=?`, verifier, state)
 		return errors.WithStack(err)
 	})
 }

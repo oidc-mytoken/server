@@ -7,13 +7,16 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
-	"github.com/oidc-mytoken/server/internal/utils/cookies"
-	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
+	"github.com/oidc-mytoken/server/internal/oidc/pkce"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+
 	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/accesstokenrepo"
@@ -46,7 +49,7 @@ func Init() {
 }
 
 // GetAuthorizationURL creates a authorization url
-func GetAuthorizationURL(provider *config.ProviderConf, oState string, restrictions restrictions.Restrictions) string {
+func GetAuthorizationURL(provider *config.ProviderConf, oState, pkceChallenge string, restrictions restrictions.Restrictions) string {
 	log.Debug("Generating authorization url")
 	scopes := restrictions.GetScopes()
 	if len(scopes) <= 0 {
@@ -59,7 +62,11 @@ func GetAuthorizationURL(provider *config.ProviderConf, oState string, restricti
 		RedirectURL:  redirectURL,
 		Scopes:       scopes,
 	}
-	additionalParams := []oauth2.AuthCodeOption{oauth2.ApprovalForce}
+	additionalParams := []oauth2.AuthCodeOption{
+		oauth2.ApprovalForce,
+		oauth2.SetAuthURLParam("code_challenge", pkceChallenge),
+		oauth2.SetAuthURLParam("code_challenge_method", pkce.TransformationS256.String()),
+	}
 	if issuerUtils.CompareIssuerURLs(provider.Issuer, issuer.GOOGLE) {
 		additionalParams = append(additionalParams, oauth2.AccessTypeOffline)
 	} else if !utils.StringInSlice(oidc.ScopeOfflineAccess, oauth2Config.Scopes) {
@@ -132,6 +139,8 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 	}
 }
 
+//TODO don't return json
+
 // CodeExchange performs an oidc code exchange it creates the mytoken and stores it in the database
 func CodeExchange(oState *state.State, code string, networkData api.ClientMetaData) *model.Response {
 	log.Debug("Handle code exchange")
@@ -159,7 +168,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 		Endpoint:     provider.Endpoints.OAuth2(),
 		RedirectURL:  redirectURL,
 	}
-	token, err := oauth2Config.Exchange(context.Get(), code)
+	token, err := oauth2Config.Exchange(context.Get(), code, oauth2.SetAuthURLParam("code_verifier", authInfo.CodeVerifier))
 	if err != nil {
 		var e *oauth2.RetrieveError
 		if errors.As(err, &e) {
