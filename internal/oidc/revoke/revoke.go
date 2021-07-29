@@ -1,6 +1,8 @@
 package revoke
 
 import (
+	log "github.com/sirupsen/logrus"
+
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcReqRes"
@@ -20,6 +22,7 @@ func RefreshToken(provider *config.ProviderConf, rt string) *model.Response {
 		SetError(&oidcReqRes.OIDCErrorResponse{}).
 		Post(provider.Endpoints.Revocation)
 	if err != nil {
+		log.WithError(err).Error()
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if errRes, ok := httpRes.Error().(*oidcReqRes.OIDCErrorResponse); ok && errRes != nil && errRes.Error != "" {

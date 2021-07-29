@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/pkg/errors"
+
 	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
@@ -31,7 +33,7 @@ func (r *MytokenFromMytokenRequest) UnmarshalJSON(data []byte) error {
 	type mytokenFromMytokenRequest2 MytokenFromMytokenRequest
 	rr := (*mytokenFromMytokenRequest2)(NewMytokenRequest())
 	if err := json.Unmarshal(data, &rr); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	*r = MytokenFromMytokenRequest(*rr)
 	if r.SubtokenCapabilities != nil && !r.Capabilities.Has(api.CapabilityCreateMT) {

@@ -2,11 +2,12 @@ package transfercoderepo
 
 import (
 	"database/sql"
-	"errors"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
 	"github.com/oidc-mytoken/server/shared/model"
@@ -37,7 +38,7 @@ func CheckTransferCode(tx *sqlx.Tx, pollingCode string) (TransferCodeStatus, err
 				err = nil  // polling code was not found, but this is fine
 				return err // p.Found is false
 			}
-			return err
+			return errors.WithStack(err)
 		}
 		return nil
 	})
@@ -81,7 +82,7 @@ func DeleteTransferCodeByState(tx *sqlx.Tx, state *state.State) error {
 	pc := createProxyToken(state.PollingCode())
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`DELETE FROM ProxyTokens WHERE id=?`, pc.ID())
-		return err
+		return errors.WithStack(err)
 	})
 }
 
@@ -90,6 +91,6 @@ func DeclineConsentByState(tx *sqlx.Tx, state *state.State) error {
 	pc := createProxyToken(state.PollingCode())
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`UPDATE TransferCodesAttributes SET consent_declined=? WHERE id=?`, db.BitBool(true), pc.ID())
-		return err
+		return errors.WithStack(err)
 	})
 }

@@ -2,10 +2,10 @@ package model
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/valyala/fasthttp"
-
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/shared/model"
+	"github.com/valyala/fasthttp"
 )
 
 // Response models a http server response
@@ -33,7 +33,7 @@ func (r Response) Send(ctx *fiber.Ctx) error {
 func ErrorToInternalServerErrorResponse(err error) *Response {
 	return &Response{
 		Status:   fiber.StatusInternalServerError,
-		Response: model.InternalServerError(err.Error()),
+		Response: model.InternalServerError(errorfmt.Error(err)),
 	}
 }
 
@@ -41,7 +41,7 @@ func ErrorToInternalServerErrorResponse(err error) *Response {
 func ErrorToBadRequestErrorResponse(err error) *Response {
 	return &Response{
 		Status:   fiber.StatusBadRequest,
-		Response: model.BadRequestError(err.Error()),
+		Response: model.BadRequestError(errorfmt.Error(err)),
 	}
 }
 

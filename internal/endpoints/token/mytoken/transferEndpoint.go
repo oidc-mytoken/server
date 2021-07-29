@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
+
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	pkgModel "github.com/oidc-mytoken/server/shared/model"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/utils"
@@ -24,7 +27,7 @@ func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
 		if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 			return model.Response{
 				Status:   fiber.StatusBadRequest,
-				Response: pkgModel.BadRequestError(err.Error()),
+				Response: pkgModel.BadRequestError(errorfmt.Error(err)),
 			}.Send(ctx)
 		}
 		token = req.Mytoken
@@ -46,16 +49,16 @@ func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
 		shortToken := transfercoderepo.ParseShortToken(token)
 		tmp, valid, err := shortToken.JWT(nil)
 		jwt = tmp
+		if err != nil {
+			return model.Response{
+				Status:   fiber.StatusUnauthorized,
+				Response: pkgModel.InvalidTokenError(errorfmt.Error(err)),
+			}.Send(ctx)
+		}
 		if !valid {
 			return model.Response{
 				Status:   fiber.StatusUnauthorized,
 				Response: pkgModel.InvalidTokenError(""),
-			}.Send(ctx)
-		}
-		if err != nil {
-			return model.Response{
-				Status:   fiber.StatusUnauthorized,
-				Response: pkgModel.InvalidTokenError(err.Error()),
 			}.Send(ctx)
 		}
 	}
@@ -63,12 +66,13 @@ func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
 	if err != nil {
 		return model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: pkgModel.InvalidTokenError(err.Error()),
+			Response: pkgModel.InvalidTokenError(errorfmt.Error(err)),
 		}.Send(ctx)
 	}
 
 	revoked, dbErr := dbhelper.CheckTokenRevoked(nil, mToken.ID, mToken.SeqNo, mToken.Rotation)
 	if dbErr != nil {
+		log.Errorf("%s", errorfmt.Full(dbErr))
 		return model.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
 	}
 	if revoked {
@@ -80,6 +84,7 @@ func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
 
 	transferCode, expiresIn, err := mytoken.CreateTransferCode(mToken.ID, token, false, tokenType, *ctxUtils.ClientMetaData(ctx))
 	if err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
 	res := &model.Response{

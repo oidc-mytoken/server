@@ -2,8 +2,10 @@ package tree
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
@@ -37,7 +39,7 @@ func (ste *MytokenEntry) Root() bool {
 // getUserID returns the user id linked to a mytoken
 func getUserID(tx *sqlx.Tx, tokenID mtid.MTID) (uid int64, err error) {
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&uid, `SELECT user_id FROM MTokens WHERE id=? ORDER BY name`, tokenID)
+		return errors.WithStack(tx.Get(&uid, `SELECT user_id FROM MTokens WHERE id=? ORDER BY name`, tokenID))
 	})
 	return
 }
@@ -59,9 +61,9 @@ func AllTokens(tx *sqlx.Tx, tokenID mtid.MTID) (trees []MytokenEntryTree, err er
 func allTokensForUser(tx *sqlx.Tx, uid int64) ([]MytokenEntryTree, error) {
 	var tokens []MytokenEntry
 	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Select(&tokens,
+		return errors.WithStack(tx.Select(&tokens,
 			`SELECT id, parent_id, root_id, name, created, ip_created AS ip FROM MTokens WHERE user_id=?`,
-			uid)
+			uid))
 	}); err != nil {
 		return nil, err
 	}
@@ -71,9 +73,9 @@ func allTokensForUser(tx *sqlx.Tx, uid int64) ([]MytokenEntryTree, error) {
 func subtokens(tx *sqlx.Tx, rootID mtid.MTID) ([]MytokenEntry, error) {
 	var tokens []MytokenEntry
 	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Select(&tokens,
+		return errors.WithStack(tx.Select(&tokens,
 			`SELECT id, parent_id, root_id, name, created, ip_created AS ip FROM MTokens WHERE root_id=?`,
-			rootID)
+			rootID))
 	})
 	return tokens, err
 }
@@ -87,7 +89,7 @@ func TokenSubTree(tx *sqlx.Tx, tokenID mtid.MTID) (MytokenEntryTree, error) {
 		if err = tx.Get(&root,
 			`SELECT id, parent_id, root_id, name, created, ip_created AS ip FROM MTokens WHERE id=?`,
 			tokenID); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 		if root.Root() {
 			root.RootID = root.ID

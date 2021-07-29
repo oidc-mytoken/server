@@ -2,9 +2,9 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -46,11 +46,11 @@ func (f *OIDCFlow) Valid() bool {
 func (f *OIDCFlow) UnmarshalYAML(value *yaml.Node) error {
 	s := value.Value
 	if s == "" {
-		return fmt.Errorf("empty value in unmarshal oidc flow")
+		return errors.New("empty value in unmarshal oidc flow")
 	}
 	*f = NewOIDCFlow(s)
 	if !f.Valid() {
-		return fmt.Errorf("value '%s' not valid for OIDCFlow", s)
+		return errors.Errorf("value '%s' not valid for OIDCFlow", s)
 	}
 	return nil
 }
@@ -58,19 +58,20 @@ func (f *OIDCFlow) UnmarshalYAML(value *yaml.Node) error {
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (f *OIDCFlow) UnmarshalJSON(data []byte) error {
 	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
+	if err := errors.WithStack(json.Unmarshal(data, &s)); err != nil {
 		return err
 	}
 	*f = NewOIDCFlow(s)
 	if !f.Valid() {
-		return fmt.Errorf("value '%s' not valid for OIDCFlow", s)
+		return errors.Errorf("value '%s' not valid for OIDCFlow", s)
 	}
 	return nil
 }
 
 // MarshalJSON implements the json.Marshaler interface
 func (f OIDCFlow) MarshalJSON() ([]byte, error) {
-	return json.Marshal(f.String())
+	data, err := json.Marshal(f.String())
+	return data, errors.WithStack(err)
 }
 
 // AddToSliceIfNotFound adds the OIDCFlow to a slice s if it is not already there

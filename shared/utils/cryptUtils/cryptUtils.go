@@ -10,6 +10,8 @@ import (
 	mathRand "math/rand"
 	"strings"
 
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/oidc-mytoken/server/shared/utils"
@@ -21,12 +23,12 @@ const (
 )
 
 const malFormedCiphertext = "malformed ciphertext"
-const malFormedCiphertextFmt = malFormedCiphertext + ": %s"
 
 // RandomBytes returns size random bytes
 func RandomBytes(size int) []byte {
 	r := make([]byte, size)
 	if _, err := rand.Read(r); err != nil {
+		log.WithError(err).Error()
 		_, _ = mathRand.Read(r)
 	}
 	return r
@@ -91,7 +93,7 @@ func aesDecrypt(cipher, password string, keyLen int) (string, error) {
 	arr := strings.SplitN(cipher, "-", 2)
 	salt, err := base64.StdEncoding.DecodeString(arr[0])
 	if err != nil {
-		return "", fmt.Errorf(malFormedCiphertextFmt, err)
+		return "", errors.Wrap(err, malFormedCiphertext)
 	}
 	key, _ := deriveKey(password, salt, keyLen)
 	return AESDecrypt(arr[1], key)
@@ -101,15 +103,15 @@ func aesDecrypt(cipher, password string, keyLen int) (string, error) {
 func AESDecrypt(cipher string, key []byte) (string, error) {
 	arr := strings.Split(cipher, "-")
 	if len(arr) != 2 {
-		return "", fmt.Errorf(malFormedCiphertext)
+		return "", errors.New(malFormedCiphertext)
 	}
 	nonce, err := base64.StdEncoding.DecodeString(arr[0])
 	if err != nil {
-		return "", fmt.Errorf(malFormedCiphertextFmt, err)
+		return "", errors.Wrap(err, malFormedCiphertext)
 	}
 	data, err := base64.StdEncoding.DecodeString(arr[1])
 	if err != nil {
-		return "", fmt.Errorf(malFormedCiphertextFmt, err)
+		return "", errors.Wrap(err, malFormedCiphertext)
 	}
 	return aesD(data, nonce, key)
 }
@@ -131,7 +133,7 @@ func aesD(cipher, nonce, key []byte) (string, error) {
 	}
 	plain, err := gcm.Open(nil, nonce, cipher, nil)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return string(plain), nil
 }
@@ -140,8 +142,10 @@ func createGCM(key []byte) (g cipher.AEAD, err error) {
 	var block cipher.Block
 	block, err = aes.NewCipher(key)
 	if err != nil {
+		err = errors.WithStack(err)
 		return
 	}
 	g, err = cipher.NewGCM(block)
+	err = errors.WithStack(err)
 	return
 }

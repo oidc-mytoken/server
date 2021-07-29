@@ -5,26 +5,27 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
-	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
-	"github.com/oidc-mytoken/server/internal/utils/cookies"
-	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
+	"github.com/oidc-mytoken/api/v0"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/accesstokenrepo"
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
 	request "github.com/oidc-mytoken/server/internal/endpoints/token/access/pkg"
+	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/refresh"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/shared/model"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/jwtutils"
@@ -56,7 +57,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		if err != nil {
 			return serverModel.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: model.InvalidTokenError(err.Error()),
+				Response: model.InvalidTokenError(errorfmt.Error(err)),
 			}.Send(ctx)
 		}
 	}
@@ -65,13 +66,14 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	if err != nil {
 		return (&serverModel.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError(err.Error()),
+			Response: model.InvalidTokenError(errorfmt.Error(err)),
 		}).Send(ctx)
 	}
 	log.Trace("Parsed mytoken")
 
 	revoked, dbErr := dbhelper.CheckTokenRevoked(nil, mt.ID, mt.SeqNo, mt.Rotation)
 	if dbErr != nil {
+		log.Errorf("%s", errorfmt.Full(dbErr))
 		return serverModel.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
 	}
 	if revoked {
@@ -147,6 +149,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 	}
 	rt, rtFound, dbErr := refreshtokenrepo.GetRefreshToken(nil, mt.ID, req.Mytoken.JWT)
 	if dbErr != nil {
+		log.Errorf("%s", errorfmt.Full(dbErr))
 		return serverModel.ErrorToInternalServerErrorResponse(dbErr)
 	}
 	if !rtFound {
@@ -158,6 +161,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 
 	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds)
 	if err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}
 	if oidcErrRes != nil {
@@ -199,6 +203,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 			tx, req.Mytoken.JWT, mt, networkData, req.Mytoken.OriginalTokenType)
 		return err
 	}); err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}
 

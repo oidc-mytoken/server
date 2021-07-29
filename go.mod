@@ -19,6 +19,7 @@ require (
 	github.com/lestrrat-go/jwx v1.2.4
 	github.com/oidc-mytoken/api v0.0.0-20210727075713-4c9550f98088
 	github.com/oidc-mytoken/lib v0.2.1-0.20210611134913-0c477174fc1f
+	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/valyala/fasthttp v1.28.0

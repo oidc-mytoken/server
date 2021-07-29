@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -25,7 +25,6 @@ func ConnectConfig(conf config.DBConf) {
 	if db != nil {
 		log.Debug("Closing existing db connections")
 		db.Close()
-		log.Debug("Done")
 	}
 	db = cluster.NewFromConfig(conf)
 }
@@ -37,14 +36,15 @@ type NullString struct {
 
 // MarshalJSON implements the json.Marshaler interface
 func (s NullString) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.String)
+	data, err := json.Marshal(s.String)
+	return data, errors.WithStack(err)
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (s *NullString) UnmarshalJSON(data []byte) error {
 	var str string
 	if err := json.Unmarshal(data, &str); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	*s = NewNullString(str)
 	return nil
@@ -86,7 +86,7 @@ func (b *BitBool) Scan(src interface{}) error {
 	}
 	v, ok := src.([]byte)
 	if !ok {
-		return fmt.Errorf("bad []byte type assertion")
+		return errors.New("bad []byte type assertion")
 	}
 	*b = v[0] == 1
 	return nil

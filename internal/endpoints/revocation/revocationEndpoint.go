@@ -2,18 +2,20 @@ package revocation
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	sharedModel "github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken"
 	mytokenPkg "github.com/oidc-mytoken/server/shared/mytoken/pkg"
@@ -71,6 +73,7 @@ func revokeAnyToken(tx *sqlx.Tx, token, issuer string, recursive bool) (errRes *
 			token = jwt
 			return shortToken.Delete(tx)
 		}); err != nil {
+			log.Errorf("%s", errorfmt.Full(err))
 			return model.ErrorToInternalServerErrorResponse(err)
 		}
 		if !valid {
@@ -110,13 +113,14 @@ func revokeTransferCode(tx *sqlx.Tx, token, issuer string) (errRes *model.Respon
 				// the TransferCode
 				errRes = revokeAnyToken(tx, jwt, issuer, true)
 				if errRes != nil {
-					return fmt.Errorf("placeholder")
+					return errors.New("placeholder")
 				}
 			}
 		}
 		return transferCode.Delete(tx)
 	})
 	if err != nil && errRes == nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	return

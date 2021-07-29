@@ -1,14 +1,16 @@
 package config
 
 import (
-	"fmt"
 	"io/ioutil"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	model2 "github.com/oidc-mytoken/server/internal/model"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v3"
+
+	model2 "github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
 	"github.com/oidc-mytoken/server/shared/context"
@@ -226,10 +228,10 @@ func (conf *DBConf) GetPassword() string {
 
 func (so *ServiceOperatorConf) validate() error {
 	if so.Name == "" {
-		return fmt.Errorf("invalid config: service_operator.name not set")
+		return errors.New("invalid config: service_operator.name not set")
 	}
 	if so.Contact == "" {
-		return fmt.Errorf("invalid config: service_operator.mail_contact not set")
+		return errors.New("invalid config: service_operator.mail_contact not set")
 	}
 	if so.Privacy == "" {
 		so.Privacy = so.Contact
@@ -246,10 +248,10 @@ func Get() *Config {
 
 func validate() error {
 	if conf == nil {
-		return fmt.Errorf("config not set")
+		return errors.New("config not set")
 	}
 	if conf.IssuerURL == "" {
-		return fmt.Errorf("invalid config:issuer_url not set")
+		return errors.New("invalid config:issuer_url not set")
 	}
 	if strings.HasPrefix(conf.IssuerURL, "http://") {
 		conf.Server.Secure = false
@@ -265,29 +267,29 @@ func validate() error {
 		return err
 	}
 	if len(conf.Providers) <= 0 {
-		return fmt.Errorf("invalid config: providers must have at least one entry")
+		return errors.New("invalid config: providers must have at least one entry")
 	}
 	for i, p := range conf.Providers {
 		if p.Issuer == "" {
-			return fmt.Errorf("invalid config: provider.issuer not set (Index %d)", i)
+			return errors.Errorf("invalid config: provider.issuer not set (Index %d)", i)
 		}
 		var err error
 		p.Endpoints, err = oauth2x.NewConfig(context.Get(), p.Issuer).Endpoints()
 		if err != nil {
-			return fmt.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
+			return errors.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
 		}
 		p.Provider, err = oidc.NewProvider(context.Get(), p.Issuer)
 		if err != nil {
-			return fmt.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
+			return errors.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
 		}
 		if p.ClientID == "" {
-			return fmt.Errorf("invalid config: provider.clientid not set (Index %d)", i)
+			return errors.Errorf("invalid config: provider.clientid not set (Index %d)", i)
 		}
 		if p.ClientSecret == "" {
-			return fmt.Errorf("invalid config: provider.clientsecret not set (Index %d)", i)
+			return errors.Errorf("invalid config: provider.clientsecret not set (Index %d)", i)
 		}
 		if len(p.Scopes) <= 0 {
-			return fmt.Errorf("invalid config: provider.scopes not set (Index %d)", i)
+			return errors.Errorf("invalid config: provider.scopes not set (Index %d)", i)
 		}
 		iss0, iss1 := issuerUtils.GetIssuerWithAndWithoutSlash(p.Issuer)
 		conf.ProviderByIssuer[iss0] = p
@@ -297,20 +299,20 @@ func validate() error {
 		}
 	}
 	if conf.IssuerURL == "" {
-		return fmt.Errorf("invalid config: issuerurl not set")
+		return errors.New("invalid config: issuerurl not set")
 	}
 	if conf.Signing.KeyFile == "" {
-		return fmt.Errorf("invalid config: signingkeyfile not set")
+		return errors.New("invalid config: signingkeyfile not set")
 	}
 	if conf.Signing.Alg == "" {
-		return fmt.Errorf("invalid config: tokensigningalg not set")
+		return errors.New("invalid config: tokensigningalg not set")
 	}
 	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(&conf.Features.EnabledOIDCFlows)
 	// if model.OIDCFlowIsInSlice(model.OIDCFlowDevice, conf.Features.EnabledOIDCFlows) && !conf.Features.Polling.Enabled {
-	// 	return fmt.Errorf("oidc flow device flow requires polling_codes to be enabled")
+	// 	return errors.New("oidc flow device flow requires polling_codes to be enabled")
 	// }
 	if !conf.Features.TokenInfo.Introspect.Enabled && conf.Features.WebInterface.Enabled {
-		return fmt.Errorf("web interface requires tokeninfo.introspect to be enabled")
+		return errors.New("web interface requires tokeninfo.introspect to be enabled")
 	}
 	conf.Features.TokenInfo.Enabled = utils.OR(
 		conf.Features.TokenInfo.Introspect.Enabled,
@@ -330,7 +332,7 @@ var possibleConfigLocations = []string{
 func Load() {
 	load()
 	if err := validate(); err != nil {
-		log.WithError(err).Fatal()
+		log.Fatalf("%s", errorfmt.Full(err))
 	}
 }
 

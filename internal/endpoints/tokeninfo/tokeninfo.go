@@ -5,11 +5,13 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	log "github.com/sirupsen/logrus"
 
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	model2 "github.com/oidc-mytoken/server/shared/model"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
@@ -58,12 +60,13 @@ func testMytoken(ctx *fiber.Ctx, req *pkg.TokenInfoRequest) (*mytoken.Mytoken, *
 	if err != nil {
 		return nil, &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model2.InvalidTokenError(err.Error()),
+			Response: model2.InvalidTokenError(errorfmt.Error(err)),
 		}
 	}
 
 	revoked, dbErr := dbhelper.CheckTokenRevoked(nil, mt.ID, mt.SeqNo, mt.Rotation)
 	if dbErr != nil {
+		log.Errorf("%s", errorfmt.Full(dbErr))
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
 	}
 	if revoked {

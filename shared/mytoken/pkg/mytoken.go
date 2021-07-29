@@ -5,9 +5,12 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
+
 	"github.com/oidc-mytoken/server/internal/utils"
 
 	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
@@ -138,27 +141,27 @@ func (mt *Mytoken) Valid() error {
 		NotBefore: int64(mt.NotBefore),
 		Subject:   mt.Subject,
 	}
-	if err := standardClaims.Valid(); err != nil {
+	if err := errors.WithStack(standardClaims.Valid()); err != nil {
 		return err
 	}
 	if ok := standardClaims.VerifyIssuer(config.Get().IssuerURL, true); !ok {
-		return fmt.Errorf("invalid issuer")
+		return errors.New("invalid issuer")
 	}
 	if ok := standardClaims.VerifyAudience(config.Get().IssuerURL, true); !ok {
-		return fmt.Errorf("invalid Audience")
+		return errors.New("invalid Audience")
 	}
 	if ok := mt.verifyID(); !ok {
-		return fmt.Errorf("invalid id")
+		return errors.New("invalid id")
 	}
 	if ok := mt.verifySubject(); !ok {
-		return fmt.Errorf("invalid subject")
+		return errors.New("invalid subject")
 	}
 	return nil
 }
 
-// ToMytokenResponse returns a MytokenResponse for this token. It requires that jwt is set or that the jwt is passed as
-// argument; if not passed as argument toJWT must have been called earlier on this token to set jwt. This is always the
-// case, if the token has been stored.
+// toMytokenResponse returns a pkg.MytokenResponse for this token. It requires that jwt is set or that the jwt is passed
+// as argument; if not passed as argument toJWT must have been called earlier on this token to set jwt. This is always
+// the case, if the token has been stored.
 func (mt *Mytoken) toMytokenResponse(jwt string) response.MytokenResponse {
 	res := mt.toTokenResponse()
 	res.Mytoken = jwt
@@ -250,7 +253,7 @@ func (mt *Mytoken) ToJWT() (string, error) {
 	}
 	var err error
 	mt.jwt, err = jwt.NewWithClaims(jwt.GetSigningMethod(config.Get().Signing.Alg), mt).SignedString(jws.GetPrivateKey())
-	return mt.jwt, err
+	return mt.jwt, errors.WithStack(err)
 }
 
 // ParseJWT parses a token string into a Mytoken
@@ -259,12 +262,12 @@ func ParseJWT(token string) (*Mytoken, error) {
 		return jws.GetPublicKey(), nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	if mt, ok := tok.Claims.(*Mytoken); ok && tok.Valid {
 		mt.jwt = token
 		return mt, nil
 	}
-	return nil, fmt.Errorf("token not valid")
+	return nil, errors.New("token not valid")
 }

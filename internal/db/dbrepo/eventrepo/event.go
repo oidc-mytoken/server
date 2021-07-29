@@ -2,8 +2,10 @@ package eventrepo
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/db"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
@@ -23,6 +25,6 @@ func (e *EventDBObject) Store(tx *sqlx.Tx) error {
 			`INSERT INTO MT_Events (MT_id, event_id, comment, ip, user_agent) 
                       VALUES(?, (SELECT id FROM Events WHERE event=?), ?, ?, ?)`,
 			e.MTID, e.Event.String(), e.Event.Comment, e.ClientMetaData.IP, e.ClientMetaData.UserAgent)
-		return err
+		return errors.WithStack(err)
 	})
 }

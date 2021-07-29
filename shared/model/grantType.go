@@ -2,9 +2,9 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -54,11 +54,11 @@ func (g *GrantType) Valid() bool {
 func (g *GrantType) UnmarshalYAML(value *yaml.Node) error {
 	s := value.Value
 	if s == "" {
-		return fmt.Errorf("empty value in unmarshal grant type")
+		return errors.New("empty value in unmarshal grant type")
 	}
 	*g = NewGrantType(s)
 	if !g.Valid() {
-		return fmt.Errorf("value '%s' not valid for GrantType", s)
+		return errors.Errorf("value '%s' not valid for GrantType", s)
 	}
 	return nil
 }
@@ -66,12 +66,12 @@ func (g *GrantType) UnmarshalYAML(value *yaml.Node) error {
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (g *GrantType) UnmarshalJSON(data []byte) error {
 	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
+	if err := errors.WithStack(json.Unmarshal(data, &s)); err != nil {
 		return err
 	}
 	*g = NewGrantType(s)
 	if !g.Valid() {
-		return fmt.Errorf("value '%s' not valid for GrantType", s)
+		return errors.Errorf("value '%s' not valid for GrantType", s)
 	}
 	return nil
 }
@@ -81,14 +81,15 @@ func (g *GrantType) UnmarshalText(data []byte) error {
 	s := string(data)
 	*g = NewGrantType(s)
 	if !g.Valid() {
-		return fmt.Errorf("value '%s' not valid for GrantType", s)
+		return errors.Errorf("value '%s' not valid for GrantType", s)
 	}
 	return nil
 }
 
 // MarshalJSON implements the json.Marshaler interface
 func (g GrantType) MarshalJSON() ([]byte, error) {
-	return json.Marshal(g.String())
+	data, err := json.Marshal(g.String())
+	return data, errors.WithStack(err)
 }
 
 // AddToSliceIfNotFound adds the GrantType to a slice s if it is not already there

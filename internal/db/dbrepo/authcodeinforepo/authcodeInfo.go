@@ -2,11 +2,14 @@ package authcodeinforepo
 
 import (
 	"github.com/jmoiron/sqlx"
-	"github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/server/shared/model"
+	"github.com/oidc-mytoken/server/shared/utils"
+
 	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
@@ -98,7 +101,7 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
                       VALUES(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name,
                              :expires_in, :polling_code, :rotation, :response_type, :max_token_len)`,
 			store)
-		return err
+		return errors.WithStack(err)
 	})
 }
 
@@ -106,11 +109,11 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
 	info := authFlowInfo{}
 	if err := db.Transact(func(tx *sqlx.Tx) error {
-		return tx.Get(&info,
+		return errors.WithStack(tx.Get(&info,
 			`SELECT state_h, iss, restrictions, capabilities, subtoken_capabilities, 
                       name, polling_code, rotation, response_type, max_token_len FROM AuthInfo 
                       WHERE state_h=? AND expires_at >= CURRENT_TIMESTAMP()`,
-			state)
+			state))
 	}); err != nil {
 		return nil, err
 	}
@@ -121,7 +124,7 @@ func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
 func DeleteAuthFlowInfoByState(tx *sqlx.Tx, state *state.State) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`DELETE FROM AuthInfo WHERE state_h = ?`, state)
-		return err
+		return errors.WithStack(err)
 	})
 }
 
@@ -132,6 +135,6 @@ func UpdateTokenInfoByState(tx *sqlx.Tx, state *state.State, r restrictions.Rest
 			`UPDATE AuthInfo SET restrictions=?, capabilities=?, subtoken_capabilities=?, rotation=?, name=?
                      WHERE state_h=?`,
 			r, c, sc, rot, tokenName, state)
-		return err
+		return errors.WithStack(err)
 	})
 }

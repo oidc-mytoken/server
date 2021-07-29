@@ -3,15 +3,18 @@ package consent
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/oidc-mytoken/server/internal/server/httpStatus"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/server/internal/server/httpStatus"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+
 	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
@@ -54,6 +57,8 @@ func getAuthInfoFromConsentCodeStr(code string) (*authcodeinforepo.AuthFlowInfoO
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = fiber.ErrNotFound
+		} else {
+			log.Errorf("%s", errorfmt.Full(err))
 		}
 	}
 	return authInfo, oState, err
@@ -63,6 +68,7 @@ func getAuthInfoFromConsentCodeStr(code string) (*authcodeinforepo.AuthFlowInfoO
 func HandleConsent(ctx *fiber.Ctx) error {
 	authInfo, _, err := getAuthInfoFromConsentCodeStr(ctx.Params("consent_code"))
 	if err != nil {
+		// Don't log error here, it was already logged
 		return err
 	}
 	return handleConsent(ctx, authInfo)
@@ -74,6 +80,7 @@ func handleConsentDecline(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInf
 		url = "/native/abort"
 	}
 	if err := authcodeinforepo.DeleteAuthFlowInfoByState(nil, oState); err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		res := model.ErrorToInternalServerErrorResponse(err)
 		m := utils.StructToStringMapUsingJSONTags(res.Response)
 		m["url"] = url
@@ -82,7 +89,7 @@ func handleConsentDecline(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInf
 	}
 	if authInfo.PollingCode {
 		if err := transfercoderepo.DeclineConsentByState(nil, oState); err != nil {
-			log.WithError(err).Error()
+			log.Errorf("%s", errorfmt.Full(err))
 		}
 	}
 	return model.Response{
@@ -97,6 +104,7 @@ func handleConsentDecline(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInf
 func HandleConsentPost(ctx *fiber.Ctx) error {
 	authInfo, oState, err := getAuthInfoFromConsentCodeStr(ctx.Params("consent_code"))
 	if err != nil {
+		// Don't log error here, it was already logged
 		return err
 	}
 	if len(ctx.Body()) == 0 {
@@ -125,6 +133,7 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 	if err = authcodeinforepo.UpdateTokenInfoByState(
 		nil, oState, req.Restrictions, req.Capabilities, req.SubtokenCapabilities, req.Rotation, req.TokenName,
 	); err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]

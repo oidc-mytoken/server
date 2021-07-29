@@ -2,14 +2,14 @@ package authcode
 
 import (
 	"database/sql"
-	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
@@ -123,6 +123,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 		}
 	}
 	if err := authFlowInfo.Store(nil); err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	return &model.Response{
@@ -142,6 +143,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 				Response: api.ErrorStateMismatch,
 			}
 		}
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	provider, ok := config.Get().ProviderByIssuer[authInfo.Issuer]
@@ -170,6 +172,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 				Response: res,
 			}
 		}
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if token.RefreshToken == "" {
@@ -192,6 +195,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 
 	oidcSub, err := getSubjectFromUserinfo(provider.Provider, token)
 	if err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	var ste *mytokenrepo.MytokenEntry
@@ -222,6 +226,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 		}
 		return authcodeinforepo.DeleteAuthFlowInfoByState(tx, oState)
 	}); err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if authInfo.PollingCode {
@@ -232,6 +237,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 	}
 	res, err := ste.Token.ToTokenResponse(authInfo.ResponseType, authInfo.MaxTokenLen, networkData, "")
 	if err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	var cookie fiber.Cookie
@@ -269,7 +275,7 @@ func createMytokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfo
 func getSubjectFromUserinfo(provider *oidc.Provider, token *oauth2.Token) (string, error) {
 	userInfo, err := provider.UserInfo(context.Get(), oauth2.StaticTokenSource(token))
 	if err != nil {
-		return "", fmt.Errorf("failed to get userinfo: %s", err)
+		return "", errors.Wrap(err, "failed to get userinfo")
 	}
 	return userInfo.Subject, nil
 }

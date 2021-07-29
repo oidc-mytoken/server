@@ -1,7 +1,7 @@
 package geoip
 
 import (
-	"github.com/ip2location/ip2location-go"
+	ip2location "github.com/ip2location/ip2location-go"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -14,6 +14,7 @@ func Init() {
 	db, err := ip2location.OpenDB(config.Get().GeoIPDBFile)
 	if err != nil {
 		log.WithError(err).Error()
+		return
 	}
 	log.Debug("Loaded geo ip data")
 	if geoDB != nil {

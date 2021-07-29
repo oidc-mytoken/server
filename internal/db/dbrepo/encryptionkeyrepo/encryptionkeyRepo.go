@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
+
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
@@ -18,7 +20,7 @@ func ReencryptEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID, oldJWT, newJWT strin
 			return err
 		}
 		var encryptedKey string
-		if err = tx.Get(&encryptedKey, `SELECT encryption_key FROM EncryptionKeys WHERE id=?`, keyID); err != nil {
+		if err = errors.WithStack(tx.Get(&encryptedKey, `SELECT encryption_key FROM EncryptionKeys WHERE id=?`, keyID)); err != nil {
 			return err
 		}
 		key, err := cryptUtils.AES256Decrypt(encryptedKey, oldJWT)
@@ -30,7 +32,7 @@ func ReencryptEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID, oldJWT, newJWT strin
 			return err
 		}
 		_, err = tx.Exec(`UPDATE EncryptionKeys SET encryption_key=? WHERE id=?`, updatedKey, keyID)
-		return err
+		return errors.WithStack(err)
 	})
 }
 
@@ -42,7 +44,7 @@ func DeleteEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID) error {
 			return err
 		}
 		if _, err = tx.Exec(`DELETE FROM EncryptionKeys WHERE id=?`, keyID); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 		return nil
 	})
@@ -56,7 +58,7 @@ func GetEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID, jwt string) (key []byte, r
 			ID           uint64        `db:"rt_id"`
 		}
 		if err = tx.Get(&res, `SELECT encryption_key, rt_id FROM MyTokens WHERE id=?`, tokenID); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 		rtID = res.ID
 		key, err = res.EncryptedKey.Decrypt(jwt)
@@ -74,15 +76,16 @@ func (k EncryptionKey) Decrypt(jwt string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return base64.StdEncoding.DecodeString(decryptedKey)
+	data, err := base64.StdEncoding.DecodeString(decryptedKey)
+	return data, errors.WithStack(err)
 }
 
 // getEncryptionKeyID returns the id of the encryption key used for encrypting the RT linked to this mytoken
 func getEncryptionKeyID(tx *sqlx.Tx, myID mtid.MTID) (keyID uint64, err error) {
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&keyID,
+		return errors.WithStack(tx.Get(&keyID,
 			`SELECT key_id FROM RT_EncryptionKeys WHERE MT_id=? AND rt_id=(SELECT rt_id FROM MTokens WHERE id=?)`,
-			myID, myID)
+			myID, myID))
 	})
 	return
 }

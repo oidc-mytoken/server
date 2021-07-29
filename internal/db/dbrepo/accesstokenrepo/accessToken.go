@@ -2,6 +2,7 @@ package accesstokenrepo
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model"
@@ -48,10 +49,17 @@ func (t *AccessToken) toDBObject() (*accessToken, error) {
 func (t *AccessToken) getDBAttributes(tx *sqlx.Tx, atID uint64) (attrs []accessTokenAttribute, err error) {
 	var scopeAttrID uint64
 	var audAttrID uint64
-	if err = tx.QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, model.AttrScope).Scan(&scopeAttrID); err != nil {
-		return
-	}
-	if err = tx.QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, model.AttrAud).Scan(&audAttrID); err != nil {
+	if err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		if err = tx.QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, model.AttrScope).
+			Scan(&scopeAttrID); err != nil {
+			return errors.WithStack(err)
+		}
+		if err = tx.QueryRow(`SELECT id FROM Attributes WHERE attribute=?`, model.AttrAud).
+			Scan(&audAttrID); err != nil {
+			return errors.WithStack(err)
+		}
+		return nil
+	}); err != nil {
 		return
 	}
 	for _, s := range t.Scopes {
@@ -77,18 +85,18 @@ func (t *AccessToken) Store(tx *sqlx.Tx) error {
 	if err != nil {
 		return err
 	}
-	storeFnc := func(tx *sqlx.Tx) error {
+	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		res, err := tx.NamedExec(
 			`INSERT INTO AccessTokens (token, ip_created, comment, MT_id)
                       VALUES (:token, :ip_created, :comment, :MT_id)`,
 			store)
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 		if len(t.Scopes) > 0 || len(t.Audiences) > 0 {
 			atID, err := res.LastInsertId()
 			if err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 			attrs, err := t.getDBAttributes(tx, uint64(atID))
 			if err != nil {
@@ -98,10 +106,9 @@ func (t *AccessToken) Store(tx *sqlx.Tx) error {
 				`INSERT INTO AT_Attributes (AT_id, attribute_id, attribute)
                           VALUES (:AT_id, :attribute_id, :attribute)`,
 				attrs); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 		}
 		return nil
-	}
-	return db.RunWithinTransaction(tx, storeFnc)
+	})
 }

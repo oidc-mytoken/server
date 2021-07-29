@@ -3,18 +3,21 @@ package mytoken
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
-	"github.com/oidc-mytoken/server/internal/utils/cookies"
-	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
+
 	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo"
@@ -35,11 +38,13 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 )
 
+const errResPlaceholder = "error_res"
+
 // HandleMytokenFromTransferCode handles requests to return the mytoken for a transfer code
 func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 	log.Debug("Handle mytoken from transfercode")
 	req := response.NewExchangeTransferCodeRequest()
-	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
+	if err := errors.WithStack(json.Unmarshal(ctx.Body(), &req)); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	log.Trace("Parsed request")
@@ -55,14 +60,14 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 				Status:   fiber.StatusUnauthorized,
 				Response: api.ErrorBadTransferCode,
 			}
-			return fmt.Errorf("error_res")
+			return errors.New(errResPlaceholder)
 		}
 		if status.Expired {
 			errorRes = &model.Response{
 				Status:   fiber.StatusUnauthorized,
 				Response: api.ErrorTransferCodeExpired,
 			}
-			return fmt.Errorf("error_res")
+			return errors.New(errResPlaceholder)
 		}
 		tokenStr, err = transfercoderepo.PopTokenForTransferCode(tx, req.TransferCode, *ctxUtils.ClientMetaData(ctx))
 		return err
@@ -70,15 +75,18 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 		if errorRes != nil {
 			return errorRes
 		}
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 
 	token, err := universalmytoken.Parse(tokenStr)
 	if err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	mt, err := mytoken.ParseJWT(token.JWT)
 	if err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	return &model.Response{
@@ -101,7 +109,7 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	log.Debug("Handle mytoken from mytoken")
 	req := response.NewMytokenRequest()
-	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
+	if err := errors.WithStack(json.Unmarshal(ctx.Body(), &req)); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	if req.Capabilities != nil && len(req.Capabilities) == 0 {
@@ -122,7 +130,7 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 		if err != nil {
 			return &model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: pkgModel.InvalidTokenError(err.Error()),
+				Response: pkgModel.InvalidTokenError(errorfmt.Error(err)),
 			}
 		}
 	}
@@ -131,7 +139,7 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	if err != nil {
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: pkgModel.InvalidTokenError(err.Error()),
+			Response: pkgModel.InvalidTokenError(errorfmt.Error(err)),
 		}
 	}
 	log.Trace("Parsed mytoken")
@@ -331,12 +339,13 @@ func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, jwt string, recursive bool, issuer
 		}
 		return refreshtokenrepo.DeleteRefreshToken(tx, rtID)
 	}); err != nil {
-		if strings.HasPrefix(err.Error(), "oidc_error") {
+		if strings.HasPrefix(errorfmt.Error(err), "oidc_error") {
 			return &model.Response{
 				Status:   httpStatus.StatusOIDPError,
-				Response: pkgModel.OIDCError(err.Error(), ""),
+				Response: pkgModel.OIDCError(errorfmt.Error(err), ""),
 			}
 		} else {
+			log.Errorf("%s", errorfmt.Full(err))
 			return model.ErrorToInternalServerErrorResponse(err)
 		}
 	}

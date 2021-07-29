@@ -8,11 +8,15 @@ import (
 
 	"github.com/jinzhu/copier"
 	"github.com/jmoiron/sqlx"
-	"github.com/oidc-mytoken/server/internal/config"
-	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+
 	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/utils/geoip"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
@@ -78,7 +82,7 @@ func (r *Restrictions) ClearUnsupportedKeys() {
 func (r *Restriction) hash() ([]byte, error) {
 	j, err := json.Marshal(r)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return hashUtils.SHA512(j), nil
 }
@@ -155,7 +159,7 @@ func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, myID mtid.MTID) bool {
 	}
 	usages, err := r.getATUsageCounts(tx, myID)
 	if err != nil {
-		log.WithError(err).Error()
+		log.Errorf("%s", errorfmt.Full(err))
 		return false
 	}
 	if usages == nil {
@@ -189,7 +193,7 @@ func (r *Restriction) verifyOtherUsageCounts(tx *sqlx.Tx, id mtid.MTID) bool {
 	}
 	usages, err := r.getOtherUsageCounts(tx, id)
 	if err != nil {
-		log.WithError(err).Error()
+		log.Errorf("%s", errorfmt.Full(err))
 		return false
 	}
 	if usages == nil {
@@ -223,7 +227,7 @@ func (r *Restriction) verifyOther(tx *sqlx.Tx, ip string, id mtid.MTID) bool {
 func (r *Restriction) UsedAT(tx *sqlx.Tx, id mtid.MTID) error {
 	js, err := json.Marshal(r)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	return mytokenrepohelper.IncreaseTokenUsageAT(tx, id, js)
 }
@@ -233,7 +237,7 @@ func (r *Restriction) UsedAT(tx *sqlx.Tx, id mtid.MTID) error {
 func (r *Restriction) UsedOther(tx *sqlx.Tx, id mtid.MTID) error {
 	js, err := json.Marshal(r)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	return mytokenrepohelper.IncreaseTokenUsageOther(tx, id, js)
 }
@@ -321,8 +325,7 @@ func (r *Restrictions) Scan(src interface{}) error {
 		return nil
 	}
 	val := src.([]uint8)
-	err := json.Unmarshal(val, &r)
-	return err
+	return errors.WithStack(json.Unmarshal(val, &r))
 }
 
 // Value implements the driver.Valuer interface
@@ -330,7 +333,8 @@ func (r Restrictions) Value() (driver.Value, error) {
 	if len(r) == 0 {
 		return nil, nil
 	}
-	return json.Marshal(r)
+	v, err := json.Marshal(r)
+	return v, errors.WithStack(err)
 }
 
 // GetExpires gets the maximum (latest) expiration time of all restrictions
@@ -451,7 +455,6 @@ func Tighten(old, wanted Restrictions) (res Restrictions, ok bool) {
 				if o.UsagesAT != nil && a.UsagesAT != nil {
 					*base[i].UsagesAT -= *a.UsagesAT
 				}
-				// base = append(base[:i], base[i+1:]...)
 				break
 			}
 		}
@@ -480,8 +483,7 @@ func (r *Restrictions) ReplaceThisIp(ip string) {
 
 func (r *Restrictions) removeIndex(i int) { // skipcq SCC-U1000
 	copy((*r)[i:], (*r)[i+1:]) // Shift r[i+1:] left one index.
-	// r[len(r)-1] = ""     // Erase last element (write zero value).
-	*r = (*r)[:len(*r)-1] // Truncate slice.
+	*r = (*r)[:len(*r)-1]      // Truncate slice.
 }
 
 func (r *Restriction) isTighterThan(b Restriction) bool {

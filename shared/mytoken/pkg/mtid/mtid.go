@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
+	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/oidc-mytoken/server/internal/db"
@@ -51,7 +52,8 @@ func (i *MTID) Hash() string {
 func (i MTID) Value() (driver.Value, error) {
 	ns := db.NewNullString(i.Hash())
 	ns.Valid = i.HashValid()
-	return ns.Value()
+	v, err := ns.Value()
+	return v, errors.WithStack(err)
 }
 
 // Scan implements the sql.Scanner interface
@@ -60,7 +62,7 @@ func (i *MTID) Scan(src interface{}) error {
 		return nil
 	}
 	ns := db.NewNullString("")
-	if err := ns.Scan(src); err != nil {
+	if err := errors.WithStack(ns.Scan(src)); err != nil {
 		return err
 	}
 	i.hash = ns.String
@@ -69,10 +71,11 @@ func (i *MTID) Scan(src interface{}) error {
 
 // MarshalJSON implements the json.Marshaler interface
 func (i MTID) MarshalJSON() ([]byte, error) {
-	return json.Marshal(i.String())
+	data, err := json.Marshal(i.String())
+	return data, errors.WithStack(err)
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (i *MTID) UnmarshalJSON(data []byte) error {
-	return json.Unmarshal(data, &i.UUID)
+	return errors.WithStack(json.Unmarshal(data, &i.UUID))
 }

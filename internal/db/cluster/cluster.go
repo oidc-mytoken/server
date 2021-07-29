@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 
 	// mysql driver
 	_ "github.com/go-sql-driver/mysql"
@@ -51,7 +53,7 @@ type node struct {
 func (n *node) close() {
 	if n.db != nil {
 		err := n.db.Close()
-		log.WithError(err).Error()
+		log.Errorf("%s", errorfmt.Full(err))
 		n.db = nil
 	}
 }
@@ -60,7 +62,7 @@ func (n *node) close() {
 func (c *Cluster) AddNodes() {
 	for _, host := range c.conf.Hosts {
 		if err := c.AddNode(host); err != nil {
-			log.WithError(err).Error()
+			log.Errorf("%s", errorfmt.Full(err))
 		}
 	}
 }
@@ -147,7 +149,7 @@ func (c *Cluster) Close() {
 func connectDSN(dsn string) (*sqlx.DB, error) {
 	db, err := sqlx.Connect("mysql", dsn)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	db.SetConnMaxLifetime(time.Minute * 4)
 	db.SetMaxOpenConns(10)
@@ -160,13 +162,13 @@ func (c *Cluster) Transact(fn func(*sqlx.Tx) error) error {
 	for {
 		n := c.next()
 		if n == nil {
-			return fmt.Errorf("no db node available")
+			return errors.New("no db node available")
 		}
 		closed, err := n.transact(fn)
 		if !closed {
 			return err
 		}
-		log.WithError(err).Error()
+		log.Errorf("%s", errorfmt.Full(err))
 		n.active = false
 	}
 }
@@ -174,7 +176,7 @@ func (c *Cluster) Transact(fn func(*sqlx.Tx) error) error {
 func (n *node) transact(fn func(*sqlx.Tx) error) (bool, error) {
 	err := n.trans(fn)
 	if err != nil {
-		e := err.Error()
+		e := errorfmt.Error(err)
 		switch {
 		case e == "sql: database is closed",
 			strings.HasPrefix(e, "dial tcp"),
@@ -188,16 +190,16 @@ func (n *node) transact(fn func(*sqlx.Tx) error) (bool, error) {
 func (n *node) trans(fn func(*sqlx.Tx) error) error {
 	tx, err := n.db.Beginx()
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	err = fn(tx)
 	if err != nil {
 		if e := tx.Rollback(); e != nil {
-			log.WithError(e).Error()
+			log.Errorf("%s", errorfmt.Full(e))
 		}
 		return err
 	}
-	return tx.Commit()
+	return errors.WithStack(tx.Commit())
 }
 
 func (c *Cluster) next() *node {

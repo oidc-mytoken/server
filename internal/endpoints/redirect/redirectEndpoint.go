@@ -11,7 +11,9 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
+	"github.com/oidc-mytoken/server/internal/server/httpStatus"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	pkgModel "github.com/oidc-mytoken/server/shared/model"
 )
 
@@ -28,12 +30,12 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 				}
 				return authcodeinforepo.DeleteAuthFlowInfoByState(tx, oState)
 			}); err != nil {
-				log.WithError(err).Error()
+				log.Errorf("%s", errorfmt.Full(err))
 			}
 		}
 		oidcErrorDescription := ctx.Query("error_description")
 		errorRes := model.Response{
-			Status:   fiber.StatusInternalServerError,
+			Status:   httpStatus.StatusOIDPError,
 			Response: pkgModel.OIDCError(oidcError, oidcErrorDescription),
 		}
 		return errorRes.Send(ctx)

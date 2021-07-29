@@ -2,16 +2,16 @@ package transfercoderepo
 
 import (
 	"database/sql"
-	"errors"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 // TransferCode is a type used to transfer a token
@@ -72,7 +72,7 @@ func (tc TransferCode) Store(tx *sqlx.Tx) error {
                       VALUES(?,?,?,?,?)`,
 			tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewMT,
 			tc.Attributes.ResponseType, tc.Attributes.MaxTokenLen)
-		return err
+		return errors.WithStack(err)
 	})
 }
 
@@ -84,7 +84,7 @@ func (tc TransferCode) GetRevokeJWT(tx *sqlx.Tx) (bool, error) {
 			if errors.Is(err, sql.ErrNoRows) {
 				return nil
 			}
-			return err
+			return errors.WithStack(err)
 		}
 		return nil
 	})

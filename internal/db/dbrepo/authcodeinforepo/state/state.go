@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -67,7 +68,7 @@ func (s *State) Scan(src interface{}) error {
 		return nil
 	}
 	ns := db.NewNullString("")
-	if err := ns.Scan(src); err != nil {
+	if err := errors.WithStack(ns.Scan(src)); err != nil {
 		return err
 	}
 	s.hash = ns.String
@@ -77,10 +78,11 @@ func (s *State) Scan(src interface{}) error {
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (s *State) UnmarshalJSON(data []byte) error {
 	err := json.Unmarshal(data, &s.state)
-	return err
+	return errors.WithStack(err)
 }
 
 // MarshalJSON implements the json.Marshaler interface
 func (s State) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.state)
+	data, err := json.Marshal(s.state)
+	return data, errors.WithStack(err)
 }

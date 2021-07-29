@@ -2,9 +2,9 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -66,11 +66,11 @@ func (rk *RestrictionKey) Valid() bool {
 func (rk *RestrictionKey) UnmarshalYAML(value *yaml.Node) error {
 	s := value.Value
 	if s == "" {
-		return fmt.Errorf("empty value in unmarshal grant type")
+		return errors.New("empty value in unmarshal grant type")
 	}
 	*rk = NewRestrictionKey(s)
 	if !rk.Valid() {
-		return fmt.Errorf("value '%s' not valid for RestrictionKey", s)
+		return errors.Errorf("value '%s' not valid for RestrictionKey", s)
 	}
 	return nil
 }
@@ -79,11 +79,11 @@ func (rk *RestrictionKey) UnmarshalYAML(value *yaml.Node) error {
 func (rk *RestrictionKey) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	*rk = NewRestrictionKey(s)
 	if !rk.Valid() {
-		return fmt.Errorf("value '%s' not valid for RestrictionKey", s)
+		return errors.Errorf("value '%s' not valid for RestrictionKey", s)
 	}
 	return nil
 }
@@ -93,14 +93,15 @@ func (rk *RestrictionKey) UnmarshalText(data []byte) error {
 	s := string(data)
 	*rk = NewRestrictionKey(s)
 	if !rk.Valid() {
-		return fmt.Errorf("value '%s' not valid for RestrictionKey", s)
+		return errors.Errorf("value '%s' not valid for RestrictionKey", s)
 	}
 	return nil
 }
 
 // MarshalJSON implements the json.Marshaler interface
 func (rk RestrictionKey) MarshalJSON() ([]byte, error) {
-	return json.Marshal(rk.String())
+	data, err := json.Marshal(rk.String())
+	return data, errors.WithStack(err)
 }
 
 // Has checks if a a RestrictionKey is in a RestrictionKeys

@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
 
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -49,11 +49,11 @@ func (r *ResponseType) Valid() bool {
 func (r *ResponseType) UnmarshalYAML(value *yaml.Node) error {
 	s := value.Value
 	if s == "" {
-		return fmt.Errorf("empty value in unmarshal response type")
+		return errors.New("empty value in unmarshal response type")
 	}
 	*r = NewResponseType(s)
 	if !r.Valid() {
-		return fmt.Errorf("value '%s' not valid for ResponseType", s)
+		return errors.Errorf("value '%s' not valid for ResponseType", s)
 	}
 	return nil
 }
@@ -61,19 +61,20 @@ func (r *ResponseType) UnmarshalYAML(value *yaml.Node) error {
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (r *ResponseType) UnmarshalJSON(data []byte) error {
 	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
+	if err := errors.WithStack(json.Unmarshal(data, &s)); err != nil {
 		return err
 	}
 	*r = NewResponseType(s)
 	if !r.Valid() {
-		return fmt.Errorf("value '%s' not valid for ResponseType", s)
+		return errors.Errorf("value '%s' not valid for ResponseType", s)
 	}
 	return nil
 }
 
 // MarshalJSON implements the json.Marshaler interface
 func (r ResponseType) MarshalJSON() ([]byte, error) {
-	return json.Marshal(r.String())
+	data, err := json.Marshal(r.String())
+	return data, errors.WithStack(err)
 }
 
 // AddToSliceIfNotFound adds the ResponseType to a slice s if it is not already there
@@ -94,7 +95,7 @@ func (r ResponseType) Value() (driver.Value, error) {
 // Scan implements the sql.Scanner interface.
 func (r *ResponseType) Scan(src interface{}) error {
 	ns := sql.NullString{}
-	if err := ns.Scan(src); err != nil {
+	if err := errors.WithStack(ns.Scan(src)); err != nil {
 		return err
 	}
 	*r = NewResponseType(ns.String)

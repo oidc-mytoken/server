@@ -7,6 +7,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/pkg/errors"
 )
 
 // RefreshRequest is the oidc request for an refresh flow
@@ -20,7 +21,8 @@ type RefreshRequest struct {
 
 // MarshalJSON implements the json.Marshaler interface
 func (r *RefreshRequest) MarshalJSON() ([]byte, error) {
-	return json.Marshal(r.ToFormData())
+	data, err := json.Marshal(r.ToFormData())
+	return data, errors.WithStack(err)
 }
 
 // NewRefreshRequest creates a new RefreshRequest for a given refresh token

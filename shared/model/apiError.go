@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/oidc-mytoken/api/v0"
+
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 )
 
 // InternalServerError creates an Error for internal server errors
@@ -65,6 +67,6 @@ func ErrorWithoutDescription(err string) api.Error {
 func ErrorWithErrorDescription(e string, err error) api.Error {
 	return api.Error{
 		Error:            e,
-		ErrorDescription: err.Error(),
+		ErrorDescription: errorfmt.Error(err),
 	}
 }

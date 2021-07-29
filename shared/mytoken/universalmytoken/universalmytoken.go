@@ -2,7 +2,8 @@ package universalmytoken
 
 import (
 	"encoding/json"
-	"fmt"
+
+	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/shared/model"
@@ -20,17 +21,17 @@ type UniversalMytoken struct {
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (t *UniversalMytoken) UnmarshalJSON(data []byte) (err error) {
 	var token string
-	if err = json.Unmarshal(data, &token); err != nil {
+	if err = errors.WithStack(json.Unmarshal(data, &token)); err != nil {
 		return
 	}
 	*t, err = Parse(token)
-	return
+	return errors.WithStack(err)
 }
 
 // Parse parses a mytoken string (that can be a long or short mytoken) into an UniversalMytoken holding the JWT
 func Parse(token string) (UniversalMytoken, error) {
 	if token == "" {
-		return UniversalMytoken{}, fmt.Errorf("token not valid")
+		return UniversalMytoken{}, errors.New("token not valid")
 	}
 	if utils.IsJWT(token) {
 		return UniversalMytoken{
@@ -43,7 +44,7 @@ func Parse(token string) (UniversalMytoken, error) {
 	jwt, valid, dbErr := shortToken.JWT(nil)
 	var validErr error
 	if !valid {
-		validErr = fmt.Errorf("token not valid")
+		validErr = errors.New("token not valid")
 	}
 	return UniversalMytoken{
 		JWT:               jwt,

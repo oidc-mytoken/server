@@ -6,11 +6,14 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/mod/semver"
+
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbmigrate"
 	"github.com/oidc-mytoken/server/internal/model/version"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/mod/semver"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 )
 
 // SetVersionBefore sets that the before db migration commands for the passed version were executed
@@ -20,7 +23,7 @@ func SetVersionBefore(tx *sqlx.Tx, version string) error {
 			`INSERT INTO version (version, bef) VALUES(?, current_timestamp()) 
                       ON DUPLICATE KEY UPDATE bef=current_timestamp()`,
 			version)
-		return err
+		return errors.WithStack(err)
 	})
 }
 
@@ -31,7 +34,7 @@ func SetVersionAfter(tx *sqlx.Tx, version string) error {
 			`INSERT INTO version (version, aft) VALUES(?, current_timestamp())
                       ON DUPLICATE KEY UPDATE aft=current_timestamp()`,
 			version)
-		return err
+		return errors.WithStack(err)
 	})
 }
 
@@ -95,9 +98,9 @@ func (state DBVersionState) dBHasVersion(v string, cmds dbmigrate.Commands) bool
 // GetVersionState returns the DBVersionState
 func GetVersionState(tx *sqlx.Tx) (state DBVersionState, err error) {
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Select(&state, `SELECT version, bef, aft FROM version`)
+		return errors.WithStack(tx.Select(&state, `SELECT version, bef, aft FROM version`))
 	})
-	if err != nil && strings.HasPrefix(err.Error(), "Error 1146: Table") { // Ignore table does not exist error
+	if err != nil && strings.HasPrefix(errorfmt.Error(err), "Error 1146: Table") { // Ignore table does not exist error
 		err = nil
 	}
 	state.Sort()

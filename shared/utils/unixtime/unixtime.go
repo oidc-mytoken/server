@@ -5,6 +5,8 @@ import (
 	"database/sql/driver"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
@@ -33,16 +35,17 @@ func InSeconds(s int64) UnixTime {
 
 // Value implements the driver.Valuer interface
 func (t UnixTime) Value() (driver.Value, error) {
-	return sql.NullTime{
+	v, err := sql.NullTime{
 		Time:  t.Time(),
 		Valid: true,
 	}.Value()
+	return v, errors.WithStack(err)
 }
 
 // Scan implements the sql.Scanner interface
 func (t *UnixTime) Scan(src interface{}) error {
 	var tmp sql.NullTime
-	if err := tmp.Scan(src); err != nil {
+	if err := errors.WithStack(tmp.Scan(src)); err != nil {
 		return err
 	}
 	*t = New(tmp.Time)

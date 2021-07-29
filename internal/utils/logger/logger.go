@@ -12,10 +12,10 @@ import (
 
 func mustGetFile(path string) io.Writer {
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
-	if err == nil {
-		return file
+	if err != nil {
+		panic(err)
 	}
-	panic(err)
+	return file
 }
 
 var accessLogger *exchangeableWriter

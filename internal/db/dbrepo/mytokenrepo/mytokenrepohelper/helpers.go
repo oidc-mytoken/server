@@ -2,10 +2,11 @@ package mytokenrepohelper
 
 import (
 	"database/sql"
-	"errors"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/pkg/errors"
+
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
@@ -28,7 +29,7 @@ func ParseError(err error) (bool, error) {
 func GetMTParentID(myID mtid.MTID) (string, bool, error) {
 	var parentID sql.NullString
 	found, err := ParseError(db.Transact(func(tx *sqlx.Tx) error {
-		return tx.Get(&parentID, `SELECT parent_id FROM MTokens WHERE id=?`, myID)
+		return errors.WithStack(tx.Get(&parentID, `SELECT parent_id FROM MTokens WHERE id=?`, myID))
 	}))
 	return parentID.String, found, err
 }
@@ -37,7 +38,7 @@ func GetMTParentID(myID mtid.MTID) (string, bool, error) {
 func GetMTRootID(id mtid.MTID) (mtid.MTID, bool, error) {
 	var rootID mtid.MTID
 	found, err := ParseError(db.Transact(func(tx *sqlx.Tx) error {
-		return tx.Get(&rootID, `SELECT root_id FROM MTokens WHERE id=?`, id)
+		return errors.WithStack(tx.Get(&rootID, `SELECT root_id FROM MTokens WHERE id=?`, id))
 	}))
 	return rootID, found, err
 }
@@ -46,30 +47,30 @@ func GetMTRootID(id mtid.MTID) (mtid.MTID, bool, error) {
 func recursiveRevokeMT(tx *sqlx.Tx, id mtid.MTID) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		var effectedMTIDs []mtid.MTID
-		if err := tx.Select(&effectedMTIDs,
+		if err := errors.WithStack(tx.Select(&effectedMTIDs,
 			`WITH Recursive childs AS (
                   SELECT id, parent_id FROM MTokens WHERE id=?
                   UNION ALL
                   SELECT mt.id, mt.parent_id FROM MTokens mt INNER JOIN childs c WHERE mt.parent_id=c.id
                 ) SELECT id FROM   childs`,
-			id); err != nil {
+			id)); err != nil {
 			return err
 		}
 		query, args, err := sqlx.In(
 			`DELETE FROM EncryptionKeys WHERE id=ANY(SELECT key_id FROM RT_EncryptionKeys WHERE MT_id IN (?))`,
 			effectedMTIDs)
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 		if _, err = tx.Exec(query, args...); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 		query, args, err = sqlx.In(`DELETE FROM MTokens WHERE id IN (?)`, effectedMTIDs)
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 		_, err = tx.Exec(query, args...)
-		return err
+		return errors.WithStack(err)
 	})
 }
 
@@ -107,7 +108,7 @@ func CheckTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64, rot *api.Rotatio
 func checkTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64) (bool, error) {
 	var count int
 	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&count, `SELECT COUNT(1) FROM MTokens WHERE id=? AND seqno=?`, id, seqno)
+		return errors.WithStack(tx.Get(&count, `SELECT COUNT(1) FROM MTokens WHERE id=? AND seqno=?`, id, seqno))
 	}); err != nil {
 		return true, err
 	}
@@ -120,7 +121,7 @@ func checkTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64) (bool, error) {
 func checkTokenID(tx *sqlx.Tx, id mtid.MTID) (bool, error) {
 	var count int
 	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&count, `SELECT COUNT(1) FROM MTokens WHERE id=?`, id)
+		return errors.WithStack(tx.Get(&count, `SELECT COUNT(1) FROM MTokens WHERE id=?`, id))
 	}); err != nil {
 		return false, err
 	}
@@ -130,10 +131,10 @@ func checkTokenID(tx *sqlx.Tx, id mtid.MTID) (bool, error) {
 func checkRotatingTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno, rotationLifetime uint64) (bool, error) {
 	var count int
 	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&count,
+		return errors.WithStack(tx.Get(&count,
 			`SELECT COUNT(1) FROM MTokens WHERE id=? AND seqno=?
                                AND TIMESTAMPADD(SECOND, ?, last_rotated) >= CURRENT_TIMESTAMP()`,
-			id, seqno, rotationLifetime)
+			id, seqno, rotationLifetime))
 	}); err != nil {
 		return true, err
 	}
@@ -148,7 +149,7 @@ func checkRotatingTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno, rotationLifetim
 func UpdateSeqNo(tx *sqlx.Tx, id mtid.MTID, seqno uint64) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`UPDATE MTokens SET seqno=?, last_rotated=current_timestamp() WHERE id=?`, seqno, id)
-		return err
+		return errors.WithStack(err)
 	})
 }
 
@@ -159,7 +160,7 @@ func revokeMT(tx *sqlx.Tx, id mtid.MTID) error {
 			return err
 		}
 		_, err := tx.Exec(`DELETE FROM MTokens WHERE id=?`, id)
-		return err
+		return errors.WithStack(err)
 	})
 }
 
@@ -176,9 +177,9 @@ func RevokeMT(tx *sqlx.Tx, id mtid.MTID, recursive bool) error {
 func GetTokenUsagesAT(tx *sqlx.Tx, myID mtid.MTID, restrictionHash string) (usages *int64, err error) {
 	var usageCount int64
 	if err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&usageCount,
+		return errors.WithStack(tx.Get(&usageCount,
 			`SELECT usages_AT FROM TokenUsages WHERE restriction_hash=? AND MT_id=?`,
-			restrictionHash, myID)
+			restrictionHash, myID))
 	}); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// No usage entry -> was not used before -> usages=nil
@@ -196,9 +197,9 @@ func GetTokenUsagesAT(tx *sqlx.Tx, myID mtid.MTID, restrictionHash string) (usag
 func GetTokenUsagesOther(tx *sqlx.Tx, myID mtid.MTID, restrictionHash string) (usages *int64, err error) {
 	var usageCount int64
 	if err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return tx.Get(&usageCount,
+		return errors.WithStack(tx.Get(&usageCount,
 			`SELECT usages_other FROM TokenUsages WHERE restriction_hash=? AND MT_id=?`,
-			restrictionHash, myID)
+			restrictionHash, myID))
 	}); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// No usage entry -> was not used before -> usages=nil
@@ -218,7 +219,7 @@ func IncreaseTokenUsageAT(tx *sqlx.Tx, myID mtid.MTID, jsonRestriction []byte) e
 			`INSERT INTO TokenUsages (MT_id, restriction, restriction_hash, usages_AT) VALUES (?, ?, ?, 1)
                       ON DUPLICATE KEY UPDATE usages_AT = usages_AT + 1`,
 			myID, jsonRestriction, hashUtils.SHA512Str(jsonRestriction))
-		return err
+		return errors.WithStack(err)
 	})
 }
 
@@ -229,6 +230,6 @@ func IncreaseTokenUsageOther(tx *sqlx.Tx, myID mtid.MTID, jsonRestriction []byte
 			`INSERT INTO TokenUsages (MT_id, restriction, restriction_hash, usages_other) VALUES (?, ?, ?, 1) 
                       ON DUPLICATE KEY UPDATE usages_other = usages_other + 1`,
 			myID, jsonRestriction, hashUtils.SHA512Str(jsonRestriction))
-		return err
+		return errors.WithStack(err)
 	})
 }
