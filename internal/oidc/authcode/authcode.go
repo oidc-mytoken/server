@@ -72,6 +72,9 @@ func GetAuthorizationURL(provider *config.ProviderConf, oState, pkceChallenge st
 	} else if !utils.StringInSlice(oidc.ScopeOfflineAccess, oauth2Config.Scopes) {
 		oauth2Config.Scopes = append(oauth2Config.Scopes, oidc.ScopeOfflineAccess)
 	}
+	if !utils.StringInSlice(oidc.ScopeOpenID, oauth2Config.Scopes) { // if user deselected openid scope in restriction, we still need it
+		oauth2Config.Scopes = append(oauth2Config.Scopes, oidc.ScopeOpenID)
+	}
 	auds := restrictions.GetAudiences()
 	if len(auds) > 0 {
 		additionalParams = append(additionalParams,
