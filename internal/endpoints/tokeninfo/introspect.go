@@ -18,13 +18,13 @@ import (
 
 func handleTokenInfoIntrospect(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
 	// If we call this function it means the token is valid.
-
 	if !mt.Capabilities.Has(api.CapabilityTokeninfoIntrospect) {
 		return model.Response{
 			Status:   fiber.StatusForbidden,
 			Response: api.ErrorInsufficientCapabilities,
 		}
 	}
+
 	var usedToken mytoken.UsedMytoken
 	if err := db.RunWithinTransaction(nil, func(tx *sqlx.Tx) error {
 		tmp, err := mt.ToUsedMytoken(tx)

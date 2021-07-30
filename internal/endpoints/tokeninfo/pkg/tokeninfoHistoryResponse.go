@@ -13,6 +13,6 @@ type TokeninfoHistoryResponse struct {
 }
 
 // NewTokeninfoHistoryResponse creates a new TokeninfoHistoryResponse
-func NewTokeninfoHistoryResponse(h eventrepo.EventHistory) TokeninfoHistoryResponse {
-	return TokeninfoHistoryResponse{EventHistory: h}
+func NewTokeninfoHistoryResponse(h eventrepo.EventHistory, update *my.MytokenResponse) TokeninfoHistoryResponse {
+	return TokeninfoHistoryResponse{EventHistory: h, TokenUpdate: update}
 }

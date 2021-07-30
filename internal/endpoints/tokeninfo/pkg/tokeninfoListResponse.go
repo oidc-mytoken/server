@@ -13,6 +13,6 @@ type TokeninfoListResponse struct {
 }
 
 // NewTokeninfoListResponse creates a new TokeninfoListResponse
-func NewTokeninfoListResponse(l []tree.MytokenEntryTree) TokeninfoListResponse {
-	return TokeninfoListResponse{Tokens: l}
+func NewTokeninfoListResponse(l []tree.MytokenEntryTree, update *my.MytokenResponse) TokeninfoListResponse {
+	return TokeninfoListResponse{Tokens: l, TokenUpdate: update}
 }

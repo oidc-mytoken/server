@@ -1,7 +1,6 @@
 package mytoken
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -210,11 +209,13 @@ func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFrom
 			{event.FromNumber(event.MTEventMTCreated, strings.TrimSpace(fmt.Sprintf("Created MT %s", req.Name))), parent.ID},
 		}, *networkData)
 	}); err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 
 	res, err := ste.Token.ToTokenResponse(req.ResponseType, req.MaxTokenLen, *networkData, "")
 	if err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	var cake []*fiber.Cookie
@@ -311,12 +312,11 @@ func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, jwt string, recursive bool, issuer
 			Response: api.ErrorUnknownIssuer,
 		}
 	}
-	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		rtID, err := refreshtokenrepo.GetRTID(tx, id)
 		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil
-			}
+			_, err = dbhelper.ParseError(err) // sets err to nil if token was not found;
+			// this is no error and we are done, since the token is already revoked
 			return err
 		}
 		rt, _, err := refreshtokenrepo.GetRefreshToken(tx, id, jwt)
@@ -338,16 +338,16 @@ func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, jwt string, recursive bool, issuer
 			return fmt.Errorf("%s: %s", apiError.Error, apiError.ErrorDescription)
 		}
 		return refreshtokenrepo.DeleteRefreshToken(tx, rtID)
-	}); err != nil {
-		if strings.HasPrefix(errorfmt.Error(err), "oidc_error") {
-			return &model.Response{
-				Status:   httpStatus.StatusOIDPError,
-				Response: pkgModel.OIDCError(errorfmt.Error(err), ""),
-			}
-		} else {
-			log.Errorf("%s", errorfmt.Full(err))
-			return model.ErrorToInternalServerErrorResponse(err)
+	})
+	if err == nil {
+		return nil
+	}
+	if strings.HasPrefix(errorfmt.Error(err), "oidc_error") {
+		return &model.Response{
+			Status:   httpStatus.StatusOIDPError,
+			Response: pkgModel.OIDCError(errorfmt.Error(err), ""),
 		}
 	}
-	return nil
+	log.Errorf("%s", errorfmt.Full(err))
+	return model.ErrorToInternalServerErrorResponse(err)
 }

@@ -5,15 +5,19 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/oidc-mytoken/api/v0"
 	log "github.com/sirupsen/logrus"
 
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
+	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	model2 "github.com/oidc-mytoken/server/shared/model"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 )
 
 // HandleTokenInfo handles requests to the tokeninfo endpoint
@@ -76,4 +80,38 @@ func testMytoken(ctx *fiber.Ctx, req *pkg.TokenInfoRequest) (*mytoken.Mytoken, *
 		}
 	}
 	return mt, nil
+}
+
+func checkTokenInfo(mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData, capability api.Capability) (*restrictions.Restriction, *model.Response) {
+	if !mt.Capabilities.Has(capability) {
+		return nil, &model.Response{
+			Status:   fiber.StatusForbidden,
+			Response: api.ErrorInsufficientCapabilities,
+		}
+	}
+	var usedRestriction *restrictions.Restriction
+	if len(mt.Restrictions) > 0 {
+		possibleRestrictions := mt.Restrictions.GetValidForOther(nil, clientMetadata.IP, mt.ID)
+		if len(possibleRestrictions) == 0 {
+			return nil, &model.Response{
+				Status:   fiber.StatusForbidden,
+				Response: api.ErrorUsageRestricted,
+			}
+		}
+		usedRestriction = &possibleRestrictions[0]
+	}
+	return usedRestriction, nil
+}
+
+func makeTokenInfoResponse(rsp interface{}, tokenUpdate *response.MytokenResponse) model.Response {
+	var cake []*fiber.Cookie
+	if tokenUpdate != nil {
+		cookie := cookies.MytokenCookie(tokenUpdate.Mytoken)
+		cake = []*fiber.Cookie{&cookie}
+	}
+	return model.Response{
+		Status:   fiber.StatusOK,
+		Response: rsp,
+		Cookies:  cake,
+	}
 }
