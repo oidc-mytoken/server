@@ -38,6 +38,8 @@ func NewGrantType(s string) GrantType {
 	return -1
 }
 
+const valueNotValidFmt = "value '%s' not valid for GrantType"
+
 func (g *GrantType) String() string {
 	if *g < 0 || int(*g) >= len(AllGrantTypes) {
 		return ""
@@ -58,7 +60,7 @@ func (g *GrantType) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*g = NewGrantType(s)
 	if !g.Valid() {
-		return errors.Errorf("value '%s' not valid for GrantType", s)
+		return errors.Errorf(valueNotValidFmt, s)
 	}
 	return nil
 }
@@ -71,7 +73,7 @@ func (g *GrantType) UnmarshalJSON(data []byte) error {
 	}
 	*g = NewGrantType(s)
 	if !g.Valid() {
-		return errors.Errorf("value '%s' not valid for GrantType", s)
+		return errors.Errorf(valueNotValidFmt, s)
 	}
 	return nil
 }
@@ -81,7 +83,7 @@ func (g *GrantType) UnmarshalText(data []byte) error {
 	s := string(data)
 	*g = NewGrantType(s)
 	if !g.Valid() {
-		return errors.Errorf("value '%s' not valid for GrantType", s)
+		return errors.Errorf(valueNotValidFmt, s)
 	}
 	return nil
 }
