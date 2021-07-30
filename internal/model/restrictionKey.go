@@ -62,6 +62,8 @@ func (rk *RestrictionKey) Valid() bool {
 	return *rk < maxRestrictionKey && *rk >= 0
 }
 
+const valueNotValidFmt = "value '%s' not valid for RestrictionKey"
+
 // UnmarshalYAML implements the yaml.Unmarshaler interface
 func (rk *RestrictionKey) UnmarshalYAML(value *yaml.Node) error {
 	s := value.Value
@@ -70,7 +72,7 @@ func (rk *RestrictionKey) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*rk = NewRestrictionKey(s)
 	if !rk.Valid() {
-		return errors.Errorf("value '%s' not valid for RestrictionKey", s)
+		return errors.Errorf(valueNotValidFmt, s)
 	}
 	return nil
 }
@@ -83,7 +85,7 @@ func (rk *RestrictionKey) UnmarshalJSON(data []byte) error {
 	}
 	*rk = NewRestrictionKey(s)
 	if !rk.Valid() {
-		return errors.Errorf("value '%s' not valid for RestrictionKey", s)
+		return errors.Errorf(valueNotValidFmt, s)
 	}
 	return nil
 }
@@ -93,7 +95,7 @@ func (rk *RestrictionKey) UnmarshalText(data []byte) error {
 	s := string(data)
 	*rk = NewRestrictionKey(s)
 	if !rk.Valid() {
-		return errors.Errorf("value '%s' not valid for RestrictionKey", s)
+		return errors.Errorf(valueNotValidFmt, s)
 	}
 	return nil
 }
