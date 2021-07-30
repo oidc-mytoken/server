@@ -9,6 +9,10 @@ $(function (){
         rotationAutoRevoke.prop("checked", rot_autoRevoke);
         rotationAutoRevoke.prop("disabled", !rot_onAT && !rot_onOther);
     }
+    chainFunctions(
+        discovery,
+        initRestrGUI,
+    );
 })
 
 function approve() {

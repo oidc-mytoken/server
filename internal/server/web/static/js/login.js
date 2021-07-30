@@ -1,5 +1,6 @@
-
-
+$(function (){
+    checkIfLoggedIn();
+})
 
 $('#login-form').on('submit', function(e){
     e.preventDefault();
@@ -28,7 +29,7 @@ $('#login-form').on('submit', function(e){
         "lifetime": 3600*24,
     }
     data['name'] = "mytoken-web";
-    storageSet("oidc_issuer", data["oidc_issuer"]);
+    storageSet("oidc_issuer", data["oidc_issuer"], true);
     data = JSON.stringify(data);
     $.ajax({
         type: "POST",

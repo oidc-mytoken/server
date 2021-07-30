@@ -8,8 +8,12 @@ clipboard.on('success', function (e) {
     el.attr('data-original-title', originalText);
 });
 
-// https://stackoverflow.com/a/17552459
 $(function (){
+    chainFunctions(
+        checkIfLoggedIn,
+        initRestrGUI,
+    );
+    // https://stackoverflow.com/a/17552459
     // Javascript to enable link to tab
     let url = document.location.toString();
     if (url.match('#')) {

@@ -2,9 +2,9 @@ const usagesAT = $('#usages_AT');
 const usagesOther = $('#usages_other');
 const restrClauses = $('#restr-clauses');
 
-$(function(){
-    let date_input=$('.datetimepicker-input');
-    let options={
+$(function() {
+    let date_input = $('.datetimepicker-input');
+    let options = {
         format: 'YYYY-MM-DD HH:mm:ss',
         extraFormats: ['X'],
         minDate: Date.now(),
@@ -27,11 +27,11 @@ $(function(){
     date_input.datetimepicker(options);
 
     $(".nbf").on("change.datetimepicker", function (e) {
-        $('#'+$(this).attr("id").replace("nbf", "exp")).datetimepicker("minDate", e.date);
+        $('#' + $(this).attr("id").replace("nbf", "exp")).datetimepicker("minDate", e.date);
         GUIToRestr_Nbf();
     });
     $(".exp").on("change.datetimepicker", function (e) {
-        $('#'+$(this).attr("id").replace("exp", "nbf")).datetimepicker("maxDate", e.date);
+        $('#' + $(this).attr("id").replace("exp", "nbf")).datetimepicker("maxDate", e.date);
         GUIToRestr_Exp();
     });
 
@@ -42,7 +42,9 @@ $(function(){
         $('.country-select').append(opt);
     }
     $(".country-select").prop("selectedIndex", -1);
+})
 
+function initRestrGUI() {
     const scopes = typeof(supported_scopes)!=='undefined' ? supported_scopes : getSupportedScopesFromStorage();
     for (const scope of scopes) {
         let html = `<tr>
@@ -82,7 +84,7 @@ $(function(){
     })
 
     RestrToGUI();
-})
+}
 
 function getSupportedScopesFromStorage() {
     const providers = storageGet("providers_supported");

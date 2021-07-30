@@ -45,3 +45,28 @@ function noLandscape(prefix) {
 function escapeSelector(s){
     return s.replace( /(:|\.|\[|]|\/)/g, "\\$1" );
 }
+
+function doNext(...next) {
+    console.log(next);
+    switch (next.length) {
+        case 0:
+            return;
+        case 1:
+            return next[0]();
+        default:
+            let other = next.splice(1);
+            return next[0](...other);
+    }
+}
+
+function chainFunctions(...fncs) {
+    switch (fncs.length) {
+        case 0:
+            return;
+        case 1:
+            return fncs[0]();
+        default:
+            let other = fncs.splice(1);
+            return fncs[0](...other);
+    }
+}

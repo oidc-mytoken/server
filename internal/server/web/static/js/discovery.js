@@ -8,8 +8,9 @@ const configElements = [
     "providers_supported"
 ]
 
-function discovery() {
+function discovery(...next) {
     if (storageGet('discovery') !== null) {
+        doNext(...next);
         return;
     }
     $.ajax({
@@ -20,10 +21,7 @@ function discovery() {
                 storageSet(el, res[el]);
             })
             storageSet('discovery', Date.now())
+            doNext(...next);
         }
     });
 }
-
-$(function () {
-    discovery();
-})

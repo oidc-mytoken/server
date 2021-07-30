@@ -25,6 +25,10 @@ $('#get-session-token-info').on('click', function(e){
     e.preventDefault();
     _tokeninfo('introspect',
         function(res){
+            let iss = res['token']['oidc_iss'];
+            if (iss) {
+                storageSet('oidc_issuer', iss, true);
+            }
             msg.text(JSON.stringify(res,null,4));
             msg.removeClass('text-danger');
             copy.removeClass('d-none');
