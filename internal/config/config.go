@@ -260,6 +260,10 @@ func Get() *Config {
 	return conf
 }
 
+func init() {
+	conf = &defaultConfig
+}
+
 func validate() error {
 	if conf == nil {
 		return errors.New("config not set")
