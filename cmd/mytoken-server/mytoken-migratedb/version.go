@@ -6,14 +6,15 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	mytokenlib "github.com/oidc-mytoken/lib"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbmigrate"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/versionrepo"
 	"github.com/oidc-mytoken/server/internal/model/version"
-	log "github.com/sirupsen/logrus"
 )
 
-func did(state versionrepo.DBVersionState, version string) (beforeDone bool, afterDone bool) {
+func did(state versionrepo.DBVersionState, version string) (beforeDone, afterDone bool) {
 	for _, entry := range state {
 		if entry.Version == version {
 			if entry.Before.Valid {

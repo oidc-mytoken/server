@@ -205,8 +205,8 @@ func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFrom
 			return
 		}
 		return eventService.LogEvents(tx, []eventService.MTEvent{
-			{event.FromNumber(event.MTEventInheritedRT, "Got RT from parent"), ste.ID},
-			{event.FromNumber(event.MTEventMTCreated, strings.TrimSpace(fmt.Sprintf("Created MT %s", req.Name))), parent.ID},
+			{Event: event.FromNumber(event.MTEventInheritedRT, "Got RT from parent"), MTID: ste.ID},
+			{Event: event.FromNumber(event.MTEventMTCreated, strings.TrimSpace(fmt.Sprintf("Created MT %s", req.Name))), MTID: parent.ID},
 		}, *networkData)
 	}); err != nil {
 		log.Errorf("%s", errorfmt.Full(err))
