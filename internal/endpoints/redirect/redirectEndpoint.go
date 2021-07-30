@@ -1,9 +1,13 @@
 package redirect
 
 import (
+	"net/http"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/api/v0"
 	log "github.com/sirupsen/logrus"
+	"github.com/valyala/fasthttp"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo"
@@ -42,5 +46,13 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 	}
 	code := ctx.Query("code")
 	res := authcode.CodeExchange(oState, code, *ctxUtils.ClientMetaData(ctx))
-	return res.Send(ctx)
+
+	if fasthttp.StatusCodeIsRedirect(res.Status) {
+		return res.Send(ctx)
+	}
+	return ctx.Render("sites/error", map[string]interface{}{
+		"empty-navbar":  true,
+		"error-heading": http.StatusText(res.Status),
+		"msg":           res.Response.(api.Error).CombinedMessage(),
+	}, "layouts/main")
 }

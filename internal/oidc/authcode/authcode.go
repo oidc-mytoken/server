@@ -142,8 +142,6 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 	}
 }
 
-//TODO don't return json
-
 // CodeExchange performs an oidc code exchange it creates the mytoken and stores it in the database
 func CodeExchange(oState *state.State, code string, networkData api.ClientMetaData) *model.Response {
 	log.Debug("Handle code exchange")
