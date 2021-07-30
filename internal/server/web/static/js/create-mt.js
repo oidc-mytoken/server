@@ -169,7 +169,7 @@ function polling(code, interval) {
                 let message;
                 switch (error) {
                     case "authorization_pending":
-                        message = "Authorization still pending.";
+                        // message = "Authorization still pending.";
                         showPending();
                         return;
                     case "access_denied":
