@@ -11,7 +11,7 @@ import (
 	"io/ioutil"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
 

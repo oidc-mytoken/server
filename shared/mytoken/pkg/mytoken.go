@@ -3,11 +3,9 @@ package mytoken
 import (
 	"fmt"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-
-	"github.com/oidc-mytoken/server/internal/utils"
 
 	"github.com/oidc-mytoken/api/v0"
 
@@ -16,6 +14,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/jws"
+	"github.com/oidc-mytoken/server/internal/utils"
 	"github.com/oidc-mytoken/server/shared/model"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
