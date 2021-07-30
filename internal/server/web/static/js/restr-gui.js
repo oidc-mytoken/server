@@ -213,9 +213,9 @@ function _addListItem(value, tableBody) {
     let html = `<tr><td class="align-middle"><span class="table-item">`+value+`</span></td><td class="align-middle"><button class="btn btn-small btn-delete-list-item"><i class="fas fa-minus"></i></button></td></tr>`;
     tableBody.append(html);
     $('.btn-delete-list-item').off("click").on("click", function (){
-        let tbodyId = $(this).parents('.list-table').attr("id");
+        let tablebodyId = $(this).parents('.list-table').attr("id");
         $(this).parents("tr").remove();
-        _guiToRestr_Table("#"+tbodyId, tbodyId.split('TableBody')[0]);
+        _guiToRestr_Table("#"+tablebodyId, tablebodyId.split('TableBody')[0]);
     })
     let tbodyId = tableBody.attr("id");
     _guiToRestr_Table("#"+tbodyId, tbodyId.split('TableBody')[0]);
@@ -268,8 +268,8 @@ function newRestrClauseBtn(index) {
     let btn = `<button type="button" id="restr-clause-`+index+`" class="btn btn-info restr-btn">`+index+`</button>`;
     restrClauses.append(btn);
     $('#restr-clause-'+index).on('click', function (){
-        let index = Number($(this).text())-1;
-        GUIMarkActiveClause(index);
+        let i = Number($(this).text())-1;
+        GUIMarkActiveClause(i);
         restrClauseToGUI();
     })
 }
