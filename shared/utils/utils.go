@@ -101,7 +101,7 @@ func IPsAreSubSet(ipsA, ipsB []string) bool {
 
 // IPIsIn checks if a ip is in a slice of ips, it will also check ip subnets
 func IPIsIn(ip string, ips []string) bool {
-	if ips == nil {
+	if len(ips) == 0 {
 		return false
 	}
 	ipA := net.ParseIP(ip)

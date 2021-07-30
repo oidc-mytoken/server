@@ -29,6 +29,12 @@ var defaultConfig = Config{
 			RedirectHTTP: true,
 		},
 		Secure: true,
+		Limiter: limiterConf{
+			Enabled:     true,
+			Max:         100,
+			Window:      300,
+			AlwaysAllow: []string{"127.0.0.1"},
+		},
 	},
 	DB: DBConf{
 		Hosts: []string{"localhost"},
@@ -172,7 +178,15 @@ type serverConf struct {
 	TLS    tlsConf `yaml:"tls"`
 	Secure bool    `yaml:"-"` // Secure indicates if the connection to the mytoken server is secure. This is
 	// independent of TLS, e.g. a Proxy can be used.
-	ProxyHeader string `yaml:"proxy_header"`
+	ProxyHeader string      `yaml:"proxy_header"`
+	Limiter     limiterConf `yaml:"request_limits"`
+}
+
+type limiterConf struct {
+	Enabled     bool     `yaml:"enabled"`
+	Max         int      `yaml:"max_requests"`
+	Window      int      `yaml:"window"`
+	AlwaysAllow []string `yaml:"always_allow"`
 }
 
 type tlsConf struct {
