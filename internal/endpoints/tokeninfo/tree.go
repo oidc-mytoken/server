@@ -13,6 +13,7 @@ import (
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
@@ -48,7 +49,7 @@ func doTokenInfoTree(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetada
 
 func handleTokenInfoTree(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
 	// If we call this function it means the token is valid.
-	usedRestriction, errRes := checkTokenInfo(mt, clientMetadata, api.CapabilityTokeninfoTree)
+	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(nil, mt, clientMetadata.IP, api.CapabilityTokeninfoTree)
 	if errRes != nil {
 		return *errRes
 	}

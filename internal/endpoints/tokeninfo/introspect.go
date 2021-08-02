@@ -10,6 +10,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
@@ -18,11 +19,8 @@ import (
 
 func handleTokenInfoIntrospect(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
 	// If we call this function it means the token is valid.
-	if !mt.Capabilities.Has(api.CapabilityTokeninfoIntrospect) {
-		return model.Response{
-			Status:   fiber.StatusForbidden,
-			Response: api.ErrorInsufficientCapabilities,
-		}
+	if errRes := auth.RequireCapability(api.CapabilityTokeninfoIntrospect, mt); errRes != nil {
+		return *errRes
 	}
 
 	var usedToken mytoken.UsedMytoken

@@ -11,12 +11,12 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/accesstokenrepo"
-	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
 	request "github.com/oidc-mytoken/server/internal/endpoints/token/access/pkg"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/refresh"
+	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
@@ -26,7 +26,6 @@ import (
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
-	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/jwtutils"
 )
@@ -43,99 +42,32 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		req.Mytoken = req.RefreshToken
 	}
 
-	if req.GrantType != model.GrantTypeMytoken {
-		res := serverModel.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: api.ErrorUnsupportedGrantType,
-		}
-		return res.Send(ctx)
+	if errRes := auth.RequireGrantType(model.GrantTypeMytoken, req.GrantType); errRes != nil {
+		return errRes.Send(ctx)
 	}
-	log.Trace("Checked grant type")
-	if req.Mytoken.JWT == "" {
-		var err error
-		req.Mytoken, err = universalmytoken.Parse(ctx.Cookies("mytoken"))
-		if err != nil {
-			return serverModel.Response{
-				Status:   fiber.StatusUnauthorized,
-				Response: model.InvalidTokenError(errorfmt.Error(err)),
-			}.Send(ctx)
-		}
+	mt, errRes := auth.RequireValidMytoken(nil, &req.Mytoken, ctx)
+	if errRes != nil {
+		return errRes.Send(ctx)
+	}
+	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(nil, mt, ctx.IP(),
+		utils.SplitIgnoreEmpty(req.Scope, " "),
+		utils.SplitIgnoreEmpty(req.Audience, " "),
+		api.CapabilityAT)
+	if errRes != nil {
+		return errRes.Send(ctx)
+	}
+	provider, errRes := auth.RequireMatchingIssuer(mt.OIDCIssuer, &req.Issuer)
+	if errRes != nil {
+		return errRes.Send(ctx)
 	}
 
-	mt, err := mytoken.ParseJWT(req.Mytoken.JWT)
-	if err != nil {
-		return (&serverModel.Response{
-			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError(errorfmt.Error(err)),
-		}).Send(ctx)
-	}
-	log.Trace("Parsed mytoken")
-
-	revoked, dbErr := dbhelper.CheckTokenRevoked(nil, mt.ID, mt.SeqNo, mt.Rotation)
-	if dbErr != nil {
-		log.Errorf("%s", errorfmt.Full(dbErr))
-		return serverModel.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
-	}
-	if revoked {
-		return (&serverModel.Response{
-			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError(""),
-		}).Send(ctx)
-	}
-	log.Trace("Checked token not revoked")
-
-	if ok := mt.Restrictions.VerifyForAT(nil, ctx.IP(), mt.ID); !ok {
-		return (&serverModel.Response{
-			Status:   fiber.StatusForbidden,
-			Response: api.ErrorUsageRestricted,
-		}).Send(ctx)
-	}
-	log.Trace("Checked mytoken restrictions")
-	if ok := mt.VerifyCapabilities(api.CapabilityAT); !ok {
-		res := serverModel.Response{
-			Status:   fiber.StatusForbidden,
-			Response: api.ErrorInsufficientCapabilities,
-		}
-		return res.Send(ctx)
-	}
-	log.Trace("Checked mytoken capabilities")
-	if req.Issuer == "" {
-		req.Issuer = mt.OIDCIssuer
-	} else if req.Issuer != mt.OIDCIssuer {
-		res := serverModel.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("token not for specified issuer"),
-		}
-		return res.Send(ctx)
-	}
-	log.Trace("Checked issuer")
-
-	return handleAccessTokenRefresh(mt, req, *ctxUtils.ClientMetaData(ctx)).Send(ctx)
+	return handleAccessTokenRefresh(mt, req, *ctxUtils.ClientMetaData(ctx), provider, usedRestriction).Send(ctx)
 }
 
-func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData api.ClientMetaData) *serverModel.Response {
-	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
-	if !ok {
-		return &serverModel.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: api.ErrorUnknownIssuer,
-		}
-	}
-
+func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData api.ClientMetaData, provider *config.ProviderConf, usedRestriction *restrictions.Restriction) *serverModel.Response {
 	scopes := strings.Join(provider.Scopes, " ") // default if no restrictions apply
 	auds := ""                                   // default if no restrictions apply
-	var usedRestriction *restrictions.Restriction
-	if len(mt.Restrictions) > 0 {
-		possibleRestrictions := mt.Restrictions.GetValidForAT(nil, networkData.IP, mt.ID).
-			WithScopes(utils.SplitIgnoreEmpty(req.Scope, " ")).
-			WithAudiences(utils.SplitIgnoreEmpty(req.Audience, " "))
-		if len(possibleRestrictions) == 0 {
-			return &serverModel.Response{
-				Status:   fiber.StatusForbidden,
-				Response: api.ErrorUsageRestricted,
-			}
-		}
-		usedRestriction = &possibleRestrictions[0]
+	if usedRestriction != nil {
 		if req.Scope != "" {
 			scopes = req.Scope
 		} else if usedRestriction.Scope != "" {

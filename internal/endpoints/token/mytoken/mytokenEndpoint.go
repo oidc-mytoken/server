@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/config"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/polling"
@@ -65,7 +66,7 @@ func handleOIDCFlow(ctx *fiber.Ctx) error {
 			Response: api.ErrorUnknownIssuer,
 		}.Send(ctx)
 	}
-	if req.Capabilities != nil && len(req.Capabilities) == 0 {
+	if len(req.Capabilities) == 0 {
 		return serverModel.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: api.Error{Error: api.ErrorStrInvalidRequest, ErrorDescription: "capabilities cannot be empty"},

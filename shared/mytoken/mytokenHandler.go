@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
+	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
@@ -111,7 +112,7 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	if err := errors.WithStack(json.Unmarshal(ctx.Body(), &req)); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
-	if req.Capabilities != nil && len(req.Capabilities) == 0 {
+	if len(req.Capabilities) == 0 {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: api.Error{Error: api.ErrorStrInvalidRequest, ErrorDescription: "capabilities cannot be empty"},
@@ -123,76 +124,29 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 
 	// GrantType already checked
 
-	if req.Mytoken.JWT == "" {
-		var err error
-		req.Mytoken, err = universalmytoken.Parse(ctx.Cookies("mytoken"))
-		if err != nil {
-			return &model.Response{
-				Status:   fiber.StatusUnauthorized,
-				Response: pkgModel.InvalidTokenError(errorfmt.Error(err)),
-			}
-		}
+	mt, errRes := auth.RequireValidMytoken(nil, &req.Mytoken, ctx)
+	if errRes != nil {
+		return errRes
 	}
-
-	mt, err := mytoken.ParseJWT(req.Mytoken.JWT)
-	if err != nil {
-		return &model.Response{
-			Status:   fiber.StatusUnauthorized,
-			Response: pkgModel.InvalidTokenError(errorfmt.Error(err)),
-		}
+	usedRestriction, errRes := auth.RequireUsableRestriction(nil, mt, ctx.IP(), nil, nil, api.CapabilityCreateMT)
+	if errRes != nil {
+		return errRes
 	}
-	log.Trace("Parsed mytoken")
-
-	revoked, dbErr := dbhelper.CheckTokenRevoked(nil, mt.ID, mt.SeqNo, mt.Rotation)
-	if dbErr != nil {
-		return model.ErrorToInternalServerErrorResponse(dbErr)
+	if _, errRes = auth.RequireMatchingIssuer(mt.OIDCIssuer, &req.Issuer); errRes != nil {
+		return errRes
 	}
-	if revoked {
-		return &model.Response{
-			Status:   fiber.StatusUnauthorized,
-			Response: pkgModel.InvalidTokenError(""),
-		}
-	}
-	log.Trace("Checked token not revoked")
-
-	if ok := mt.VerifyCapabilities(api.CapabilityCreateMT); !ok {
-		return &model.Response{
-			Status:   fiber.StatusForbidden,
-			Response: api.ErrorInsufficientCapabilities,
-		}
-	}
-	log.Trace("Checked mytoken capabilities")
-	if ok := mt.Restrictions.VerifyForOther(nil, ctx.IP(), mt.ID); !ok {
-		return &model.Response{
-			Status:   fiber.StatusForbidden,
-			Response: api.ErrorUsageRestricted,
-		}
-	}
-	log.Trace("Checked mytoken restrictions")
-
-	if req.Issuer == "" {
-		req.Issuer = mt.OIDCIssuer
-	} else {
-		if req.Issuer != mt.OIDCIssuer {
-			return &model.Response{
-				Status:   fiber.StatusBadRequest,
-				Response: pkgModel.BadRequestError("token not for specified issuer"),
-			}
-		}
-		log.Trace("Checked issuer")
-	}
-	return handleMytokenFromMytoken(mt, req, ctxUtils.ClientMetaData(ctx))
+	return handleMytokenFromMytoken(mt, req, ctxUtils.ClientMetaData(ctx), usedRestriction)
 }
 
-func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData *api.ClientMetaData) *model.Response {
+func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData *api.ClientMetaData, usedRestriction *restrictions.Restriction) *model.Response {
 	ste, errorResponse := createMytokenEntry(parent, req, *networkData)
 	if errorResponse != nil {
 		return errorResponse
 	}
 	var tokenUpdate *response.MytokenResponse
 	if err := db.Transact(func(tx *sqlx.Tx) (err error) {
-		if len(parent.Restrictions) > 0 {
-			if err = parent.Restrictions.GetValidForOther(tx, networkData.IP, parent.ID)[0].UsedOther(tx, parent.ID); err != nil {
+		if usedRestriction != nil {
+			if err = usedRestriction.UsedOther(tx, parent.ID); err != nil {
 				return
 			}
 		}
