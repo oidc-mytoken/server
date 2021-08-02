@@ -49,7 +49,7 @@ func doTokenInfoHistory(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMet
 
 func handleTokenInfoHistory(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
 	// If we call this function it means the token is valid.
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(nil, mt, clientMetadata.IP, api.CapabilityTokeninfoHistory)
+	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(nil, mt, clientMetadata.IP, nil, nil, api.CapabilityTokeninfoHistory)
 	if errRes != nil {
 		return *errRes
 	}

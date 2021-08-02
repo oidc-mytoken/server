@@ -49,7 +49,7 @@ func doTokenInfoTree(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetada
 
 func handleTokenInfoTree(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
 	// If we call this function it means the token is valid.
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(nil, mt, clientMetadata.IP, api.CapabilityTokeninfoTree)
+	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(nil, mt, clientMetadata.IP, nil, nil, api.CapabilityTokeninfoTree)
 	if errRes != nil {
 		return *errRes
 	}

@@ -50,7 +50,7 @@ func doTokenInfoList(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetada
 
 func handleTokenInfoList(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
 	// If we call this function it means the token is valid.
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(nil, mt, clientMetadata.IP, api.CapabilityListMT)
+	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(nil, mt, clientMetadata.IP, nil, nil, api.CapabilityListMT)
 	if errRes != nil {
 		return *errRes
 	}
