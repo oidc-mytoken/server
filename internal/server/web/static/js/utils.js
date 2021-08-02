@@ -47,7 +47,6 @@ function escapeSelector(s){
 }
 
 function doNext(...next) {
-    console.log(next);
     switch (next.length) {
         case 0:
             return;
@@ -69,4 +68,24 @@ function chainFunctions(...fncs) {
             let other = fncs.splice(1);
             return fncs[0](...other);
     }
+}
+
+function onlyUnique(value, index, self) {
+    return self.indexOf(value) === index;
+}
+
+function extractMaxScopesFromToken(token) {
+   let restr = token['restrictions'];
+    if (!restr) {
+       return "";
+   }
+   let scopes = [];
+    for (const r of restr) {
+       let s = r['scope'];
+       if (!s || s==="") { // if any restriction allows all scopes, return ""
+           return "";
+       }
+       scopes.push(...s.split(' '));
+    }
+    return scopes.filter(onlyUnique).join(" ")
 }

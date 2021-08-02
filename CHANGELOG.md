@@ -32,6 +32,7 @@
 ### Webinterface
 - Added option to create mytoken in the web interface
 - Reworked consent screen
+- Added possibility to set scopes and audiences when requesting an AT
 - Improvements
 
 ### Enhancements

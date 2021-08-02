@@ -3,12 +3,12 @@ const subtokenCapabilityChecks = $('.subtoken-capability-check');
 const mtResult = $('#mt-result');
 const mtResultColor = $('#mt-result-color');
 const mtConfig = $('#mt-config');
-const pendingHeading = $('#mt-result-heading-pending');
-const pendingSpinner = $('#pending-spinner');
-const successHeading = $('#mt-result-heading-success');
-const errorHeading = $('#mt-result-heading-error');
+const mtPendingHeading = $('#mt-result-heading-pending');
+const mtPendingSpinner = $('#mt-pending-spinner');
+const mtSuccessHeading = $('#mt-result-heading-success');
+const mtErrorHeading = $('#mt-result-heading-error');
 const mtResultMsg = $('#mt-result-msg');
-const copyButton = $('#mt-result-copy');
+const mtCopyButton = $('#mt-result-copy');
 const authURL = $('#authorization-url');
 const capabilityCreateMytoken = $('#cp-create_mytoken');
 const maxTokenLenDiv = $('#max_token_len_div');
@@ -73,7 +73,6 @@ $('#get-mt').on('click', function(){
        data["rotation"] = rot;
     }
     data = JSON.stringify(data);
-    console.log(data);
     $.ajax({
         type: "POST",
         url: storageGet('mytoken_endpoint'),
@@ -88,44 +87,44 @@ $('#get-mt').on('click', function(){
         },
         error: function(errRes){
             let errMsg = getErrorMessage(errRes);
-            showError(errMsg);
+            mtShowError(errMsg);
         },
         dataType: "json",
         contentType : "application/json"
     });
-    showPending();
+    mtShowPending();
     mtResult.showB();
     mtConfig.hideB();
 })
 
-function showPending() {
-    pendingHeading.showB();
-    pendingSpinner.showB();
-    successHeading.hideB();
-    errorHeading.hideB();
-    copyButton.hideB();
+function mtShowPending() {
+    mtPendingHeading.showB();
+    mtPendingSpinner.showB();
+    mtSuccessHeading.hideB();
+    mtErrorHeading.hideB();
+    mtCopyButton.hideB();
     mtResultMsg.text('');
     mtResultColor.addClass('alert-warning');
     mtResultColor.removeClass('alert-success');
     mtResultColor.removeClass('alert-danger');
 }
-function showSuccess(msg) {
-    pendingHeading.hideB();
-    pendingSpinner.hideB();
-    successHeading.showB();
-    errorHeading.hideB();
-    copyButton.showB();
+function mtShowSuccess(msg) {
+    mtPendingHeading.hideB();
+    mtPendingSpinner.hideB();
+    mtSuccessHeading.showB();
+    mtErrorHeading.hideB();
+    mtCopyButton.showB();
     mtResultMsg.text(msg);
     mtResultColor.addClass('alert-success');
     mtResultColor.removeClass('alert-warning');
     mtResultColor.removeClass('alert-danger');
 }
-function showError(msg) {
-    pendingHeading.hideB();
-    pendingSpinner.hideB();
-    successHeading.hideB();
-    errorHeading.showB();
-    copyButton.showB();
+function mtShowError(msg) {
+    mtPendingHeading.hideB();
+    mtPendingSpinner.hideB();
+    mtSuccessHeading.hideB();
+    mtErrorHeading.showB();
+    mtCopyButton.showB();
     mtResultMsg.text(msg);
     mtResultColor.addClass('alert-danger');
     mtResultColor.removeClass('alert-success');
@@ -161,7 +160,7 @@ function polling(code, interval) {
                     default:
                         tokenTypeBadge.text("JWT");
                 }
-                showSuccess(token);
+                mtShowSuccess(token);
                 window.clearInterval(intervalID);
             },
             error: function(errRes) {
@@ -170,7 +169,7 @@ function polling(code, interval) {
                 switch (error) {
                     case "authorization_pending":
                         // message = "Authorization still pending.";
-                        showPending();
+                        mtShowPending();
                         return;
                     case "access_denied":
                         message = "You denied the authorization request.";
@@ -194,7 +193,7 @@ function polling(code, interval) {
                         window.clearInterval(intervalID);
                         break;
                 }
-                showError(message)
+                mtShowError(message)
             }
         });
     }, interval);

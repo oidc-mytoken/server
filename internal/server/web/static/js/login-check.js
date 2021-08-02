@@ -8,7 +8,6 @@ function checkIfLoggedIn(...next) {
 }
 
 function _checkIfLoggedIn(...next) {
-    console.log('_checkIfLoggedIn');
     let data = {
         'action':'introspect'
     };
@@ -18,10 +17,13 @@ function _checkIfLoggedIn(...next) {
         url: storageGet('tokeninfo_endpoint'),
         data: data,
         success: function(res){
-            let iss = res['token']['oidc_iss'];
+            let token = res['token'];
+            let iss = token['oidc_iss'];
             if (iss) {
                 storageSet('oidc_issuer', iss, true);
             }
+            let scopes = extractMaxScopesFromToken(token);
+            storageSet('token_scopes', scopes, true);
             if (window.location.pathname === "/") {
                 window.location.href = "/home";
             }

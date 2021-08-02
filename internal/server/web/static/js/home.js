@@ -11,6 +11,7 @@ clipboard.on('success', function (e) {
 $(function (){
     chainFunctions(
         checkIfLoggedIn,
+        initAT,
         initRestrGUI,
     );
     // https://stackoverflow.com/a/17552459
@@ -33,55 +34,6 @@ $('.nav-tabs a').on('shown.bs.tab', function (e) {
     }
 })
 
-$('#get-at').on('click', function(e){
-    e.preventDefault();
-    let msg = $('#at-msg');
-    let copy = $('#at-copy');
-    getMT(
-        function (res) {
-           const mToken = res['mytoken']
-            getAT(
-                function(tokenRes) {
-                    msg.text(tokenRes['access_token']);
-                    msg.removeClass('text-danger');
-                    copy.removeClass('d-none');
-                },
-                function (errRes) {
-                    msg.text(getErrorMessage(errRes));
-                    msg.addClass('text-danger');
-                    copy.removeClass('d-none');
-                },
-                mToken);
-        },
-        function (errRes) {
-            msg.text(getErrorMessage(errRes));
-            msg.addClass('text-danger');
-            copy.removeClass('d-none');
-        }
-    );
-    return false;
-});
-
-function getAT(okCallback, errCallback, mToken) {
-    let data = {
-        "grant_type": "mytoken",
-        "comment": "from web interface"
-    };
-    if (mToken!==undefined) {
-        data["mytoken"]=mToken
-    }
-
-    data = JSON.stringify(data);
-    $.ajax({
-        type: "POST",
-        url: storageGet('access_token_endpoint'),
-        data: data,
-        success: okCallback,
-        error: errCallback,
-        dataType: "json",
-        contentType : "application/json"
-    });
-}
 
 function getMT(okCallback, errCallback, capability="AT") {
     let data = {

@@ -25,16 +25,18 @@ $('#get-session-token-info').on('click', function(e){
     e.preventDefault();
     _tokeninfo('introspect',
         function(res){
-            let iss = res['token']['oidc_iss'];
+            let token = res['token'];
+            let iss = token['oidc_iss'];
             if (iss) {
                 storageSet('oidc_issuer', iss, true);
             }
+            let scopes = extractMaxScopesFromToken(token);
+            storageSet('token_scopes', scopes, true);
             msg.text(JSON.stringify(res,null,4));
             msg.removeClass('text-danger');
             copy.removeClass('d-none');
         },
         function (errRes) {
-            console.log(errRes);
             msg.text(getErrorMessage(errRes));
             msg.addClass('text-danger');
             copy.removeClass('d-none');
@@ -126,7 +128,6 @@ $('#get-history').on('click', function(e){
             copy.addClass('d-none');
         },
         function (errRes) {
-            console.log(errRes);
             msg.text(getErrorMessage(errRes));
             msg.addClass('text-danger');
             copy.removeClass('d-none');
@@ -145,7 +146,6 @@ $('#get-tree').on('click', function(e){
             copy.addClass('d-none');
         },
         function (errRes) {
-            console.log(errRes);
             msg.text(getErrorMessage(errRes));
             msg.addClass('text-danger');
             copy.removeClass('d-none');
@@ -167,7 +167,6 @@ $('#get-list').on('click', function(e){
                     copy.addClass('d-none');
                 },
                 function (errRes) {
-                    console.log(errRes);
                     msg.text(getErrorMessage(errRes));
                     msg.addClass('text-danger');
                     copy.removeClass('d-none');

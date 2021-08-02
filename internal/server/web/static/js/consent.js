@@ -29,7 +29,6 @@ function approve() {
         "rotation": getRotationFromForm()
     };
     data = JSON.stringify(data);
-    console.log(data);
     $.ajax({
         type: "POST",
         url: window.location.href,

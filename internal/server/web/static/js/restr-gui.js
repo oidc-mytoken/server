@@ -44,10 +44,8 @@ $(function() {
     $(".country-select").prop("selectedIndex", -1);
 })
 
-function initRestrGUI() {
-    const scopes = typeof(supported_scopes)!=='undefined' ? supported_scopes : getSupportedScopesFromStorage();
-    for (const scope of scopes) {
-        let html = `<tr>
+function _addScopeValueToGUI(scope, $htmlEl) {
+    let html = `<tr>
                             <td><span class="table-item">`+scope+`</span></td>
                             <td>
                                 <i class="fas fa-check-circle text-success scope-active"></i>
@@ -55,13 +53,20 @@ function initRestrGUI() {
                             </td>
                             <td><input class="form-check-input scope-checkbox" id="scope_`+scope+`" type="checkbox" value="`+scope+`"></td>
                         </tr>`;
-        $('#scopeTableBody').append(html);
+    $htmlEl.append(html);
+}
+
+function initRestrGUI(...next) {
+    const scopes = typeof(supported_scopes)!=='undefined' ? supported_scopes : getSupportedScopesFromStorage();
+    let $table = $('#scopeTableBody');
+    for (const scope of scopes) {
+        _addScopeValueToGUI(scope, $table);
     }
 
     $('.scope-checkbox').on("click", function (){
-        let allScopesInactive = $('.scope-inactive');
-        let allScopesActive = $('.scope-active');
-        let checkedScopeBoxes = $('.scope-checkbox:checked');
+        let allScopesInactive = $(this).parents('tbody').find('.scope-inactive');
+        let allScopesActive = $(this).parents('tbody').find('.scope-active');
+        let checkedScopeBoxes = $(this).parents('tbody').find('.scope-checkbox:checked');
         let activeIcon = $(this).parents('tr').find('.scope-active');
         let inactiveIcon = $(this).parents('tr').find('.scope-inactive');
         let activated = $(this).prop('checked');
@@ -80,10 +85,13 @@ function initRestrGUI() {
             allScopesInactive.hideB();
             allScopesActive.showB();
         }
+    })
+    $('#scopeTableBody').find('.scope-checkbox').on("click", function (){
         GUIToRestr_Scopes();
     })
 
     RestrToGUI();
+    doNext(...next);
 }
 
 function getSupportedScopesFromStorage() {
@@ -154,7 +162,7 @@ function _guiToRestr_Table(id, restrKey) {
         }
         values.push(v);
     })
-    GUISetRestr(restrKey, values);
+    GUISetRestr(restrKey, values.filter(onlyUnique));
 }
 
 function GUIToRestr_Nbf() {
@@ -166,7 +174,7 @@ function GUIToRestr_Exp() {
 }
 
 function GUIToRestr_Scopes() {
-    let checkedScopeBoxes = $('.scope-checkbox:checked');
+    let checkedScopeBoxes = $('#scopeTableBody').find('.scope-checkbox:checked');
     if (checkedScopeBoxes.length === 0) {
         GUIDelRestr('scope');
         return;
@@ -217,10 +225,14 @@ function _addListItem(value, tableBody) {
     $('.btn-delete-list-item').off("click").on("click", function (){
         let tablebodyId = $(this).parents('.list-table').attr("id");
         $(this).parents("tr").remove();
-        _guiToRestr_Table("#"+tablebodyId, tablebodyId.split('TableBody')[0]);
+        if (tableBody.hasClass('restr')) {
+            _guiToRestr_Table("#"+tablebodyId, tablebodyId.split('TableBody')[0]);
+        }
     })
     let tbodyId = tableBody.attr("id");
-    _guiToRestr_Table("#"+tbodyId, tbodyId.split('TableBody')[0]);
+    if (tableBody.hasClass('restr')) {
+        _guiToRestr_Table("#" + tbodyId, tbodyId.split('TableBody')[0]);
+    }
 }
 
 function restrClauseToGUI() {
