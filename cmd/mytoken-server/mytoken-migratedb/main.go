@@ -112,7 +112,7 @@ var app = &cli.App{
 		dbConfig.ReconnectInterval = 60
 		dbConfig.DBConf.Hosts = dbConfig.Hosts.Value()
 		db.ConnectConfig(dbConfig.DBConf)
-		return migrateDB(nil, mytokenNodes)
+		return migrateDB(mytokenNodes)
 	},
 }
 

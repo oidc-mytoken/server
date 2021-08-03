@@ -38,15 +38,13 @@ func getDoneMap(state versionrepo.DBVersionState, versions dbmigrate.VersionComm
 	return before, after
 }
 
-func migrateDB(tx *sqlx.Tx, mytokenNodes []string) error {
+func migrateDB(mytokenNodes []string) error {
 	v := version.VERSION()
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		dbState, err := versionrepo.GetVersionState(tx)
-		if err != nil {
-			return err
-		}
-		return runUpdates(tx, dbState, mytokenNodes, v)
-	})
+	dbState, err := versionrepo.GetVersionState(nil)
+	if err != nil {
+		return err
+	}
+	return runUpdates(nil, dbState, mytokenNodes, v)
 }
 
 func runUpdates(tx *sqlx.Tx, dbState versionrepo.DBVersionState, mytokenNodes []string, version string) error {
