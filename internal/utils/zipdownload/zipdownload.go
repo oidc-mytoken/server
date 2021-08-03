@@ -6,19 +6,20 @@ import (
 	"io/ioutil"
 
 	"github.com/oidc-mytoken/server/shared/httpClient"
+	"github.com/pkg/errors"
 )
 
 // DownloadZipped downloads a zip archive and returns all contained files
 func DownloadZipped(url string) (map[string][]byte, error) {
 	resp, err := httpClient.Do().R().Get(url)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	body := resp.Body()
 	zipReader, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	allFiles := make(map[string][]byte)
@@ -36,8 +37,9 @@ func DownloadZipped(url string) (map[string][]byte, error) {
 func readZipFile(zf *zip.File) ([]byte, error) {
 	f, err := zf.Open()
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	defer f.Close()
-	return ioutil.ReadAll(f)
+	data, err := ioutil.ReadAll(f)
+	return data, errors.WithStack(err)
 }

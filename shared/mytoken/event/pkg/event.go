@@ -2,7 +2,8 @@ package event
 
 import (
 	"database/sql/driver"
-	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 // Event is an enum like type for events
@@ -32,7 +33,7 @@ func (e *Event) Value() (driver.Value, error) {
 func (e *Event) Scan(src interface{}) error {
 	number := eventStringToInt(src.(string))
 	if number < 0 {
-		return fmt.Errorf("unknown event")
+		return errors.New("unknown event")
 	}
 	e.Type = number
 	return nil
@@ -62,7 +63,28 @@ func eventStringToInt(str string) int {
 }
 
 // AllEvents hold all possible Events
-var AllEvents = [...]string{"unknown", "created", "AT_created", "MT_created", "tokeninfo_introspect", "tokeninfo_history", "tokeninfo_tree", "tokeninfo_list_mytokens", "mng_enabled_AT_grant", "mng_disabled_AT_grant", "mng_enabled_JWT_grant", "mng_disabled_JWT_grant", "mng_linked_grant", "mng_unlinked_grant", "mng_enabled_tracing", "mng_disabled_tracing", "inherited_RT", "transfer_code_created", "transfer_code_used"}
+var AllEvents = [...]string{
+	"unknown",
+	"created",
+	"AT_created",
+	"MT_created",
+	"tokeninfo_introspect",
+	"tokeninfo_history",
+	"tokeninfo_tree",
+	"tokeninfo_list_mytokens",
+	"mng_enabled_AT_grant",
+	"mng_disabled_AT_grant",
+	"mng_enabled_JWT_grant",
+	"mng_disabled_JWT_grant",
+	"mng_linked_grant",
+	"mng_unlinked_grant",
+	"mng_enabled_tracing",
+	"mng_disabled_tracing",
+	"inherited_RT",
+	"transfer_code_created",
+	"transfer_code_used",
+	"token_rotated",
+}
 
 // Events for Mytokens
 const (
@@ -85,5 +107,6 @@ const (
 	MTEventInheritedRT
 	MTEventTransferCodeCreated
 	MTEventTransferCodeUsed
+	MTEventTokenRotated
 	maxEvent
 )

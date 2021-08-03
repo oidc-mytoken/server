@@ -8,12 +8,18 @@ import (
 
 	"github.com/jinzhu/copier"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+
+	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/utils/geoip"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
@@ -22,6 +28,15 @@ import (
 // Restrictions is a slice of Restriction
 type Restrictions []Restriction
 
+var eRKs model.RestrictionKeys
+
+func disabledRestrictionKeys() model.RestrictionKeys {
+	if eRKs == nil {
+		eRKs = config.Get().Features.DisabledRestrictionKeys
+	}
+	return eRKs
+}
+
 // Restriction describes a token usage restriction
 type Restriction struct {
 	NotBefore       unixtime.UnixTime `json:"nbf,omitempty"`
@@ -29,25 +44,74 @@ type Restriction struct {
 	api.Restriction `json:",inline"`
 }
 
+// ClearUnsupportedKeys sets default values for the keys that are not supported by this instance
+func (r *Restrictions) ClearUnsupportedKeys() {
+	for i, rr := range *r {
+		if disabledRestrictionKeys().Has(model.RestrictionKeyNotBefore) {
+			rr.NotBefore = 0
+		}
+		if disabledRestrictionKeys().Has(model.RestrictionKeyExpiresAt) {
+			rr.ExpiresAt = 0
+		}
+		if disabledRestrictionKeys().Has(model.RestrictionKeyScope) {
+			rr.Scope = ""
+		}
+		if disabledRestrictionKeys().Has(model.RestrictionKeyAudiences) {
+			rr.Audiences = nil
+		}
+		if disabledRestrictionKeys().Has(model.RestrictionKeyIPs) {
+			rr.IPs = nil
+		}
+		if disabledRestrictionKeys().Has(model.RestrictionKeyGeoIPAllow) {
+			rr.GeoIPAllow = nil
+		}
+		if disabledRestrictionKeys().Has(model.RestrictionKeyGeoIPDisallow) {
+			rr.GeoIPDisallow = nil
+		}
+		if disabledRestrictionKeys().Has(model.RestrictionKeyUsagesAT) {
+			rr.UsagesAT = nil
+		}
+		if disabledRestrictionKeys().Has(model.RestrictionKeyUsagesOther) {
+			rr.UsagesOther = nil
+		}
+		(*r)[i] = rr
+	}
+}
+
 // hash returns the hash of this restriction
 func (r *Restriction) hash() ([]byte, error) {
 	j, err := json.Marshal(r)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return hashUtils.SHA512(j), nil
 }
 
+func (r *Restriction) verifyNbf(now unixtime.UnixTime) bool {
+	if disabledRestrictionKeys().Has(model.RestrictionKeyNotBefore) {
+		return true
+	}
+	return now >= r.NotBefore
+}
+func (r *Restriction) verifyExp(now unixtime.UnixTime) bool {
+	if disabledRestrictionKeys().Has(model.RestrictionKeyExpiresAt) {
+		return true
+	}
+	return r.ExpiresAt == 0 ||
+		now <= r.ExpiresAt
+}
 func (r *Restriction) verifyTimeBased() bool {
 	log.Trace("Verifying time based")
 	now := unixtime.Now()
-	return (now >= r.NotBefore) && (r.ExpiresAt == 0 ||
-		now <= r.ExpiresAt)
+	return r.verifyNbf(now) && r.verifyExp(now)
 }
 func (r *Restriction) verifyIPBased(ip string) bool {
 	return r.verifyIPs(ip) && r.verifyGeoIP(ip)
 }
 func (r *Restriction) verifyIPs(ip string) bool {
+	if disabledRestrictionKeys().Has(model.RestrictionKeyIPs) {
+		return true
+	}
 	log.Trace("Verifying ips")
 	return len(r.IPs) == 0 ||
 		utils.IPIsIn(ip, r.IPs)
@@ -57,6 +121,9 @@ func (r *Restriction) verifyGeoIP(ip string) bool {
 	return r.verifyGeoIPDisallow(ip) && r.verifyGeoIPAllow(ip)
 }
 func (r *Restriction) verifyGeoIPAllow(ip string) bool {
+	if disabledRestrictionKeys().Has(model.RestrictionKeyGeoIPAllow) {
+		return true
+	}
 	log.Trace("Verifying ip geo location allow list")
 	allow := r.GeoIPAllow
 	if len(allow) == 0 {
@@ -65,6 +132,9 @@ func (r *Restriction) verifyGeoIPAllow(ip string) bool {
 	return utils.StringInSlice(geoip.CountryCode(ip), allow)
 }
 func (r *Restriction) verifyGeoIPDisallow(ip string) bool {
+	if disabledRestrictionKeys().Has(model.RestrictionKeyGeoIPDisallow) {
+		return true
+	}
 	log.Trace("Verifying ip geo location disallow list")
 	disallow := r.GeoIPDisallow
 	if len(disallow) == 0 {
@@ -80,13 +150,16 @@ func (r *Restriction) getATUsageCounts(tx *sqlx.Tx, myID mtid.MTID) (*int64, err
 	return mytokenrepohelper.GetTokenUsagesAT(tx, myID, string(hash))
 }
 func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, myID mtid.MTID) bool {
+	if disabledRestrictionKeys().Has(model.RestrictionKeyUsagesAT) {
+		return true
+	}
 	log.Trace("Verifying AT usage count")
 	if r.UsagesAT == nil {
 		return true
 	}
 	usages, err := r.getATUsageCounts(tx, myID)
 	if err != nil {
-		log.WithError(err).Error()
+		log.Errorf("%s", errorfmt.Full(err))
 		return false
 	}
 	if usages == nil {
@@ -111,13 +184,16 @@ func (r *Restriction) getOtherUsageCounts(tx *sqlx.Tx, myID mtid.MTID) (*int64, 
 	return mytokenrepohelper.GetTokenUsagesOther(tx, myID, string(hash))
 }
 func (r *Restriction) verifyOtherUsageCounts(tx *sqlx.Tx, id mtid.MTID) bool {
+	if disabledRestrictionKeys().Has(model.RestrictionKeyUsagesOther) {
+		return true
+	}
 	log.Trace("Verifying other usage count")
 	if r.UsagesOther == nil {
 		return true
 	}
 	usages, err := r.getOtherUsageCounts(tx, id)
 	if err != nil {
-		log.WithError(err).Error()
+		log.Errorf("%s", errorfmt.Full(err))
 		return false
 	}
 	if usages == nil {
@@ -146,20 +222,22 @@ func (r *Restriction) verifyOther(tx *sqlx.Tx, ip string, id mtid.MTID) bool {
 		r.verifyOtherUsageCounts(tx, id)
 }
 
-// UsedAT will update the usages_AT value for this restriction; it should be called after this restriction was used to obtain an access token;
+// UsedAT will update the usages_AT value for this restriction; it should be called after this restriction was used to
+// obtain an access token;
 func (r *Restriction) UsedAT(tx *sqlx.Tx, id mtid.MTID) error {
 	js, err := json.Marshal(r)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	return mytokenrepohelper.IncreaseTokenUsageAT(tx, id, js)
 }
 
-// UsedOther will update the usages_other value for this restriction; it should be called after this restriction was used for other reasons than obtaining an access token;
+// UsedOther will update the usages_other value for this restriction; it should be called after this restriction was
+// used for other reasons than obtaining an access token;
 func (r *Restriction) UsedOther(tx *sqlx.Tx, id mtid.MTID) error {
 	js, err := json.Marshal(r)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	return mytokenrepohelper.IncreaseTokenUsageOther(tx, id, js)
 }
@@ -247,8 +325,7 @@ func (r *Restrictions) Scan(src interface{}) error {
 		return nil
 	}
 	val := src.([]uint8)
-	err := json.Unmarshal(val, &r)
-	return err
+	return errors.WithStack(json.Unmarshal(val, &r))
 }
 
 // Value implements the driver.Valuer interface
@@ -256,7 +333,8 @@ func (r Restrictions) Value() (driver.Value, error) {
 	if len(r) == 0 {
 		return nil, nil
 	}
-	return json.Marshal(r)
+	v, err := json.Marshal(r)
+	return v, errors.WithStack(err)
 }
 
 // GetExpires gets the maximum (latest) expiration time of all restrictions
@@ -311,7 +389,8 @@ func (r *Restrictions) GetAudiences() (auds []string) {
 	return
 }
 
-// SetMaxScopes sets the maximum scopes, i.e. all scopes are stripped from the restrictions if not included in the passed argument. This is used to eliminate requested scopes that are dropped by the provider. Don't use it to eliminate scopes that are not enabled for the oidc client, because it also could be a custom scope.
+// SetMaxScopes sets the maximum scopes, i.e. all scopes are stripped from the restrictions if not included in the
+// passed argument. This is used to eliminate requested scopes that are dropped by the provider. Don't use it to eliminate scopes that are not enabled for the oidc client, because it also could be a custom scope.
 func (r *Restrictions) SetMaxScopes(mScopes []string) {
 	for _, rr := range *r {
 		rScopes := utils.SplitIgnoreEmpty(rr.Scope, " ")
@@ -320,14 +399,39 @@ func (r *Restrictions) SetMaxScopes(mScopes []string) {
 	}
 }
 
-// SetMaxAudiences sets the maximum audiences, i.e. all audiences are stripped from the restrictions if not included in the passed argument. This is used to eliminate requested audiences that are dropped by the provider.
+// SetMaxAudiences sets the maximum audiences, i.e. all audiences are stripped from the restrictions if not included in
+// the passed argument. This is used to eliminate requested audiences that are dropped by the provider.
 func (r *Restrictions) SetMaxAudiences(mAud []string) {
 	for _, rr := range *r {
 		rr.Audiences = utils.IntersectSlices(mAud, rr.Audiences)
 	}
 }
 
-// Tighten tightens/restricts a Restrictions with another set; if the wanted Restrictions are not tighter the original ones are returned
+// EnforceMaxLifetime enforces the maximum mytoken lifetime set by server admins. Returns true if the restrictions was
+// changed.
+func (r *Restrictions) EnforceMaxLifetime(issuer string) (changed bool) {
+	maxLifetime := config.Get().ProviderByIssuer[issuer].MytokensMaxLifetime
+	if maxLifetime == 0 {
+		return
+	}
+	exp := unixtime.InSeconds(maxLifetime)
+	if len(*r) == 0 {
+		*r = append(*r, Restriction{ExpiresAt: exp})
+		changed = true
+		return
+	}
+	for i, rr := range *r {
+		if rr.ExpiresAt == 0 || rr.ExpiresAt > exp {
+			rr.ExpiresAt = exp
+			(*r)[i] = rr
+			changed = true
+		}
+	}
+	return
+}
+
+// Tighten tightens/restricts a Restrictions with another set; if the wanted Restrictions are not tighter the original
+// ones are returned
 func Tighten(old, wanted Restrictions) (res Restrictions, ok bool) {
 	if len(old) == 0 {
 		ok = true
@@ -335,7 +439,7 @@ func Tighten(old, wanted Restrictions) (res Restrictions, ok bool) {
 		return
 	}
 	base := Restrictions{}
-	if err := copier.Copy(&base, &old); err != nil {
+	if err := copier.CopyWithOption(&base, &old, copier.Option{DeepCopy: true}); err != nil {
 		log.WithError(err).Error()
 	}
 	var droppedRestrictionsFromWanted bool
@@ -351,7 +455,6 @@ func Tighten(old, wanted Restrictions) (res Restrictions, ok bool) {
 				if o.UsagesAT != nil && a.UsagesAT != nil {
 					*base[i].UsagesAT -= *a.UsagesAT
 				}
-				// base = append(base[:i], base[i+1:]...)
 				break
 			}
 		}
@@ -361,7 +464,8 @@ func Tighten(old, wanted Restrictions) (res Restrictions, ok bool) {
 	}
 	if len(res) == 0 { // if all from wanted are dropped, because they are not tighter than old, than use old
 		res = old
-		if len(wanted) == 0 { // the default for an empty restriction field is always using the parent's restrictions, so this is fine
+		if len(wanted) == 0 { // the default for an empty restriction field is always using the parent's restrictions,
+			// so this is fine
 			ok = true
 		}
 		return
@@ -379,8 +483,7 @@ func (r *Restrictions) ReplaceThisIp(ip string) {
 
 func (r *Restrictions) removeIndex(i int) { // skipcq SCC-U1000
 	copy((*r)[i:], (*r)[i+1:]) // Shift r[i+1:] left one index.
-	// r[len(r)-1] = ""     // Erase last element (write zero value).
-	*r = (*r)[:len(*r)-1] // Truncate slice.
+	*r = (*r)[:len(*r)-1]      // Truncate slice.
 }
 
 func (r *Restriction) isTighterThan(b Restriction) bool {

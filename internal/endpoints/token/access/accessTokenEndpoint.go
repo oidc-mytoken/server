@@ -1,29 +1,31 @@
 package access
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/api/v0"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/accesstokenrepo"
-	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
 	request "github.com/oidc-mytoken/server/internal/endpoints/token/access/pkg"
+	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/refresh"
+	"github.com/oidc-mytoken/server/internal/utils/auth"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/shared/model"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/mytoken/token"
+	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/jwtutils"
 )
@@ -31,102 +33,41 @@ import (
 // HandleAccessTokenEndpoint handles request on the access token endpoint
 func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	log.Debug("Handle access token request")
-	req := request.AccessTokenRequest{}
-	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
+	req := request.NewAccessTokenRequest()
+	if err := ctx.BodyParser(&req); err != nil {
 		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	log.Trace("Parsed access token request")
-
-	if req.GrantType != model.GrantTypeMytoken {
-		res := serverModel.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: api.APIErrorUnsupportedGrantType,
-		}
-		return res.Send(ctx)
-	}
-	log.Trace("Checked grant type")
-	if len(req.Mytoken) == 0 {
-		var err error
-		req.Mytoken, err = token.GetLongMytoken(ctx.Cookies("mytoken"))
-		if err != nil {
-			return serverModel.Response{
-				Status:   fiber.StatusUnauthorized,
-				Response: model.InvalidTokenError(err.Error()),
-			}.Send(ctx)
-		}
+	if req.Mytoken.JWT == "" {
+		req.Mytoken = req.RefreshToken
 	}
 
-	mt, err := mytoken.ParseJWT(string(req.Mytoken))
-	if err != nil {
-		return (&serverModel.Response{
-			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError(err.Error()),
-		}).Send(ctx)
+	if errRes := auth.RequireGrantType(model.GrantTypeMytoken, req.GrantType); errRes != nil {
+		return errRes.Send(ctx)
 	}
-	log.Trace("Parsed mytoken")
+	mt, errRes := auth.RequireValidMytoken(nil, &req.Mytoken, ctx)
+	if errRes != nil {
+		return errRes.Send(ctx)
+	}
+	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(nil, mt, ctx.IP(),
+		utils.SplitIgnoreEmpty(req.Scope, " "),
+		utils.SplitIgnoreEmpty(req.Audience, " "),
+		api.CapabilityAT)
+	if errRes != nil {
+		return errRes.Send(ctx)
+	}
+	provider, errRes := auth.RequireMatchingIssuer(mt.OIDCIssuer, &req.Issuer)
+	if errRes != nil {
+		return errRes.Send(ctx)
+	}
 
-	revoked, dbErr := dbhelper.CheckTokenRevoked(nil, mt.ID, mt.SeqNo, mt.Rotation)
-	if dbErr != nil {
-		return serverModel.ErrorToInternalServerErrorResponse(dbErr).Send(ctx)
-	}
-	if revoked {
-		return (&serverModel.Response{
-			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError(""),
-		}).Send(ctx)
-	}
-	log.Trace("Checked token not revoked")
-
-	if ok := mt.Restrictions.VerifyForAT(nil, ctx.IP(), mt.ID); !ok {
-		return (&serverModel.Response{
-			Status:   fiber.StatusForbidden,
-			Response: api.APIErrorUsageRestricted,
-		}).Send(ctx)
-	}
-	log.Trace("Checked mytoken restrictions")
-	if ok := mt.VerifyCapabilities(api.CapabilityAT); !ok {
-		res := serverModel.Response{
-			Status:   fiber.StatusForbidden,
-			Response: api.APIErrorInsufficientCapabilities,
-		}
-		return res.Send(ctx)
-	}
-	log.Trace("Checked mytoken capabilities")
-	if req.Issuer == "" {
-		req.Issuer = mt.OIDCIssuer
-	} else if req.Issuer != mt.OIDCIssuer {
-		res := serverModel.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("token not for specified issuer"),
-		}
-		return res.Send(ctx)
-	}
-	log.Trace("Checked issuer")
-
-	return handleAccessTokenRefresh(mt, req, *ctxUtils.ClientMetaData(ctx)).Send(ctx)
+	return handleAccessTokenRefresh(mt, req, *ctxUtils.ClientMetaData(ctx), provider, usedRestriction).Send(ctx)
 }
 
-func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData api.ClientMetaData) *serverModel.Response {
-	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
-	if !ok {
-		return &serverModel.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: api.APIErrorUnknownIssuer,
-		}
-	}
-
+func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData api.ClientMetaData, provider *config.ProviderConf, usedRestriction *restrictions.Restriction) *serverModel.Response {
 	scopes := strings.Join(provider.Scopes, " ") // default if no restrictions apply
 	auds := ""                                   // default if no restrictions apply
-	var usedRestriction *restrictions.Restriction
-	if len(mt.Restrictions) > 0 {
-		possibleRestrictions := mt.Restrictions.GetValidForAT(nil, networkData.IP, mt.ID).WithScopes(utils.SplitIgnoreEmpty(req.Scope, " ")).WithAudiences(utils.SplitIgnoreEmpty(req.Audience, " "))
-		if len(possibleRestrictions) == 0 {
-			return &serverModel.Response{
-				Status:   fiber.StatusForbidden,
-				Response: api.APIErrorUsageRestricted,
-			}
-		}
-		usedRestriction = &possibleRestrictions[0]
+	if usedRestriction != nil {
 		if req.Scope != "" {
 			scopes = req.Scope
 		} else if usedRestriction.Scope != "" {
@@ -138,8 +79,9 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 			auds = strings.Join(usedRestriction.Audiences, " ")
 		}
 	}
-	rt, rtFound, dbErr := refreshtokenrepo.GetRefreshToken(nil, mt.ID, string(req.Mytoken))
+	rt, rtFound, dbErr := refreshtokenrepo.GetRefreshToken(nil, mt.ID, req.Mytoken.JWT)
 	if dbErr != nil {
+		log.Errorf("%s", errorfmt.Full(dbErr))
 		return serverModel.ErrorToInternalServerErrorResponse(dbErr)
 	}
 	if !rtFound {
@@ -149,8 +91,9 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 		}
 	}
 
-	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, mt.ID, string(req.Mytoken), rt, scopes, auds)
+	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds)
 	if err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}
 	if oidcErrRes != nil {
@@ -172,6 +115,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 		Scopes:    utils.SplitIgnoreEmpty(retScopes, " "),
 		Audiences: retAudiences,
 	}
+	var tokenUpdate *response.MytokenResponse
 	if err = db.Transact(func(tx *sqlx.Tx) error {
 		if err = at.Store(tx); err != nil {
 			return err
@@ -187,18 +131,32 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 				return err
 			}
 		}
-		return nil
+		tokenUpdate, err = rotation.RotateMytokenAfterATForResponse(
+			tx, req.Mytoken.JWT, mt, networkData, req.Mytoken.OriginalTokenType)
+		return err
 	}); err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}
-	return &serverModel.Response{
-		Status: fiber.StatusOK,
-		Response: api.AccessTokenResponse{
+
+	rsp := request.AccessTokenResponse{
+		AccessTokenResponse: api.AccessTokenResponse{
 			AccessToken: oidcRes.AccessToken,
 			TokenType:   oidcRes.TokenType,
 			ExpiresIn:   oidcRes.ExpiresIn,
 			Scope:       retScopes,
 			Audiences:   retAudiences,
 		},
+	}
+	var cake []*fiber.Cookie
+	if tokenUpdate != nil {
+		rsp.TokenUpdate = tokenUpdate
+		cookie := cookies.MytokenCookie(tokenUpdate.Mytoken)
+		cake = []*fiber.Cookie{&cookie}
+	}
+	return &serverModel.Response{
+		Status:   fiber.StatusOK,
+		Response: rsp,
+		Cookies:  cake,
 	}
 }

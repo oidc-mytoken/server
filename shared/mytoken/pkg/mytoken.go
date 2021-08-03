@@ -3,28 +3,31 @@ package mytoken
 import (
 	"fmt"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
+
+	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/jws"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/server/internal/utils"
 	"github.com/oidc-mytoken/server/shared/model"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
-	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
 // Mytoken is a mytoken Mytoken
 type Mytoken struct {
 	// On update also update api.Mytoken
+	Version              api.TokenVersion          `json:"ver"`
+	TokenType            string                    `json:"token_type"`
 	Issuer               string                    `json:"iss"`
 	Subject              string                    `json:"sub"`
 	ExpiresAt            unixtime.UnixTime         `json:"exp,omitempty"`
@@ -38,8 +41,21 @@ type Mytoken struct {
 	Restrictions         restrictions.Restrictions `json:"restrictions,omitempty"`
 	Capabilities         api.Capabilities          `json:"capabilities"`
 	SubtokenCapabilities api.Capabilities          `json:"subtoken_capabilities,omitempty"`
-	Rotation             *rotation.Rotation        `json:"rotation,omitempty"`
+	Rotation             *api.Rotation             `json:"rotation,omitempty"`
 	jwt                  string
+}
+
+// Rotate returns a Mytoken and returns the new *Mytoken
+func (mt Mytoken) Rotate() *Mytoken {
+	rotated := mt
+	rotated.SeqNo++
+	if rotated.Rotation.Lifetime > 0 {
+		rotated.ExpiresAt = unixtime.InSeconds(int64(rotated.Rotation.Lifetime))
+	}
+	rotated.IssuedAt = unixtime.Now()
+	rotated.NotBefore = rotated.IssuedAt
+	rotated.jwt = ""
+	return &rotated
 }
 
 func (mt *Mytoken) verifyID() bool {
@@ -50,7 +66,7 @@ func (mt *Mytoken) verifySubject() bool {
 	if mt.Subject == "" {
 		return false
 	}
-	if mt.Subject != issuerUtils.CombineSubIss(mt.OIDCSubject, mt.OIDCIssuer) {
+	if mt.Subject != utils.CreateMytokenSubject(mt.OIDCSubject, mt.OIDCIssuer) {
 		return false
 	}
 	return true
@@ -70,21 +86,25 @@ func (mt *Mytoken) VerifyCapabilities(required ...api.Capability) bool {
 }
 
 // NewMytoken creates a new Mytoken
-func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.Capabilities) *Mytoken {
+func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation) *Mytoken {
 	now := unixtime.Now()
 	mt := &Mytoken{
+		Version:              api.TokenVer,
+		TokenType:            api.TokenType,
 		ID:                   mtid.New(),
 		SeqNo:                1,
 		IssuedAt:             now,
 		NotBefore:            now,
 		Issuer:               config.Get().IssuerURL,
-		Subject:              issuerUtils.CombineSubIss(oidcSub, oidcIss),
+		Subject:              utils.CreateMytokenSubject(oidcSub, oidcIss),
 		Audience:             config.Get().IssuerURL,
 		OIDCIssuer:           oidcIss,
 		OIDCSubject:          oidcSub,
 		Capabilities:         c,
 		SubtokenCapabilities: sc,
+		Rotation:             rot,
 	}
+	r.EnforceMaxLifetime(oidcIss)
 	if len(r) > 0 {
 		mt.Restrictions = r
 		exp := r.GetExpires()
@@ -120,25 +140,27 @@ func (mt *Mytoken) Valid() error {
 		NotBefore: int64(mt.NotBefore),
 		Subject:   mt.Subject,
 	}
-	if err := standardClaims.Valid(); err != nil {
+	if err := errors.WithStack(standardClaims.Valid()); err != nil {
 		return err
 	}
 	if ok := standardClaims.VerifyIssuer(config.Get().IssuerURL, true); !ok {
-		return fmt.Errorf("invalid issuer")
+		return errors.New("invalid issuer")
 	}
 	if ok := standardClaims.VerifyAudience(config.Get().IssuerURL, true); !ok {
-		return fmt.Errorf("invalid Audience")
+		return errors.New("invalid Audience")
 	}
 	if ok := mt.verifyID(); !ok {
-		return fmt.Errorf("invalid id")
+		return errors.New("invalid id")
 	}
 	if ok := mt.verifySubject(); !ok {
-		return fmt.Errorf("invalid subject")
+		return errors.New("invalid subject")
 	}
 	return nil
 }
 
-// ToMytokenResponse returns a MytokenResponse for this token. It requires that jwt is set or that the jwt is passed as argument; if not passed as argument toJWT must have been called earlier on this token to set jwt. This is always the case, if the token has been stored.
+// toMytokenResponse returns a pkg.MytokenResponse for this token. It requires that jwt is set or that the jwt is passed
+// as argument; if not passed as argument toJWT must have been called earlier on this token to set jwt. This is always
+// the case, if the token has been stored.
 func (mt *Mytoken) toMytokenResponse(jwt string) response.MytokenResponse {
 	res := mt.toTokenResponse()
 	res.Mytoken = jwt
@@ -166,6 +188,7 @@ func (mt *Mytoken) toTokenResponse() response.MytokenResponse {
 			ExpiresIn:            mt.ExpiresIn(),
 			Capabilities:         mt.Capabilities,
 			SubtokenCapabilities: mt.SubtokenCapabilities,
+			Rotation:             mt.Rotation,
 		},
 		Restrictions: mt.Restrictions,
 	}
@@ -191,9 +214,20 @@ func CreateTransferCode(myID mtid.MTID, jwt string, newMT bool, responseType mod
 }
 
 // ToTokenResponse creates a MytokenResponse for this Mytoken according to the passed model.ResponseType
-func (mt *Mytoken) ToTokenResponse(responseType model.ResponseType, networkData api.ClientMetaData, jwt string) (response.MytokenResponse, error) {
+func (mt *Mytoken) ToTokenResponse(responseType model.ResponseType, maxTokenLen int, networkData api.ClientMetaData, jwt string) (response.MytokenResponse, error) {
 	if jwt == "" {
 		jwt = mt.jwt
+	}
+	if maxTokenLen > 0 {
+		if maxTokenLen >= len(jwt) {
+			responseType = model.ResponseTypeToken
+		} else if config.Get().Features.ShortTokens.Enabled && maxTokenLen >= config.Get().Features.ShortTokens.Len {
+			responseType = model.ResponseTypeShortToken
+		} else if config.Get().Features.TransferCodes.Enabled {
+			responseType = model.ResponseTypeTransferCode
+		} else {
+			responseType = model.ResponseTypeToken
+		}
 	}
 	switch responseType {
 	case model.ResponseTypeShortToken:
@@ -218,7 +252,7 @@ func (mt *Mytoken) ToJWT() (string, error) {
 	}
 	var err error
 	mt.jwt, err = jwt.NewWithClaims(jwt.GetSigningMethod(config.Get().Signing.Alg), mt).SignedString(jws.GetPrivateKey())
-	return mt.jwt, err
+	return mt.jwt, errors.WithStack(err)
 }
 
 // ParseJWT parses a token string into a Mytoken
@@ -227,11 +261,12 @@ func ParseJWT(token string) (*Mytoken, error) {
 		return jws.GetPublicKey(), nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
-	if st, ok := tok.Claims.(*Mytoken); ok && tok.Valid {
-		return st, nil
+	if mt, ok := tok.Claims.(*Mytoken); ok && tok.Valid {
+		mt.jwt = token
+		return mt, nil
 	}
-	return nil, fmt.Errorf("token not valid")
+	return nil, errors.New("token not valid")
 }

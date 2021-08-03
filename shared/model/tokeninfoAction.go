@@ -2,9 +2,9 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
 
-	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/api/v0"
+	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -49,11 +49,11 @@ func (a *TokeninfoAction) Valid() bool {
 func (a *TokeninfoAction) UnmarshalYAML(value *yaml.Node) error {
 	s := value.Value
 	if s == "" {
-		return fmt.Errorf("empty value in unmarshal TokeninfoAction")
+		return errors.New("empty value in unmarshal TokeninfoAction")
 	}
 	*a = NewTokeninfoAction(s)
 	if !a.Valid() {
-		return fmt.Errorf("value '%s' not valid for TokeninfoAction", s)
+		return errors.Errorf("value '%s' not valid for TokeninfoAction", s)
 	}
 	return nil
 }
@@ -61,19 +61,20 @@ func (a *TokeninfoAction) UnmarshalYAML(value *yaml.Node) error {
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (a *TokeninfoAction) UnmarshalJSON(data []byte) error {
 	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
+	if err := errors.WithStack(json.Unmarshal(data, &s)); err != nil {
 		return err
 	}
 	*a = NewTokeninfoAction(s)
 	if !a.Valid() {
-		return fmt.Errorf("value '%s' not valid for TokeninfoAction", s)
+		return errors.Errorf("value '%s' not valid for TokeninfoAction", s)
 	}
 	return nil
 }
 
 // MarshalJSON implements the json.Marshaler interface
 func (a TokeninfoAction) MarshalJSON() ([]byte, error) {
-	return json.Marshal(a.String())
+	data, err := json.Marshal(a.String())
+	return data, errors.WithStack(err)
 }
 
 // AddToSliceIfNotFound adds the TokeninfoAction to a slice s if it is not already there

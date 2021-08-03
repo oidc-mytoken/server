@@ -2,22 +2,23 @@ package revocation
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	sharedModel "github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken"
 	mytokenPkg "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/token"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
@@ -46,7 +47,7 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 				Value:    "",
 				Path:     "/api",
 				Expires:  time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC),
-				Secure:   config.Get().Server.TLS.Enabled,
+				Secure:   config.Get().Server.Secure,
 				HTTPOnly: true,
 				SameSite: "Strict",
 			}},
@@ -72,6 +73,7 @@ func revokeAnyToken(tx *sqlx.Tx, token, issuer string, recursive bool) (errRes *
 			token = jwt
 			return shortToken.Delete(tx)
 		}); err != nil {
+			log.Errorf("%s", errorfmt.Full(err))
 			return model.ErrorToInternalServerErrorResponse(err)
 		}
 		if !valid {
@@ -92,7 +94,7 @@ func revokeMytoken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *mod
 			Response: sharedModel.BadRequestError("token not for specified issuer"),
 		}
 	}
-	return mytoken.RevokeMytoken(tx, mt.ID, token.Token(jwt), recursive, mt.OIDCIssuer)
+	return mytoken.RevokeMytoken(tx, mt.ID, jwt, recursive, mt.OIDCIssuer)
 }
 
 func revokeTransferCode(tx *sqlx.Tx, token, issuer string) (errRes *model.Response) {
@@ -107,16 +109,18 @@ func revokeTransferCode(tx *sqlx.Tx, token, issuer string) (errRes *model.Respon
 			if err != nil {
 				return err
 			}
-			if valid { // if !valid the jwt field could not decrypted correctly, so we can skip that, but still delete the TransferCode
+			if valid { // if !valid the jwt field could not decrypted correctly, so we can skip that, but still delete
+				// the TransferCode
 				errRes = revokeAnyToken(tx, jwt, issuer, true)
 				if errRes != nil {
-					return fmt.Errorf("placeholder")
+					return errors.New("placeholder")
 				}
 			}
 		}
 		return transferCode.Delete(tx)
 	})
 	if err != nil && errRes == nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	return

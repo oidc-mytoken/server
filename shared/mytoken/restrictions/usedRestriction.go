@@ -7,13 +7,15 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
 
-// UsedRestriction is a type for a restriction that has been used and additionally has information how often is has been used
+// UsedRestriction is a type for a restriction that has been used and additionally has information how often is has been
+// used
 type UsedRestriction struct {
 	Restriction
 	UsagesATDone    *int64 `json:"usages_AT_done,omitempty"`
 	UsagesOtherDone *int64 `json:"usages_other_done,omitempty"`
 }
 
+// ToUsedRestrictions turns a Restrictions into a slice of UsedRestriction
 func (r Restrictions) ToUsedRestrictions(tx *sqlx.Tx, id mtid.MTID) (ur []UsedRestriction, err error) {
 	var u UsedRestriction
 	for _, rr := range r {
@@ -26,6 +28,7 @@ func (r Restrictions) ToUsedRestrictions(tx *sqlx.Tx, id mtid.MTID) (ur []UsedRe
 	return
 }
 
+// ToUsedRestriction turns a Restriction into an UsedRestriction
 func (r Restriction) ToUsedRestriction(tx *sqlx.Tx, id mtid.MTID) (UsedRestriction, error) {
 	ur := UsedRestriction{
 		Restriction: r,

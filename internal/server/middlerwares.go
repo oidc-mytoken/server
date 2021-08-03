@@ -16,7 +16,9 @@ import (
 	"github.com/gofiber/helmet/v2"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/server/internal/config"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 //go:embed web/static
@@ -51,19 +53,23 @@ func addMiddlewares(s fiber.Router) {
 
 func addLoggerMiddleware(s fiber.Router) {
 	s.Use(logger.New(logger.Config{
-		Format:     "${time} ${ip} ${latency} - ${status} ${method} ${path}\n",
+		Format:     "${time} ${ip} ${ua} ${latency} - ${status} ${method} ${path}\n",
 		TimeFormat: "2006-01-02 15:04:05",
 		Output:     loggerUtils.MustGetAccessLogger(),
 	}))
 }
 
 func addLimiterMiddleware(s fiber.Router) {
+	limiterConf := config.Get().Server.Limiter
+	if !limiterConf.Enabled {
+		return
+	}
 	s.Use(limiter.New(limiter.Config{
 		Next: func(c *fiber.Ctx) bool {
-			return c.IP() == "127.0.0.1"
+			return utils.IPIsIn(c.IP(), limiterConf.AlwaysAllow)
 		},
-		Max:        100,
-		Expiration: 5 * time.Minute,
+		Max:        limiterConf.Max,
+		Expiration: time.Duration(limiterConf.Window) * time.Second,
 	}))
 }
 

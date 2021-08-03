@@ -6,32 +6,36 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 
 	// mysql driver
 	_ "github.com/go-sql-driver/mysql"
 )
 
+// NewFromConfig creates a new Cluster from the passed config.DBConf
 func NewFromConfig(conf config.DBConf) *Cluster {
-	c := New(len(conf.Hosts))
-	c.AddNodes(conf)
+	c := newCluster(len(conf.Hosts))
 	c.conf = &conf
+	c.startReconnector()
+	c.AddNodes()
 	log.Debug("Created db cluster")
 	return c
 }
 
-func New(size int) *Cluster {
+func newCluster(size int) *Cluster {
 	c := &Cluster{
 		active: make(chan *node, size),
 		down:   make(chan *node, size),
 		stop:   make(chan interface{}),
 	}
-	c.startReconnector()
 	return c
 }
 
+// Cluster is a type for holding a db cluster
 type Cluster struct {
 	active chan *node
 	down   chan *node
@@ -41,7 +45,7 @@ type Cluster struct {
 
 type node struct {
 	db     *sqlx.DB
-	dsn    string
+	host   string
 	active bool
 	// lock   sync.RWMutex
 }
@@ -49,34 +53,36 @@ type node struct {
 func (n *node) close() {
 	if n.db != nil {
 		err := n.db.Close()
-		log.WithError(err).Error()
+		log.Errorf("%s", errorfmt.Full(err))
 		n.db = nil
 	}
 }
 
-func (c *Cluster) AddNodes(conf config.DBConf) {
-	for _, host := range conf.Hosts {
-		if err := c.AddNode(conf, host); err != nil {
-			log.WithError(err).Error()
+// AddNodes adds the nodes specified for this Cluster to the cluster
+func (c *Cluster) AddNodes() {
+	for _, host := range c.conf.Hosts {
+		if err := c.AddNode(host); err != nil {
+			log.Errorf("%s", errorfmt.Full(err))
 		}
 	}
 }
 
-func (c *Cluster) AddNode(conf config.DBConf, host string) error {
+// AddNode adds the passed host a a db node to the cluster
+func (c *Cluster) AddNode(host string) error {
 	log.WithField("host", host).Debug("Adding node to db cluster")
-	dsn := fmt.Sprintf("%s:%s@%s(%s)/%s?parseTime=true", conf.User, conf.Password, "tcp", host, conf.DB)
 	return c.addNode(&node{
-		dsn: dsn,
+		host: host,
 	})
 }
 
 func (c *Cluster) addNode(n *node) error {
 	n.close()
-	db, err := connectDSN(n.dsn)
+	dsn := fmt.Sprintf("%s:%s@%s(%s)/%s?parseTime=true", c.conf.User, c.conf.GetPassword(), "tcp", n.host, c.conf.DB)
+	db, err := connectDSN(dsn)
 	if err != nil {
 		n.active = false
 		c.down <- n
-		log.WithField("dsn", n.dsn).Debug("Could not connect node")
+		log.WithField("dsn", dsn).Debug("Could not connect node")
 		return err
 	}
 	n.db = db
@@ -125,6 +131,7 @@ func (c *Cluster) checkNodesDown() bool {
 	return false
 }
 
+// Close closes the cluster
 func (c *Cluster) Close() {
 	c.stop <- struct{}{}
 	for {
@@ -142,7 +149,7 @@ func (c *Cluster) Close() {
 func connectDSN(dsn string) (*sqlx.DB, error) {
 	db, err := sqlx.Connect("mysql", dsn)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	db.SetConnMaxLifetime(time.Minute * 4)
 	db.SetMaxOpenConns(10)
@@ -155,13 +162,13 @@ func (c *Cluster) Transact(fn func(*sqlx.Tx) error) error {
 	for {
 		n := c.next()
 		if n == nil {
-			return fmt.Errorf("no db node available")
+			return errors.New("no db node available")
 		}
 		closed, err := n.transact(fn)
 		if !closed {
 			return err
 		}
-		log.WithError(err).Error()
+		log.Errorf("%s", errorfmt.Full(err))
 		n.active = false
 	}
 }
@@ -169,12 +176,12 @@ func (c *Cluster) Transact(fn func(*sqlx.Tx) error) error {
 func (n *node) transact(fn func(*sqlx.Tx) error) (bool, error) {
 	err := n.trans(fn)
 	if err != nil {
-		e := err.Error()
+		e := errorfmt.Error(err)
 		switch {
 		case e == "sql: database is closed",
 			strings.HasPrefix(e, "dial tcp"),
 			strings.HasSuffix(e, "closing bad idle connection: EOF"):
-			log.WithField("dsn", n.dsn).Error("Node is down")
+			log.WithField("host", n.host).Error("Node is down")
 			return true, err
 		}
 	}
@@ -183,28 +190,28 @@ func (n *node) transact(fn func(*sqlx.Tx) error) (bool, error) {
 func (n *node) trans(fn func(*sqlx.Tx) error) error {
 	tx, err := n.db.Beginx()
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	err = fn(tx)
 	if err != nil {
 		if e := tx.Rollback(); e != nil {
-			log.WithError(e).Error()
+			log.Errorf("%s", errorfmt.Full(e))
 		}
 		return err
 	}
-	return tx.Commit()
+	return errors.WithStack(tx.Commit())
 }
 
 func (c *Cluster) next() *node {
-	log.Debug("Selecting a node")
+	log.Trace("Selecting a node")
 	select {
 	case n := <-c.active:
 		if n.active {
 			c.active <- n
-			log.WithField("dsn", n.dsn).Debug("Selected active node")
+			log.WithField("host", n.host).Trace("Selected active node")
 			return n
 		}
-		log.WithField("dsn", n.dsn).Debug("Found inactive node")
+		log.WithField("host", n.host).Trace("Found inactive node")
 		go c.addNode(n) // try to add node again, if it does not work, will add to down nodes
 		return c.next()
 	default:
@@ -213,7 +220,8 @@ func (c *Cluster) next() *node {
 	}
 }
 
-// RunWithinTransaction runs the passed function using the passed transaction; if nil is passed as tx a new transaction is created. This is basically a wrapper function, that works with a possible nil-tx
+// RunWithinTransaction runs the passed function using the passed transaction; if nil is passed as tx a new transaction
+// is created. This is basically a wrapper function, that works with a possible nil-tx
 func (c *Cluster) RunWithinTransaction(tx *sqlx.Tx, fn func(*sqlx.Tx) error) error {
 	if tx == nil {
 		return c.Transact(fn)

@@ -1,11 +1,16 @@
 package config
 
 import (
-	"fmt"
+	"io/ioutil"
+	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v3"
+
+	model2 "github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
 	"github.com/oidc-mytoken/server/shared/context"
@@ -19,14 +24,23 @@ var defaultConfig = Config{
 	Server: serverConf{
 		Port: 8000,
 		TLS: tlsConf{
-			Enabled:      true, // The default is that TLS is enabled if cert and key are given, this is checked later; we must set true here, because otherwise we cannot distinct this from a false set by the user
+			Enabled: true, // The default is that TLS is enabled if cert and key are given, this is checked later;
+			// we must set true here, because otherwise we cannot distinct this from a false set by the user
 			RedirectHTTP: true,
+		},
+		Secure: true,
+		Limiter: limiterConf{
+			Enabled:     true,
+			Max:         100,
+			Window:      300,
+			AlwaysAllow: []string{"127.0.0.1"},
 		},
 	},
 	DB: DBConf{
-		Hosts:             []string{"localhost"},
-		User:              "mytoken",
-		Password:          "mytoken",
+		Hosts: []string{"localhost"},
+		User:  "mytoken",
+		// The default value for Password is "mytoken", but it is not set here, but returned in the GetPassword function,
+		// because the default value is only used if no password and no password file are provided
 		DB:                "mytoken",
 		ReconnectInterval: 60,
 	},
@@ -62,6 +76,7 @@ var defaultConfig = Config{
 			PollingCodeExpiresAfter: 300,
 			PollingInterval:         5,
 		},
+		TokenRotation:    onlyEnable{true},
 		AccessTokenGrant: onlyEnable{true},
 		SignedJWTGrant:   onlyEnable{true},
 		TokenInfo: tokeninfoConfig{
@@ -99,15 +114,17 @@ type apiConf struct {
 }
 
 type featuresConf struct {
-	EnabledOIDCFlows []model.OIDCFlow `yaml:"enabled_oidc_flows"`
-	TokenRevocation  onlyEnable       `yaml:"token_revocation"`
-	ShortTokens      shortTokenConfig `yaml:"short_tokens"`
-	TransferCodes    onlyEnable       `yaml:"transfer_codes"`
-	Polling          pollingConf      `yaml:"polling_codes"`
-	AccessTokenGrant onlyEnable       `yaml:"access_token_grant"`
-	SignedJWTGrant   onlyEnable       `yaml:"signed_jwt_grant"`
-	TokenInfo        tokeninfoConfig  `yaml:"tokeninfo"`
-	WebInterface     onlyEnable       `yaml:"web_interface"`
+	EnabledOIDCFlows        []model.OIDCFlow       `yaml:"enabled_oidc_flows"`
+	TokenRevocation         onlyEnable             `yaml:"token_revocation"`
+	ShortTokens             shortTokenConfig       `yaml:"short_tokens"`
+	TransferCodes           onlyEnable             `yaml:"transfer_codes"`
+	Polling                 pollingConf            `yaml:"polling_codes"`
+	TokenRotation           onlyEnable             `yaml:"token_rotation"`
+	AccessTokenGrant        onlyEnable             `yaml:"access_token_grant"`
+	SignedJWTGrant          onlyEnable             `yaml:"signed_jwt_grant"`
+	TokenInfo               tokeninfoConfig        `yaml:"tokeninfo"`
+	WebInterface            onlyEnable             `yaml:"web_interface"`
+	DisabledRestrictionKeys model2.RestrictionKeys `yaml:"unsupported_restrictions"`
 }
 
 type tokeninfoConfig struct {
@@ -146,18 +163,30 @@ type pollingConf struct {
 	PollingInterval         int64 `yaml:"polling_interval"`
 }
 
+// DBConf is type for holding configuration for a db
 type DBConf struct {
 	Hosts             []string `yaml:"hosts"`
 	User              string   `yaml:"user"`
 	Password          string   `yaml:"password"`
+	PasswordFile      string   `yaml:"password_file"`
 	DB                string   `yaml:"db"`
 	ReconnectInterval int64    `yaml:"try_reconnect_interval"`
 }
 
 type serverConf struct {
-	Hostname string  `yaml:"hostname"`
-	Port     int     `yaml:"port"`
-	TLS      tlsConf `yaml:"tls"`
+	Port   int     `yaml:"port"`
+	TLS    tlsConf `yaml:"tls"`
+	Secure bool    `yaml:"-"` // Secure indicates if the connection to the mytoken server is secure. This is
+	// independent of TLS, e.g. a Proxy can be used.
+	ProxyHeader string      `yaml:"proxy_header"`
+	Limiter     limiterConf `yaml:"request_limits"`
+}
+
+type limiterConf struct {
+	Enabled     bool     `yaml:"enabled"`
+	Max         int      `yaml:"max_requests"`
+	Window      int      `yaml:"window"`
+	AlwaysAllow []string `yaml:"always_allow"`
 }
 
 type tlsConf struct {
@@ -179,12 +208,14 @@ type ProviderConf struct {
 	ClientID                 string             `yaml:"client_id"`
 	ClientSecret             string             `yaml:"client_secret"`
 	Scopes                   []string           `yaml:"scopes"`
+	MytokensMaxLifetime      int64              `yaml:"mytokens_max_lifetime"`
 	Endpoints                *oauth2x.Endpoints `yaml:"-"`
 	Provider                 *oidc.Provider     `yaml:"-"`
 	Name                     string             `yaml:"name"`
 	AudienceRequestParameter string             `yaml:"audience_request_parameter"`
 }
 
+// ServiceOperatorConf is type holding the configuration for the service operator of this mytoken instance
 type ServiceOperatorConf struct {
 	Name     string `yaml:"name"`
 	Homepage string `yaml:"homepage"`
@@ -192,12 +223,29 @@ type ServiceOperatorConf struct {
 	Privacy  string `yaml:"mail_privacy"`
 }
 
+// GetPassword returns the password for this database config. If necessary it reads it from the password file.
+func (conf *DBConf) GetPassword() string {
+	if conf.Password != "" {
+		return conf.Password
+	}
+	if conf.PasswordFile == "" {
+		return "mytoken"
+	}
+	content, err := ioutil.ReadFile(conf.PasswordFile)
+	if err != nil {
+		log.WithError(err).Error()
+		return ""
+	}
+	conf.Password = strings.Split(string(content), "\n")[0]
+	return conf.Password
+}
+
 func (so *ServiceOperatorConf) validate() error {
 	if so.Name == "" {
-		return fmt.Errorf("invalid config: service_operator.name not set")
+		return errors.New("invalid config: service_operator.name not set")
 	}
 	if so.Contact == "" {
-		return fmt.Errorf("invalid config: service_operator.mail_contact not set")
+		return errors.New("invalid config: service_operator.mail_contact not set")
 	}
 	if so.Privacy == "" {
 		so.Privacy = so.Contact
@@ -212,12 +260,19 @@ func Get() *Config {
 	return conf
 }
 
+func init() {
+	conf = &defaultConfig
+}
+
 func validate() error {
 	if conf == nil {
-		return fmt.Errorf("config not set")
+		return errors.New("config not set")
 	}
-	if conf.Server.Hostname == "" {
-		return fmt.Errorf("invalid config: server.hostname not set")
+	if conf.IssuerURL == "" {
+		return errors.New("invalid config:issuer_url not set")
+	}
+	if strings.HasPrefix(conf.IssuerURL, "http://") {
+		conf.Server.Secure = false
 	}
 	if conf.Server.TLS.Enabled {
 		if conf.Server.TLS.Key != "" && conf.Server.TLS.Cert != "" {
@@ -230,29 +285,29 @@ func validate() error {
 		return err
 	}
 	if len(conf.Providers) <= 0 {
-		return fmt.Errorf("invalid config: providers must have at least one entry")
+		return errors.New("invalid config: providers must have at least one entry")
 	}
 	for i, p := range conf.Providers {
 		if p.Issuer == "" {
-			return fmt.Errorf("invalid config: provider.issuer not set (Index %d)", i)
+			return errors.Errorf("invalid config: provider.issuer not set (Index %d)", i)
 		}
 		var err error
 		p.Endpoints, err = oauth2x.NewConfig(context.Get(), p.Issuer).Endpoints()
 		if err != nil {
-			return fmt.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
+			return errors.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
 		}
 		p.Provider, err = oidc.NewProvider(context.Get(), p.Issuer)
 		if err != nil {
-			return fmt.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
+			return errors.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
 		}
 		if p.ClientID == "" {
-			return fmt.Errorf("invalid config: provider.clientid not set (Index %d)", i)
+			return errors.Errorf("invalid config: provider.clientid not set (Index %d)", i)
 		}
 		if p.ClientSecret == "" {
-			return fmt.Errorf("invalid config: provider.clientsecret not set (Index %d)", i)
+			return errors.Errorf("invalid config: provider.clientsecret not set (Index %d)", i)
 		}
 		if len(p.Scopes) <= 0 {
-			return fmt.Errorf("invalid config: provider.scopes not set (Index %d)", i)
+			return errors.Errorf("invalid config: provider.scopes not set (Index %d)", i)
 		}
 		iss0, iss1 := issuerUtils.GetIssuerWithAndWithoutSlash(p.Issuer)
 		conf.ProviderByIssuer[iss0] = p
@@ -262,20 +317,20 @@ func validate() error {
 		}
 	}
 	if conf.IssuerURL == "" {
-		return fmt.Errorf("invalid config: issuerurl not set")
+		return errors.New("invalid config: issuerurl not set")
 	}
 	if conf.Signing.KeyFile == "" {
-		return fmt.Errorf("invalid config: signingkeyfile not set")
+		return errors.New("invalid config: signingkeyfile not set")
 	}
 	if conf.Signing.Alg == "" {
-		return fmt.Errorf("invalid config: tokensigningalg not set")
+		return errors.New("invalid config: tokensigningalg not set")
 	}
 	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(&conf.Features.EnabledOIDCFlows)
 	// if model.OIDCFlowIsInSlice(model.OIDCFlowDevice, conf.Features.EnabledOIDCFlows) && !conf.Features.Polling.Enabled {
-	// 	return fmt.Errorf("oidc flow device flow requires polling_codes to be enabled")
+	// 	return errors.New("oidc flow device flow requires polling_codes to be enabled")
 	// }
 	if !conf.Features.TokenInfo.Introspect.Enabled && conf.Features.WebInterface.Enabled {
-		return fmt.Errorf("web interface requires tokeninfo.introspect to be enabled")
+		return errors.New("web interface requires tokeninfo.introspect to be enabled")
 	}
 	conf.Features.TokenInfo.Enabled = utils.OR(
 		conf.Features.TokenInfo.Introspect.Enabled,
@@ -295,7 +350,7 @@ var possibleConfigLocations = []string{
 func Load() {
 	load()
 	if err := validate(); err != nil {
-		log.WithError(err).Fatal()
+		log.Fatalf("%s", errorfmt.Full(err))
 	}
 }
 
@@ -309,7 +364,8 @@ func load() {
 	}
 }
 
-// LoadForSetup reads the config file and populates the Config struct; it does not validate the Config, since this is not required for setup
+// LoadForSetup reads the config file and populates the Config struct; it does not validate the Config, since this is
+// not required for setup
 func LoadForSetup() {
 	load()
 }

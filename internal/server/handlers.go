@@ -2,6 +2,10 @@ package server
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/oidc-mytoken/api/v0"
+	consent "github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 
 	"github.com/oidc-mytoken/server/internal/config"
 )
@@ -23,7 +27,15 @@ func handleIndex(ctx *fiber.Ctx) error {
 
 func handleHome(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
-		loggedIn: true,
+		loggedIn:        true,
+		restrictionsGUI: true,
+		"restrictions": consent.WebRestrictions{
+			Restrictions: restrictions.Restrictions{
+				{ExpiresAt: unixtime.InSeconds(3600 * 24 * 7)},
+			},
+		},
+		"capabilities":          consent.WebCapabilities(api.AllCapabilities),
+		"subtoken-capabilities": consent.WebCapabilities(api.AllCapabilities),
 	}
 	return ctx.Render("sites/home", binding, layoutMain)
 }

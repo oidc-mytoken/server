@@ -3,12 +3,13 @@ package event
 import (
 	"github.com/jmoiron/sqlx"
 
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/eventrepo"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	pkg "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
 
+// MTEvent is type for mytoken events
 type MTEvent struct {
 	*pkg.Event
 	MTID mtid.MTID

@@ -3,7 +3,7 @@
     After=network.target auditd.service
 
     [Service]
-    ExecStart=/usr/local/bin/mytoken-server
+    ExecStart=/usr/bin/mytoken-server
     ExecReload=/bin/kill -HUP $MAINPID
     WorkingDirectory=/
     StandardOutput=inherit

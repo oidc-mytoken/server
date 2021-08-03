@@ -1,0 +1,75 @@
+
+<div id="mt-config">
+    <div>
+        <div class="row">
+            <div class="col">
+                <div class="form-group alert border">
+                    <h4>Token Name</h4>
+                    <label for="tokenName">Token Name</label>
+                    <input type="text" class="form-control" id="tokenName" aria-describedby="tokenNameHelp" placeholder="Name">
+                    <small id="tokenNameHelp" class="form-text text-muted">Give the Mytoken a name, so you can identify it better.</small>
+                </div>
+
+                <div class="form-group alert border">
+                    <h4>Token Type</h4>
+                    <div>
+                        <label for="select-token-type">Mytoken Type</label>
+                        <select id="select-token-type" class="select custom-select" data-live-search="true">
+                            <option selected value="token">JWT</option>
+                            <option value="short_token">Short Token</option>
+                            <option value="auto">Depending on size</option>
+                        </select>
+                        <div id="max_token_len_div" class="d-none">
+                            <label for="max_token_len">Maximum Token Length</label>
+                            <input type="number" class="form-control" id="max_token_len" aria-describedby="max_token_len_help" min=0>
+                            <small id="usages_AT_help" class="form-text text-muted">Adapt the mytoken type so that the returned mytoken is not longer than this value.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="alert border">
+                        {{> rotation}}
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col">
+                <div class="alert border">
+                    {{> capabilities}}
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="alert border">
+                    {{> restrictions}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <a href="#mt" class="btn btn-primary mx-auto d-block" id="get-mt">Create new Mytoken</a>
+</div>
+
+<div id="mt-result" class="d-none">
+    <div id="mt-instructions">
+        <p>
+            To obtain your Mytoken follow the following link and authenticate:
+            <a id="authorization-url" target="_blank" rel="noopener noreferrer" href="" ></a>
+        </p>
+    </div>
+    <div id="mt-result-color" class="alert" role="alert">
+        <h4 id="mt-result-heading-success" class="alert-heading d-none">Your Mytoken <span class="ml-3 badge badge-pill bg-my_blue_dark" id="token-badge"></span></h4>
+        <h4 id="mt-result-heading-error" class="alert-heading d-none">Error</h4>
+        <h4 id="mt-result-heading-pending" class="alert-heading d-none">Authorization Pending</h4>
+        <div id="mt-pending-spinner" class="spinner-border text-primary d-none" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+        <button class="btn btn-copy d-none" id="mt-result-copy" data-toggle="tooltip" data-placement="bottom" title="Copy to clipboard" data-clipboard-target="#mt-result-msg">
+            <i class="far fa-copy"></i>
+        </button>
+        <pre class="card-text" id="mt-result-msg"></pre>
+    </div>
+    <a href="#mt" class="btn btn-primary mx-auto d-block" id="next-mt">Configure another Mytoken</a>
+</div>

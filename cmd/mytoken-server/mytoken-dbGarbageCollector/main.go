@@ -27,7 +27,9 @@ func execSimpleQuery(sql string) {
 }
 
 func deleteExpiredTransferCodes() {
-	execSimpleQuery(`DELETE FROM ProxyTokens WHERE id = ANY(SELECT id FROM TransferCodesAttributes WHERE expires_at < CURRENT_TIMESTAMP())`)
+	execSimpleQuery(
+		`DELETE FROM ProxyTokens WHERE id = ANY(SELECT id FROM TransferCodesAttributes
+               WHERE expires_at < CURRENT_TIMESTAMP())`)
 }
 
 func deleteExpiredAuthInfo() {

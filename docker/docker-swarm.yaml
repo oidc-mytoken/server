@@ -1,0 +1,168 @@
+version: "3.9"
+services:
+  mytoken:
+    hostname: 'mytoken_{{.Task.Slot}}'
+    image: oidcmytoken/mytoken-server
+    working_dir: /root/mytoken
+    volumes:
+      - ${MYTOKEN_CONFIG_FILE}:/etc/mytoken/config.yaml
+      - ${MYTOKEN_GEOIPDB}:/root/mytoken/IP2LOCATION-LITE-DB1.IPV6.BIN
+      - ${MYTOKEN_LOGS_DIR}:/root/mytoken/logs
+    secrets:
+      - signing_key
+      - db_password
+    networks:
+      - frontend
+      - backend
+    environment:
+      - WAIT_FOR_NODES=db_1:3306,db_2:3306,db_3:3306
+    deploy:
+      mode: replicated
+      replicas: 3
+#      placement:
+      #        max_replicas_per_node: 1
+      restart_policy:
+        condition: any
+        delay: 120s
+        window: 60s
+      rollback_config:
+        parallelism: 1
+        delay: 120s
+      update_config:
+        parallelism: 1
+        delay: 180s
+        failure_action: rollback
+
+  db-bootstrap:
+    image: bitnami/mariadb-galera:latest
+    hostname: db-bootstrap
+    volumes:
+      - '${DB_BOOTSTRAP_DIR}:/bitnami/mariadb'
+    networks:
+      - backend
+    env_file:
+      - db.env
+    environment:
+      - MARIADB_PASSWORD_FILE=/run/secrets/db_password
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
+      - MARIADB_GALERA_MARIABACKUP_PASSWORD_FILE=/run/secrets/db_backup_password
+      - MARIADB_REPLICATION_PASSWORD_FILE=/run/secrets/db_replication_password
+    secrets:
+      - db_password
+      - db_root_password
+      - db_backup_password
+      - db_replication_password
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: none
+      update_config:
+        parallelism: 0
+    healthcheck:
+      test: [ 'CMD', '/opt/bitnami/scripts/mariadb-galera/healthcheck.sh' ]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+
+  db:
+    image: oidcmytoken/galera-node:latest
+    hostname: 'db_{{.Task.Slot}}'
+    volumes:
+      - '${DB_DIR_TEMPLATE}:/bitnami/mariadb'
+    networks:
+      - backend
+    env_file:
+      - db.env
+    environment:
+      - MARIADB_GALERA_CLUSTER_ADDRESS=gcomm://db-bootstrap,db_1,db_2,db_3
+      - MARIADB_PASSWORD_FILE=/run/secrets/db_password
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
+      - MARIADB_GALERA_MARIABACKUP_PASSWORD_FILE=/run/secrets/db_backup_password
+      - MARIADB_REPLICATION_PASSWORD_FILE=/run/secrets/db_replication_password
+      - WAIT_FOR_NODES=db-bootstrap:3306,db_1:3306,db_2:3306,db_3:3306
+    secrets:
+      - db_password
+      - db_root_password
+      - db_backup_password
+      - db_replication_password
+    deploy:
+      mode: replicated
+      replicas: 3
+      #      placement:
+      #        max_replicas_per_node: 1
+      restart_policy:
+        condition: on-failure
+      rollback_config:
+        parallelism: 1
+        delay: 120s
+      update_config:
+        parallelism: 1
+        delay: 180s
+        failure_action: rollback
+    healthcheck:
+      test: [ 'CMD', '/opt/bitnami/scripts/mariadb-galera/healthcheck.sh' ]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+    command: ["/opt/bitnami/scripts/mariadb-galera/entrypoint.sh", "/opt/bitnami/scripts/mariadb-galera/run.sh"]
+
+  migrate:
+    image: oidcmytoken/mytoken-migratedb
+#    depends_on:
+#      - db
+    networks:
+      - backend
+    environment:
+      - DB_PASSWORD_FILE=/run/secrets/db_root_password
+      - DB_DATABASE=mytoken
+      - DB_NODES=db_1,db_2,db_3
+      - WAIT_FOR_NODES=db_1:3306,db_2:3306,db_3:3306
+      - MYTOKEN_NODES=mytoken_1,mytoken_2,mytoken_3
+    secrets:
+      - db_root_password
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  load_balancer:
+    image: haproxy
+    networks:
+      - frontend
+    ports:
+      - target: 80
+        published: 80
+        mode: host
+      - target: 443
+        published: 443
+        mode: host
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=0
+    volumes:
+      - ${HAPROXY_DIR}:/usr/local/etc/haproxy:ro
+    secrets:
+      - cert
+    deploy:
+      mode: replicated
+      replicas: 1
+
+
+networks:
+  frontend:
+  backend:
+
+secrets:
+  cert:
+    file: ${SECRET_CERT}
+  signing_key:
+    file: ${SECRET_SIGNING_KEY}
+  db_password:
+    file: ${SECRET_DB_PASSWORD_FILE}
+  db_root_password:
+    file: ${SECRET_DB_ROOT_PASSWORD_FILE}
+  db_backup_password:
+    file: ${SECRET_DB_BACKUP_PASSWORD_FILE}
+  db_replication_password:
+    file: ${SECRET_DB_REPLICATION_PASSWORD_FILE}

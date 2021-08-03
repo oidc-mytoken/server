@@ -2,13 +2,13 @@ package pkg
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
+// WebRestrictions a type for representing restrictions.Restrictions in the consent screen
 type WebRestrictions struct {
 	restrictions.Restrictions
 	timeClass   *int
@@ -18,9 +18,9 @@ type WebRestrictions struct {
 	usagesClass *bool
 }
 
+// Text returns a textual (json) representation of this WebRestrictions
 func (r WebRestrictions) Text() string {
 	data, _ := json.Marshal(r.Restrictions)
-	fmt.Println(string(data))
 	return string(data)
 }
 
@@ -110,6 +110,7 @@ func (r WebRestrictions) getUsageClass() bool {
 	return u
 }
 
+// TimeColorClass returns the html class for coloring the time dimension
 func (r WebRestrictions) TimeColorClass() string {
 	intClass := r.getTimeClass()
 	switch intClass {
@@ -124,6 +125,7 @@ func (r WebRestrictions) TimeColorClass() string {
 	}
 }
 
+// TimeDescription returns a string describing the state of the time dimension
 func (r WebRestrictions) TimeDescription() string {
 	intClass := r.getTimeClass()
 	switch intClass {
@@ -138,6 +140,7 @@ func (r WebRestrictions) TimeDescription() string {
 	}
 }
 
+// ScopeColorClass returns the html class for coloring the scope dimension
 func (r WebRestrictions) ScopeColorClass() string {
 	if r.getScopeClass() {
 		return "text-success"
@@ -145,6 +148,7 @@ func (r WebRestrictions) ScopeColorClass() string {
 	return "text-warning"
 }
 
+// ScopeDescription returns a string describing the state of the scope dimension
 func (r WebRestrictions) ScopeDescription() string {
 	if r.getScopeClass() {
 		return "This token has restrictions for scopes."

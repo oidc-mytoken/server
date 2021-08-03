@@ -2,9 +2,11 @@ package eventrepo
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
+
+	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
@@ -19,8 +21,10 @@ type EventDBObject struct {
 // Store stores the EventDBObject in the database
 func (e *EventDBObject) Store(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`INSERT INTO MT_Events (MT_id, event_id, comment, ip, user_agent) VALUES(?, (SELECT id FROM Events WHERE event=?), ?, ?, ?)`,
+		_, err := tx.Exec(
+			`INSERT INTO MT_Events (MT_id, event_id, comment, ip, user_agent) 
+                      VALUES(?, (SELECT id FROM Events WHERE event=?), ?, ?, ?)`,
 			e.MTID, e.Event.String(), e.Event.Comment, e.ClientMetaData.IP, e.ClientMetaData.UserAgent)
-		return err
+		return errors.WithStack(err)
 	})
 }

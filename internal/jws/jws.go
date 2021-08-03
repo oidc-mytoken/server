@@ -11,8 +11,9 @@ import (
 	"io/ioutil"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/server/internal/config"
 )
@@ -24,7 +25,7 @@ func GenerateKeyPair() (sk, pk interface{}, err error) {
 	case oidc.RS256, oidc.RS384, oidc.RS512, oidc.PS256, oidc.PS384, oidc.PS512:
 		keyLen := config.Get().Signing.RSAKeyLen
 		if keyLen <= 0 {
-			return nil, nil, fmt.Errorf("%s specified, but no valid RSA key len", alg)
+			return nil, nil, errors.Errorf("%s specified, but no valid RSA key len", alg)
 		}
 		sk, err = rsa.GenerateKey(rand.Reader, keyLen)
 	case oidc.ES256:
@@ -34,17 +35,19 @@ func GenerateKeyPair() (sk, pk interface{}, err error) {
 	case oidc.ES512:
 		sk, err = ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	default:
-		return nil, nil, fmt.Errorf("unknown signing algorithm '%s'", alg)
+		return nil, nil, errors.Errorf("unknown signing algorithm '%s'", alg)
 	}
 	if err != nil {
-		switch sk := sk.(type) {
-		case *rsa.PrivateKey:
-			pk = &sk.PublicKey
-		case *ecdsa.PrivateKey:
-			pk = &sk.PublicKey
-		default:
-			err = fmt.Errorf("something went wrong, we just created an unknown key type")
-		}
+		err = errors.WithStack(err)
+		return
+	}
+	switch sk := sk.(type) {
+	case *rsa.PrivateKey:
+		pk = &sk.PublicKey
+	case *ecdsa.PrivateKey:
+		pk = &sk.PublicKey
+	default:
+		err = errors.Errorf("something went wrong, we just created an unknown key type")
 	}
 	return
 }

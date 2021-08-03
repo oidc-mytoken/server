@@ -2,13 +2,18 @@ package authcodeinforepo
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/oidc-mytoken/server/shared/model"
+	"github.com/oidc-mytoken/server/shared/utils"
+
+	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 )
 
@@ -27,6 +32,10 @@ type AuthFlowInfoOut struct {
 	SubtokenCapabilities api.Capabilities
 	Name                 string
 	PollingCode          bool
+	Rotation             *api.Rotation
+	ResponseType         model.ResponseType
+	MaxTokenLen          int
+	CodeVerifier         string
 }
 
 type authFlowInfo struct {
@@ -38,6 +47,10 @@ type authFlowInfo struct {
 	Name                 db.NullString
 	PollingCode          db.BitBool `db:"polling_code"`
 	ExpiresIn            int64      `db:"expires_in"`
+	Rotation             *api.Rotation
+	ResponseType         model.ResponseType `db:"response_type"`
+	MaxTokenLen          *int               `db:"max_token_len"`
+	CodeVerifier         db.NullString      `db:"code_verifier"`
 }
 
 func (i *AuthFlowInfo) toAuthFlowInfo() *authFlowInfo {
@@ -50,11 +63,14 @@ func (i *AuthFlowInfo) toAuthFlowInfo() *authFlowInfo {
 		Name:                 db.NewNullString(i.Name),
 		ExpiresIn:            config.Get().Features.Polling.PollingCodeExpiresAfter,
 		PollingCode:          i.PollingCode != nil,
+		Rotation:             i.Rotation,
+		ResponseType:         i.ResponseType,
+		MaxTokenLen:          utils.NewInt(i.MaxTokenLen),
 	}
 }
 
 func (i *authFlowInfo) toAuthFlowInfo() *AuthFlowInfoOut {
-	return &AuthFlowInfoOut{
+	o := &AuthFlowInfoOut{
 		State:                i.State,
 		Issuer:               i.Issuer,
 		Restrictions:         i.Restrictions,
@@ -62,7 +78,14 @@ func (i *authFlowInfo) toAuthFlowInfo() *AuthFlowInfoOut {
 		SubtokenCapabilities: i.SubtokenCapabilities,
 		Name:                 i.Name.String,
 		PollingCode:          bool(i.PollingCode),
+		Rotation:             i.Rotation,
+		ResponseType:         i.ResponseType,
+		CodeVerifier:         i.CodeVerifier.String,
 	}
+	if i.MaxTokenLen != nil {
+		o.MaxTokenLen = *i.MaxTokenLen
+	}
+	return o
 }
 
 // Store stores the AuthFlowInfoIn in the database as well as the linked polling code if it exists
@@ -75,8 +98,13 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 				return err
 			}
 		}
-		_, err := tx.NamedExec(`INSERT INTO AuthInfo (state_h, iss, restrictions, capabilities, subtoken_capabilities, name, expires_in, polling_code) VALUES(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name, :expires_in, :polling_code)`, store)
-		return err
+		_, err := tx.NamedExec(
+			`INSERT INTO AuthInfo (state_h, iss, restrictions, capabilities, subtoken_capabilities, name, 
+                      expires_in, polling_code, rotation, response_type, max_token_len) 
+                      VALUES(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name,
+                             :expires_in, :polling_code, :rotation, :response_type, :max_token_len)`,
+			store)
+		return errors.WithStack(err)
 	})
 }
 
@@ -84,7 +112,11 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
 	info := authFlowInfo{}
 	if err := db.Transact(func(tx *sqlx.Tx) error {
-		return tx.Get(&info, `SELECT state_h, iss, restrictions, capabilities, subtoken_capabilities, name, polling_code FROM AuthInfo WHERE state_h=? AND expires_at >= CURRENT_TIMESTAMP()`, state)
+		return errors.WithStack(tx.Get(&info,
+			`SELECT state_h, iss, restrictions, capabilities, subtoken_capabilities, 
+                      name, polling_code, rotation, response_type, max_token_len, code_verifier FROM AuthInfo 
+                      WHERE state_h=? AND expires_at >= CURRENT_TIMESTAMP()`,
+			state))
 	}); err != nil {
 		return nil, err
 	}
@@ -95,13 +127,25 @@ func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
 func DeleteAuthFlowInfoByState(tx *sqlx.Tx, state *state.State) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`DELETE FROM AuthInfo WHERE state_h = ?`, state)
-		return err
+		return errors.WithStack(err)
 	})
 }
 
-func UpdateTokenInfoByState(tx *sqlx.Tx, state *state.State, r restrictions.Restrictions, c, sc api.Capabilities) error {
+// UpdateTokenInfoByState updates the stored AuthFlowInfo for the given state
+func UpdateTokenInfoByState(tx *sqlx.Tx, state *state.State, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation, tokenName string) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`UPDATE AuthInfo SET restrictions=?, capabilities=?, subtoken_capabilities=? WHERE state_h=?`, r, c, sc, state)
-		return err
+		_, err := tx.Exec(
+			`UPDATE AuthInfo SET restrictions=?, capabilities=?, subtoken_capabilities=?, rotation=?, name=?
+                     WHERE state_h=?`,
+			r, c, sc, rot, tokenName, state)
+		return errors.WithStack(err)
+	})
+}
+
+// SetCodeVerifier stores the passed PKCE code verifier
+func SetCodeVerifier(tx *sqlx.Tx, state *state.State, verifier string) error {
+	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		_, err := tx.Exec(`UPDATE AuthInfo SET code_verifier=? WHERE state_h=?`, verifier, state)
+		return errors.WithStack(err)
 	})
 }

@@ -2,6 +2,8 @@ package pkg
 
 import (
 	"encoding/json"
+
+	"github.com/pkg/errors"
 )
 
 // Redirect types
@@ -25,7 +27,7 @@ func (r *AuthCodeFlowRequest) Native() bool {
 func (r *AuthCodeFlowRequest) UnmarshalJSON(data []byte) error {
 	var tmp OIDCFlowRequest
 	if err := json.Unmarshal(data, &tmp); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	*r = tmp.ToAuthCodeFlowRequest()
 	return nil
@@ -34,5 +36,6 @@ func (r *AuthCodeFlowRequest) UnmarshalJSON(data []byte) error {
 // MarshalJSON implements the json marshaler interface
 func (r *AuthCodeFlowRequest) MarshalJSON() ([]byte, error) {
 	r.redirectType = r.RedirectType
-	return json.Marshal(r.OIDCFlow)
+	data, err := json.Marshal(r.OIDCFlow)
+	return data, errors.WithStack(err)
 }

@@ -4,11 +4,13 @@ const configElements = [
     "mytoken_endpoint",
     "usersettings_endpoint",
     "revocation_endpoint",
-    "tokeninfo_endpoint"
+    "tokeninfo_endpoint",
+    "providers_supported"
 ]
 
-function discovery() {
-    if (storageGet('discovery') != undefined) {
+function discovery(...next) {
+    if (storageGet('discovery') !== null) {
+        doNext(...next);
         return;
     }
     $.ajax({
@@ -19,10 +21,7 @@ function discovery() {
                 storageSet(el, res[el]);
             })
             storageSet('discovery', Date.now())
+            doNext(...next);
         }
     });
 }
-
-$(function () {
-    discovery();
-})

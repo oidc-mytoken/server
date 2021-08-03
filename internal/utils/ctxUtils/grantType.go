@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/server/shared/model"
 )
@@ -21,7 +22,7 @@ func GetGrantTypeStr(ctx *fiber.Ctx) (string, error) {
 	gt := grantTypeReqObj{}
 	err := json.Unmarshal(ctx.Body(), &gt)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return gt.GrantType, nil
 }

@@ -3,9 +3,10 @@ package pkg
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
 
-	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/api/v0"
+	"github.com/pkg/errors"
+
 	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 )
@@ -24,10 +25,13 @@ type OIDCFlowRequest struct {
 func NewOIDCFlowRequest() *OIDCFlowRequest {
 	return &OIDCFlowRequest{
 		OIDCFlowRequest: api.OIDCFlowRequest{
-			Capabilities: api.Capabilities{api.CapabilityAT},
+			GeneralMytokenRequest: api.GeneralMytokenRequest{
+				Capabilities: api.Capabilities{api.CapabilityAT},
+			},
 		},
 		ResponseType: model.ResponseTypeToken,
 		redirectType: redirectTypeWeb,
+		GrantType:    -1,
 	}
 }
 
@@ -41,7 +45,8 @@ func (r OIDCFlowRequest) MarshalJSON() ([]byte, error) {
 		ofr:          ofr(r),
 		RedirectType: r.redirectType,
 	}
-	return json.Marshal(o)
+	data, err := json.Marshal(o)
+	return data, errors.WithStack(err)
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface
@@ -55,7 +60,7 @@ func (r *OIDCFlowRequest) UnmarshalJSON(data []byte) error {
 	}
 	o.RedirectType = o.redirectType
 	if err := json.Unmarshal(data, &o); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	o.redirectType = o.RedirectType
 	*r = OIDCFlowRequest(o.ofr)
@@ -65,6 +70,7 @@ func (r *OIDCFlowRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// ToAuthCodeFlowRequest creates a AuthCodeFlowRequest from the OIDCFlowRequest
 func (r OIDCFlowRequest) ToAuthCodeFlowRequest() AuthCodeFlowRequest {
 	return AuthCodeFlowRequest{
 		OIDCFlowRequest: r,
@@ -76,12 +82,13 @@ func (r OIDCFlowRequest) ToAuthCodeFlowRequest() AuthCodeFlowRequest {
 func (r *OIDCFlowRequest) Scan(src interface{}) error {
 	v, ok := src.([]byte)
 	if !ok {
-		return fmt.Errorf("bad []byte type assertion")
+		return errors.New("bad []byte type assertion")
 	}
-	return json.Unmarshal(v, r)
+	return errors.WithStack(json.Unmarshal(v, r))
 }
 
 // Value implements the driver.Valuer interface
 func (r OIDCFlowRequest) Value() (driver.Value, error) {
-	return json.Marshal(r)
+	v, err := json.Marshal(r)
+	return v, errors.WithStack(err)
 }

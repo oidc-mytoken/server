@@ -2,13 +2,13 @@ package configuration
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/routes"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	pkgModel "github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
@@ -66,12 +66,15 @@ func basicConfiguration() *pkg.MytokenConfiguration {
 		MytokenEndpointGrantTypesSupported:     []pkgModel.GrantType{pkgModel.GrantTypeOIDCFlow, pkgModel.GrantTypeMytoken},
 		MytokenEndpointOIDCFlowsSupported:      config.Get().Features.EnabledOIDCFlows,
 		ResponseTypesSupported:                 []pkgModel.ResponseType{pkgModel.ResponseTypeToken},
+		TokenEndpoint:                          utils.CombineURLPath(config.Get().IssuerURL, apiPaths.AccessTokenEndpoint),
+		SupportedRestrictionKeys:               model.AllRestrictionKeys.Disable(config.Get().Features.DisabledRestrictionKeys),
 	}
 }
 
 func addTokenRevocation(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.TokenRevocation.Enabled {
-		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(config.Get().IssuerURL, routes.GetCurrentAPIPaths().RevocationEndpoint)
+		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(config.Get().IssuerURL,
+			routes.GetCurrentAPIPaths().RevocationEndpoint)
 	}
 }
 func addShortTokens(mytokenConfig *pkg.MytokenConfiguration) {
@@ -81,7 +84,8 @@ func addShortTokens(mytokenConfig *pkg.MytokenConfiguration) {
 }
 func addTransferCodes(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.TransferCodes.Enabled {
-		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(config.Get().IssuerURL, routes.GetCurrentAPIPaths().TokenTransferEndpoint)
+		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(config.Get().IssuerURL,
+			routes.GetCurrentAPIPaths().TokenTransferEndpoint)
 		pkgModel.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 		pkgModel.ResponseTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
 	}

@@ -1,0 +1,33 @@
+.bg-my_green {
+    background: #6DB966;
+}
+.bg-my_green_dark {
+     background: #007038;
+}
+.text-my_green{
+    color: #007038;
+}
+
+.bg-my_orange{
+    background: #DF691A;
+}
+.bg-my_orange_dark{
+    background: #C73500;
+}
+.text-my_orange{
+    color: #C73500;
+}
+
+.bg-my_blue {
+    background: #1BA1E2;
+}
+.bg-my_blue_dark {
+    background: #006EAF;
+}
+.text-my_blue{
+    color: #006EAF;
+}
+
+.bg-my_grey {
+    background: #63778a;
+}

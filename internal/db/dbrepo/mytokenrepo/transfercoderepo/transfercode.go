@@ -2,15 +2,16 @@ package transfercoderepo
 
 import (
 	"database/sql"
-	"errors"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 // TransferCode is a type used to transfer a token
@@ -20,8 +21,9 @@ type TransferCode struct {
 }
 
 type transferCodeAttributes struct {
-	NewMT db.BitBool
-	model.ResponseType
+	NewMT        db.BitBool
+	ResponseType model.ResponseType
+	MaxTokenLen  *int
 }
 
 // NewTransferCode creates a new TransferCode for the passed jwt
@@ -46,13 +48,14 @@ func ParseTransferCode(token string) *TransferCode {
 }
 
 // CreatePollingCode creates a polling code
-func CreatePollingCode(pollingCode string, responseType model.ResponseType) *TransferCode {
+func CreatePollingCode(pollingCode string, responseType model.ResponseType, maxTokenLen int) *TransferCode {
 	pt := createProxyToken(pollingCode)
 	return &TransferCode{
 		proxyToken: *pt,
 		Attributes: transferCodeAttributes{
 			NewMT:        true,
 			ResponseType: responseType,
+			MaxTokenLen:  utils.NewInt(maxTokenLen),
 		},
 	}
 }
@@ -64,8 +67,12 @@ func (tc TransferCode) Store(tx *sqlx.Tx) error {
 		if err := tc.proxyToken.Store(tx); err != nil {
 			return err
 		}
-		_, err := tx.Exec(`INSERT INTO TransferCodesAttributes (id, expires_in,  revoke_MT, response_type) VALUES(?,?,?,?)`, tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewMT, tc.Attributes.ResponseType)
-		return err
+		_, err := tx.Exec(
+			`INSERT INTO TransferCodesAttributes (id, expires_in,  revoke_MT, response_type, max_token_len)
+                      VALUES(?,?,?,?,?)`,
+			tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewMT,
+			tc.Attributes.ResponseType, tc.Attributes.MaxTokenLen)
+		return errors.WithStack(err)
 	})
 }
 
@@ -77,7 +84,7 @@ func (tc TransferCode) GetRevokeJWT(tx *sqlx.Tx) (bool, error) {
 			if errors.Is(err, sql.ErrNoRows) {
 				return nil
 			}
-			return err
+			return errors.WithStack(err)
 		}
 		return nil
 	})

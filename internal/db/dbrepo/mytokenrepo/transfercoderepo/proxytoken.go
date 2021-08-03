@@ -2,9 +2,9 @@ package transfercoderepo
 
 import (
 	"database/sql"
-	"errors"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
@@ -87,8 +87,8 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 				JWT  string    `db:"jwt"`
 				MTID mtid.MTID `db:"MT_id"`
 			}
-			if err := tx.Get(&res, `SELECT jwt, MT_id FROM ProxyTokens WHERE id=?`, pt.id); err != nil {
-				return err
+			if err = tx.Get(&res, `SELECT jwt, MT_id FROM ProxyTokens WHERE id=?`, pt.id); err != nil {
+				return errors.WithStack(err)
 			}
 			pt.encryptedJWT = res.JWT
 			pt.mtID = res.MTID
@@ -114,7 +114,7 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 func (pt proxyToken) Store(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`INSERT INTO ProxyTokens (id, jwt, MT_id) VALUES (?,?,?)`, pt.id, pt.encryptedJWT, pt.mtID)
-		return err
+		return errors.WithStack(err)
 	})
 }
 
@@ -122,14 +122,15 @@ func (pt proxyToken) Store(tx *sqlx.Tx) error {
 func (pt proxyToken) Update(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`UPDATE ProxyTokens SET jwt=?, MT_id=? WHERE id=?`, pt.encryptedJWT, pt.mtID, pt.id)
-		return err
+		return errors.WithStack(err)
 	})
 }
 
-// Delete deletes the proxyToken from the database, it does not delete the linked Mytoken, the jwt should have been retrieved earlier and the Mytoken if desired be revoked separately
+// Delete deletes the proxyToken from the database, it does not delete the linked Mytoken, the jwt should have been
+// retrieved earlier and the Mytoken if desired be revoked separately
 func (pt proxyToken) Delete(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`DELETE FROM ProxyTokens WHERE id=?`, pt.id)
-		return err
+		return errors.WithStack(err)
 	})
 }

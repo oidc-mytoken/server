@@ -10,6 +10,8 @@ import (
 	mathRand "math/rand"
 	"strings"
 
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/oidc-mytoken/server/shared/utils"
@@ -20,9 +22,13 @@ const (
 	keyIterations = 8
 )
 
+const malFormedCiphertext = "malformed ciphertext"
+
+// RandomBytes returns size random bytes
 func RandomBytes(size int) []byte {
 	r := make([]byte, size)
 	if _, err := rand.Read(r); err != nil {
+		log.WithError(err).Error()
 		_, _ = mathRand.Read(r)
 	}
 	return r
@@ -35,65 +41,77 @@ func deriveKey(password string, salt []byte, size int) ([]byte, []byte) {
 	return pbkdf2.Key([]byte(password), salt, keyIterations, size, sha512.New), salt
 }
 
+// AES128Encrypt encrypts a string using AES128 with the passed password
 func AES128Encrypt(plain, password string) (string, error) {
 	return aesEncrypt(plain, password, 16)
 }
+
+// AES192Encrypt encrypts a string using AES192 with the passed password
 func AES192Encrypt(plain, password string) (string, error) {
 	return aesEncrypt(plain, password, 24)
 }
+
+// AES256Encrypt encrypts a string using AES256 with the passed password
 func AES256Encrypt(plain, password string) (string, error) {
 	return aesEncrypt(plain, password, 32)
 }
 
+// AES128Decrypt decrypts a string using AES128 with the passed password
 func AES128Decrypt(cipher, password string) (string, error) {
 	return aesDecrypt(cipher, password, 16)
 }
+
+// AES192Decrypt decrypts a string using AES192 with the passed password
 func AES192Decrypt(cipher, password string) (string, error) {
 	return aesDecrypt(cipher, password, 24)
 }
+
+// AES256Decrypt decrypts a string using AES256 with the passed password
 func AES256Decrypt(cipher, password string) (string, error) {
 	return aesDecrypt(cipher, password, 32)
 }
 
 func aesEncrypt(plain, password string, keyLen int) (string, error) {
 	key, salt := deriveKey(password, nil, keyLen)
-	cipher, err := AESEncrypt(plain, key)
+	ciph, err := AESEncrypt(plain, key)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s-%s", base64.StdEncoding.EncodeToString(salt), cipher), nil
+	return fmt.Sprintf("%s-%s", base64.StdEncoding.EncodeToString(salt), ciph), nil
 }
 
+// AESEncrypt encrypts a string using the passed key
 func AESEncrypt(plain string, key []byte) (string, error) {
-	cipher, nonce, err := aesE(plain, key)
+	ciph, nonce, err := aesE(plain, key)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s-%s", base64.StdEncoding.EncodeToString(nonce), base64.StdEncoding.EncodeToString(cipher)), nil
+	return fmt.Sprintf("%s-%s", base64.StdEncoding.EncodeToString(nonce), base64.StdEncoding.EncodeToString(ciph)), nil
 }
 
 func aesDecrypt(cipher, password string, keyLen int) (string, error) {
 	arr := strings.SplitN(cipher, "-", 2)
 	salt, err := base64.StdEncoding.DecodeString(arr[0])
 	if err != nil {
-		return "", fmt.Errorf("malformed ciphertext: %s", err)
+		return "", errors.Wrap(err, malFormedCiphertext)
 	}
 	key, _ := deriveKey(password, salt, keyLen)
 	return AESDecrypt(arr[1], key)
 }
 
+// AESDecrypt decrypts a string using the passed key
 func AESDecrypt(cipher string, key []byte) (string, error) {
 	arr := strings.Split(cipher, "-")
 	if len(arr) != 2 {
-		return "", fmt.Errorf("malformed ciphertext")
+		return "", errors.New(malFormedCiphertext)
 	}
 	nonce, err := base64.StdEncoding.DecodeString(arr[0])
 	if err != nil {
-		return "", fmt.Errorf("malformed ciphertext: %s", err)
+		return "", errors.Wrap(err, malFormedCiphertext)
 	}
 	data, err := base64.StdEncoding.DecodeString(arr[1])
 	if err != nil {
-		return "", fmt.Errorf("malformed ciphertext: %s", err)
+		return "", errors.Wrap(err, malFormedCiphertext)
 	}
 	return aesD(data, nonce, key)
 }
@@ -104,8 +122,8 @@ func aesE(plain string, key []byte) ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 	nonce := []byte(utils.RandASCIIString(gcm.NonceSize()))
-	cipher := gcm.Seal(nil, nonce, []byte(plain), nil)
-	return cipher, nonce, nil
+	ciph := gcm.Seal(nil, nonce, []byte(plain), nil)
+	return ciph, nonce, nil
 }
 
 func aesD(cipher, nonce, key []byte) (string, error) {
@@ -115,7 +133,7 @@ func aesD(cipher, nonce, key []byte) (string, error) {
 	}
 	plain, err := gcm.Open(nil, nonce, cipher, nil)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return string(plain), nil
 }
@@ -124,8 +142,10 @@ func createGCM(key []byte) (g cipher.AEAD, err error) {
 	var block cipher.Block
 	block, err = aes.NewCipher(key)
 	if err != nil {
+		err = errors.WithStack(err)
 		return
 	}
 	g, err = cipher.NewGCM(block)
+	err = errors.WithStack(err)
 	return
 }

@@ -6,13 +6,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/config"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/polling"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken"
 )
@@ -48,7 +49,7 @@ func HandleMytokenEndpoint(ctx *fiber.Ctx) error {
 	}
 	res := serverModel.Response{
 		Status:   fiber.StatusBadRequest,
-		Response: api.APIErrorUnsupportedGrantType,
+		Response: api.ErrorUnsupportedGrantType,
 	}
 	return res.Send(ctx)
 }
@@ -62,7 +63,13 @@ func handleOIDCFlow(ctx *fiber.Ctx) error {
 	if !ok {
 		return serverModel.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: api.APIErrorUnknownIssuer,
+			Response: api.ErrorUnknownIssuer,
+		}.Send(ctx)
+	}
+	if len(req.Capabilities) == 0 {
+		return serverModel.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: api.Error{Error: api.ErrorStrInvalidRequest, ErrorDescription: "capabilities cannot be empty"},
 		}.Send(ctx)
 	}
 	switch req.OIDCFlow {
@@ -73,7 +80,7 @@ func handleOIDCFlow(ctx *fiber.Ctx) error {
 	default:
 		res := serverModel.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: api.APIErrorUnsupportedOIDCFlow,
+			Response: api.ErrorUnsupportedOIDCFlow,
 		}
 		return res.Send(ctx)
 	}

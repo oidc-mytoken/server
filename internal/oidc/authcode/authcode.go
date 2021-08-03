@@ -2,15 +2,20 @@ package authcode
 
 import (
 	"database/sql"
-	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
+
+	"github.com/oidc-mytoken/server/internal/oidc/pkce"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+
+	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
@@ -23,7 +28,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/issuer"
 	"github.com/oidc-mytoken/server/internal/server/routes"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/context"
 	pkgModel "github.com/oidc-mytoken/server/shared/model"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
@@ -44,7 +48,8 @@ func Init() {
 	consentEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.ConsentEndpoint)
 }
 
-func GetAuthorizationURL(provider *config.ProviderConf, oState string, restrictions restrictions.Restrictions) string {
+// GetAuthorizationURL creates a authorization url
+func GetAuthorizationURL(provider *config.ProviderConf, oState, pkceChallenge string, restrictions restrictions.Restrictions) string {
 	log.Debug("Generating authorization url")
 	scopes := restrictions.GetScopes()
 	if len(scopes) <= 0 {
@@ -57,15 +62,23 @@ func GetAuthorizationURL(provider *config.ProviderConf, oState string, restricti
 		RedirectURL:  redirectURL,
 		Scopes:       scopes,
 	}
-	additionalParams := []oauth2.AuthCodeOption{oauth2.ApprovalForce}
+	additionalParams := []oauth2.AuthCodeOption{
+		oauth2.ApprovalForce,
+		oauth2.SetAuthURLParam("code_challenge", pkceChallenge),
+		oauth2.SetAuthURLParam("code_challenge_method", pkce.TransformationS256.String()),
+	}
 	if issuerUtils.CompareIssuerURLs(provider.Issuer, issuer.GOOGLE) {
 		additionalParams = append(additionalParams, oauth2.AccessTypeOffline)
 	} else if !utils.StringInSlice(oidc.ScopeOfflineAccess, oauth2Config.Scopes) {
 		oauth2Config.Scopes = append(oauth2Config.Scopes, oidc.ScopeOfflineAccess)
 	}
+	if !utils.StringInSlice(oidc.ScopeOpenID, oauth2Config.Scopes) { // if user deselected openid scope in restriction, we still need it
+		oauth2Config.Scopes = append(oauth2Config.Scopes, oidc.ScopeOpenID)
+	}
 	auds := restrictions.GetAudiences()
 	if len(auds) > 0 {
-		additionalParams = append(additionalParams, oauth2.SetAuthURLParam(provider.AudienceRequestParameter, strings.Join(auds, " ")))
+		additionalParams = append(additionalParams,
+			oauth2.SetAuthURLParam(provider.AudienceRequestParameter, strings.Join(auds, " ")))
 	}
 
 	return oauth2Config.AuthCodeURL(oState, additionalParams...)
@@ -75,11 +88,13 @@ func GetAuthorizationURL(provider *config.ProviderConf, oState string, restricti
 func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.Response {
 	log.Debug("Handle authcode")
 	req := oidcReq.ToAuthCodeFlowRequest()
+	req.Restrictions.ReplaceThisIp(ctx.IP())
+	req.Restrictions.ClearUnsupportedKeys()
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
 	if !ok {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: api.APIErrorUnknownIssuer,
+			Response: api.ErrorUnknownIssuer,
 		}
 	}
 	exp := req.Restrictions.GetExpires()
@@ -90,8 +105,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 		}
 	}
 
-	req.Restrictions.ReplaceThisIp(ctx.IP())
-	oState, consentCode := state.CreateState(state.Info{Native: req.Native()})
+	oState, consentCode := state.CreateState()
 	authFlowInfoO := authcodeinforepo.AuthFlowInfoOut{
 		State:                oState,
 		Issuer:               provider.Issuer,
@@ -99,6 +113,9 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 		Capabilities:         req.Capabilities,
 		SubtokenCapabilities: req.SubtokenCapabilities,
 		Name:                 req.Name,
+		Rotation:             req.Rotation,
+		ResponseType:         req.ResponseType,
+		MaxTokenLen:          req.MaxTokenLen,
 	}
 	authFlowInfo := authcodeinforepo.AuthFlowInfo{
 		AuthFlowInfoOut: authFlowInfoO,
@@ -108,7 +125,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 	}
 	if req.Native() && config.Get().Features.Polling.Enabled {
 		poll := authFlowInfo.State.PollingCode()
-		authFlowInfo.PollingCode = transfercoderepo.CreatePollingCode(poll, req.ResponseType)
+		authFlowInfo.PollingCode = transfercoderepo.CreatePollingCode(poll, req.ResponseType, req.MaxTokenLen)
 		res.PollingInfo = api.PollingInfo{
 			PollingCode:          poll,
 			PollingCodeExpiresIn: config.Get().Features.Polling.PollingCodeExpiresAfter,
@@ -116,6 +133,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 		}
 	}
 	if err := authFlowInfo.Store(nil); err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	return &model.Response{
@@ -132,16 +150,17 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 		if errors.Is(err, sql.ErrNoRows) {
 			return &model.Response{
 				Status:   fiber.StatusBadRequest,
-				Response: api.APIErrorStateMismatch,
+				Response: api.ErrorStateMismatch,
 			}
 		}
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	provider, ok := config.Get().ProviderByIssuer[authInfo.Issuer]
 	if !ok {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: api.APIErrorUnknownIssuer,
+			Response: api.ErrorUnknownIssuer,
 		}
 	}
 	oauth2Config := oauth2.Config{
@@ -150,7 +169,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 		Endpoint:     provider.Endpoints.OAuth2(),
 		RedirectURL:  redirectURL,
 	}
-	token, err := oauth2Config.Exchange(context.Get(), code)
+	token, err := oauth2Config.Exchange(context.Get(), code, oauth2.SetAuthURLParam("code_verifier", authInfo.CodeVerifier))
 	if err != nil {
 		var e *oauth2.RetrieveError
 		if errors.As(err, &e) {
@@ -163,12 +182,13 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 				Response: res,
 			}
 		}
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if token.RefreshToken == "" {
 		return &model.Response{
 			Status:   fiber.StatusInternalServerError,
-			Response: api.APIErrorNoRefreshToken,
+			Response: api.ErrorNoRefreshToken,
 		}
 	}
 	scopes := authInfo.Restrictions.GetScopes()
@@ -185,6 +205,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 
 	oidcSub, err := getSubjectFromUserinfo(provider.Provider, token)
 	if err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	var ste *mytokenrepo.MytokenEntry
@@ -215,6 +236,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 		}
 		return authcodeinforepo.DeleteAuthFlowInfoByState(tx, oState)
 	}); err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if authInfo.PollingCode {
@@ -223,31 +245,21 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 			Response: "/native",
 		}
 	}
-	stateInf := oState.Parse()
-	res, err := ste.Token.ToTokenResponse(stateInf.ResponseType, networkData, "")
+	res, err := ste.Token.ToTokenResponse(authInfo.ResponseType, authInfo.MaxTokenLen, networkData, "")
 	if err != nil {
+		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	cookieName := "mytoken"
-	cookieValue := res.Mytoken
-	cookieAge := 3600 * 24 //TODO from config, same as in js
-	if stateInf.ResponseType == pkgModel.ResponseTypeTransferCode {
-		cookieName = "mytoken-transfercode"
-		cookieValue = res.TransferCode
-		cookieAge = int(res.ExpiresIn)
+	var cookie fiber.Cookie
+	if authInfo.ResponseType == pkgModel.ResponseTypeTransferCode {
+		cookie = cookies.TransferCodeCookie(res.TransferCode, int(res.ExpiresIn))
+	} else {
+		cookie = cookies.MytokenCookie(res.Mytoken)
 	}
 	return &model.Response{
 		Status:   fiber.StatusSeeOther,
 		Response: "/home",
-		Cookies: []*fiber.Cookie{{
-			Name:     cookieName,
-			Value:    cookieValue,
-			Path:     "/api",
-			MaxAge:   cookieAge,
-			Secure:   config.Get().Server.TLS.Enabled,
-			HTTPOnly: true,
-			SameSite: "Strict",
-		}},
+		Cookies:  []*fiber.Cookie{&cookie},
 	}
 }
 
@@ -258,7 +270,8 @@ func createMytokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfo
 			authFlowInfo.Issuer,
 			authFlowInfo.Restrictions,
 			authFlowInfo.Capabilities,
-			authFlowInfo.SubtokenCapabilities),
+			authFlowInfo.SubtokenCapabilities,
+			authFlowInfo.Rotation),
 		authFlowInfo.Name, networkData)
 	if err := ste.InitRefreshToken(token.RefreshToken); err != nil {
 		return nil, err
@@ -272,7 +285,7 @@ func createMytokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfo
 func getSubjectFromUserinfo(provider *oidc.Provider, token *oauth2.Token) (string, error) {
 	userInfo, err := provider.UserInfo(context.Get(), oauth2.StaticTokenSource(token))
 	if err != nil {
-		return "", fmt.Errorf("failed to get userinfo: %s", err)
+		return "", errors.Wrap(err, "failed to get userinfo")
 	}
 	return userInfo.Subject, nil
 }

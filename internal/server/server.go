@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/template/mustache"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints"
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration"
@@ -19,7 +20,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/server/routes"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 )
 
 var server *fiber.App
@@ -31,6 +31,7 @@ var serverConfig = fiber.Config{
 	ReadBufferSize: 8192,
 	// WriteBufferSize: 4096,
 	ErrorHandler: handleError,
+	// ProxyHeader is set later from config
 }
 
 //go:embed web/sites web/layouts
@@ -55,25 +56,26 @@ func init() {
 
 func initTemplateEngine() {
 	engine := mustache.NewFileSystemPartials(http.FS(webFiles), ".mustache", http.FS(partials))
-	// engine.Reload(version.DEV)
 	serverConfig.Views = engine
 }
 
 // Init initializes the server
 func Init() {
 	initTemplateEngine()
+	serverConfig.ProxyHeader = config.Get().Server.ProxyHeader
 	server = fiber.New(serverConfig)
 	addMiddlewares(server)
 	addRoutes(server)
 	server.Use(func(ctx *fiber.Ctx) error {
 		if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" {
+			ctx.Status(fiber.StatusNotFound)
 			return ctx.Render("sites/404", map[string]interface{}{
 				"empty-navbar": true,
 			}, "layouts/main")
 		}
 		return model.Response{
 			Status: fiber.StatusNotFound,
-			Response: api.APIError{
+			Response: api.Error{
 				Error: "not_found",
 			},
 		}.Send(ctx)
@@ -106,7 +108,8 @@ func start(s *fiber.App) {
 		if config.Get().Server.TLS.RedirectHTTP {
 			httpServer := fiber.New(serverConfig)
 			httpServer.All("*", func(ctx *fiber.Ctx) error {
-				return ctx.Redirect(strings.Replace(ctx.Request().URI().String(), "http://", "https://", 1), fiber.StatusPermanentRedirect)
+				return ctx.Redirect(strings.Replace(ctx.Request().URI().String(), "http://", "https://", 1),
+					fiber.StatusPermanentRedirect)
 			})
 			go httpServer.Listen(":80")
 		}

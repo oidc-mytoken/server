@@ -5,41 +5,34 @@ import (
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
-const stateLen = 16
 const consentCodeLen = 8
 
-func NewConsentCode(info Info) *ConsentCode {
-	return &ConsentCode{
-		r:           utils.RandASCIIString(consentCodeLen),
-		encodedInfo: info.Encode(),
-	}
+// NewConsentCode creates a new ConsentCode
+func NewConsentCode() *ConsentCode {
+	return ConsentCodeFromStr(utils.RandASCIIString(consentCodeLen))
 }
 
-func ParseConsentCode(cc string) *ConsentCode {
-	return &ConsentCode{
-		r:           cc[:len(cc)-infoAsciiLen],
-		encodedInfo: cc[len(cc)-infoAsciiLen:],
-		public:      cc,
-	}
-}
-
+// ConsentCode is type for the code used for giving consent to mytoken
 type ConsentCode struct {
-	r           string
-	encodedInfo string
-	public      string
-	state       string
+	code  string
+	state string
 }
 
-func (c *ConsentCode) String() string {
-	if c.public == "" {
-		c.public = c.r + c.encodedInfo
+func (c ConsentCode) String() string {
+	return c.code
+}
+
+// ConsentCodeFromStr turns a consent code string into a *ConsentCode
+func ConsentCodeFromStr(code string) *ConsentCode {
+	return &ConsentCode{
+		code: code,
 	}
-	return c.public
 }
 
+// GetState returns the state linked to a ConsentCode
 func (c *ConsentCode) GetState() string {
 	if c.state == "" {
-		c.state = hashUtils.HMACSHA512Str([]byte(c.r), []byte("state"))[:stateLen] + c.encodedInfo
+		c.state = hashUtils.HMACBasedHash([]byte(c.code))[:stateLen]
 	}
 	return c.state
 }

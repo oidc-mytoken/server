@@ -4,32 +4,34 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/oidc-mytoken/server/pkg/api/v0"
+	"github.com/oidc-mytoken/api/v0"
+
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 )
 
-// InternalServerError creates an APIError for internal server errors
-func InternalServerError(errorDescription string) api.APIError {
-	return api.APIError{
-		Error:            api.ErrorInternal,
+// InternalServerError creates an Error for internal server errors
+func InternalServerError(errorDescription string) api.Error {
+	return api.Error{
+		Error:            api.ErrorStrInternal,
 		ErrorDescription: errorDescription,
 	}
 }
 
-// OIDCError creates an APIError for oidc related errors
-func OIDCError(oidcError, oidcErrorDescription string) api.APIError {
+// OIDCError creates an Error for oidc related errors
+func OIDCError(oidcError, oidcErrorDescription string) api.Error {
 	err := oidcError
 	if oidcErrorDescription != "" {
 		err = fmt.Sprintf("%s: %s", oidcError, oidcErrorDescription)
 	}
-	return api.APIError{
-		Error:            api.ErrorOIDC,
+	return api.Error{
+		Error:            api.ErrorStrOIDC,
 		ErrorDescription: err,
 	}
 }
 
-// OIDCErrorFromBody creates an APIError for oidc related errors from the response of an oidc provider
-func OIDCErrorFromBody(body []byte) (apiError api.APIError, ok bool) {
-	bodyError := api.APIError{}
+// OIDCErrorFromBody creates an Error for oidc related errors from the response of an oidc provider
+func OIDCErrorFromBody(body []byte) (apiError api.Error, ok bool) {
+	bodyError := api.Error{}
 	if err := json.Unmarshal(body, &bodyError); err != nil {
 		return
 	}
@@ -38,33 +40,33 @@ func OIDCErrorFromBody(body []byte) (apiError api.APIError, ok bool) {
 	return
 }
 
-// BadRequestError creates an APIError for bad request errors
-func BadRequestError(errorDescription string) api.APIError {
-	return api.APIError{
-		Error:            api.ErrorInvalidRequest,
+// BadRequestError creates an Error for bad request errors
+func BadRequestError(errorDescription string) api.Error {
+	return api.Error{
+		Error:            api.ErrorStrInvalidRequest,
 		ErrorDescription: errorDescription,
 	}
 }
 
-// InvalidTokenError creates an APIError for invalid token errors
-func InvalidTokenError(errorDescription string) api.APIError {
-	return api.APIError{
-		Error:            api.ErrorInvalidToken,
+// InvalidTokenError creates an Error for invalid token errors
+func InvalidTokenError(errorDescription string) api.Error {
+	return api.Error{
+		Error:            api.ErrorStrInvalidToken,
 		ErrorDescription: errorDescription,
 	}
 }
 
-// ErrorWithoutDescription creates an APIError from an error string
-func ErrorWithoutDescription(err string) api.APIError {
-	return api.APIError{
+// ErrorWithoutDescription creates an Error from an error string
+func ErrorWithoutDescription(err string) api.Error {
+	return api.Error{
 		Error: err,
 	}
 }
 
-// ErrorWithErrorDescription creates an APIError from an error string and golang error
-func ErrorWithErrorDescription(e string, err error) api.APIError {
-	return api.APIError{
+// ErrorWithErrorDescription creates an Error from an error string and golang error
+func ErrorWithErrorDescription(e string, err error) api.Error {
+	return api.Error{
 		Error:            e,
-		ErrorDescription: err.Error(),
+		ErrorDescription: errorfmt.Error(err),
 	}
 }

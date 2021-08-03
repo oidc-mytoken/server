@@ -5,6 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/versionrepo"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -25,7 +26,7 @@ func main() {
 	server.Init()
 	configurationEndpoint.Init()
 	authcode.Init()
-	db.Connect()
+	versionrepo.ConnectToVersion()
 	jws.LoadKey()
 	httpClient.Init(config.Get().IssuerURL)
 	geoip.Init()

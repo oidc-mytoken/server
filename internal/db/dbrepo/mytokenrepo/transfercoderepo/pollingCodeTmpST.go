@@ -2,13 +2,14 @@ package transfercoderepo
 
 import (
 	"database/sql"
-	"errors"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
+
+	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
-	"github.com/oidc-mytoken/server/pkg/api/v0"
 	"github.com/oidc-mytoken/server/shared/model"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
@@ -21,6 +22,7 @@ type TransferCodeStatus struct {
 	Expired         bool               `db:"expired"`
 	ResponseType    model.ResponseType `db:"response_type"`
 	ConsentDeclined db.BitBool         `db:"consent_declined"`
+	MaxTokenLen     *int               `db:"max_token_len"`
 }
 
 // CheckTransferCode checks the passed polling code in the database
@@ -28,12 +30,15 @@ func CheckTransferCode(tx *sqlx.Tx, pollingCode string) (TransferCodeStatus, err
 	pt := createProxyToken(pollingCode)
 	var p TransferCodeStatus
 	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if err := tx.Get(&p, `SELECT 1 as found, CURRENT_TIMESTAMP() > expires_at AS expired, response_type, consent_declined FROM TransferCodes WHERE id=?`, pt.ID()); err != nil {
+		if err := tx.Get(&p,
+			`SELECT 1 as found, CURRENT_TIMESTAMP() > expires_at AS expired,
+                      response_type, consent_declined, max_token_len FROM TransferCodes WHERE id=?`,
+			pt.ID()); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				err = nil  // polling code was not found, but this is fine
 				return err // p.Found is false
 			}
-			return err
+			return errors.WithStack(err)
 		}
 		return nil
 	})
@@ -77,7 +82,7 @@ func DeleteTransferCodeByState(tx *sqlx.Tx, state *state.State) error {
 	pc := createProxyToken(state.PollingCode())
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`DELETE FROM ProxyTokens WHERE id=?`, pc.ID())
-		return err
+		return errors.WithStack(err)
 	})
 }
 
@@ -86,6 +91,6 @@ func DeclineConsentByState(tx *sqlx.Tx, state *state.State) error {
 	pc := createProxyToken(state.PollingCode())
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`UPDATE TransferCodesAttributes SET consent_declined=? WHERE id=?`, db.BitBool(true), pc.ID())
-		return err
+		return errors.WithStack(err)
 	})
 }
