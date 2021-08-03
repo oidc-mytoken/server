@@ -11,7 +11,7 @@ var v0_3_0_Before = []string{
 	"ALTER TABLE AuthInfo ADD code_verifier varchar(128) NULL",
 	"ALTER TABLE TransferCodesAttributes ADD max_token_len INT NULL",
 	"CREATE OR REPLACE" +
-		"ALGORITHM = UNDEFINED VIEW `mytoken_test`.`TransferCodes` AS" +
+		"ALGORITHM = UNDEFINED VIEW `TransferCodes` AS" +
 		"select" +
 		"`pt`.`id` AS `id`," +
 		"`pt`.`jwt` AS `jwt`," +
@@ -23,8 +23,8 @@ var v0_3_0_Before = []string{
 		"`tca`.`max_token_len` AS `max_token_len`," +
 		"`tca`.`consent_declined` AS `consent_declined`" +
 		"from" +
-		"(`mytoken_test`.`ProxyTokens` `pt`" +
-		"join `mytoken_test`.`TransferCodesAttributes` `tca` on" +
+		"(`ProxyTokens` `pt`" +
+		"join `TransferCodesAttributes` `tca` on" +
 		"(`pt`.`id` = `tca`.`id`))",
 
 	// Predefined Values

@@ -6,14 +6,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/oidc-mytoken/server/internal/config"
-	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 	"github.com/zachmann/cli/v2"
 	"golang.org/x/term"
 
-	"github.com/oidc-mytoken/server/internal/model/version"
+	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/shared/utils/fileutil"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/oidc-mytoken/server/internal/model/version"
 )
 
 var configFile string
@@ -48,7 +50,7 @@ var app = &cli.App{
 		&cli.BoolFlag{
 			Name:             "force",
 			Aliases:          []string{"f"},
-			Usage:            "Force a complete database migration. Mytoken servers are not checked if they are compatible with the changes.",
+			Usage:            "Force a complete database migration. It is not checked if mytoken servers are compatible with the changes.",
 			Destination:      &force,
 			HideDefaultValue: true,
 		},
