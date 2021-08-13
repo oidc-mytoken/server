@@ -9,7 +9,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/go-sql-driver/mysql v1.6.0
-	github.com/gofiber/fiber/v2 v2.16.0
+	github.com/gofiber/fiber/v2 v2.17.0
 	github.com/gofiber/helmet/v2 v2.2.0
 	github.com/gofiber/template v1.6.14
 	github.com/golang-jwt/jwt v3.2.1+incompatible
