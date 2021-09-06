@@ -19,12 +19,12 @@ function _tokeninfo(action, successFnc, errorFnc, token=undefined) {
 }
 
 
-$('#get-session-token-info').on('click', function(e){
+function getSessionTokenInfo(e) {
+    e.preventDefault();
     let msg = $('#session-token-info-msg');
     let copy = $('#session-copy');
-    e.preventDefault();
     _tokeninfo('introspect',
-        function(res){
+        function (res) {
             let token = res['token'];
             let iss = token['oidc_iss'];
             if (iss) {
@@ -32,7 +32,7 @@ $('#get-session-token-info').on('click', function(e){
             }
             let scopes = extractMaxScopesFromToken(token);
             storageSet('token_scopes', scopes, true);
-            msg.text(JSON.stringify(res,null,4));
+            msg.text(JSON.stringify(res, null, 4));
             msg.removeClass('text-danger');
             copy.removeClass('d-none');
         },
@@ -42,7 +42,7 @@ $('#get-session-token-info').on('click', function(e){
             copy.removeClass('d-none');
         })
     return false;
-})
+}
 
 function userAgentToHTMLIcons(userAgent) {
     let icons = FaUserAgent.faUserAgent(userAgent);
@@ -117,12 +117,12 @@ function tokenlistToHTML(tokenTrees) {
         '</tbody></table>';
 }
 
-$('#get-history').on('click', function(e){
+function getHistoryTokenInfo(e) {
     e.preventDefault();
     let msg = $('#history-msg');
     let copy = $('#history-copy');
     _tokeninfo('event_history',
-        function(res){
+        function (res) {
             msg.html(historyToHTML(res['events']));
             msg.removeClass('text-danger');
             copy.addClass('d-none');
@@ -133,14 +133,14 @@ $('#get-history').on('click', function(e){
             copy.removeClass('d-none');
         })
     return false;
-})
+}
 
-$('#get-tree').on('click', function(e){
+function getTreeTokenInfo(e) {
     e.preventDefault();
     let msg = $('#tree-msg');
     let copy = $('#tree-copy');
     _tokeninfo('subtoken_tree',
-        function(res){
+        function (res) {
             msg.html(tokenlistToHTML([res['mytokens']]));
             msg.removeClass('text-danger');
             copy.addClass('d-none');
@@ -151,9 +151,9 @@ $('#get-tree').on('click', function(e){
             copy.removeClass('d-none');
         })
     return false;
-})
+}
 
-$('#get-list').on('click', function(e){
+function getListTokenInfo(e) {
     e.preventDefault();
     let msg = $('#list-msg');
     let copy = $('#list-copy');
@@ -161,7 +161,7 @@ $('#get-list').on('click', function(e){
         function (res) {
             const mToken = res['mytoken']
             _tokeninfo('list_mytokens',
-                function(infoRes){
+                function (infoRes) {
                     msg.html(tokenlistToHTML(infoRes['mytokens']));
                     msg.removeClass('text-danger');
                     copy.addClass('d-none');
@@ -170,7 +170,7 @@ $('#get-list').on('click', function(e){
                     msg.text(getErrorMessage(errRes));
                     msg.addClass('text-danger');
                     copy.removeClass('d-none');
-                }, mToken) ;
+                }, mToken);
         },
         function (errRes) {
             msg.text(getErrorMessage(errRes));
@@ -180,4 +180,13 @@ $('#get-list').on('click', function(e){
         "list_mytokens"
     );
     return false;
-})
+}
+
+$('#session-info-tab').on('shown.bs.tab', getSessionTokenInfo)
+$('#session-reload').on('click', getSessionTokenInfo)
+$('#history-tab').on('shown.bs.tab', getHistoryTokenInfo)
+$('#history-reload').on('click', getHistoryTokenInfo)
+$('#tree-tab').on('shown.bs.tab', getTreeTokenInfo)
+$('#tree-reload').on('click', getTreeTokenInfo)
+$('#list-tab').on('shown.bs.tab', getListTokenInfo)
+$('#list-reload').on('click', getListTokenInfo)
