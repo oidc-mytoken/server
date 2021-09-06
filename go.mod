@@ -12,7 +12,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.18.0
 	github.com/gofiber/helmet/v2 v2.2.1
 	github.com/gofiber/template v1.6.16
-	github.com/golang-jwt/jwt v3.2.1+incompatible
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/ip2location/ip2location-go v8.3.0+incompatible
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/jinzhu/copier v0.3.2
