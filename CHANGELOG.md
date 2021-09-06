@@ -12,6 +12,17 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.3.3
+
+### API
+
+- Don't redirect from `/.well-known/openid-configuration` to `/.well-known/mytoken-configuration`. Instead returning the
+  same content on both endpoints.
+
+### Enhancements
+
+- Removed buttons from webinterface in the tokeninfo tabs. The content now loads directly when switching the tab.
+
 ## mytoken 0.3.2
 
 - Fixed password prompt for migratedb
