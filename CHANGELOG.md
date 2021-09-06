@@ -12,8 +12,21 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.3.1-dev
+
+### API
+
+- Don't redirect from `/.well-known/openid-configuration` to `/.well-known/mytoken-configuration`. Instead returning the
+  same content on both endpoints.
+
+### Enhancements
+
+- Removed buttons from webinterface in the tokeninfo tabs. The content now loads directly when switching the tab.
+
 ## mytoken 0.3.0
+
 ### Features
+
 - Changes to the mytoken
   - Added a version to the mytoken token
   - Added token type 'mytoken'
