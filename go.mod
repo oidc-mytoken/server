@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/Songmu/prompter v0.5.0
 	github.com/andybalholm/brotli v1.0.3 // indirect
-	github.com/coreos/go-oidc/v3 v3.0.0
+	github.com/coreos/go-oidc/v3 v3.1.0
 	github.com/fatih/structs v1.1.0
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/go-sql-driver/mysql v1.6.0
