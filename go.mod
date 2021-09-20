@@ -23,7 +23,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/valyala/fasthttp v1.29.0
+	github.com/valyala/fasthttp v1.30.0
 	github.com/zachmann/cli/v2 v2.3.1-0.20210512144416-96dd678d93c7
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/mod v0.5.0
