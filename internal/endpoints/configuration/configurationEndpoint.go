@@ -41,8 +41,6 @@ func Init() {
 	addShortTokens(mytokenConfig)
 	addTransferCodes(mytokenConfig)
 	addPollingCodes(mytokenConfig)
-	addAccessTokenGrant(mytokenConfig)
-	addSignedJWTGrant(mytokenConfig)
 	addTokenInfo(mytokenConfig)
 }
 
@@ -93,16 +91,6 @@ func addTransferCodes(mytokenConfig *pkg.MytokenConfiguration) {
 func addPollingCodes(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.Polling.Enabled {
 		pkgModel.GrantTypePollingCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
-	}
-}
-func addAccessTokenGrant(mytokenConfig *pkg.MytokenConfiguration) {
-	if config.Get().Features.AccessTokenGrant.Enabled {
-		pkgModel.GrantTypeAccessToken.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
-	}
-}
-func addSignedJWTGrant(mytokenConfig *pkg.MytokenConfiguration) {
-	if config.Get().Features.SignedJWTGrant.Enabled {
-		pkgModel.GrantTypePrivateKeyJWT.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 	}
 }
 func addTokenInfo(mytokenConfig *pkg.MytokenConfiguration) {

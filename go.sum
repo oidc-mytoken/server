@@ -415,6 +415,8 @@ github.com/nishanths/exhaustive v0.0.0-20200525081945-8e46705b6132 h1:NjznefjSrr
 github.com/nishanths/exhaustive v0.0.0-20200525081945-8e46705b6132/go.mod h1:wBEpHwM2OdmeNpdCvRPUlkEbBuaFmcK4Wv8Q7FuGW3c=
 github.com/oidc-mytoken/api v0.0.0-20210730065550-117f733ae8a1 h1:i1LIDAuTm4SR65iPjVq+elXHSKNju3Yt61+jreULTuE=
 github.com/oidc-mytoken/api v0.0.0-20210730065550-117f733ae8a1/go.mod h1:S8t1XA42EFAgc3vUfis0g1LPGA4TXH0nfDynvgo6cwk=
+github.com/oidc-mytoken/api v0.3.1-0.20210921092134-2599cdd1db99 h1:0b66hU44d5wwcOpQhnilvIP0prVaQnZeaMLVCOYfAjQ=
+github.com/oidc-mytoken/api v0.3.1-0.20210921092134-2599cdd1db99/go.mod h1:S8t1XA42EFAgc3vUfis0g1LPGA4TXH0nfDynvgo6cwk=
 github.com/oidc-mytoken/lib v0.2.1-0.20210730094903-f59c9a8f84e0 h1:eo1lEHaU6vkQZnAQyy7dA7JIoXpUOS/G4csV1LPIi80=
 github.com/oidc-mytoken/lib v0.2.1-0.20210730094903-f59c9a8f84e0/go.mod h1:2ITx3/ZTRyrR6GGIG3BfNdscxERXsD0Up8G3yZZDJng=
 github.com/oidc-mytoken/server v0.2.0/go.mod h1:6uFm+Za9NMK3gq4OOIeX3gs3T6leluVIWsGiM1zlQbA=

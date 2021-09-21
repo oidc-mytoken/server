@@ -7,7 +7,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v3"
 
 	model2 "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
@@ -76,9 +76,7 @@ var defaultConfig = Config{
 			PollingCodeExpiresAfter: 300,
 			PollingInterval:         5,
 		},
-		TokenRotation:    onlyEnable{true},
-		AccessTokenGrant: onlyEnable{true},
-		SignedJWTGrant:   onlyEnable{true},
+		TokenRotation: onlyEnable{true},
 		TokenInfo: tokeninfoConfig{
 			Introspect: onlyEnable{true},
 			History:    onlyEnable{true},
@@ -120,8 +118,6 @@ type featuresConf struct {
 	TransferCodes           onlyEnable             `yaml:"transfer_codes"`
 	Polling                 pollingConf            `yaml:"polling_codes"`
 	TokenRotation           onlyEnable             `yaml:"token_rotation"`
-	AccessTokenGrant        onlyEnable             `yaml:"access_token_grant"`
-	SignedJWTGrant          onlyEnable             `yaml:"signed_jwt_grant"`
 	TokenInfo               tokeninfoConfig        `yaml:"tokeninfo"`
 	WebInterface            onlyEnable             `yaml:"web_interface"`
 	DisabledRestrictionKeys model2.RestrictionKeys `yaml:"unsupported_restrictions"`

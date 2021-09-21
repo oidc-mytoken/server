@@ -34,14 +34,6 @@ func HandleMytokenEndpoint(ctx *fiber.Ctx) error {
 		if config.Get().Features.Polling.Enabled {
 			return polling.HandlePollingCode(ctx)
 		}
-	case model.GrantTypeAccessToken:
-		if config.Get().Features.AccessTokenGrant.Enabled {
-			return serverModel.ResponseNYI.Send(ctx)
-		}
-	case model.GrantTypePrivateKeyJWT:
-		if config.Get().Features.SignedJWTGrant.Enabled {
-			return serverModel.ResponseNYI.Send(ctx)
-		}
 	case model.GrantTypeTransferCode:
 		if config.Get().Features.TransferCodes.Enabled {
 			return mytoken.HandleMytokenFromTransferCode(ctx).Send(ctx)
