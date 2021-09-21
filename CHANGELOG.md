@@ -12,8 +12,14 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.3.1
+
+- Improved helper tools
+
 ## mytoken 0.3.0
+
 ### Features
+
 - Changes to the mytoken
   - Added a version to the mytoken token
   - Added token type 'mytoken'

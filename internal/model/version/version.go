@@ -8,7 +8,7 @@ import (
 const (
 	MAJOR = 0
 	MINOR = 3
-	FIX   = 0
+	FIX   = 1
 	DEV   = false
 )
 
