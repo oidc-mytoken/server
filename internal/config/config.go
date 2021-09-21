@@ -7,7 +7,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v3"
 
 	model2 "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
@@ -368,4 +368,5 @@ func load() {
 // not required for setup
 func LoadForSetup() {
 	load()
+	conf.Logging.Internal.StdErr = true
 }

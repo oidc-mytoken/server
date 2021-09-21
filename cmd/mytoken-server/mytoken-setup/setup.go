@@ -4,56 +4,63 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/Songmu/prompter"
-	"github.com/jessevdk/go-flags"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/zachmann/cli/v2"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/jws"
+	"github.com/oidc-mytoken/server/internal/model/version"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/internal/utils/zipdownload"
 	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 )
 
-var genSigningKeyComm commandGenSigningKey
-var installComm struct {
-	GeoIP commandInstallGeoIPDB `command:"geoip-db" description:"Installs the ip geolocation database."`
+var app = &cli.App{
+	Name:     "mytoken-setup",
+	Usage:    "Command line client for easily setting up a mytoken server",
+	Version:  version.VERSION(),
+	Compiled: time.Time{},
+	Authors: []*cli.Author{{
+		Name:  "Gabriel Zachmann",
+		Email: "gabriel.zachmann@kit.edu",
+	}},
+	Copyright:              "Karlsruhe Institute of Technology 2020-2021",
+	UseShortOptionHandling: true,
+	Commands: cli.Commands{
+		&cli.Command{
+			Name:        "signing-key",
+			Aliases:     []string{"key"},
+			Usage:       "Generates a new signing key",
+			Description: "Generates a new signing key according to the properties specified in the config file and stores it.",
+			Action:      createSigningKey,
+		},
+		&cli.Command{
+			Name:  "install",
+			Usage: "Installs needed dependencies",
+			Subcommands: cli.Commands{
+				&cli.Command{
+					Name:    "geoip-db",
+					Aliases: []string{"geo-ip-db"},
+					Usage:   "Installs the ip geolocation database.",
+					Action:  installGEOIPDB,
+				},
+			},
+		},
+	},
 }
 
 func main() {
 	config.LoadForSetup()
 	loggerUtils.Init()
-
-	parser := flags.NewNamedParser("mytoken", flags.HelpFlag|flags.PassDoubleDash)
-	if _, err := parser.AddCommand("signing-key", "Generates a new signing key", "Generates a new signing key according to the properties specified in the config file and stores it.", &genSigningKeyComm); err != nil {
-		log.WithError(err).Fatal()
-		os.Exit(1)
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
 	}
-	if _, err := parser.AddCommand("install", "Installs needed dependencies", "", &installComm); err != nil {
-		log.WithError(err).Fatal()
-		os.Exit(1)
-	}
-	if _, err := parser.Parse(); err != nil {
-		var flagError *flags.Error
-		if errors.As(err, &flagError) {
-			if flagError.Type == flags.ErrHelp {
-				fmt.Println(err)
-				os.Exit(0)
-			}
-		}
-		log.WithError(err).Fatal()
-		os.Exit(1)
-	}
-
 }
 
-type commandGenSigningKey struct{}
-type commandInstallGeoIPDB struct{}
-
-// Execute implements the flags.Commander interface
-func (c *commandInstallGeoIPDB) Execute(args []string) error {
+func installGEOIPDB(context *cli.Context) error {
 	archive, err := zipdownload.DownloadZipped("https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.IPV6.BIN.ZIP")
 	if err != nil {
 		return err
@@ -67,8 +74,7 @@ func (c *commandInstallGeoIPDB) Execute(args []string) error {
 	return err
 }
 
-// Execute implements the flags.Commander interface
-func (c *commandGenSigningKey) Execute(args []string) error {
+func createSigningKey(context *cli.Context) error {
 	sk, _, err := jws.GenerateKeyPair()
 	if err != nil {
 		return err
