@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/Songmu/prompter"
-	flags "github.com/jessevdk/go-flags"
+	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -18,7 +18,6 @@ import (
 )
 
 var genSigningKeyComm commandGenSigningKey
-var createDBComm commandCreateDB
 var installComm struct {
 	GeoIP commandInstallGeoIPDB `command:"geoip-db" description:"Installs the ip geolocation database."`
 }
@@ -29,10 +28,6 @@ func main() {
 
 	parser := flags.NewNamedParser("mytoken", flags.HelpFlag|flags.PassDoubleDash)
 	if _, err := parser.AddCommand("signing-key", "Generates a new signing key", "Generates a new signing key according to the properties specified in the config file and stores it.", &genSigningKeyComm); err != nil {
-		log.WithError(err).Fatal()
-		os.Exit(1)
-	}
-	if _, err := parser.AddCommand("db", "Setups the database", "Setups the database as needed and specified in the config file.", &createDBComm); err != nil {
 		log.WithError(err).Fatal()
 		os.Exit(1)
 	}
@@ -55,10 +50,6 @@ func main() {
 }
 
 type commandGenSigningKey struct{}
-type commandCreateDB struct {
-	Username string  `short:"u" long:"user" default:"root" description:"This username is used to connect to the database to create a new database, database user, and tables."`
-	Password *string `short:"p" optional:"true" optional-value:"" long:"password" description:"The password for the database user"`
-}
 type commandInstallGeoIPDB struct{}
 
 // Execute implements the flags.Commander interface
