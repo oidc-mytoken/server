@@ -10,7 +10,7 @@ var v0_3_0_Before = []string{
 	"ALTER TABLE AuthInfo ADD max_token_len INT DEFAULT NULL NULL",
 	"ALTER TABLE AuthInfo ADD code_verifier varchar(128) NULL",
 	"ALTER TABLE TransferCodesAttributes ADD max_token_len INT NULL",
-	"CREATE OR REPLACE" +
+	"CREATE OR REPLACE " +
 		"ALGORITHM = UNDEFINED VIEW `TransferCodes` AS" +
 		"select" +
 		"`pt`.`id` AS `id`," +
