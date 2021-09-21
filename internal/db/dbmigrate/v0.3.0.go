@@ -2,7 +2,7 @@ package dbmigrate
 
 var v0_3_0_Before = []string{
 	// Tables
-	"DROP TRIGGER updtrigger",
+	"DROP TRIGGER IF EXISTS updtrigger",
 	"ALTER TABLE RT_EncryptionKeys ADD CONSTRAINT RT_EncryptionKeys_FK_2 FOREIGN KEY (MT_id) REFERENCES MTokens(id) ON DELETE CASCADE ON UPDATE CASCADE",
 	"TRUNCATE TABLE AuthInfo",
 	"ALTER TABLE AuthInfo ADD rotation json NULL",
