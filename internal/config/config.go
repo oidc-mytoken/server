@@ -364,4 +364,5 @@ func load() {
 // not required for setup
 func LoadForSetup() {
 	load()
+	conf.Logging.Internal.StdErr = true
 }

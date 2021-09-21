@@ -7,8 +7,8 @@ import (
 // Version segments
 const (
 	MAJOR = 0
-	MINOR = 3
-	FIX   = 1
+	MINOR = 4
+	FIX   = 0
 	DEV   = true
 )
 

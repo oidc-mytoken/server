@@ -12,7 +12,7 @@
 <!-- ### Dependencies -->
 <!--  -->
 
-## mytoken 0.3.1-dev
+## mytoken 0.4.0
 
 ### API
 
@@ -22,6 +22,10 @@
 ### Enhancements
 
 - Removed buttons from webinterface in the tokeninfo tabs. The content now loads directly when switching the tab.
+
+## mytoken 0.3.1
+
+- Improved helper tools
 
 ## mytoken 0.3.0
 
