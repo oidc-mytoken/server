@@ -95,7 +95,7 @@ func runAfterUpdates(tx *sqlx.Tx, afterDone map[string]bool) error {
 		return nil
 	})
 }
-func updateCallback(tx *sqlx.Tx, cmds string, version string, done map[string]bool, dbUpdateCallback func(*sqlx.Tx, string) error) error {
+func updateCallback(tx *sqlx.Tx, cmds, version string, done map[string]bool, dbUpdateCallback func(*sqlx.Tx, string) error) error {
 	log.WithField("version", version).Info("Updating DB to version")
 	if len(cmds) == 0 {
 		return nil
