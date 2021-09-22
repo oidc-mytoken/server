@@ -60,7 +60,7 @@ func main() {
 	}
 }
 
-func installGEOIPDB(context *cli.Context) error {
+func installGEOIPDB(_ *cli.Context) error {
 	archive, err := zipdownload.DownloadZipped("https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.IPV6.BIN.ZIP")
 	if err != nil {
 		return err
@@ -74,7 +74,7 @@ func installGEOIPDB(context *cli.Context) error {
 	return err
 }
 
-func createSigningKey(context *cli.Context) error {
+func createSigningKey(_ *cli.Context) error {
 	sk, _, err := jws.GenerateKeyPair()
 	if err != nil {
 		return err
