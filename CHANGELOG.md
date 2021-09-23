@@ -23,6 +23,10 @@
 
 - Removed buttons from webinterface in the tokeninfo tabs. The content now loads directly when switching the tab.
 
+## mytoken 0.3.2
+
+- Fixed password prompt for migratedb
+
 ## mytoken 0.3.1
 
 - Improved helper tools

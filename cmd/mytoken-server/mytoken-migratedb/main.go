@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Songmu/prompter"
 	log "github.com/sirupsen/logrus"
 	"github.com/zachmann/cli/v2"
 	"golang.org/x/term"
@@ -106,6 +107,9 @@ var app = &cli.App{
 			mytokenNodes = strings.Split(os.Getenv("MYTOKEN_NODES"), ",")
 		} else if !force {
 			return fmt.Errorf("No mytoken servers specified. Please provide mytoken servers or use '-f' to force database migration.")
+		}
+		if dbConfig.Password == "" {
+			dbConfig.Password = prompter.Password("Enter password")
 		}
 		dbConfig.ReconnectInterval = 60
 		dbConfig.DBConf.Hosts = dbConfig.Hosts.Value()

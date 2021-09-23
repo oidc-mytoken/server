@@ -57,7 +57,7 @@ func (state DBVersionState) Swap(i, j int) { state[i], state[j] = state[j], stat
 // Less checks if a version is less than another
 func (state DBVersionState) Less(i, j int) bool {
 	a, b := state[i].Version, state[j].Version
-	return semver.Compare("v"+a, "v"+b) < 0
+	return semver.Compare(a, b) < 0
 }
 
 // Sort sorts this DBVersionState by the version
@@ -68,7 +68,7 @@ func (state DBVersionState) Sort() {
 // dbHasAllVersions checks that the database is compatible with the current version; assumes that DBVersionState is
 // ordered
 func (state DBVersionState) dBHasAllVersions() (hasAllVersions bool, missingVersions []string) {
-	for v, cmds := range dbmigrate.Migrate {
+	for v, cmds := range dbmigrate.MigrationCommands {
 		if !state.dBHasVersion(v, cmds) {
 			missingVersions = append(missingVersions, v)
 		}
@@ -80,7 +80,7 @@ func (state DBVersionState) dBHasAllVersions() (hasAllVersions bool, missingVers
 // dbHasVersion checks that the database is compatible with the passed version; assumes that DBVersionState is ordered
 func (state DBVersionState) dBHasVersion(v string, cmds dbmigrate.Commands) bool {
 	i := sort.Search(len(state), func(i int) bool {
-		return semver.Compare("v"+state[i].Version, "v"+v) >= 0
+		return semver.Compare(state[i].Version, v) >= 0
 	})
 	if i >= len(state) || state[i].Version != v { // we have to check that i really points to v
 		return false

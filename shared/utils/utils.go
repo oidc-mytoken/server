@@ -210,6 +210,32 @@ func SplitIgnoreEmpty(s, del string) (ret []string) {
 	return
 }
 
+func RSplitN(s, del string, n int) []string {
+	if n == 0 {
+		return nil
+	}
+	if del == "" {
+		return nil
+	}
+	if n < 0 {
+		return strings.Split(s, del)
+	}
+	split := make([]string, n)
+	delLen := len(del)
+	n--
+	for n > 0 {
+		m := strings.LastIndex(s, del)
+		if m < 0 {
+			break
+		}
+		split[n] = s[m+delLen:]
+		s = s[:m+delLen-1]
+		n--
+	}
+	split[n] = s
+	return split[n:]
+}
+
 // StructToStringMap creates a string map from an interface{} using the passed tag name
 func StructToStringMap(st interface{}, tag string) map[string]string {
 	s := structs.New(st)
