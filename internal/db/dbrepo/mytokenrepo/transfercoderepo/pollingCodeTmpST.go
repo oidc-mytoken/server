@@ -30,10 +30,7 @@ func CheckTransferCode(tx *sqlx.Tx, pollingCode string) (TransferCodeStatus, err
 	pt := createProxyToken(pollingCode)
 	var p TransferCodeStatus
 	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if err := tx.Get(&p,
-			`SELECT 1 as found, CURRENT_TIMESTAMP() > expires_at AS expired,
-                      response_type, consent_declined, max_token_len FROM TransferCodes WHERE id=?`,
-			pt.ID()); err != nil {
+		if err := tx.Get(&p, `CALL TransferCodes_GetStatus(?)`, pt.ID()); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				err = nil  // polling code was not found, but this is fine
 				return err // p.Found is false
@@ -81,7 +78,7 @@ func LinkPollingCodeToMT(tx *sqlx.Tx, pollingCode, jwt string, mID mtid.MTID) er
 func DeleteTransferCodeByState(tx *sqlx.Tx, state *state.State) error {
 	pc := createProxyToken(state.PollingCode())
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`DELETE FROM ProxyTokens WHERE id=?`, pc.ID())
+		_, err := tx.Exec(`CALL ProxyTokens_Delete(?)`, pc.ID())
 		return errors.WithStack(err)
 	})
 }
@@ -90,7 +87,7 @@ func DeleteTransferCodeByState(tx *sqlx.Tx, state *state.State) error {
 func DeclineConsentByState(tx *sqlx.Tx, state *state.State) error {
 	pc := createProxyToken(state.PollingCode())
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`UPDATE TransferCodesAttributes SET consent_declined=? WHERE id=?`, db.BitBool(true), pc.ID())
+		_, err := tx.Exec(`CALL TransferCodeAttributes_DeclineConsent(?)`, pc.ID())
 		return errors.WithStack(err)
 	})
 }

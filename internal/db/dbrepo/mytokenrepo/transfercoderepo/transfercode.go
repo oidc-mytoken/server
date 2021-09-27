@@ -67,9 +67,7 @@ func (tc TransferCode) Store(tx *sqlx.Tx) error {
 		if err := tc.proxyToken.Store(tx); err != nil {
 			return err
 		}
-		_, err := tx.Exec(
-			`INSERT INTO TransferCodesAttributes (id, expires_in,  revoke_MT, response_type, max_token_len)
-                      VALUES(?,?,?,?,?)`,
+		_, err := tx.Exec(`CALL TransferCodeAttributes_Insert(?,?,?,?,?)`,
 			tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewMT,
 			tc.Attributes.ResponseType, tc.Attributes.MaxTokenLen)
 		return errors.WithStack(err)
@@ -80,7 +78,7 @@ func (tc TransferCode) Store(tx *sqlx.Tx) error {
 func (tc TransferCode) GetRevokeJWT(tx *sqlx.Tx) (bool, error) {
 	var revokeMT db.BitBool
 	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if err := tx.Get(&revokeMT, `SELECT revoke_MT FROM TransferCodesAttributes WHERE id=?`, tc.id); err != nil {
+		if err := tx.Get(&revokeMT, `CALL TransferCodeAttributes_GetRevokeJWT(?)`, tc.id); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return nil
 			}

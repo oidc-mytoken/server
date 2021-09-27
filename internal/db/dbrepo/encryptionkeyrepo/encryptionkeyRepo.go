@@ -20,7 +20,7 @@ func ReencryptEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID, oldJWT, newJWT strin
 			return err
 		}
 		var encryptedKey string
-		if err = errors.WithStack(tx.Get(&encryptedKey, `SELECT encryption_key FROM EncryptionKeys WHERE id=?`, keyID)); err != nil {
+		if err = errors.WithStack(tx.Get(&encryptedKey, `CALL EncryptionKeys_Get(?)`, keyID)); err != nil {
 			return err
 		}
 		key, err := cryptUtils.AES256Decrypt(encryptedKey, oldJWT)
@@ -31,7 +31,7 @@ func ReencryptEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID, oldJWT, newJWT strin
 		if err != nil {
 			return err
 		}
-		_, err = tx.Exec(`UPDATE EncryptionKeys SET encryption_key=? WHERE id=?`, updatedKey, keyID)
+		_, err = tx.Exec(`CALL EncryptionKeys_Update(?,?)`, keyID, updatedKey)
 		return errors.WithStack(err)
 	})
 }
@@ -43,7 +43,7 @@ func DeleteEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID) error {
 		if err != nil {
 			return err
 		}
-		if _, err = tx.Exec(`DELETE FROM EncryptionKeys WHERE id=?`, keyID); err != nil {
+		if _, err = tx.Exec(`CALL EncryptionKeys_Delete(?)`, keyID); err != nil {
 			return errors.WithStack(err)
 		}
 		return nil
@@ -53,15 +53,12 @@ func DeleteEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID) error {
 // GetEncryptionKey returns the encryption key and the rtid for a mytoken
 func GetEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID, jwt string) (key []byte, rtID uint64, err error) {
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		var res struct {
-			EncryptedKey EncryptionKey `db:"encryption_key"`
-			ID           uint64        `db:"rt_id"`
-		}
-		if err = tx.Get(&res, `SELECT encryption_key, rt_id FROM MyTokens WHERE id=?`, tokenID); err != nil {
+		var res RTCryptKeyDBRes
+		if err = tx.Get(&res, `CALL EncryptionKeys_GetRTKeyForMT(?)`, tokenID); err != nil {
 			return errors.WithStack(err)
 		}
-		rtID = res.ID
-		key, err = res.EncryptedKey.Decrypt(jwt)
+		rtID = res.RTID
+		key, err = res.EncryptionKey.Decrypt(jwt)
 		return err
 	})
 	return
@@ -80,12 +77,28 @@ func (k EncryptionKey) Decrypt(jwt string) ([]byte, error) {
 	return data, errors.WithStack(err)
 }
 
+// RTCryptKeyDBRes is a struct holding the db result for the EncryptionKeys_GetRTKeyForMT procedure
+type RTCryptKeyDBRes struct {
+	KeyID         uint64        `db:"key_id"`
+	EncryptionKey EncryptionKey `db:"encryption_key"`
+	RTID          uint64        `db:"rt_id"`
+	RT            string        `db:"refresh_token"`
+}
+
+// Decrypt returns the decrypted refresh token
+func (res RTCryptKeyDBRes) Decrypt(jwt string) (string, error) {
+	key, err := res.EncryptionKey.Decrypt(jwt)
+	if err != nil {
+		return "", err
+	}
+	return cryptUtils.AESDecrypt(res.RT, key)
+}
+
 // getEncryptionKeyID returns the id of the encryption key used for encrypting the RT linked to this mytoken
-func getEncryptionKeyID(tx *sqlx.Tx, myID mtid.MTID) (keyID uint64, err error) {
-	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Get(&keyID,
-			`SELECT key_id FROM RT_EncryptionKeys WHERE MT_id=? AND rt_id=(SELECT rt_id FROM MTokens WHERE id=?)`,
-			myID, myID))
+func getEncryptionKeyID(tx *sqlx.Tx, myID mtid.MTID) (uint64, error) {
+	var res RTCryptKeyDBRes
+	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
+		return errors.WithStack(tx.Get(&res, `CALL EncryptionKeys_GetRTKeyForMT(?)`, myID))
 	})
-	return
+	return res.KeyID, err
 }

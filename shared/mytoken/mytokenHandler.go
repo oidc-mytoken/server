@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/cryptstore"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
@@ -273,7 +274,7 @@ func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, jwt string, recursive bool, issuer
 			// this is no error and we are done, since the token is already revoked
 			return err
 		}
-		rt, _, err := refreshtokenrepo.GetRefreshToken(tx, id, jwt)
+		rt, _, err := cryptstore.GetRefreshToken(tx, id, jwt)
 		if err != nil {
 			return err
 		}
@@ -291,7 +292,7 @@ func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, jwt string, recursive bool, issuer
 			apiError := e.Response.(api.Error)
 			return fmt.Errorf("%s: %s", apiError.Error, apiError.ErrorDescription)
 		}
-		return refreshtokenrepo.DeleteRefreshToken(tx, rtID)
+		return cryptstore.DeleteCrypted(tx, rtID)
 	})
 	if err == nil {
 		return nil

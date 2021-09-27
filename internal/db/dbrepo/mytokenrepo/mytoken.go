@@ -3,7 +3,6 @@ package mytokenrepo
 import (
 	"encoding/base64"
 
-	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 
@@ -103,11 +102,11 @@ func (ste *MytokenEntry) Store(tx *sqlx.Tx, comment string) error {
 	}
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		if ste.rtID == nil {
-			if _, err := tx.Exec(`INSERT INTO RefreshTokens  (rt)  VALUES(?)`, ste.rtEncrypted); err != nil {
+			if _, err := tx.Exec(`CALL CryptStoreRT_Insert(?,@ID)`, ste.rtEncrypted); err != nil {
 				return errors.WithStack(err)
 			}
 			var rtID uint64
-			if err := tx.Get(&rtID, `SELECT LAST_INSERT_ID()`); err != nil {
+			if err := tx.Get(&rtID, `SELECT @ID`); err != nil {
 				return errors.WithStack(err)
 			}
 			ste.rtID = &rtID
@@ -127,14 +126,7 @@ func (ste *MytokenEntry) Store(tx *sqlx.Tx, comment string) error {
 }
 
 func storeEncryptionKey(tx *sqlx.Tx, key string, rtID uint64, myid mtid.MTID) error {
-	if _, err := tx.Exec(`INSERT IGNORE INTO EncryptionKeys  (encryption_key)  VALUES(?)`, key); err != nil {
-		return errors.WithStack(err)
-	}
-	var keyID uint64
-	if err := tx.Get(&keyID, `SELECT LAST_INSERT_ID()`); err != nil {
-		return errors.WithStack(err)
-	}
-	_, err := tx.Exec(`INSERT IGNORE INTO RT_EncryptionKeys  (rt_id, MT_id, key_id)  VALUES(?,?,?)`, rtID, myid, keyID)
+	_, err := tx.Exec(`CALL EncryptionKeysRT_Insert(?,?,?)`, key, rtID, myid)
 	return errors.WithStack(err)
 }
 
@@ -154,26 +146,8 @@ type mytokenEntryStore struct {
 // to the db
 func (e *mytokenEntryStore) Store(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		stmt, err := tx.PrepareNamed(
-			`INSERT INTO MTokens (id, seqno, parent_id, root_id, rt_id, name, ip_created, user_id)
-                      VALUES(:id, :seqno, :parent_id, :root_id, :rt_id, :name, :ip_created,
-                        (SELECT id FROM Users WHERE iss=:iss AND sub=:sub))`)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		txStmt := tx.NamedStmt(stmt)
-		if _, err = txStmt.Exec(e); err != nil {
-			var mysqlError *mysql.MySQLError
-			if errors.As(err, &mysqlError) && mysqlError.Number == 1048 {
-				_, err = tx.NamedExec(`INSERT INTO Users (sub, iss) VALUES(:sub, :iss)`, e)
-				if err != nil {
-					return errors.WithStack(err)
-				}
-				_, err = txStmt.Exec(e)
-				return errors.WithStack(err)
-			}
-			return errors.WithStack(err)
-		}
-		return nil
+		_, err := tx.Exec(`CALL MTokens_Insert(?,?,?,?,?,?,?,?,?)`,
+			e.Sub, e.Iss, e.ID, e.SeqNo, e.ParentID, e.RootID, e.RefreshTokenID, e.Name, e.IP)
+		return errors.WithStack(err)
 	})
 }

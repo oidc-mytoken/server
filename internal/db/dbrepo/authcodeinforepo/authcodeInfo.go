@@ -99,11 +99,8 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 			}
 		}
 		_, err := tx.NamedExec(
-			`INSERT INTO AuthInfo (state_h, iss, restrictions, capabilities, subtoken_capabilities, name, 
-                      expires_in, polling_code, rotation, response_type, max_token_len) 
-                      VALUES(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name,
-                             :expires_in, :polling_code, :rotation, :response_type, :max_token_len)`,
-			store)
+			`CALL AuthInfo_Insert(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name,
+                             :expires_in, :polling_code, :rotation, :response_type, :max_token_len)`, store)
 		return errors.WithStack(err)
 	})
 }
@@ -112,11 +109,7 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
 	info := authFlowInfo{}
 	if err := db.Transact(func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Get(&info,
-			`SELECT state_h, iss, restrictions, capabilities, subtoken_capabilities, 
-                      name, polling_code, rotation, response_type, max_token_len, code_verifier FROM AuthInfo 
-                      WHERE state_h=? AND expires_at >= CURRENT_TIMESTAMP()`,
-			state))
+		return errors.WithStack(tx.Get(&info, `CALL AuthInfo_Get(?)`, state))
 	}); err != nil {
 		return nil, err
 	}
@@ -126,7 +119,7 @@ func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
 // DeleteAuthFlowInfoByState deletes the AuthFlowInfoIn for a given state
 func DeleteAuthFlowInfoByState(tx *sqlx.Tx, state *state.State) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`DELETE FROM AuthInfo WHERE state_h = ?`, state)
+		_, err := tx.Exec(`CALL AuthInfo_Delete(?)`, state)
 		return errors.WithStack(err)
 	})
 }
@@ -135,9 +128,8 @@ func DeleteAuthFlowInfoByState(tx *sqlx.Tx, state *state.State) error {
 func UpdateTokenInfoByState(tx *sqlx.Tx, state *state.State, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation, tokenName string) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(
-			`UPDATE AuthInfo SET restrictions=?, capabilities=?, subtoken_capabilities=?, rotation=?, name=?
-                     WHERE state_h=?`,
-			r, c, sc, rot, tokenName, state)
+			`CALL AuthInfo_Update(?,?,?,?,?,?)`,
+			state, r, c, sc, rot, tokenName)
 		return errors.WithStack(err)
 	})
 }
@@ -145,7 +137,7 @@ func UpdateTokenInfoByState(tx *sqlx.Tx, state *state.State, r restrictions.Rest
 // SetCodeVerifier stores the passed PKCE code verifier
 func SetCodeVerifier(tx *sqlx.Tx, state *state.State, verifier string) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`UPDATE AuthInfo SET code_verifier=? WHERE state_h=?`, verifier, state)
+		_, err := tx.Exec(`CALL AuthInfo_SetCodeVerifier(?,?)`, state, verifier)
 		return errors.WithStack(err)
 	})
 }

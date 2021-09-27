@@ -87,7 +87,7 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 				JWT  string    `db:"jwt"`
 				MTID mtid.MTID `db:"MT_id"`
 			}
-			if err = tx.Get(&res, `SELECT jwt, MT_id FROM ProxyTokens WHERE id=?`, pt.id); err != nil {
+			if err = tx.Get(&res, `CALL ProxyTokens_GetMT(?)`, pt.id); err != nil {
 				return errors.WithStack(err)
 			}
 			pt.encryptedJWT = res.JWT
@@ -113,7 +113,7 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 // Store stores the proxyToken
 func (pt proxyToken) Store(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`INSERT INTO ProxyTokens (id, jwt, MT_id) VALUES (?,?,?)`, pt.id, pt.encryptedJWT, pt.mtID)
+		_, err := tx.Exec(`CALL ProxyTokens_Insert(?,?,?)`, pt.id, pt.encryptedJWT, pt.mtID)
 		return errors.WithStack(err)
 	})
 }
@@ -121,7 +121,7 @@ func (pt proxyToken) Store(tx *sqlx.Tx) error {
 // Update updates the jwt of the proxyToken
 func (pt proxyToken) Update(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`UPDATE ProxyTokens SET jwt=?, MT_id=? WHERE id=?`, pt.encryptedJWT, pt.mtID, pt.id)
+		_, err := tx.Exec(`CALL ProxyTokens_Update(?,?,?)`, pt.ID(), pt.encryptedJWT, pt.mtID)
 		return errors.WithStack(err)
 	})
 }
@@ -130,7 +130,7 @@ func (pt proxyToken) Update(tx *sqlx.Tx) error {
 // retrieved earlier and the Mytoken if desired be revoked separately
 func (pt proxyToken) Delete(tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`DELETE FROM ProxyTokens WHERE id=?`, pt.id)
+		_, err := tx.Exec(`CALL ProxyTokens_Delete(?)`, pt.id)
 		return errors.WithStack(err)
 	})
 }

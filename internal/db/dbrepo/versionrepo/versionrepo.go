@@ -19,10 +19,7 @@ import (
 // SetVersionBefore sets that the before db migration commands for the passed version were executed
 func SetVersionBefore(tx *sqlx.Tx, version string) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(
-			`INSERT INTO version (version, bef) VALUES(?, current_timestamp()) 
-                      ON DUPLICATE KEY UPDATE bef=current_timestamp()`,
-			version)
+		_, err := tx.Exec(`CALL Version_SetBefore(?)`, version)
 		return errors.WithStack(err)
 	})
 }
@@ -30,10 +27,7 @@ func SetVersionBefore(tx *sqlx.Tx, version string) error {
 // SetVersionAfter sets that the after db migration commands for the passed version were executed
 func SetVersionAfter(tx *sqlx.Tx, version string) error {
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(
-			`INSERT INTO version (version, aft) VALUES(?, current_timestamp())
-                      ON DUPLICATE KEY UPDATE aft=current_timestamp()`,
-			version)
+		_, err := tx.Exec(`CALL Version_SetAfter(?)`, version)
 		return errors.WithStack(err)
 	})
 }
@@ -98,7 +92,7 @@ func (state DBVersionState) dBHasVersion(v string, cmds dbmigrate.Commands) bool
 // GetVersionState returns the DBVersionState
 func GetVersionState(tx *sqlx.Tx) (state DBVersionState, err error) {
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Select(&state, `SELECT version, bef, aft FROM version`))
+		return errors.WithStack(tx.Select(&state, `CALL Version_Get()`))
 	})
 	if err != nil && strings.HasPrefix(errorfmt.Error(err), "Error 1146: Table") { // Ignore table does not exist error
 		err = nil

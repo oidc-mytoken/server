@@ -24,8 +24,7 @@ type EventEntry struct {
 // GetEventHistory returns the stored EventHistory for a mytoken
 func GetEventHistory(tx *sqlx.Tx, id mtid.MTID) (history EventHistory, err error) {
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Select(&history,
-			`SELECT MT_id, event, time, comment, ip, user_agent FROM EventHistory WHERE MT_id=?`, id))
+		return errors.WithStack(tx.Select(&history, `CALL EventHistory_Get(?)`, id))
 	})
 	return
 }

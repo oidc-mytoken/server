@@ -1,12 +1,13 @@
 package refresh
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/oidc-mytoken/server/internal/config"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/cryptstore"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcReqRes"
 	"github.com/oidc-mytoken/server/shared/httpClient"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/pkg/errors"
 )
 
 // UpdateChangedRT is a function that should update a refresh token, it takes the old value as well as the new one
@@ -55,5 +56,5 @@ func RefreshFlowAndUpdateDB(provider *config.ProviderConf, tokenID mtid.MTID, my
 }
 
 func updateChangedRTInDB(tokenID mtid.MTID, newRT, mytoken string) error {
-	return refreshtokenrepo.UpdateRefreshToken(nil, tokenID, newRT, mytoken)
+	return cryptstore.UpdateRefreshToken(nil, tokenID, newRT, mytoken)
 }

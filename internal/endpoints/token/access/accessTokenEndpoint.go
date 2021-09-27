@@ -11,7 +11,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/accesstokenrepo"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/cryptstore"
 	request "github.com/oidc-mytoken/server/internal/endpoints/token/access/pkg"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
@@ -79,7 +79,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 			auds = strings.Join(usedRestriction.Audiences, " ")
 		}
 	}
-	rt, rtFound, dbErr := refreshtokenrepo.GetRefreshToken(nil, mt.ID, req.Mytoken.JWT)
+	rt, rtFound, dbErr := cryptstore.GetRefreshToken(nil, mt.ID, req.Mytoken.JWT)
 	if dbErr != nil {
 		log.Errorf("%s", errorfmt.Full(dbErr))
 		return serverModel.ErrorToInternalServerErrorResponse(dbErr)
