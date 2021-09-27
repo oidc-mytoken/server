@@ -75,15 +75,15 @@ var app = &cli.App{
 			Name:        "password",
 			Aliases:     []string{"p"},
 			Usage:       "The password for connecting to the database",
-			EnvVars:     []string{"DB_PASSWORD"},
+			EnvVars:     []string{"DB_ROOT_PASSWORD", "DB_ROOT_PW"},
 			Destination: &dbConfig.Password,
 			Placeholder: "PASSWORD",
 		},
 		&cli.StringFlag{
 			Name:        "password-file",
-			Aliases:     []string{"pass-file"},
+			Aliases:     []string{"pw-file"},
 			Usage:       "Read the password for connecting to the database from this file",
-			EnvVars:     []string{"DB_PASSWORD_FILE"},
+			EnvVars:     []string{"DB_PASSWORD_FILE", "DB_PW_FILE"},
 			Destination: &dbConfig.PasswordFile,
 			Placeholder: "FILE",
 		},
@@ -95,6 +95,7 @@ var app = &cli.App{
 			Value:       cli.NewStringSlice("localhost"),
 			Destination: &dbConfig.Hosts,
 			Placeholder: "HOST",
+			TakesFile:   true,
 		},
 	},
 	Action: func(context *cli.Context) error {
@@ -108,8 +109,8 @@ var app = &cli.App{
 		} else if !force {
 			return fmt.Errorf("No mytoken servers specified. Please provide mytoken servers or use '-f' to force database migration.")
 		}
-		if dbConfig.Password == "" {
-			dbConfig.Password = prompter.Password("Enter password")
+		if dbConfig.GetPassword() == "" {
+			dbConfig.Password = prompter.Password(fmt.Sprintf("Enter db password for user '%s'", dbConfig.User))
 		}
 		dbConfig.ReconnectInterval = 60
 		dbConfig.DBConf.Hosts = dbConfig.Hosts.Value()

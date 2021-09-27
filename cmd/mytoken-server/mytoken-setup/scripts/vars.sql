@@ -1,0 +1,3 @@
+PREPARE setDB FROM 'SET @DB = ?';
+PREPARE setUser FROM 'SET @USER = ?';
+PREPARE setPassword FROM 'SET @PASSWORD = ?';

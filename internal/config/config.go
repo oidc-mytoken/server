@@ -37,10 +37,8 @@ var defaultConfig = Config{
 		},
 	},
 	DB: DBConf{
-		Hosts: []string{"localhost"},
-		User:  "mytoken",
-		// The default value for Password is "mytoken", but it is not set here, but returned in the GetPassword function,
-		// because the default value is only used if no password and no password file are provided
+		Hosts:             []string{"localhost"},
+		User:              "mytoken",
 		DB:                "mytoken",
 		ReconnectInterval: 60,
 	},
@@ -225,7 +223,7 @@ func (conf *DBConf) GetPassword() string {
 		return conf.Password
 	}
 	if conf.PasswordFile == "" {
-		return "mytoken"
+		return ""
 	}
 	content, err := ioutil.ReadFile(conf.PasswordFile)
 	if err != nil {
