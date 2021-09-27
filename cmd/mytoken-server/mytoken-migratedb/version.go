@@ -1,9 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -15,6 +12,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbmigrate"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/versionrepo"
 	"github.com/oidc-mytoken/server/internal/model/version"
+	"github.com/oidc-mytoken/server/internal/utils/dbcl"
 )
 
 func did(state versionrepo.DBVersionState, version string) (beforeDone, afterDone bool) {
@@ -105,7 +103,7 @@ func updateCallback(tx *sqlx.Tx, cmds, version string, done map[string]bool, dbU
 		return nil
 	}
 	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if err := runDBCommands(cmds); err != nil {
+		if err := dbcl.RunDBCommands(cmds, dbConfig.DBConf, true); err != nil {
 			return err
 		}
 		return dbUpdateCallback(tx, version)
@@ -140,21 +138,4 @@ func getVersionForNode(node string) (string, error) {
 		return "", err
 	}
 	return my.Version, nil
-}
-
-func runDBCommands(cmds string) error {
-	cmd := exec.Command("sh", "-c", fmt.Sprintf("mysql -uroot -p%s --protocol tcp -h %s %s", dbConfig.GetPassword(), dbConfig.Hosts.Value()[0], dbConfig.DB))
-	cmdIn, err := cmd.StdinPipe()
-	if err != nil {
-		return err
-	}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if _, err = cmdIn.Write([]byte(cmds)); err != nil {
-		return err
-	}
-	if err = cmdIn.Close(); err != nil {
-		return err
-	}
-	return cmd.Run()
 }
