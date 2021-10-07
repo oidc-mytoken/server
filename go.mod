@@ -25,7 +25,7 @@ require (
 	github.com/valyala/fasthttp v1.30.0
 	github.com/zachmann/cli/v2 v2.3.1-0.20210512144416-96dd678d93c7
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
-	golang.org/x/mod v0.5.0
+	golang.org/x/mod v0.5.1
 	golang.org/x/oauth2 v0.0.0-20210125201302-af13f521f196
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56
