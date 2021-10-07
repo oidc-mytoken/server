@@ -146,14 +146,6 @@ features:
   token_rotation:
     enabled: true
 
-  # Support for the access_token grant, i.e. a user can use an AT to obtain an ST.
-  access_token_grant:
-    enabled: true
-
-  # Support for the private_key_jwt grant, i.e. a user can use an signed jwt to obtain an ST.
-  signed_jwt_grant:
-    enabled: true
-
   # Provides a web interface for in browser usage
   web_interface:
     enabled: true
