@@ -85,10 +85,12 @@ func Init() {
 
 // SetOutput sets the logging output
 func SetOutput() {
-	log.SetFormatter(&log.TextFormatter{
-		DisableColors: true,
-		ForceQuote:    true,
-		FullTimestamp: true,
-	})
+	log.SetFormatter(
+		&log.TextFormatter{
+			DisableColors: true,
+			ForceQuote:    true,
+			FullTimestamp: true,
+		},
+	)
 	log.SetOutput(mustGetLogWriter(config.Get().Logging.Internal, "mytoken.log"))
 }

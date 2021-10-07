@@ -40,10 +40,12 @@ func GetMTRootID(tx *sqlx.Tx, id mtid.MTID) (mtid.MTID, bool, error) {
 
 // recursiveRevokeMT revokes the passed mytoken as well as all children
 func recursiveRevokeMT(tx *sqlx.Tx, id mtid.MTID) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`CALL MTokens_RevokeRec(?)`, id)
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL MTokens_RevokeRec(?)`, id)
+			return errors.WithStack(err)
+		},
+	)
 }
 
 // CheckTokenRevoked checks if a Mytoken has been revoked. If it is a rotating mytoken and auto_revoke is enabled for
@@ -79,9 +81,11 @@ func CheckTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64, rot *api.Rotatio
 
 func checkTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64) (bool, error) {
 	var count int
-	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Get(&count, `CALL MTokens_Check(?,?)`, id, seqno))
-	}); err != nil {
+	if err := db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Get(&count, `CALL MTokens_Check(?,?)`, id, seqno))
+		},
+	); err != nil {
 		return true, err
 	}
 	if count > 0 { // token was found as Mytoken
@@ -92,9 +96,11 @@ func checkTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno uint64) (bool, error) {
 
 func checkTokenID(tx *sqlx.Tx, id mtid.MTID) (bool, error) {
 	var count int
-	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Get(&count, `CALL MTokens_CheckID(?)`, id))
-	}); err != nil {
+	if err := db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Get(&count, `CALL MTokens_CheckID(?)`, id))
+		},
+	); err != nil {
 		return false, err
 	}
 	return count > 0, nil
@@ -102,9 +108,11 @@ func checkTokenID(tx *sqlx.Tx, id mtid.MTID) (bool, error) {
 
 func checkRotatingTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno, rotationLifetime uint64) (bool, error) {
 	var count int
-	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Get(&count, `CALL MTokens_CheckRotating(?,?,?)`, id, seqno, rotationLifetime))
-	}); err != nil {
+	if err := db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Get(&count, `CALL MTokens_CheckRotating(?,?,?)`, id, seqno, rotationLifetime))
+		},
+	); err != nil {
 		return true, err
 	}
 	if count > 0 { // token was found as Mytoken
@@ -116,21 +124,25 @@ func checkRotatingTokenRevoked(tx *sqlx.Tx, id mtid.MTID, seqno, rotationLifetim
 // UpdateSeqNo updates the sequence number of a mytoken, i.e. it rotates the mytoken. Don't forget to update the
 // encryption key
 func UpdateSeqNo(tx *sqlx.Tx, id mtid.MTID, seqno uint64) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`CALL MTokens_UpdateSeqNo(?,?)`, id, seqno)
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL MTokens_UpdateSeqNo(?,?)`, id, seqno)
+			return errors.WithStack(err)
+		},
+	)
 }
 
 // revokeMT revokes the passed mytoken but no children
 func revokeMT(tx *sqlx.Tx, id mtid.MTID) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if err := encryptionkeyrepo.DeleteEncryptionKey(tx, id); err != nil {
-			return err
-		}
-		_, err := tx.Exec(`CALL MTokens_Delete(?)`, id)
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			if err := encryptionkeyrepo.DeleteEncryptionKey(tx, id); err != nil {
+				return err
+			}
+			_, err := tx.Exec(`CALL MTokens_Delete(?)`, id)
+			return errors.WithStack(err)
+		},
+	)
 }
 
 // RevokeMT revokes the passed mytoken and depending on the recursive parameter also its children
@@ -145,9 +157,11 @@ func RevokeMT(tx *sqlx.Tx, id mtid.MTID, recursive bool) error {
 // GetTokenUsagesAT returns how often a Mytoken was used with a specific restriction to obtain an access token
 func GetTokenUsagesAT(tx *sqlx.Tx, myID mtid.MTID, restrictionHash string) (usages *int64, err error) {
 	var usageCount int64
-	if err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Get(&usageCount, `CALL TokenUsages_GetAT(?,?)`, restrictionHash, myID))
-	}); err != nil {
+	if err = db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Get(&usageCount, `CALL TokenUsages_GetAT(?,?)`, restrictionHash, myID))
+		},
+	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// No usage entry -> was not used before -> usages=nil
 			err = nil // This is fine
@@ -163,9 +177,11 @@ func GetTokenUsagesAT(tx *sqlx.Tx, myID mtid.MTID, restrictionHash string) (usag
 // obtaining an access token
 func GetTokenUsagesOther(tx *sqlx.Tx, myID mtid.MTID, restrictionHash string) (usages *int64, err error) {
 	var usageCount int64
-	if err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Get(&usageCount, `CALL TokenUsages_GetOther(?,?)`, restrictionHash, myID))
-	}); err != nil {
+	if err = db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Get(&usageCount, `CALL TokenUsages_GetOther(?,?)`, restrictionHash, myID))
+		},
+	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// No usage entry -> was not used before -> usages=nil
 			err = nil // This is fine

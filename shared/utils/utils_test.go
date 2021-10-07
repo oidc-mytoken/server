@@ -75,33 +75,61 @@ func TestIntersectSlicesAllEmpty(t *testing.T) {
 }
 func TestIntersectSlicesOneEmpty(t *testing.T) {
 	a := []string{}
-	b := []string{"not", "empty"}
+	b := []string{
+		"not",
+		"empty",
+	}
 	expected := []string{}
 	testIntersectList(t, a, b, expected)
 	testIntersectList(t, b, a, expected)
 }
 func TestIntersectSlicesNoIntersection(t *testing.T) {
-	a := []string{"some", "values"}
-	b := []string{"completely", "different"}
+	a := []string{
+		"some",
+		"values",
+	}
+	b := []string{
+		"completely",
+		"different",
+	}
 	expected := []string{}
 	testIntersectList(t, a, b, expected)
 	testIntersectList(t, b, a, expected)
 }
 func TestIntersectSlicesSame(t *testing.T) {
-	a := []string{"some", "values"}
+	a := []string{
+		"some",
+		"values",
+	}
 	testIntersectList(t, a, a, a)
 }
 func TestIntersectSlicesSomeIntersection(t *testing.T) {
-	a := []string{"some", "values"}
-	b := []string{"some", "different"}
+	a := []string{
+		"some",
+		"values",
+	}
+	b := []string{
+		"some",
+		"different",
+	}
 	expected := []string{"some"}
 	testIntersectList(t, a, b, expected)
 	testIntersectList(t, b, a, expected)
 }
 func TestIntersectSlicesSubSet(t *testing.T) {
-	a := []string{"some", "values"}
-	b := []string{"some", "more", "values"}
-	expected := []string{"some", "values"}
+	a := []string{
+		"some",
+		"values",
+	}
+	b := []string{
+		"some",
+		"more",
+		"values",
+	}
+	expected := []string{
+		"some",
+		"values",
+	}
 	testIntersectList(t, a, b, expected)
 	testIntersectList(t, b, a, expected)
 }
@@ -123,19 +151,28 @@ func TestIsSubSetAllEmpty(t *testing.T) {
 }
 func TestIsSubSetOneEmpty(t *testing.T) {
 	a := []string{}
-	b := []string{"some", "values"}
+	b := []string{
+		"some",
+		"values",
+	}
 	testIsSubSet(t, a, b, true)
 	testIsSubSet(t, b, a, false)
 }
 func TestIsSubSetSubset(t *testing.T) {
 	a := []string{"some"}
-	b := []string{"some", "values"}
+	b := []string{
+		"some",
+		"values",
+	}
 	testIsSubSet(t, a, b, true)
 	testIsSubSet(t, b, a, false)
 }
 func TestIsSubSetDistinct(t *testing.T) {
 	a := []string{"other"}
-	b := []string{"some", "values"}
+	b := []string{
+		"some",
+		"values",
+	}
 	testIsSubSet(t, a, b, false)
 	testIsSubSet(t, b, a, false)
 }
@@ -151,46 +188,99 @@ func TestSliceUnion_Empty(t *testing.T) {
 }
 func TestSliceUnion_OneEmpty(t *testing.T) {
 	a := []string{}
-	b := []string{"a", "b"}
-	exp := []string{"a", "b"}
+	b := []string{
+		"a",
+		"b",
+	}
+	exp := []string{
+		"a",
+		"b",
+	}
 	u := SliceUnion(a, b)
 	checkSlice(t, u, exp)
 	u = SliceUnion(b, a)
 	checkSlice(t, u, exp)
 }
 func TestSliceUnion_Same(t *testing.T) {
-	a := []string{"a", "b"}
-	b := []string{"a", "b"}
-	exp := []string{"a", "b"}
+	a := []string{
+		"a",
+		"b",
+	}
+	b := []string{
+		"a",
+		"b",
+	}
+	exp := []string{
+		"a",
+		"b",
+	}
 	u := SliceUnion(a, b)
 	checkSlice(t, u, exp)
 	u = SliceUnion(b, a)
 	checkSlice(t, u, exp)
 }
 func TestSliceUnion_Distinct(t *testing.T) {
-	a := []string{"a", "b"}
-	b := []string{"c", "d"}
-	exp := []string{"a", "b", "c", "d"}
+	a := []string{
+		"a",
+		"b",
+	}
+	b := []string{
+		"c",
+		"d",
+	}
+	exp := []string{
+		"a",
+		"b",
+		"c",
+		"d",
+	}
 	u := SliceUnion(a, b)
 	checkSlice(t, u, exp)
-	exp = []string{"c", "d", "a", "b"}
+	exp = []string{
+		"c",
+		"d",
+		"a",
+		"b",
+	}
 	u = SliceUnion(b, a)
 	checkSlice(t, u, exp)
 }
 func TestSliceUnion_Mixed(t *testing.T) {
-	a := []string{"a", "b", "c"}
-	b := []string{"c", "b", "d"}
-	exp := []string{"a", "b", "c", "d"}
+	a := []string{
+		"a",
+		"b",
+		"c",
+	}
+	b := []string{
+		"c",
+		"b",
+		"d",
+	}
+	exp := []string{
+		"a",
+		"b",
+		"c",
+		"d",
+	}
 	u := SliceUnion(a, b)
 	checkSlice(t, u, exp)
-	exp = []string{"c", "b", "d", "a"}
+	exp = []string{
+		"c",
+		"b",
+		"d",
+		"a",
+	}
 	u = SliceUnion(b, a)
 	checkSlice(t, u, exp)
 }
 
 func TestStringInSliceFirstPosition(t *testing.T) {
 	str := "key"
-	slice := []string{str, "other", "another"}
+	slice := []string{
+		str,
+		"other",
+		"another",
+	}
 	found := StringInSlice(str, slice)
 	if found != true {
 		t.Errorf("'%s' not found in slice '%v'", str, slice)
@@ -198,7 +288,11 @@ func TestStringInSliceFirstPosition(t *testing.T) {
 }
 func TestStringInSliceLastPosition(t *testing.T) {
 	str := "key"
-	slice := []string{"other", "another", str}
+	slice := []string{
+		"other",
+		"another",
+		str,
+	}
 	found := StringInSlice(str, slice)
 	if found != true {
 		t.Errorf("'%s' not found in slice '%v'", str, slice)
@@ -206,7 +300,11 @@ func TestStringInSliceLastPosition(t *testing.T) {
 }
 func TestStringInSliceMidPosition(t *testing.T) {
 	str := "key"
-	slice := []string{"other", str, "another"}
+	slice := []string{
+		"other",
+		str,
+		"another",
+	}
 	found := StringInSlice(str, slice)
 	if found != true {
 		t.Errorf("'%s' not found in slice '%v'", str, slice)
@@ -230,7 +328,11 @@ func TestStringInSliceEmpty(t *testing.T) {
 }
 func TestStringInSliceNotFound(t *testing.T) {
 	str := "key"
-	slice := []string{"only", "other", "strings"}
+	slice := []string{
+		"only",
+		"other",
+		"strings",
+	}
 	found := StringInSlice(str, slice)
 	if found != false {
 		t.Errorf("'%s' not found in slice '%v'", str, slice)
@@ -238,30 +340,70 @@ func TestStringInSliceNotFound(t *testing.T) {
 }
 
 func TestReplaceStringInSlice_Normal(t *testing.T) {
-	strs := []string{"a", "b", "c"}
+	strs := []string{
+		"a",
+		"b",
+		"c",
+	}
 	o := "a"
 	n := "b"
-	exp := []string{"b", "b", "c"}
+	exp := []string{
+		"b",
+		"b",
+		"c",
+	}
 	ReplaceStringInSlice(&strs, o, n, true)
 	checkSlice(t, strs, exp)
 }
 func TestReplaceStringInSlice_Multiple(t *testing.T) {
-	strs := []string{"a", "b", "d", "a", "c"}
+	strs := []string{
+		"a",
+		"b",
+		"d",
+		"a",
+		"c",
+	}
 	o := "a"
 	n := "b"
-	exp := []string{"b", "b", "d", "b", "c"}
+	exp := []string{
+		"b",
+		"b",
+		"d",
+		"b",
+		"c",
+	}
 	ReplaceStringInSlice(&strs, o, n, true)
 	checkSlice(t, strs, exp)
 }
 func TestReplaceStringInSlice_CaseSensitivity(t *testing.T) {
-	strs := []string{"a", "b", "A", "b"}
+	strs := []string{
+		"a",
+		"b",
+		"A",
+		"b",
+	}
 	o := "a"
 	n := "c"
-	exp := []string{"c", "b", "A", "b"}
+	exp := []string{
+		"c",
+		"b",
+		"A",
+		"b",
+	}
 	ReplaceStringInSlice(&strs, o, n, true)
 	checkSlice(t, strs, exp)
-	strs = []string{"a", "b", "A", "b"}
-	exp = []string{"c", "b", "c", "b"}
+	strs = []string{
+		"a",
+		"b",
+		"A",
+		"b",
+	}
+	exp = []string{
+		"c",
+		"b",
+		"c",
+		"b",
+	}
 	ReplaceStringInSlice(&strs, o, n, false)
 	checkSlice(t, strs, exp)
 }
@@ -274,10 +416,18 @@ func TestReplaceStringInSlice_Empty(t *testing.T) {
 	checkSlice(t, strs, exp)
 }
 func TestReplaceStringInSlice_NotFound(t *testing.T) {
-	strs := []string{"a", "b", "c"}
+	strs := []string{
+		"a",
+		"b",
+		"c",
+	}
 	o := "d"
 	n := "b"
-	exp := []string{"a", "b", "c"}
+	exp := []string{
+		"a",
+		"b",
+		"c",
+	}
 	ReplaceStringInSlice(&strs, o, n, true)
 	checkSlice(t, strs, exp)
 }
@@ -304,14 +454,37 @@ func TestUniqueSlice_Empty(t *testing.T) {
 	checkSlice(t, u, exp)
 }
 func TestUniqueSlice_Unique(t *testing.T) {
-	a := []string{"a", "b", "c"}
-	exp := []string{"a", "b", "c"}
+	a := []string{
+		"a",
+		"b",
+		"c",
+	}
+	exp := []string{
+		"a",
+		"b",
+		"c",
+	}
 	u := UniqueSlice(a)
 	checkSlice(t, u, exp)
 }
 func TestUniqueSlice_Duplicates(t *testing.T) {
-	a := []string{"a", "b", "a", "c", "c", "d", "c", "e"}
-	exp := []string{"a", "b", "c", "d", "e"}
+	a := []string{
+		"a",
+		"b",
+		"a",
+		"c",
+		"c",
+		"d",
+		"c",
+		"e",
+	}
+	exp := []string{
+		"a",
+		"b",
+		"c",
+		"d",
+		"e",
+	}
 	u := UniqueSlice(a)
 	checkSlice(t, u, exp)
 }
@@ -324,13 +497,23 @@ func TestSplitIgnoreEmpty_Empty(t *testing.T) {
 }
 func TestSplitIgnoreEmpty_Normal(t *testing.T) {
 	s := "a b c d"
-	exp := []string{"a", "b", "c", "d"}
+	exp := []string{
+		"a",
+		"b",
+		"c",
+		"d",
+	}
 	split := SplitIgnoreEmpty(s, " ")
 	checkSlice(t, split, exp)
 }
 func TestSplitIgnoreEmpty_MultipleEmpty(t *testing.T) {
 	s := "a b  c    d"
-	exp := []string{"a", "b", "c", "d"}
+	exp := []string{
+		"a",
+		"b",
+		"c",
+		"d",
+	}
 	split := SplitIgnoreEmpty(s, " ")
 	checkSlice(t, split, exp)
 }

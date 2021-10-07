@@ -39,9 +39,11 @@ func (ste *MytokenEntry) Root() bool {
 // AllTokens returns information about all mytokens for the user linked to the passed mytoken
 func AllTokens(tx *sqlx.Tx, tokenID mtid.MTID) ([]MytokenEntryTree, error) {
 	var tokens []MytokenEntry
-	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Select(&tokens, `CALL MTokens_GetAllForSameUser(?)`, tokenID))
-	}); err != nil {
+	if err := db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Select(&tokens, `CALL MTokens_GetAllForSameUser(?)`, tokenID))
+		},
+	); err != nil {
 		return nil, err
 	}
 	return tokensToTrees(tokens), nil
@@ -50,9 +52,11 @@ func AllTokens(tx *sqlx.Tx, tokenID mtid.MTID) ([]MytokenEntryTree, error) {
 // TokenSubTree returns information about all subtokens for the passed mytoken
 func TokenSubTree(tx *sqlx.Tx, tokenID mtid.MTID) (MytokenEntryTree, error) {
 	var tokens []MytokenEntry
-	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Select(&tokens, `CALL MTokens_GetSubtokens(?)`, tokenID))
-	}); err != nil {
+	if err := db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Select(&tokens, `CALL MTokens_GetSubtokens(?)`, tokenID))
+		},
+	); err != nil {
 		return MytokenEntryTree{}, err
 	}
 	var root MytokenEntry

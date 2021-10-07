@@ -14,31 +14,39 @@ import (
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
-func rotateMytoken(tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData) (*mytoken.Mytoken, bool, error) {
+func rotateMytoken(
+	tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData,
+) (*mytoken.Mytoken, bool, error) {
 	rotated := old.Rotate()
 	jwt, err := rotated.ToJWT()
 	if err != nil {
 		return old, false, err
 	}
-	if err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if err = helper.UpdateSeqNo(tx, rotated.ID, rotated.SeqNo); err != nil {
-			return err
-		}
-		if err = encryptionkeyrepo.ReencryptEncryptionKey(tx, rotated.ID, oldJWT, jwt); err != nil {
-			return err
-		}
-		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.MTRotated, ""),
-			MTID:  rotated.ID,
-		}, clientMetaData)
-	}); err != nil {
+	if err = db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			if err = helper.UpdateSeqNo(tx, rotated.ID, rotated.SeqNo); err != nil {
+				return err
+			}
+			if err = encryptionkeyrepo.ReencryptEncryptionKey(tx, rotated.ID, oldJWT, jwt); err != nil {
+				return err
+			}
+			return eventService.LogEvent(
+				tx, eventService.MTEvent{
+					Event: event.FromNumber(event.MTRotated, ""),
+					MTID:  rotated.ID,
+				}, clientMetaData,
+			)
+		},
+	); err != nil {
 		return old, false, err
 	}
 	return rotated, true, nil
 }
 
 // RotateMytokenAfterAT rotates a mytoken after it was used to obtain an AT if rotation is enabled for that case
-func RotateMytokenAfterAT(tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData) (*mytoken.Mytoken, bool, error) {
+func RotateMytokenAfterAT(
+	tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData,
+) (*mytoken.Mytoken, bool, error) {
 	if old.Rotation == nil {
 		return old, false, nil
 	}
@@ -49,7 +57,9 @@ func RotateMytokenAfterAT(tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clie
 }
 
 // RotateMytokenAfterOther rotates a mytoken after it was used for other usages than AT if rotation is enabled for that case
-func RotateMytokenAfterOther(tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData) (*mytoken.Mytoken, bool, error) {
+func RotateMytokenAfterOther(
+	tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData,
+) (*mytoken.Mytoken, bool, error) {
 	if old.Rotation == nil {
 		return old, false, nil
 	}
@@ -61,7 +71,9 @@ func RotateMytokenAfterOther(tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, c
 
 // RotateMytokenAfterOtherForResponse rotates a mytoken after it was used for other usages than AT if rotation is
 // enabled for that case and returns a pkg.MytokenResponse with the updated infos
-func RotateMytokenAfterOtherForResponse(tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData, responseType model.ResponseType) (*pkg.MytokenResponse, error) {
+func RotateMytokenAfterOtherForResponse(
+	tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData, responseType model.ResponseType,
+) (*pkg.MytokenResponse, error) {
 	my, rotated, err := RotateMytokenAfterOther(tx, oldJWT, old, clientMetaData)
 	if err != nil {
 		return nil, err
@@ -75,7 +87,9 @@ func RotateMytokenAfterOtherForResponse(tx *sqlx.Tx, oldJWT string, old *mytoken
 
 // RotateMytokenAfterATForResponse rotates a mytoken after it was used for obtaining an AT if rotation is enabled for
 // that case and returns a pkg.MytokenResponse with the updated infos
-func RotateMytokenAfterATForResponse(tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData, responseType model.ResponseType) (*pkg.MytokenResponse, error) {
+func RotateMytokenAfterATForResponse(
+	tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData, responseType model.ResponseType,
+) (*pkg.MytokenResponse, error) {
 	my, rotated, err := RotateMytokenAfterAT(tx, oldJWT, old, clientMetaData)
 	if err != nil {
 		return nil, err

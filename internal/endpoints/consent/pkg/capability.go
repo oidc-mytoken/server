@@ -15,7 +15,12 @@ type WebCapability struct {
 // WebCapabilities creates a slice of WebCapability from api.Capabilities
 func WebCapabilities(cc api.Capabilities) (wc []WebCapability) {
 	for _, c := range cc {
-		wc = append(wc, WebCapability{c, nil})
+		wc = append(
+			wc, WebCapability{
+				c,
+				nil,
+			},
+		)
 	}
 	return
 }

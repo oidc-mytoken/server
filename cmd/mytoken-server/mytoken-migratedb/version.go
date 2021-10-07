@@ -50,9 +50,11 @@ func migrateDB(mytokenNodes []string) error {
 
 func runUpdates(tx *sqlx.Tx, dbState versionrepo.DBVersionState, mytokenNodes []string, version string) error {
 	beforeDone, afterDone := getDoneMap(dbState)
-	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return runBeforeUpdates(tx, beforeDone)
-	}); err != nil {
+	if err := db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			return runBeforeUpdates(tx, beforeDone)
+		},
+	); err != nil {
 		return err
 	}
 	if !anyAfterUpdates(afterDone) { // If there are no after cmds to run, we are done
@@ -60,20 +62,26 @@ func runUpdates(tx *sqlx.Tx, dbState versionrepo.DBVersionState, mytokenNodes []
 	}
 	waitUntilAllNodesOnVersion(mytokenNodes, version)
 
-	return db.RunWithinTransaction(nil, func(tx *sqlx.Tx) error {
-		return runAfterUpdates(tx, afterDone)
-	})
+	return db.RunWithinTransaction(
+		nil, func(tx *sqlx.Tx) error {
+			return runAfterUpdates(tx, afterDone)
+		},
+	)
 }
 
 func runBeforeUpdates(tx *sqlx.Tx, beforeDone map[string]bool) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		for _, v := range dbmigrate.Versions {
-			if err := updateCallback(tx, dbmigrate.MigrationCommands[v].Before, v, beforeDone, versionrepo.SetVersionBefore); err != nil {
-				return err
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			for _, v := range dbmigrate.Versions {
+				if err := updateCallback(
+					tx, dbmigrate.MigrationCommands[v].Before, v, beforeDone, versionrepo.SetVersionBefore,
+				); err != nil {
+					return err
+				}
 			}
-		}
-		return nil
-	})
+			return nil
+		},
+	)
 }
 func anyAfterUpdates(afterDone map[string]bool) bool {
 	for v, cs := range dbmigrate.MigrationCommands {
@@ -84,16 +92,22 @@ func anyAfterUpdates(afterDone map[string]bool) bool {
 	return false
 }
 func runAfterUpdates(tx *sqlx.Tx, afterDone map[string]bool) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		for _, v := range dbmigrate.Versions {
-			if err := updateCallback(tx, dbmigrate.MigrationCommands[v].After, v, afterDone, versionrepo.SetVersionAfter); err != nil {
-				return err
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			for _, v := range dbmigrate.Versions {
+				if err := updateCallback(
+					tx, dbmigrate.MigrationCommands[v].After, v, afterDone, versionrepo.SetVersionAfter,
+				); err != nil {
+					return err
+				}
 			}
-		}
-		return nil
-	})
+			return nil
+		},
+	)
 }
-func updateCallback(tx *sqlx.Tx, cmds, version string, done map[string]bool, dbUpdateCallback func(*sqlx.Tx, string) error) error {
+func updateCallback(
+	tx *sqlx.Tx, cmds, version string, done map[string]bool, dbUpdateCallback func(*sqlx.Tx, string) error,
+) error {
 	log.WithField("version", version).Info("Updating DB to version")
 	if cmds == "" {
 		return nil
@@ -102,12 +116,14 @@ func updateCallback(tx *sqlx.Tx, cmds, version string, done map[string]bool, dbU
 		log.WithField("version", version).Info("Skipping Update; DB already has this version.")
 		return nil
 	}
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if err := dbcl.RunDBCommands(cmds, dbConfig.DBConf, true); err != nil {
-			return err
-		}
-		return dbUpdateCallback(tx, version)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			if err := dbcl.RunDBCommands(cmds, dbConfig.DBConf, true); err != nil {
+				return err
+			}
+			return dbUpdateCallback(tx, version)
+		},
+	)
 }
 
 func waitUntilAllNodesOnVersion(mytokenNodes []string, version string) {

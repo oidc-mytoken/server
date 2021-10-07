@@ -403,10 +403,31 @@ func TestIsTighterThanScopeOneEmpty(t *testing.T) {
 }
 func TestIsTighterThanIP(t *testing.T) {
 	a := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}}
-	b := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12", "192.168.0.14"}}}
+	b := Restriction{
+		Restriction: api.Restriction{
+			IPs: []string{
+				"192.168.0.12",
+				"192.168.0.14",
+			},
+		},
+	}
 	c := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}}
-	d := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.1.2", "192.168.0.12"}}}
-	e := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24", "192.168.1.2"}}}
+	d := Restriction{
+		Restriction: api.Restriction{
+			IPs: []string{
+				"192.168.1.2",
+				"192.168.0.12",
+			},
+		},
+	}
+	e := Restriction{
+		Restriction: api.Restriction{
+			IPs: []string{
+				"192.168.0.0/24",
+				"192.168.1.2",
+			},
+		},
+	}
 	testIsTighter(t, a, b, true)
 	testIsTighter(t, b, a, false)
 	testIsTighter(t, a, c, true)
@@ -422,15 +443,43 @@ func TestIsTighterThanIP(t *testing.T) {
 }
 func TestIsTighterThanIPOneEmpty(t *testing.T) {
 	a := Restriction{}
-	b := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12", "192.168.0.14"}}}
+	b := Restriction{
+		Restriction: api.Restriction{
+			IPs: []string{
+				"192.168.0.12",
+				"192.168.0.14",
+			},
+		},
+	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanGeoIPAllow(t *testing.T) {
-	a := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"de", "us"}}}
+	a := Restriction{
+		Restriction: api.Restriction{
+			GeoIPAllow: []string{
+				"de",
+				"us",
+			},
+		},
+	}
 	b := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"de"}}}
-	c := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"fr", "de"}}}
-	d := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"jp", "cn"}}}
+	c := Restriction{
+		Restriction: api.Restriction{
+			GeoIPAllow: []string{
+				"fr",
+				"de",
+			},
+		},
+	}
+	d := Restriction{
+		Restriction: api.Restriction{
+			GeoIPAllow: []string{
+				"jp",
+				"cn",
+			},
+		},
+	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 	testIsTighter(t, a, c, false)
@@ -442,15 +491,43 @@ func TestIsTighterThanGeoIPAllow(t *testing.T) {
 }
 func TestIsTighterThanGeoIPAllowOneEmpty(t *testing.T) {
 	a := Restriction{}
-	b := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"de", "us"}}}
+	b := Restriction{
+		Restriction: api.Restriction{
+			GeoIPAllow: []string{
+				"de",
+				"us",
+			},
+		},
+	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
 func TestIsTighterThanGeoIPDisallow(t *testing.T) {
-	a := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"de", "us"}}}
+	a := Restriction{
+		Restriction: api.Restriction{
+			GeoIPDisallow: []string{
+				"de",
+				"us",
+			},
+		},
+	}
 	b := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"de"}}}
-	c := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"fr", "de"}}}
-	d := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"jp", "cn"}}}
+	c := Restriction{
+		Restriction: api.Restriction{
+			GeoIPDisallow: []string{
+				"fr",
+				"de",
+			},
+		},
+	}
+	d := Restriction{
+		Restriction: api.Restriction{
+			GeoIPDisallow: []string{
+				"jp",
+				"cn",
+			},
+		},
+	}
 	testIsTighter(t, a, b, true)
 	testIsTighter(t, b, a, false)
 	testIsTighter(t, a, c, false)
@@ -462,7 +539,14 @@ func TestIsTighterThanGeoIPDisallow(t *testing.T) {
 }
 func TestIsTighterThanGeoIPDisallowOneEmpty(t *testing.T) {
 	a := Restriction{}
-	b := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"de", "us"}}}
+	b := Restriction{
+		Restriction: api.Restriction{
+			GeoIPDisallow: []string{
+				"de",
+				"us",
+			},
+		},
+	}
 	testIsTighter(t, a, b, false)
 	testIsTighter(t, b, a, true)
 }
@@ -571,13 +655,29 @@ func TestIsTighterThanAll1(t *testing.T) {
 		NotBefore: 500,
 		ExpiresAt: 1000,
 		Restriction: api.Restriction{
-			Scope:         "a b c",
-			Audiences:     []string{"a", "b", "c"},
-			IPs:           []string{"a", "b", "c"},
-			GeoIPAllow:    []string{"a", "b", "c"},
-			GeoIPDisallow: []string{"a", "b", "c"},
-			UsagesAT:      utils.NewInt64(20),
-			UsagesOther:   utils.NewInt64(20),
+			Scope: "a b c",
+			Audiences: []string{
+				"a",
+				"b",
+				"c",
+			},
+			IPs: []string{
+				"a",
+				"b",
+				"c",
+			},
+			GeoIPAllow: []string{
+				"a",
+				"b",
+				"c",
+			},
+			GeoIPDisallow: []string{
+				"a",
+				"b",
+				"c",
+			},
+			UsagesAT:    utils.NewInt64(20),
+			UsagesOther: utils.NewInt64(20),
 		},
 	}
 	b := a
@@ -589,26 +689,58 @@ func TestIsTighterThanAll2(t *testing.T) {
 		NotBefore: 500,
 		ExpiresAt: 1000,
 		Restriction: api.Restriction{
-			Scope:         "a b c",
-			Audiences:     []string{"a", "b", "c"},
-			IPs:           []string{"a", "b", "c"},
-			GeoIPAllow:    []string{"a", "b", "c"},
-			GeoIPDisallow: []string{"a", "b", "c"},
-			UsagesAT:      utils.NewInt64(20),
-			UsagesOther:   utils.NewInt64(20),
+			Scope: "a b c",
+			Audiences: []string{
+				"a",
+				"b",
+				"c",
+			},
+			IPs: []string{
+				"a",
+				"b",
+				"c",
+			},
+			GeoIPAllow: []string{
+				"a",
+				"b",
+				"c",
+			},
+			GeoIPDisallow: []string{
+				"a",
+				"b",
+				"c",
+			},
+			UsagesAT:    utils.NewInt64(20),
+			UsagesOther: utils.NewInt64(20),
 		},
 	}
 	b := Restriction{
 		NotBefore: 700,
 		ExpiresAt: 1000,
 		Restriction: api.Restriction{
-			Scope:         "a b c",
-			Audiences:     []string{"a", "b", "c"},
-			IPs:           []string{"a", "b", "c"},
-			GeoIPAllow:    []string{"a", "b", "c"},
-			GeoIPDisallow: []string{"a", "b", "c"},
-			UsagesAT:      utils.NewInt64(20),
-			UsagesOther:   utils.NewInt64(20),
+			Scope: "a b c",
+			Audiences: []string{
+				"a",
+				"b",
+				"c",
+			},
+			IPs: []string{
+				"a",
+				"b",
+				"c",
+			},
+			GeoIPAllow: []string{
+				"a",
+				"b",
+				"c",
+			},
+			GeoIPDisallow: []string{
+				"a",
+				"b",
+				"c",
+			},
+			UsagesAT:    utils.NewInt64(20),
+			UsagesOther: utils.NewInt64(20),
 		},
 	}
 	testIsTighter(t, a, b, false)
@@ -619,26 +751,58 @@ func TestIsTighterThanAll3(t *testing.T) {
 		NotBefore: 500,
 		ExpiresAt: 1000,
 		Restriction: api.Restriction{
-			Scope:         "a c",
-			Audiences:     []string{"a", "b", "c"},
-			IPs:           []string{"a", "b", "c"},
-			GeoIPAllow:    []string{"a", "b", "c"},
-			GeoIPDisallow: []string{"a", "b", "c"},
-			UsagesAT:      utils.NewInt64(20),
-			UsagesOther:   utils.NewInt64(20),
+			Scope: "a c",
+			Audiences: []string{
+				"a",
+				"b",
+				"c",
+			},
+			IPs: []string{
+				"a",
+				"b",
+				"c",
+			},
+			GeoIPAllow: []string{
+				"a",
+				"b",
+				"c",
+			},
+			GeoIPDisallow: []string{
+				"a",
+				"b",
+				"c",
+			},
+			UsagesAT:    utils.NewInt64(20),
+			UsagesOther: utils.NewInt64(20),
 		},
 	}
 	b := Restriction{
 		NotBefore: 700,
 		ExpiresAt: 1000,
 		Restriction: api.Restriction{
-			Scope:         "a b c",
-			Audiences:     []string{"a", "b", "c"},
-			IPs:           []string{"a", "b", "c"},
-			GeoIPAllow:    []string{"a", "b", "c"},
-			GeoIPDisallow: []string{"a", "b", "c"},
-			UsagesAT:      utils.NewInt64(20),
-			UsagesOther:   utils.NewInt64(20),
+			Scope: "a b c",
+			Audiences: []string{
+				"a",
+				"b",
+				"c",
+			},
+			IPs: []string{
+				"a",
+				"b",
+				"c",
+			},
+			GeoIPAllow: []string{
+				"a",
+				"b",
+				"c",
+			},
+			GeoIPDisallow: []string{
+				"a",
+				"b",
+				"c",
+			},
+			UsagesAT:    utils.NewInt64(20),
+			UsagesOther: utils.NewInt64(20),
 		},
 	}
 	testIsTighter(t, a, b, false)
@@ -649,26 +813,51 @@ func TestIsTighterThanAll4(t *testing.T) {
 		NotBefore: 500,
 		ExpiresAt: 1000,
 		Restriction: api.Restriction{
-			Scope:         "a b c",
-			Audiences:     []string{"a", "b", "c"},
-			IPs:           []string{"a", "b", "c"},
-			GeoIPAllow:    []string{"a", "b", "c"},
-			GeoIPDisallow: []string{"a", "b", "c"},
-			UsagesAT:      utils.NewInt64(20),
-			UsagesOther:   utils.NewInt64(20),
+			Scope: "a b c",
+			Audiences: []string{
+				"a",
+				"b",
+				"c",
+			},
+			IPs: []string{
+				"a",
+				"b",
+				"c",
+			},
+			GeoIPAllow: []string{
+				"a",
+				"b",
+				"c",
+			},
+			GeoIPDisallow: []string{
+				"a",
+				"b",
+				"c",
+			},
+			UsagesAT:    utils.NewInt64(20),
+			UsagesOther: utils.NewInt64(20),
 		},
 	}
 	b := Restriction{
 		NotBefore: 700,
 		ExpiresAt: 900,
 		Restriction: api.Restriction{
-			Scope:         "b c",
-			Audiences:     []string{"a", "c"},
-			IPs:           []string{"b", "c"},
-			GeoIPAllow:    []string{"a"},
-			GeoIPDisallow: []string{"a", "b"},
-			UsagesAT:      utils.NewInt64(10),
-			UsagesOther:   utils.NewInt64(0),
+			Scope: "b c",
+			Audiences: []string{
+				"a",
+				"c",
+			},
+			IPs: []string{
+				"b",
+				"c",
+			},
+			GeoIPAllow: []string{"a"},
+			GeoIPDisallow: []string{
+				"a",
+				"b",
+			},
+			UsagesAT:    utils.NewInt64(10),
+			UsagesOther: utils.NewInt64(0),
 		},
 	}
 	testIsTighter(t, a, b, false)
@@ -816,27 +1005,45 @@ func TestRestriction_VerifyTimeBased(t *testing.T) {
 		exp bool
 	}{
 		{
-			r:   Restriction{NotBefore: 0, ExpiresAt: 0},
+			r: Restriction{
+				NotBefore: 0,
+				ExpiresAt: 0,
+			},
 			exp: true,
 		},
 		{
-			r:   Restriction{NotBefore: now - 10, ExpiresAt: 0},
+			r: Restriction{
+				NotBefore: now - 10,
+				ExpiresAt: 0,
+			},
 			exp: true,
 		},
 		{
-			r:   Restriction{NotBefore: 0, ExpiresAt: now + 10},
+			r: Restriction{
+				NotBefore: 0,
+				ExpiresAt: now + 10,
+			},
 			exp: true,
 		},
 		{
-			r:   Restriction{NotBefore: now + 10, ExpiresAt: 0},
+			r: Restriction{
+				NotBefore: now + 10,
+				ExpiresAt: 0,
+			},
 			exp: false,
 		},
 		{
-			r:   Restriction{NotBefore: 0, ExpiresAt: now - 10},
+			r: Restriction{
+				NotBefore: 0,
+				ExpiresAt: now - 10,
+			},
 			exp: false,
 		},
 		{
-			r:   Restriction{NotBefore: now + 10, ExpiresAt: now - 10},
+			r: Restriction{
+				NotBefore: now + 10,
+				ExpiresAt: now - 10,
+			},
 			exp: false,
 		},
 	}

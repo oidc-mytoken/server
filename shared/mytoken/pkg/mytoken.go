@@ -86,7 +86,9 @@ func (mt *Mytoken) VerifyCapabilities(required ...api.Capability) bool {
 }
 
 // NewMytoken creates a new Mytoken
-func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation) *Mytoken {
+func NewMytoken(
+	oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation,
+) *Mytoken {
 	now := unixtime.Now()
 	mt := &Mytoken{
 		Version:              api.TokenVer,
@@ -195,26 +197,36 @@ func (mt *Mytoken) toTokenResponse() response.MytokenResponse {
 }
 
 // CreateTransferCode creates a transfer code for the passed mytoken id
-func CreateTransferCode(myID mtid.MTID, jwt string, newMT bool, responseType model.ResponseType, clientMetaData api.ClientMetaData) (string, uint64, error) {
+func CreateTransferCode(
+	myID mtid.MTID, jwt string, newMT bool, responseType model.ResponseType, clientMetaData api.ClientMetaData,
+) (string, uint64, error) {
 	transferCode, err := transfercoderepo.NewTransferCode(jwt, myID, newMT, responseType)
 	if err != nil {
 		return "", 0, err
 	}
-	err = db.Transact(func(tx *sqlx.Tx) error {
-		if err = transferCode.Store(tx); err != nil {
-			return err
-		}
-		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.TransferCodeCreated, fmt.Sprintf("token type: %s", responseType.String())),
-			MTID:  myID,
-		}, clientMetaData)
-	})
+	err = db.Transact(
+		func(tx *sqlx.Tx) error {
+			if err = transferCode.Store(tx); err != nil {
+				return err
+			}
+			return eventService.LogEvent(
+				tx, eventService.MTEvent{
+					Event: event.FromNumber(
+						event.TransferCodeCreated, fmt.Sprintf("token type: %s", responseType.String()),
+					),
+					MTID: myID,
+				}, clientMetaData,
+			)
+		},
+	)
 	expiresIn := uint64(config.Get().Features.Polling.PollingCodeExpiresAfter)
 	return transferCode.String(), expiresIn, err
 }
 
 // ToTokenResponse creates a MytokenResponse for this Mytoken according to the passed model.ResponseType
-func (mt *Mytoken) ToTokenResponse(responseType model.ResponseType, maxTokenLen int, networkData api.ClientMetaData, jwt string) (response.MytokenResponse, error) {
+func (mt *Mytoken) ToTokenResponse(
+	responseType model.ResponseType, maxTokenLen int, networkData api.ClientMetaData, jwt string,
+) (response.MytokenResponse, error) {
 	if jwt == "" {
 		jwt = mt.jwt
 	}
@@ -251,15 +263,19 @@ func (mt *Mytoken) ToJWT() (string, error) {
 		return mt.jwt, nil
 	}
 	var err error
-	mt.jwt, err = jwt.NewWithClaims(jwt.GetSigningMethod(config.Get().Signing.Alg), mt).SignedString(jws.GetPrivateKey())
+	mt.jwt, err = jwt.NewWithClaims(
+		jwt.GetSigningMethod(config.Get().Signing.Alg), mt,
+	).SignedString(jws.GetPrivateKey())
 	return mt.jwt, errors.WithStack(err)
 }
 
 // ParseJWT parses a token string into a Mytoken
 func ParseJWT(token string) (*Mytoken, error) {
-	tok, err := jwt.ParseWithClaims(token, &Mytoken{}, func(t *jwt.Token) (interface{}, error) {
-		return jws.GetPublicKey(), nil
-	})
+	tok, err := jwt.ParseWithClaims(
+		token, &Mytoken{}, func(t *jwt.Token) (interface{}, error) {
+			return jws.GetPublicKey(), nil
+		},
+	)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

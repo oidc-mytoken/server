@@ -28,12 +28,14 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 	oState := state.NewState(ctx.Query("state"))
 	if oidcError != "" {
 		if oState.State() != "" {
-			if err := db.Transact(func(tx *sqlx.Tx) error {
-				if err := transfercoderepo.DeleteTransferCodeByState(tx, oState); err != nil {
-					return err
-				}
-				return authcodeinforepo.DeleteAuthFlowInfoByState(tx, oState)
-			}); err != nil {
+			if err := db.Transact(
+				func(tx *sqlx.Tx) error {
+					if err := transfercoderepo.DeleteTransferCodeByState(tx, oState); err != nil {
+						return err
+					}
+					return authcodeinforepo.DeleteAuthFlowInfoByState(tx, oState)
+				},
+			); err != nil {
 				log.Errorf("%s", errorfmt.Full(err))
 			}
 		}
@@ -50,9 +52,11 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 	if fasthttp.StatusCodeIsRedirect(res.Status) {
 		return res.Send(ctx)
 	}
-	return ctx.Render("sites/error", map[string]interface{}{
-		"empty-navbar":  true,
-		"error-heading": http.StatusText(res.Status),
-		"msg":           res.Response.(api.Error).CombinedMessage(),
-	}, "layouts/main")
+	return ctx.Render(
+		"sites/error", map[string]interface{}{
+			"empty-navbar":  true,
+			"error-heading": http.StatusText(res.Status),
+			"msg":           res.Response.(api.Error).CombinedMessage(),
+		}, "layouts/main",
+	)
 }

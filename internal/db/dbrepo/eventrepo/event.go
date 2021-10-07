@@ -20,9 +20,13 @@ type EventDBObject struct {
 
 // Store stores the EventDBObject in the database
 func (e *EventDBObject) Store(tx *sqlx.Tx) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`CALL Event_Insert(?, ?, ?, ?, ?)`,
-			e.MTID, e.Event.String(), e.Event.Comment, e.ClientMetaData.IP, e.ClientMetaData.UserAgent)
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(
+				`CALL Event_Insert(?, ?, ?, ?, ?)`,
+				e.MTID, e.Event.String(), e.Event.Comment, e.ClientMetaData.IP, e.ClientMetaData.UserAgent,
+			)
+			return errors.WithStack(err)
+		},
+	)
 }

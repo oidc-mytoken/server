@@ -23,12 +23,18 @@ func TestSuperTokenEntry_RootEmpty(t *testing.T) {
 }
 func TestSuperTokenEntry_RootHasParentAsRoot(t *testing.T) {
 	id := mtid.New()
-	a := MytokenEntry{ParentID: id, RootID: id}
+	a := MytokenEntry{
+		ParentID: id,
+		RootID:   id,
+	}
 	testRoot(t, a, false)
 }
 func TestSuperTokenEntry_RootHasRoot(t *testing.T) {
 	pid := mtid.New()
 	rid := mtid.New()
-	a := MytokenEntry{ParentID: pid, RootID: rid}
+	a := MytokenEntry{
+		ParentID: pid,
+		RootID:   rid,
+	}
 	testRoot(t, a, false)
 }

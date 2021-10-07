@@ -92,25 +92,30 @@ func (i *authFlowInfo) toAuthFlowInfo() *AuthFlowInfoOut {
 func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 	log.Debug("Storing auth flow info")
 	store := i.toAuthFlowInfo()
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if i.PollingCode != nil {
-			if err := i.PollingCode.Store(tx); err != nil {
-				return err
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			if i.PollingCode != nil {
+				if err := i.PollingCode.Store(tx); err != nil {
+					return err
+				}
 			}
-		}
-		_, err := tx.NamedExec(
-			`CALL AuthInfo_Insert(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name,
-                             :expires_in, :polling_code, :rotation, :response_type, :max_token_len)`, store)
-		return errors.WithStack(err)
-	})
+			_, err := tx.NamedExec(
+				`CALL AuthInfo_Insert(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name,
+                             :expires_in, :polling_code, :rotation, :response_type, :max_token_len)`, store,
+			)
+			return errors.WithStack(err)
+		},
+	)
 }
 
 // GetAuthFlowInfoByState returns AuthFlowInfoIn by state
 func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
 	info := authFlowInfo{}
-	if err := db.Transact(func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Get(&info, `CALL AuthInfo_Get(?)`, state))
-	}); err != nil {
+	if err := db.Transact(
+		func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Get(&info, `CALL AuthInfo_Get(?)`, state))
+		},
+	); err != nil {
 		return nil, err
 	}
 	return info.toAuthFlowInfo(), nil
@@ -118,26 +123,36 @@ func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
 
 // DeleteAuthFlowInfoByState deletes the AuthFlowInfoIn for a given state
 func DeleteAuthFlowInfoByState(tx *sqlx.Tx, state *state.State) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`CALL AuthInfo_Delete(?)`, state)
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL AuthInfo_Delete(?)`, state)
+			return errors.WithStack(err)
+		},
+	)
 }
 
 // UpdateTokenInfoByState updates the stored AuthFlowInfo for the given state
-func UpdateTokenInfoByState(tx *sqlx.Tx, state *state.State, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation, tokenName string) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(
-			`CALL AuthInfo_Update(?,?,?,?,?,?)`,
-			state, r, c, sc, rot, tokenName)
-		return errors.WithStack(err)
-	})
+func UpdateTokenInfoByState(
+	tx *sqlx.Tx, state *state.State, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation,
+	tokenName string,
+) error {
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(
+				`CALL AuthInfo_Update(?,?,?,?,?,?)`,
+				state, r, c, sc, rot, tokenName,
+			)
+			return errors.WithStack(err)
+		},
+	)
 }
 
 // SetCodeVerifier stores the passed PKCE code verifier
 func SetCodeVerifier(tx *sqlx.Tx, state *state.State, verifier string) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`CALL AuthInfo_SetCodeVerifier(?,?)`, state, verifier)
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL AuthInfo_SetCodeVerifier(?,?)`, state, verifier)
+			return errors.WithStack(err)
+		},
+	)
 }

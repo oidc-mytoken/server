@@ -28,7 +28,7 @@ type _rootDBCredentials struct {
 
 var rootDBCredentials _rootDBCredentials
 
-func (cred _rootDBCredentials) ToDBConf() config.DBConf {
+func (cred _rootDBCredentials) toDBConf() config.DBConf {
 	return config.DBConf{
 		Hosts:             config.Get().DB.Hosts,
 		User:              cred.User,
@@ -211,7 +211,7 @@ func createDB(_ *cli.Context) error {
 		return err
 	}
 	cmds += dbCmds
-	return dbcl.RunDBCommands(cmds, rootDBCredentials.ToDBConf(), true)
+	return dbcl.RunDBCommands(cmds, rootDBCredentials.toDBConf(), true)
 }
 
 func createUser(_ *cli.Context) error {
@@ -224,5 +224,5 @@ func createUser(_ *cli.Context) error {
 		return err
 	}
 	cmds += userCmds
-	return dbcl.RunDBCommands(cmds, rootDBCredentials.ToDBConf(), true)
+	return dbcl.RunDBCommands(cmds, rootDBCredentials.toDBConf(), true)
 }

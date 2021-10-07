@@ -18,10 +18,15 @@ func GetFromJWT(token string, key ...string) (values ResultSet) {
 		if claims, ok := atJWT.Claims.(jwt.MapClaims); ok {
 			for _, k := range key {
 				v, set := claims[k]
-				values = append(values, struct {
-					Value interface{}
-					Set   bool
-				}{Value: v, Set: set})
+				values = append(
+					values, struct {
+						Value interface{}
+						Set   bool
+					}{
+						Value: v,
+						Set:   set,
+					},
+				)
 			}
 		}
 	}

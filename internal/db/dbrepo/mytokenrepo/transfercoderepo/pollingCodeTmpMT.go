@@ -30,39 +30,47 @@ type TransferCodeStatus struct {
 func CheckTransferCode(tx *sqlx.Tx, pollingCode string) (TransferCodeStatus, error) {
 	pt := createProxyToken(pollingCode)
 	var p TransferCodeStatus
-	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if err := tx.Get(&p, `CALL TransferCodes_GetStatus(?)`, pt.ID()); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				err = nil  // polling code was not found, but this is fine
-				return err // p.Found is false
+	err := db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			if err := tx.Get(&p, `CALL TransferCodes_GetStatus(?)`, pt.ID()); err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					err = nil  // polling code was not found, but this is fine
+					return err // p.Found is false
+				}
+				return errors.WithStack(err)
 			}
-			return errors.WithStack(err)
-		}
-		return nil
-	})
+			return nil
+		},
+	)
 	return p, err
 }
 
 // PopTokenForTransferCode returns the decrypted token for a polling code and then deletes the entry
-func PopTokenForTransferCode(tx *sqlx.Tx, pollingCode string, clientMetadata api.ClientMetaData) (jwt string, err error) {
+func PopTokenForTransferCode(tx *sqlx.Tx, pollingCode string, clientMetadata api.ClientMetaData) (
+	jwt string, err error,
+) {
 	pt := createProxyToken(pollingCode)
 	var valid bool
-	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		jwt, valid, err = pt.JWT(tx)
-		if err != nil {
-			return err
-		}
-		if !valid || jwt == "" {
-			return nil
-		}
-		if err = pt.Delete(tx); err != nil {
-			return err
-		}
-		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.TransferCodeUsed, ""),
-			MTID:  pt.mtID,
-		}, clientMetadata)
-	})
+	err = db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			jwt, valid, err = pt.JWT(tx)
+			if err != nil {
+				return err
+			}
+			if !valid || jwt == "" {
+				return nil
+			}
+			if err = pt.Delete(tx); err != nil {
+				return err
+			}
+			return eventService.LogEvent(
+				tx, eventService.MTEvent{
+					Event: event.FromNumber(event.TransferCodeUsed, ""),
+					MTID:  pt.mtID,
+				}, clientMetadata,
+			)
+		},
+	)
 	return
 }
 
@@ -100,8 +108,10 @@ func DeleteTransferCodeByState(tx *sqlx.Tx, state *state.State) error {
 // DeclineConsentByState updates the polling code attribute after the consent has been declined
 func DeclineConsentByState(tx *sqlx.Tx, state *state.State) error {
 	pc := createProxyToken(state.PollingCode())
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`CALL TransferCodeAttributes_DeclineConsent(?)`, pc.ID())
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL TransferCodeAttributes_DeclineConsent(?)`, pc.ID())
+			return errors.WithStack(err)
+		},
+	)
 }

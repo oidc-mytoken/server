@@ -47,4 +47,7 @@ func ErrorToBadRequestErrorResponse(err error) *Response {
 }
 
 // ResponseNYI is the server response when something is not yet implemented
-var ResponseNYI = Response{Status: fiber.StatusNotImplemented, Response: api.ErrorNYI}
+var ResponseNYI = Response{
+	Status:   fiber.StatusNotImplemented,
+	Response: api.ErrorNYI,
+}

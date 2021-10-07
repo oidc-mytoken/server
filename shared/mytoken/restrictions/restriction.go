@@ -164,16 +164,20 @@ func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, myID mtid.MTID) bool {
 	}
 	if usages == nil {
 		//  was not used before
-		log.WithFields(map[string]interface{}{
-			"myID": myID.String(),
-		}).Debug("Did not found restriction in database; it was not used before")
+		log.WithFields(
+			map[string]interface{}{
+				"myID": myID.String(),
+			},
+		).Debug("Did not found restriction in database; it was not used before")
 		return *r.UsagesAT > 0
 	}
-	log.WithFields(map[string]interface{}{
-		"myID":       myID.String(),
-		"used":       *usages,
-		"usageLimit": *r.UsagesAT,
-	}).Debug("Found restriction usage in db.")
+	log.WithFields(
+		map[string]interface{}{
+			"myID":       myID.String(),
+			"used":       *usages,
+			"usageLimit": *r.UsagesAT,
+		},
+	).Debug("Found restriction usage in db.")
 	return *usages < *r.UsagesAT
 }
 func (r *Restriction) getOtherUsageCounts(tx *sqlx.Tx, myID mtid.MTID) (*int64, error) {
@@ -198,16 +202,20 @@ func (r *Restriction) verifyOtherUsageCounts(tx *sqlx.Tx, id mtid.MTID) bool {
 	}
 	if usages == nil {
 		// was not used before
-		log.WithFields(map[string]interface{}{
-			"id": id.String(),
-		}).Debug("Did not found restriction in database; it was not used before")
+		log.WithFields(
+			map[string]interface{}{
+				"id": id.String(),
+			},
+		).Debug("Did not found restriction in database; it was not used before")
 		return *r.UsagesOther > 0
 	}
-	log.WithFields(map[string]interface{}{
-		"id":         id.String(),
-		"used":       *usages,
-		"usageLimit": *r.UsagesAT,
-	}).Debug("Found restriction usage in db.")
+	log.WithFields(
+		map[string]interface{}{
+			"id":         id.String(),
+			"used":       *usages,
+			"usageLimit": *r.UsagesAT,
+		},
+	).Debug("Found restriction usage in db.")
 	return *usages < *r.UsagesOther
 }
 func (r *Restriction) verify(ip string) bool {
@@ -504,16 +512,22 @@ func (r *Restriction) isTighterThan(b Restriction) bool {
 	if len(rScopes) == 0 && len(bScopes) > 0 || !utils.IsSubSet(rScopes, bScopes) && len(bScopes) != 0 {
 		return false
 	}
-	if len(r.Audiences) == 0 && len(b.Audiences) > 0 || !utils.IsSubSet(r.Audiences, b.Audiences) && len(b.Audiences) != 0 {
+	if len(r.Audiences) == 0 && len(b.Audiences) > 0 || !utils.IsSubSet(
+		r.Audiences, b.Audiences,
+	) && len(b.Audiences) != 0 {
 		return false
 	}
 	if len(r.IPs) == 0 && len(b.IPs) > 0 || !utils.IPsAreSubSet(r.IPs, b.IPs) && len(b.IPs) != 0 {
 		return false
 	}
-	if len(r.GeoIPAllow) == 0 && len(b.GeoIPAllow) > 0 || !utils.IsSubSet(r.GeoIPAllow, b.GeoIPAllow) && len(b.GeoIPAllow) != 0 {
+	if len(r.GeoIPAllow) == 0 && len(b.GeoIPAllow) > 0 || !utils.IsSubSet(
+		r.GeoIPAllow, b.GeoIPAllow,
+	) && len(b.GeoIPAllow) != 0 {
 		return false
 	}
-	if !utils.IsSubSet(b.GeoIPDisallow, r.GeoIPDisallow) { // for Disallow-list r must have all the values from b to be tighter
+	if !utils.IsSubSet(
+		b.GeoIPDisallow, r.GeoIPDisallow,
+	) { // for Disallow-list r must have all the values from b to be tighter
 		return false
 	}
 	if utils.CompareNullableIntsWithNilAsInfinity(r.UsagesAT, b.UsagesAT) > 0 {

@@ -33,15 +33,17 @@ func (r Restriction) ToUsedRestriction(tx *sqlx.Tx, id mtid.MTID) (UsedRestricti
 	ur := UsedRestriction{
 		Restriction: r,
 	}
-	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		at, err := r.getATUsageCounts(tx, id)
-		if err != nil {
+	err := db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			at, err := r.getATUsageCounts(tx, id)
+			if err != nil {
+				return err
+			}
+			ur.UsagesATDone = at
+			other, err := r.getOtherUsageCounts(tx, id)
+			ur.UsagesOtherDone = other
 			return err
-		}
-		ur.UsagesATDone = at
-		other, err := r.getOtherUsageCounts(tx, id)
-		ur.UsagesOtherDone = other
-		return err
-	})
+		},
+	)
 	return ur, err
 }

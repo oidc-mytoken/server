@@ -14,53 +14,59 @@ import (
 // ReencryptEncryptionKey re-encrypts the encryption key for a mytoken. This is needed when the mytoken changes, e.g. on
 // token rotation
 func ReencryptEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID, oldJWT, newJWT string) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		keyID, err := getEncryptionKeyID(tx, tokenID)
-		if err != nil {
-			return err
-		}
-		var encryptedKey string
-		if err = errors.WithStack(tx.Get(&encryptedKey, `CALL EncryptionKeys_Get(?)`, keyID)); err != nil {
-			return err
-		}
-		key, err := cryptUtils.AES256Decrypt(encryptedKey, oldJWT)
-		if err != nil {
-			return err
-		}
-		updatedKey, err := cryptUtils.AES256Encrypt(key, newJWT)
-		if err != nil {
-			return err
-		}
-		_, err = tx.Exec(`CALL EncryptionKeys_Update(?,?)`, keyID, updatedKey)
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			keyID, err := getEncryptionKeyID(tx, tokenID)
+			if err != nil {
+				return err
+			}
+			var encryptedKey string
+			if err = errors.WithStack(tx.Get(&encryptedKey, `CALL EncryptionKeys_Get(?)`, keyID)); err != nil {
+				return err
+			}
+			key, err := cryptUtils.AES256Decrypt(encryptedKey, oldJWT)
+			if err != nil {
+				return err
+			}
+			updatedKey, err := cryptUtils.AES256Encrypt(key, newJWT)
+			if err != nil {
+				return err
+			}
+			_, err = tx.Exec(`CALL EncryptionKeys_Update(?,?)`, keyID, updatedKey)
+			return errors.WithStack(err)
+		},
+	)
 }
 
 // DeleteEncryptionKey deletes the encryption key for a mytoken.
 func DeleteEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		keyID, err := getEncryptionKeyID(tx, tokenID)
-		if err != nil {
-			return err
-		}
-		if _, err = tx.Exec(`CALL EncryptionKeys_Delete(?)`, keyID); err != nil {
-			return errors.WithStack(err)
-		}
-		return nil
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			keyID, err := getEncryptionKeyID(tx, tokenID)
+			if err != nil {
+				return err
+			}
+			if _, err = tx.Exec(`CALL EncryptionKeys_Delete(?)`, keyID); err != nil {
+				return errors.WithStack(err)
+			}
+			return nil
+		},
+	)
 }
 
 // GetEncryptionKey returns the encryption key and the rtid for a mytoken
 func GetEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID, jwt string) (key []byte, rtID uint64, err error) {
-	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		var res RTCryptKeyDBRes
-		if err = tx.Get(&res, `CALL EncryptionKeys_GetRTKeyForMT(?)`, tokenID); err != nil {
-			return errors.WithStack(err)
-		}
-		rtID = res.RTID
-		key, err = res.EncryptionKey.Decrypt(jwt)
-		return err
-	})
+	err = db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			var res RTCryptKeyDBRes
+			if err = tx.Get(&res, `CALL EncryptionKeys_GetRTKeyForMT(?)`, tokenID); err != nil {
+				return errors.WithStack(err)
+			}
+			rtID = res.RTID
+			key, err = res.EncryptionKey.Decrypt(jwt)
+			return err
+		},
+	)
 	return
 }
 
@@ -97,8 +103,10 @@ func (res RTCryptKeyDBRes) Decrypt(jwt string) (string, error) {
 // getEncryptionKeyID returns the id of the encryption key used for encrypting the RT linked to this mytoken
 func getEncryptionKeyID(tx *sqlx.Tx, myID mtid.MTID) (uint64, error) {
 	var res RTCryptKeyDBRes
-	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Get(&res, `CALL EncryptionKeys_GetRTKeyForMT(?)`, myID))
-	})
+	err := db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Get(&res, `CALL EncryptionKeys_GetRTKeyForMT(?)`, myID))
+		},
+	)
 	return res.KeyID, err
 }

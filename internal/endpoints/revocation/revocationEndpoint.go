@@ -42,15 +42,17 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 	if clearCookie {
 		return model.Response{
 			Status: fiber.StatusNoContent,
-			Cookies: []*fiber.Cookie{{
-				Name:     "mytoken",
-				Value:    "",
-				Path:     "/api",
-				Expires:  time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC),
-				Secure:   config.Get().Server.Secure,
-				HTTPOnly: true,
-				SameSite: "Strict",
-			}},
+			Cookies: []*fiber.Cookie{
+				{
+					Name:     "mytoken",
+					Value:    "",
+					Path:     "/api",
+					Expires:  time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC),
+					Secure:   config.Get().Server.Secure,
+					HTTPOnly: true,
+					SameSite: "Strict",
+				},
+			},
 		}.Send(ctx)
 	}
 	return ctx.SendStatus(fiber.StatusNoContent)
@@ -64,15 +66,17 @@ func revokeAnyToken(tx *sqlx.Tx, token, issuer string, recursive bool) (errRes *
 	} else { // Short Token
 		shortToken := transfercoderepo.ParseShortToken(token)
 		var valid bool
-		if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-			jwt, v, err := shortToken.JWT(tx)
-			valid = v
-			if err != nil {
-				return err
-			}
-			token = jwt
-			return shortToken.Delete(tx)
-		}); err != nil {
+		if err := db.RunWithinTransaction(
+			tx, func(tx *sqlx.Tx) error {
+				jwt, v, err := shortToken.JWT(tx)
+				valid = v
+				if err != nil {
+					return err
+				}
+				token = jwt
+				return shortToken.Delete(tx)
+			},
+		); err != nil {
 			log.Errorf("%s", errorfmt.Full(err))
 			return model.ErrorToInternalServerErrorResponse(err)
 		}
@@ -99,26 +103,28 @@ func revokeMytoken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *mod
 
 func revokeTransferCode(tx *sqlx.Tx, token, issuer string) (errRes *model.Response) {
 	transferCode := transfercoderepo.ParseTransferCode(token)
-	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		revokeMT, err := transferCode.GetRevokeJWT(tx)
-		if err != nil {
-			return err
-		}
-		if revokeMT {
-			jwt, valid, err := transferCode.JWT(tx)
+	err := db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			revokeMT, err := transferCode.GetRevokeJWT(tx)
 			if err != nil {
 				return err
 			}
-			if valid { // if !valid the jwt field could not decrypted correctly, so we can skip that, but still delete
-				// the TransferCode
-				errRes = revokeAnyToken(tx, jwt, issuer, true)
-				if errRes != nil {
-					return errors.New("placeholder")
+			if revokeMT {
+				jwt, valid, err := transferCode.JWT(tx)
+				if err != nil {
+					return err
+				}
+				if valid { // if !valid the jwt field could not decrypted correctly, so we can skip that, but still delete
+					// the TransferCode
+					errRes = revokeAnyToken(tx, jwt, issuer, true)
+					if errRes != nil {
+						return errors.New("placeholder")
+					}
 				}
 			}
-		}
-		return transferCode.Delete(tx)
-	})
+			return transferCode.Delete(tx)
+		},
+	)
 	if err != nil && errRes == nil {
 		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)

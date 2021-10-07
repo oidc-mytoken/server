@@ -52,22 +52,24 @@ func (t *AccessToken) Store(tx *sqlx.Tx) error {
 	if err != nil {
 		return err
 	}
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		var atID uint64
-		err = tx.Get(&atID, `CALL AT_Insert(?,?,?,?)`, store.Token, store.IP, store.Comment, store.MTID)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		for _, s := range t.Scopes {
-			if _, err = tx.Exec(`CALL ATAttribute_Insert(?,?,?)`, atID, s, model.AttrScope); err != nil {
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			var atID uint64
+			err = tx.Get(&atID, `CALL AT_Insert(?,?,?,?)`, store.Token, store.IP, store.Comment, store.MTID)
+			if err != nil {
 				return errors.WithStack(err)
 			}
-		}
-		for _, a := range t.Audiences {
-			if _, err = tx.Exec(`CALL ATAttribute_Insert(?,?,?)`, atID, a, model.AttrAud); err != nil {
-				return errors.WithStack(err)
+			for _, s := range t.Scopes {
+				if _, err = tx.Exec(`CALL ATAttribute_Insert(?,?,?)`, atID, s, model.AttrScope); err != nil {
+					return errors.WithStack(err)
+				}
 			}
-		}
-		return nil
-	})
+			for _, a := range t.Audiences {
+				if _, err = tx.Exec(`CALL ATAttribute_Insert(?,?,?)`, atID, a, model.AttrAud); err != nil {
+					return errors.WithStack(err)
+				}
+			}
+			return nil
+		},
+	)
 }

@@ -80,7 +80,9 @@ func RequireMytokenNotRevoked(tx *sqlx.Tx, mt *mytoken.Mytoken) *model.Response 
 // RequireValidMytoken checks the passed universalmytoken.UniversalMytoken and if needed other request parameters like
 // authorization header and cookie value for a mytoken string. The mytoken string is parsed and if not valid an error
 // model.Response is returned. RequireValidMytoken also asserts that the mytoken.Mytoken was not revoked.
-func RequireValidMytoken(tx *sqlx.Tx, reqToken *universalmytoken.UniversalMytoken, ctx *fiber.Ctx) (*mytoken.Mytoken, *model.Response) {
+func RequireValidMytoken(tx *sqlx.Tx, reqToken *universalmytoken.UniversalMytoken, ctx *fiber.Ctx) (
+	*mytoken.Mytoken, *model.Response,
+) {
 	mt, errRes := RequireMytoken(reqToken, ctx)
 	if errRes != nil {
 		return nil, errRes
@@ -125,7 +127,9 @@ func RequireCapability(capability api.Capability, mt *mytoken.Mytoken) *model.Re
 	return nil
 }
 
-func requireUseableRestriction(tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string, at bool) (*restrictions.Restriction, *model.Response) {
+func requireUseableRestriction(
+	tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string, at bool,
+) (*restrictions.Restriction, *model.Response) {
 	if len(mt.Restrictions) == 0 {
 		return nil, nil
 	}
@@ -146,22 +150,30 @@ func requireUseableRestriction(tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scop
 }
 
 // RequireUsableRestriction checks that the mytoken.Mytoken's restrictions allow the usage
-func RequireUsableRestriction(tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string, capability api.Capability) (*restrictions.Restriction, *model.Response) {
+func RequireUsableRestriction(
+	tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string, capability api.Capability,
+) (*restrictions.Restriction, *model.Response) {
 	return requireUseableRestriction(tx, mt, ip, scopes, auds, capability == api.CapabilityAT)
 }
 
 // RequireUsableRestrictionAT checks that the mytoken.Mytoken's restrictions allow the AT usage
-func RequireUsableRestrictionAT(tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string) (*restrictions.Restriction, *model.Response) {
+func RequireUsableRestrictionAT(
+	tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string,
+) (*restrictions.Restriction, *model.Response) {
 	return requireUseableRestriction(tx, mt, ip, scopes, auds, true)
 }
 
 // RequireUsableRestrictionOther checks that the mytoken.Mytoken's restrictions allow the non-AT usage
-func RequireUsableRestrictionOther(tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string) (*restrictions.Restriction, *model.Response) {
+func RequireUsableRestrictionOther(
+	tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string,
+) (*restrictions.Restriction, *model.Response) {
 	return requireUseableRestriction(tx, mt, ip, scopes, auds, false)
 }
 
 // CheckCapabilityAndRestriction checks the mytoken.Mytoken's capability and restrictions
-func CheckCapabilityAndRestriction(tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string, capability api.Capability) (*restrictions.Restriction, *model.Response) {
+func CheckCapabilityAndRestriction(
+	tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string, capability api.Capability,
+) (*restrictions.Restriction, *model.Response) {
 	if errRes := RequireCapability(capability, mt); errRes != nil {
 		return nil, errRes
 	}

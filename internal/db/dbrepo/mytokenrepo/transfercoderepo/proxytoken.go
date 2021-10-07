@@ -82,18 +82,20 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 		return
 	}
 	if pt.encryptedJWT == "" {
-		if err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-			var res struct {
-				JWT  string    `db:"jwt"`
-				MTID mtid.MTID `db:"MT_id"`
-			}
-			if err = tx.Get(&res, `CALL ProxyTokens_GetMT(?)`, pt.id); err != nil {
-				return errors.WithStack(err)
-			}
-			pt.encryptedJWT = res.JWT
-			pt.mtID = res.MTID
-			return nil
-		}); err != nil {
+		if err = db.RunWithinTransaction(
+			tx, func(tx *sqlx.Tx) error {
+				var res struct {
+					JWT  string    `db:"jwt"`
+					MTID mtid.MTID `db:"MT_id"`
+				}
+				if err = tx.Get(&res, `CALL ProxyTokens_GetMT(?)`, pt.id); err != nil {
+					return errors.WithStack(err)
+				}
+				pt.encryptedJWT = res.JWT
+				pt.mtID = res.MTID
+				return nil
+			},
+		); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				err = nil
 				return
@@ -112,25 +114,31 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 
 // Store stores the proxyToken
 func (pt proxyToken) Store(tx *sqlx.Tx) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`CALL ProxyTokens_Insert(?,?,?)`, pt.id, pt.encryptedJWT, pt.mtID)
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL ProxyTokens_Insert(?,?,?)`, pt.id, pt.encryptedJWT, pt.mtID)
+			return errors.WithStack(err)
+		},
+	)
 }
 
 // Update updates the jwt of the proxyToken
 func (pt proxyToken) Update(tx *sqlx.Tx) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`CALL ProxyTokens_Update(?,?,?)`, pt.ID(), pt.encryptedJWT, pt.mtID)
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL ProxyTokens_Update(?,?,?)`, pt.ID(), pt.encryptedJWT, pt.mtID)
+			return errors.WithStack(err)
+		},
+	)
 }
 
 // Delete deletes the proxyToken from the database, it does not delete the linked Mytoken, the jwt should have been
 // retrieved earlier and the Mytoken if desired be revoked separately
 func (pt proxyToken) Delete(tx *sqlx.Tx) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`CALL ProxyTokens_Delete(?)`, pt.id)
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL ProxyTokens_Delete(?)`, pt.id)
+			return errors.WithStack(err)
+		},
+	)
 }

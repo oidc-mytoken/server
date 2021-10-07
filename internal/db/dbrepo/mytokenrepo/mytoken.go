@@ -100,29 +100,33 @@ func (ste *MytokenEntry) Store(tx *sqlx.Tx, comment string) error {
 		Iss:      ste.Token.OIDCIssuer,
 		Sub:      ste.Token.OIDCSubject,
 	}
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if ste.rtID == nil {
-			if _, err := tx.Exec(`CALL CryptStoreRT_Insert(?,@ID)`, ste.rtEncrypted); err != nil {
-				return errors.WithStack(err)
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			if ste.rtID == nil {
+				if _, err := tx.Exec(`CALL CryptStoreRT_Insert(?,@ID)`, ste.rtEncrypted); err != nil {
+					return errors.WithStack(err)
+				}
+				var rtID uint64
+				if err := tx.Get(&rtID, `SELECT @ID`); err != nil {
+					return errors.WithStack(err)
+				}
+				ste.rtID = &rtID
 			}
-			var rtID uint64
-			if err := tx.Get(&rtID, `SELECT @ID`); err != nil {
-				return errors.WithStack(err)
+			steStore.RefreshTokenID = *ste.rtID
+			if err := steStore.Store(tx); err != nil {
+				return err
 			}
-			ste.rtID = &rtID
-		}
-		steStore.RefreshTokenID = *ste.rtID
-		if err := steStore.Store(tx); err != nil {
-			return err
-		}
-		if err := storeEncryptionKey(tx, ste.encryptionKeyEncrypted, steStore.RefreshTokenID, ste.ID); err != nil {
-			return err
-		}
-		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.MTCreated, comment),
-			MTID:  ste.ID,
-		}, ste.networkData)
-	})
+			if err := storeEncryptionKey(tx, ste.encryptionKeyEncrypted, steStore.RefreshTokenID, ste.ID); err != nil {
+				return err
+			}
+			return eventService.LogEvent(
+				tx, eventService.MTEvent{
+					Event: event.FromNumber(event.MTCreated, comment),
+					MTID:  ste.ID,
+				}, ste.networkData,
+			)
+		},
+	)
 }
 
 func storeEncryptionKey(tx *sqlx.Tx, key string, rtID uint64, myid mtid.MTID) error {
@@ -145,9 +149,13 @@ type mytokenEntryStore struct {
 // Store stores the mytokenEntryStore in the database; if this is the first token for this user, the user is also added
 // to the db
 func (e *mytokenEntryStore) Store(tx *sqlx.Tx) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`CALL MTokens_Insert(?,?,?,?,?,?,?,?,?)`,
-			e.Sub, e.Iss, e.ID, e.SeqNo, e.ParentID, e.RootID, e.RefreshTokenID, e.Name, e.IP)
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(
+				`CALL MTokens_Insert(?,?,?,?,?,?,?,?,?)`,
+				e.Sub, e.Iss, e.ID, e.SeqNo, e.ParentID, e.RootID, e.RefreshTokenID, e.Name, e.IP,
+			)
+			return errors.WithStack(err)
+		},
+	)
 }

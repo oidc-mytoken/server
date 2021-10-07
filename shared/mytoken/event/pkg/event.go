@@ -50,7 +50,10 @@ func FromNumber(number int, comment string) *Event {
 	if number < 0 {
 		return nil
 	}
-	return &Event{Type: number, Comment: comment}
+	return &Event{
+		Type:    number,
+		Comment: comment,
+	}
 }
 
 func eventStringToInt(str string) int {

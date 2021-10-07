@@ -26,10 +26,12 @@ var mytokenConfig *pkg.MytokenConfiguration
 
 func getProvidersFromConfig() (providers []api.SupportedProviderConfig) {
 	for _, p := range config.Get().Providers {
-		providers = append(providers, api.SupportedProviderConfig{
-			Issuer:          p.Issuer,
-			ScopesSupported: p.Scopes,
-		})
+		providers = append(
+			providers, api.SupportedProviderConfig{
+				Issuer:          p.Issuer,
+				ScopesSupported: p.Scopes,
+			},
+		)
 	}
 	return
 }
@@ -62,18 +64,25 @@ func basicConfiguration() *pkg.MytokenConfiguration {
 			Version:              version.VERSION(),
 		},
 		AccessTokenEndpointGrantTypesSupported: []pkgModel.GrantType{pkgModel.GrantTypeMytoken},
-		MytokenEndpointGrantTypesSupported:     []pkgModel.GrantType{pkgModel.GrantTypeOIDCFlow, pkgModel.GrantTypeMytoken},
-		MytokenEndpointOIDCFlowsSupported:      config.Get().Features.EnabledOIDCFlows,
-		ResponseTypesSupported:                 []pkgModel.ResponseType{pkgModel.ResponseTypeToken},
-		TokenEndpoint:                          utils.CombineURLPath(config.Get().IssuerURL, apiPaths.AccessTokenEndpoint),
-		SupportedRestrictionKeys:               model.AllRestrictionKeys.Disable(config.Get().Features.DisabledRestrictionKeys),
+		MytokenEndpointGrantTypesSupported: []pkgModel.GrantType{
+			pkgModel.GrantTypeOIDCFlow,
+			pkgModel.GrantTypeMytoken,
+		},
+		MytokenEndpointOIDCFlowsSupported: config.Get().Features.EnabledOIDCFlows,
+		ResponseTypesSupported:            []pkgModel.ResponseType{pkgModel.ResponseTypeToken},
+		TokenEndpoint: utils.CombineURLPath(
+			config.Get().IssuerURL, apiPaths.AccessTokenEndpoint,
+		),
+		SupportedRestrictionKeys: model.AllRestrictionKeys.Disable(config.Get().Features.DisabledRestrictionKeys),
 	}
 }
 
 func addTokenRevocation(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.TokenRevocation.Enabled {
-		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(config.Get().IssuerURL,
-			routes.GetCurrentAPIPaths().RevocationEndpoint)
+		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(
+			config.Get().IssuerURL,
+			routes.GetCurrentAPIPaths().RevocationEndpoint,
+		)
 	}
 }
 func addShortTokens(mytokenConfig *pkg.MytokenConfiguration) {
@@ -83,8 +92,10 @@ func addShortTokens(mytokenConfig *pkg.MytokenConfiguration) {
 }
 func addTransferCodes(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.TransferCodes.Enabled {
-		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(config.Get().IssuerURL,
-			routes.GetCurrentAPIPaths().TokenTransferEndpoint)
+		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(
+			config.Get().IssuerURL,
+			routes.GetCurrentAPIPaths().TokenTransferEndpoint,
+		)
 		pkgModel.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 		pkgModel.ResponseTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
 	}

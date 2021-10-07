@@ -31,7 +31,9 @@ func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
 		return errRes.Send(ctx)
 	}
 
-	transferCode, expiresIn, err := mytoken.CreateTransferCode(mt.ID, req.Mytoken.JWT, false, req.Mytoken.OriginalTokenType, *ctxUtils.ClientMetaData(ctx))
+	transferCode, expiresIn, err := mytoken.CreateTransferCode(
+		mt.ID, req.Mytoken.JWT, false, req.Mytoken.OriginalTokenType, *ctxUtils.ClientMetaData(ctx),
+	)
 	if err != nil {
 		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)

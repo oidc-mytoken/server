@@ -30,16 +30,22 @@ var app = &cli.App{
 	Usage:    "Command line client for easy database migration between mytoken versions",
 	Version:  version.VERSION(),
 	Compiled: time.Time{},
-	Authors: []*cli.Author{{
-		Name:  "Gabriel Zachmann",
-		Email: "gabriel.zachmann@kit.edu",
-	}},
+	Authors: []*cli.Author{
+		{
+			Name:  "Gabriel Zachmann",
+			Email: "gabriel.zachmann@kit.edu",
+		},
+	},
 	Copyright:              "Karlsruhe Institute of Technology 2020-2021",
 	UseShortOptionHandling: true,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:        "nodes",
-			Aliases:     []string{"n", "s", "server"},
+			Name: "nodes",
+			Aliases: []string{
+				"n",
+				"s",
+				"server",
+			},
 			Usage:       "The passed file lists the mytoken nodes / servers (one server per line)",
 			EnvVars:     []string{"MYTOKEN_NODES_FILE"},
 			TakesFile:   true,
@@ -47,9 +53,10 @@ var app = &cli.App{
 			Destination: &configFile,
 		},
 		&cli.BoolFlag{
-			Name:             "force",
-			Aliases:          []string{"f"},
-			Usage:            "Force a complete database migration. It is not checked if mytoken servers are compatible with the changes.",
+			Name:    "force",
+			Aliases: []string{"f"},
+			Usage: "Force a complete database migration. It is not checked if mytoken servers are " +
+				"compatible with the changes.",
 			Destination:      &force,
 			HideDefaultValue: true,
 		},
@@ -72,26 +79,36 @@ var app = &cli.App{
 			Placeholder: "USER",
 		},
 		&cli.StringFlag{
-			Name:        "password",
-			Aliases:     []string{"p"},
-			Usage:       "The password for connecting to the database",
-			EnvVars:     []string{"DB_ROOT_PASSWORD", "DB_ROOT_PW"},
+			Name:    "password",
+			Aliases: []string{"p"},
+			Usage:   "The password for connecting to the database",
+			EnvVars: []string{
+				"DB_ROOT_PASSWORD",
+				"DB_ROOT_PW",
+			},
 			Destination: &dbConfig.Password,
 			Placeholder: "PASSWORD",
 		},
 		&cli.StringFlag{
-			Name:        "password-file",
-			Aliases:     []string{"pw-file"},
-			Usage:       "Read the password for connecting to the database from this file",
-			EnvVars:     []string{"DB_PASSWORD_FILE", "DB_PW_FILE"},
+			Name:    "password-file",
+			Aliases: []string{"pw-file"},
+			Usage:   "Read the password for connecting to the database from this file",
+			EnvVars: []string{
+				"DB_PASSWORD_FILE",
+				"DB_PW_FILE",
+			},
 			Destination: &dbConfig.PasswordFile,
 			Placeholder: "FILE",
 		},
 		&cli.StringSliceFlag{
-			Name:        "host",
-			Aliases:     []string{"hosts"},
-			Usage:       "The hostnames of the database nodes",
-			EnvVars:     []string{"DB_HOST", "DB_HOSTS", "DB_NODES"},
+			Name:    "host",
+			Aliases: []string{"hosts"},
+			Usage:   "The hostnames of the database nodes",
+			EnvVars: []string{
+				"DB_HOST",
+				"DB_HOSTS",
+				"DB_NODES",
+			},
 			Value:       cli.NewStringSlice("localhost"),
 			Destination: &dbConfig.Hosts,
 			Placeholder: "HOST",
@@ -107,7 +124,8 @@ var app = &cli.App{
 		} else if os.Getenv("MYTOKEN_NODES") != "" {
 			mytokenNodes = strings.Split(os.Getenv("MYTOKEN_NODES"), ",")
 		} else if !force {
-			return fmt.Errorf("No mytoken servers specified. Please provide mytoken servers or use '-f' to force database migration.")
+			return fmt.Errorf("No mytoken servers specified. Please provide mytoken servers or use '-f' to " +
+				"force database migration.")
 		}
 		if dbConfig.GetPassword() == "" {
 			dbConfig.Password = prompter.Password(fmt.Sprintf("Enter db password for user '%s'", dbConfig.User))

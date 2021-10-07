@@ -49,10 +49,12 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(nil, mt, ctx.IP(),
+	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
+		nil, mt, ctx.IP(),
 		utils.SplitIgnoreEmpty(req.Scope, " "),
 		utils.SplitIgnoreEmpty(req.Audience, " "),
-		api.CapabilityAT)
+		api.CapabilityAT,
+	)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
@@ -64,7 +66,10 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	return handleAccessTokenRefresh(mt, req, *ctxUtils.ClientMetaData(ctx), provider, usedRestriction).Send(ctx)
 }
 
-func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData api.ClientMetaData, provider *config.ProviderConf, usedRestriction *restrictions.Restriction) *serverModel.Response {
+func handleAccessTokenRefresh(
+	mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData api.ClientMetaData, provider *config.ProviderConf,
+	usedRestriction *restrictions.Restriction,
+) *serverModel.Response {
 	scopes := strings.Join(provider.Scopes, " ") // default if no restrictions apply
 	auds := ""                                   // default if no restrictions apply
 	if usedRestriction != nil {
@@ -116,25 +121,30 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 		Audiences: retAudiences,
 	}
 	var tokenUpdate *response.MytokenResponse
-	if err = db.Transact(func(tx *sqlx.Tx) error {
-		if err = at.Store(tx); err != nil {
-			return err
-		}
-		if err = eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.ATCreated, "Used grant_type mytoken"),
-			MTID:  mt.ID,
-		}, networkData); err != nil {
-			return err
-		}
-		if usedRestriction != nil {
-			if err = usedRestriction.UsedAT(tx, mt.ID); err != nil {
+	if err = db.Transact(
+		func(tx *sqlx.Tx) error {
+			if err = at.Store(tx); err != nil {
 				return err
 			}
-		}
-		tokenUpdate, err = rotation.RotateMytokenAfterATForResponse(
-			tx, req.Mytoken.JWT, mt, networkData, req.Mytoken.OriginalTokenType)
-		return err
-	}); err != nil {
+			if err = eventService.LogEvent(
+				tx, eventService.MTEvent{
+					Event: event.FromNumber(event.ATCreated, "Used grant_type mytoken"),
+					MTID:  mt.ID,
+				}, networkData,
+			); err != nil {
+				return err
+			}
+			if usedRestriction != nil {
+				if err = usedRestriction.UsedAT(tx, mt.ID); err != nil {
+					return err
+				}
+			}
+			tokenUpdate, err = rotation.RotateMytokenAfterATForResponse(
+				tx, req.Mytoken.JWT, mt, networkData, req.Mytoken.OriginalTokenType,
+			)
+			return err
+		},
+	); err != nil {
 		log.Errorf("%s", errorfmt.Full(err))
 		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}

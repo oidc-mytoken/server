@@ -70,9 +70,11 @@ func (c *Cluster) AddNodes() {
 // AddNode adds the passed host a a db node to the cluster
 func (c *Cluster) AddNode(host string) error {
 	log.WithField("host", host).Debug("Adding node to db cluster")
-	return c.addNode(&node{
-		host: host,
-	})
+	return c.addNode(
+		&node{
+			host: host,
+		},
+	)
 }
 
 func (c *Cluster) addNode(n *node) error {
