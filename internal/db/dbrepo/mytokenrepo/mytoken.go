@@ -119,7 +119,7 @@ func (ste *MytokenEntry) Store(tx *sqlx.Tx, comment string) error {
 			return err
 		}
 		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.MTEventCreated, comment),
+			Event: event.FromNumber(event.MTCreated, comment),
 			MTID:  ste.ID,
 		}, ste.networkData)
 	})

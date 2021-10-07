@@ -26,11 +26,15 @@ func ParseError(err error) (bool, error) {
 }
 
 // GetMTRootID returns the id of the root mytoken of the passed mytoken id
-func GetMTRootID(id mtid.MTID) (mtid.MTID, bool, error) {
+func GetMTRootID(tx *sqlx.Tx, id mtid.MTID) (mtid.MTID, bool, error) {
 	var rootID mtid.MTID
-	found, err := ParseError(db.Transact(func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Get(&rootID, `CALL MTokens_GetRoot(?)`, id))
-	}))
+	found, err := ParseError(
+		db.RunWithinTransaction(
+			tx, func(tx *sqlx.Tx) error {
+				return errors.WithStack(tx.Get(&rootID, `CALL MTokens_GetRoot(?)`, id))
+			},
+		),
+	)
 	return rootID, found, err
 }
 
@@ -175,18 +179,36 @@ func GetTokenUsagesOther(tx *sqlx.Tx, myID mtid.MTID, restrictionHash string) (u
 
 // IncreaseTokenUsageAT increases the usage count for obtaining ATs with a Mytoken and the given restriction
 func IncreaseTokenUsageAT(tx *sqlx.Tx, myID mtid.MTID, jsonRestriction []byte) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`CALL TokenUsages_IncrAT(?,?,?)`,
-			myID, jsonRestriction, hashUtils.SHA512Str(jsonRestriction))
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(
+				`CALL TokenUsages_IncrAT(?,?,?)`,
+				myID, jsonRestriction, hashUtils.SHA512Str(jsonRestriction),
+			)
+			return errors.WithStack(err)
+		},
+	)
 }
 
 // IncreaseTokenUsageOther increases the usage count for other usages with a Mytoken and the given restriction
 func IncreaseTokenUsageOther(tx *sqlx.Tx, myID mtid.MTID, jsonRestriction []byte) error {
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`CALL TokenUsages_IncrOther(?,?,?)`,
-			myID, jsonRestriction, hashUtils.SHA512Str(jsonRestriction))
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(
+				`CALL TokenUsages_IncrOther(?,?,?)`,
+				myID, jsonRestriction, hashUtils.SHA512Str(jsonRestriction),
+			)
+			return errors.WithStack(err)
+		},
+	)
+}
+
+// GetMTName returns the name of the mytoken
+func GetMTName(tx *sqlx.Tx, id mtid.MTID) (name db.NullString, err error) {
+	err = db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Get(&name, `CALL MTokens_GetName(?)`, id))
+		},
+	)
+	return
 }

@@ -40,7 +40,7 @@ func doTokenInfoHistory(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMet
 			return err
 		}
 		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.MTEventTokenInfoHistory, ""),
+			Event: event.FromNumber(event.TokenInfoHistory, ""),
 			MTID:  mt.ID,
 		}, *clientMetadata)
 	})

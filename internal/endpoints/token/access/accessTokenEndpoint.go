@@ -121,7 +121,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 			return err
 		}
 		if err = eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.MTEventATCreated, "Used grant_type mytoken"),
+			Event: event.FromNumber(event.ATCreated, "Used grant_type mytoken"),
 			MTID:  mt.ID,
 		}, networkData); err != nil {
 			return err
@@ -151,8 +151,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 	var cake []*fiber.Cookie
 	if tokenUpdate != nil {
 		rsp.TokenUpdate = tokenUpdate
-		cookie := cookies.MytokenCookie(tokenUpdate.Mytoken)
-		cake = []*fiber.Cookie{&cookie}
+		cake = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
 	}
 	return &serverModel.Response{
 		Status:   fiber.StatusOK,

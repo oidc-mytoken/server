@@ -205,7 +205,7 @@ func CreateTransferCode(myID mtid.MTID, jwt string, newMT bool, responseType mod
 			return err
 		}
 		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.MTEventTransferCodeCreated, fmt.Sprintf("token type: %s", responseType.String())),
+			Event: event.FromNumber(event.TransferCodeCreated, fmt.Sprintf("token type: %s", responseType.String())),
 			MTID:  myID,
 		}, clientMetaData)
 	})

@@ -30,9 +30,14 @@ func NewOIDCFlowRequest() *OIDCFlowRequest {
 			},
 		},
 		ResponseType: model.ResponseTypeToken,
-		redirectType: redirectTypeWeb,
+		redirectType: api.RedirectTypeWeb,
 		GrantType:    -1,
 	}
+}
+
+// SetRedirectType sets the (hidden) redirect type
+func (r *OIDCFlowRequest) SetRedirectType(redirect string) {
+	r.redirectType = redirect
 }
 
 // MarshalJSON implements the json.Marshaler interface

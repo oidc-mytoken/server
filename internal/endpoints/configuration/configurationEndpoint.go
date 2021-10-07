@@ -42,6 +42,7 @@ func Init() {
 	addTransferCodes(mytokenConfig)
 	addPollingCodes(mytokenConfig)
 	addTokenInfo(mytokenConfig)
+	addSSHGrant(mytokenConfig)
 }
 
 func basicConfiguration() *pkg.MytokenConfiguration {
@@ -109,5 +110,10 @@ func addTokenInfo(mytokenConfig *pkg.MytokenConfiguration) {
 		if config.Get().Features.TokenInfo.List.Enabled {
 			pkgModel.TokeninfoActionListMytokens.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
 		}
+	}
+}
+func addSSHGrant(mytokenconfig *pkg.MytokenConfiguration) {
+	if config.Get().Features.SSH.Enabled {
+		pkgModel.GrantTypeSSH.AddToSliceIfNotFound(&mytokenconfig.MytokenEndpointGrantTypesSupported)
 	}
 }

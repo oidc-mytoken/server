@@ -34,11 +34,15 @@ func RequireGrantType(want, got model2.GrantType) *model.Response {
 // model.Response is returned.
 func RequireMytoken(reqToken *universalmytoken.UniversalMytoken, ctx *fiber.Ctx) (*mytoken.Mytoken, *model.Response) {
 	if reqToken.JWT == "" {
-		t := ctxUtils.GetMytoken(ctx)
+		t, found := ctxUtils.GetMytoken(ctx)
 		if t == nil {
+			errDesc := "no mytoken found in request"
+			if found {
+				errDesc = "token not valid"
+			}
 			return nil, &model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: model2.InvalidTokenError("no mytoken found in request"),
+				Response: model2.InvalidTokenError(errDesc),
 			}
 		}
 		*reqToken = *t

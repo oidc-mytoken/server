@@ -1,19 +1,28 @@
 <div class="pb-3 row">
     <h4 class="col">Restrictions</h4>
-    <input class="col" id="restr-editor-mode" type="checkbox" checked data-size="sm" data-toggle="toggle" data-onstyle="success" data-offstyle="info" data-on="Easy Editor" data-off="JSON Editor">
+    <input class="col" id="restr-editor-mode" type="checkbox" checked data-size="sm" data-toggle="toggle"
+           data-onstyle="success" data-offstyle="info" data-on="Easy Editor" data-off="JSON Editor">
 </div>
 
 <div class="d-flex justify-content-between">
-    <i id="r-icon-time" class="fas fa-clock fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
-    <i id="r-icon-ip" class="fas fa-network-wired fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
-    <i id="r-icon-scope" class="fas fa-shield-alt fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
-    <i id="r-icon-aud" class="fas fa-server fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
-    <i id="r-icon-usages" class="fas fa-less-than-equal fa-2x" data-toggle="tooltip" data-placement="bottom" title="" data-original-title=""></i>
+    <i id="r-icon-time" class="fas fa-clock fa-2x" data-toggle="tooltip" data-placement="bottom" title=""
+       data-original-title=""></i>
+    <i id="r-icon-ip" class="fas fa-network-wired fa-2x" data-toggle="tooltip" data-placement="bottom" title=""
+       data-original-title=""></i>
+    <i id="r-icon-scope" class="fas fa-shield-alt fa-2x" data-toggle="tooltip" data-placement="bottom" title=""
+       data-original-title=""></i>
+    <i id="r-icon-aud" class="fas fa-server fa-2x" data-toggle="tooltip" data-placement="bottom" title=""
+       data-original-title=""></i>
+    <i id="r-icon-usages" class="fas fa-less-than-equal fa-2x" data-toggle="tooltip" data-placement="bottom" title=""
+       data-original-title=""></i>
 </div>
 
 {{>restrictions-gui-editor}}
 
 <div id="restr-json-editor" class="justify-content-center d-none">
-    <textarea class="mt-5 form-control" id="restrictionsArea" autocomplete="off" cols=50 rows=20 onkeyup="updateRestrFromJSONEditor()"></textarea>
+    <textarea class="mt-5 form-control" id="restrictionsArea" autocomplete="off" cols=50 rows=20
+              onkeyup="updateRestrFromJSONEditor()"></textarea>
 </div>
-<script>if (typeof restrictions==='undefined') {restrictions = {{&restrictions.Text}};}</script>
+<script>if (typeof restrictions === 'undefined') {
+    restrictions = {{&restrictions.Text}}?{{&restrictions.Text}}: [{}];
+}</script>

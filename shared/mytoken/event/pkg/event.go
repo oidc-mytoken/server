@@ -76,29 +76,33 @@ var AllEvents = [...]string{
 	"transfer_code_created",
 	"transfer_code_used",
 	"token_rotated",
+	"settings_grant_enabled",
+	"settings_grant_disabled",
+	"settings_grants_listed",
+	"ssh_keys_listed",
+	"ssh_key_added",
+	"ssh_key_removed",
 }
 
 // Events for Mytokens
 const (
-	MTEventUnknown = iota
-	MTEventCreated
-	MTEventATCreated
-	MTEventMTCreated
-	MTEventTokenInfoIntrospect
-	MTEventTokenInfoHistory
-	MTEventTokenInfoTree
-	MTEventTokenInfoListMTs
-	MTEventMngGrantATEnabled
-	MTEventMngGrantATDisabled
-	MTEventMngGrantJWTEnabled
-	MTEventMngGrantJWTDisabled
-	MTEventMngGrantLinked
-	MTEventMngGrantUnlinked
-	MTEventMngTracingEnabled
-	MTEventMngTracingDisabled
-	MTEventInheritedRT
-	MTEventTransferCodeCreated
-	MTEventTransferCodeUsed
-	MTEventTokenRotated
+	UnknownEvent = iota
+	MTCreated
+	ATCreated
+	SubtokenCreated
+	TokenInfoIntrospect
+	TokenInfoHistory
+	TokenInfoTree
+	TokenInfoListMTs
+	InheritedRT
+	TransferCodeCreated
+	TransferCodeUsed
+	MTRotated
+	GrantEnabled
+	GrantDisabled
+	GrantsListed
+	SSHKeyListed
+	SSHKeyAdded
+	SSHKeyRemoved
 	maxEvent
 )

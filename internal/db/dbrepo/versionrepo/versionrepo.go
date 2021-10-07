@@ -92,7 +92,14 @@ func (state DBVersionState) dBHasVersion(v string, cmds dbmigrate.Commands) bool
 // GetVersionState returns the DBVersionState
 func GetVersionState(tx *sqlx.Tx) (state DBVersionState, err error) {
 	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Select(&state, `CALL Version_Get()`))
+		err = errors.WithStack(tx.Select(&state, `CALL Version_Get()`))
+		if err == nil {
+			return nil
+		}
+		if !strings.HasSuffix(err.Error(), "Version_Get does not exist") {
+			return err
+		}
+		return errors.WithStack(tx.Select(&state, `SELECT version, bef, aft FROM version`))
 	})
 	if err != nil && strings.HasPrefix(errorfmt.Error(err), "Error 1146: Table") { // Ignore table does not exist error
 		err = nil

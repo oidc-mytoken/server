@@ -7,6 +7,7 @@ require (
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/coreos/go-oidc/v3 v3.1.0
 	github.com/fatih/structs v1.1.0
+	github.com/gliderlabs/ssh v0.3.3
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gofiber/fiber/v2 v2.19.0
@@ -17,14 +18,14 @@ require (
 	github.com/jinzhu/copier v0.3.2
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/lestrrat-go/jwx v1.2.6
-	github.com/oidc-mytoken/api v0.3.1-0.20210921092134-2599cdd1db99
+	github.com/oidc-mytoken/api v0.3.1-0.20211007142508-81cf671ea83c
 	github.com/oidc-mytoken/lib v0.2.1-0.20210730094903-f59c9a8f84e0
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/valyala/fasthttp v1.30.0
 	github.com/zachmann/cli/v2 v2.3.1-0.20210512144416-96dd678d93c7
-	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
+	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
 	golang.org/x/mod v0.5.0
 	golang.org/x/oauth2 v0.0.0-20210125201302-af13f521f196
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect

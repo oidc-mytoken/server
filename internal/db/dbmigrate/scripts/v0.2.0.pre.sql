@@ -481,39 +481,61 @@ VALUES ('MT_created');
 INSERT IGNORE INTO Events (event)
 VALUES ('tokeninfo_introspect');
 INSERT IGNORE INTO Events (event)
-VALUES ('tokeninfo_history');
+    VALUES ('tokeninfo_history');
 INSERT IGNORE INTO Events (event)
-VALUES ('tokeninfo_tree');
+    VALUES ('tokeninfo_tree');
 INSERT IGNORE INTO Events (event)
-VALUES ('tokeninfo_list_mytokens');
+    VALUES ('tokeninfo_list_mytokens');
 INSERT IGNORE INTO Events (event)
-VALUES ('mng_enabled_AT_grant');
+    VALUES ('mng_enabled_AT_grant');
 INSERT IGNORE INTO Events (event)
-VALUES ('mng_disabled_AT_grant');
+    VALUES ('mng_disabled_AT_grant');
 INSERT IGNORE INTO Events (event)
-VALUES ('mng_enabled_JWT_grant');
+    VALUES ('mng_enabled_JWT_grant');
 INSERT IGNORE INTO Events (event)
-VALUES ('mng_disabled_JWT_grant');
+    VALUES ('mng_disabled_JWT_grant');
 INSERT IGNORE INTO Events (event)
-VALUES ('mng_linked_grant');
+    VALUES ('mng_linked_grant');
 INSERT IGNORE INTO Events (event)
-VALUES ('mng_unlinked_grant');
+    VALUES ('mng_unlinked_grant');
 INSERT IGNORE INTO Events (event)
-VALUES ('mng_enabled_tracing');
+    VALUES ('mng_enabled_tracing');
 INSERT IGNORE INTO Events (event)
-VALUES ('mng_disabled_tracing');
+    VALUES ('mng_disabled_tracing');
 INSERT IGNORE INTO Events (event)
-VALUES ('inherited_RT');
+    VALUES ('inherited_RT');
 INSERT IGNORE INTO Events (event)
-VALUES ('transfer_code_created');
+    VALUES ('transfer_code_created');
 INSERT IGNORE INTO Events (event)
-VALUES ('transfer_code_used');
+    VALUES ('transfer_code_used');
 
 INSERT IGNORE INTO Grants (grant_type)
-VALUES ('mytoken');
+    VALUES ('mytoken');
 INSERT IGNORE INTO Grants (grant_type)
-VALUES ('oidc_flow');
+    VALUES ('oidc_flow');
 INSERT IGNORE INTO Grants (grant_type)
-VALUES ('polling_code');
+    VALUES ('polling_code');
 INSERT IGNORE INTO Grants (grant_type)
-VALUES ('transfer_code');
+    VALUES ('transfer_code');
+
+
+DELIMITER ;;
+CREATE OR REPLACE PROCEDURE Version_Get()
+BEGIN
+    SELECT version, bef, aft FROM version;
+END;;
+
+CREATE OR REPLACE PROCEDURE Version_SetAfter(IN VERSION TEXT)
+BEGIN
+    INSERT INTO version (version, aft)
+        VALUES (VERSION, CURRENT_TIMESTAMP())
+    ON DUPLICATE KEY UPDATE aft=CURRENT_TIMESTAMP();
+END;;
+
+CREATE OR REPLACE PROCEDURE Version_SetBefore(IN VERSION TEXT)
+BEGIN
+    INSERT INTO version (version, bef)
+        VALUES (VERSION, CURRENT_TIMESTAMP())
+    ON DUPLICATE KEY UPDATE bef=CURRENT_TIMESTAMP();
+END;;
+DELIMITER ;

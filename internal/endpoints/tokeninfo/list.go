@@ -41,7 +41,7 @@ func doTokenInfoList(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetada
 			return err
 		}
 		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.MTEventTokenInfoListMTs, ""),
+			Event: event.FromNumber(event.TokenInfoListMTs, ""),
 			MTID:  mt.ID,
 		}, *clientMetadata)
 	})

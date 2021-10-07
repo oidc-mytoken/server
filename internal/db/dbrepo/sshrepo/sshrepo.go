@@ -1,0 +1,104 @@
+package sshrepo
+
+import (
+	"database/sql"
+	"time"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/api/v0"
+	"github.com/pkg/errors"
+
+	"github.com/oidc-mytoken/server/internal/db"
+	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
+)
+
+// GetSSHInfo returns the SSHInfo stored in the database for the passed key and user hashes.
+func GetSSHInfo(tx *sqlx.Tx, keyHash, userHash string) (info SSHInfo, err error) {
+	err = db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Get(&info, `CALL SSHInfo_Get(?,?)`, keyHash, userHash))
+		},
+	)
+	return
+}
+
+// GetAllSSHInfo returns the SSHInfo for all ssh keys for a given user
+func GetAllSSHInfo(tx *sqlx.Tx, myid mtid.MTID) (info []api.SSHKeyInfo, err error) {
+	dbInfo := []SSHInfo{}
+	err = db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Select(&dbInfo, `CALL SSHInfo_GetAll(?)`, myid))
+		},
+	)
+	for _, i := range dbInfo {
+		apiI := api.SSHKeyInfo{
+			Name:       i.Name.String,
+			SSHKeyHash: i.KeyHash,
+			Created:    i.Created.Unix(),
+		}
+		if i.LastUsed.Valid {
+			apiI.LastUsed = utils.NewInt64(i.LastUsed.Time.Unix())
+		}
+		info = append(info, apiI)
+	}
+	return
+}
+
+type SSHInfo struct {
+	KeyID       string        `db:"key_id"`
+	Name        db.NullString `db:"name"`
+	KeyHash     string        `db:"ssh_key_hash"`
+	UserHash    string        `db:"ssh_user_hash"`
+	Created     time.Time     `db:"created"`
+	LastUsed    sql.NullTime  `db:"last_used"`
+	Enabled     db.BitBool    `db:"enabled"`
+	EncryptedMT string        `db:"MT_crypt"`
+}
+
+func (i SSHInfo) Decrypt(key string) (*mytoken.Mytoken, error) {
+	decryptedMT, err := cryptUtils.AES256Decrypt(i.EncryptedMT, key)
+	if err != nil {
+		return nil, err
+	}
+	return mytoken.ParseJWT(decryptedMT)
+}
+
+func Delete(tx *sqlx.Tx, myid mtid.MTID, keyHash string) error {
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL SSHInfo_Delete(?,?)`, myid, keyHash)
+			return errors.WithStack(err)
+		},
+	)
+}
+
+type SSHInfoIn struct {
+	Name        db.NullString `db:"name"`
+	KeyHash     string        `db:"ssh_key_hash"`
+	UserHash    string        `db:"ssh_user_hash"`
+	EncryptedMT string        `db:"MT_crypt"`
+}
+
+func Insert(tx *sqlx.Tx, myid mtid.MTID, data SSHInfoIn) error {
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(
+				`CALL SSHInfo_Insert(?,?,?,?,?)`,
+				myid, data.KeyHash, data.UserHash, data.Name, data.EncryptedMT,
+			)
+			return errors.WithStack(err)
+		},
+	)
+}
+
+func UsedKey(tx *sqlx.Tx, keyHash, userHash string) error {
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL SSHInfo_UsedKey(?,?)`, keyHash, userHash)
+			return errors.WithStack(err)
+		},
+	)
+}

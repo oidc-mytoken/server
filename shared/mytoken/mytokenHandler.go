@@ -51,28 +51,32 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 	log.Trace("Parsed request")
 	var errorRes *model.Response = nil
 	var tokenStr string
-	if err := db.Transact(func(tx *sqlx.Tx) error {
-		status, err := transfercoderepo.CheckTransferCode(tx, req.TransferCode)
-		if err != nil {
+	if err := db.Transact(
+		func(tx *sqlx.Tx) error {
+			status, err := transfercoderepo.CheckTransferCode(tx, req.TransferCode)
+			if err != nil {
+				return err
+			}
+			if !status.Found {
+				errorRes = &model.Response{
+					Status:   fiber.StatusUnauthorized,
+					Response: api.ErrorBadTransferCode,
+				}
+				return errors.New(errResPlaceholder)
+			}
+			if status.Expired {
+				errorRes = &model.Response{
+					Status:   fiber.StatusUnauthorized,
+					Response: api.ErrorTransferCodeExpired,
+				}
+				return errors.New(errResPlaceholder)
+			}
+			tokenStr, err = transfercoderepo.PopTokenForTransferCode(
+				tx, req.TransferCode, *ctxUtils.ClientMetaData(ctx),
+			)
 			return err
-		}
-		if !status.Found {
-			errorRes = &model.Response{
-				Status:   fiber.StatusUnauthorized,
-				Response: api.ErrorBadTransferCode,
-			}
-			return errors.New(errResPlaceholder)
-		}
-		if status.Expired {
-			errorRes = &model.Response{
-				Status:   fiber.StatusUnauthorized,
-				Response: api.ErrorTransferCodeExpired,
-			}
-			return errors.New(errResPlaceholder)
-		}
-		tokenStr, err = transfercoderepo.PopTokenForTransferCode(tx, req.TransferCode, *ctxUtils.ClientMetaData(ctx))
-		return err
-	}); err != nil {
+		},
+	); err != nil {
 		if errorRes != nil {
 			return errorRes
 		}
@@ -115,8 +119,11 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	}
 	if len(req.Capabilities) == 0 {
 		return &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: api.Error{Error: api.ErrorStrInvalidRequest, ErrorDescription: "capabilities cannot be empty"},
+			Status: fiber.StatusBadRequest,
+			Response: api.Error{
+				Error:            api.ErrorStrInvalidRequest,
+				ErrorDescription: "capabilities cannot be empty",
+			},
 		}
 	}
 	req.Restrictions.ReplaceThisIp(ctx.IP())
@@ -139,31 +146,47 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	return handleMytokenFromMytoken(mt, req, ctxUtils.ClientMetaData(ctx), usedRestriction)
 }
 
-func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData *api.ClientMetaData, usedRestriction *restrictions.Restriction) *model.Response {
+func handleMytokenFromMytoken(
+	parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData *api.ClientMetaData,
+	usedRestriction *restrictions.Restriction,
+) *model.Response {
 	ste, errorResponse := createMytokenEntry(parent, req, *networkData)
 	if errorResponse != nil {
 		return errorResponse
 	}
 	var tokenUpdate *response.MytokenResponse
-	if err := db.Transact(func(tx *sqlx.Tx) (err error) {
-		if usedRestriction != nil {
-			if err = usedRestriction.UsedOther(tx, parent.ID); err != nil {
+	if err := db.Transact(
+		func(tx *sqlx.Tx) (err error) {
+			if usedRestriction != nil {
+				if err = usedRestriction.UsedOther(tx, parent.ID); err != nil {
+					return
+				}
+			}
+			tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(
+				tx, req.Mytoken.JWT, parent, *networkData, req.Mytoken.OriginalTokenType,
+			)
+			if err != nil {
 				return
 			}
-		}
-		tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(
-			tx, req.Mytoken.JWT, parent, *networkData, req.Mytoken.OriginalTokenType)
-		if err != nil {
-			return
-		}
-		if err = ste.Store(tx, "Used grant_type mytoken"); err != nil {
-			return
-		}
-		return eventService.LogEvents(tx, []eventService.MTEvent{
-			{Event: event.FromNumber(event.MTEventInheritedRT, "Got RT from parent"), MTID: ste.ID},
-			{Event: event.FromNumber(event.MTEventMTCreated, strings.TrimSpace(fmt.Sprintf("Created MT %s", req.Name))), MTID: parent.ID},
-		}, *networkData)
-	}); err != nil {
+			if err = ste.Store(tx, "Used grant_type mytoken"); err != nil {
+				return
+			}
+			return eventService.LogEvents(
+				tx, []eventService.MTEvent{
+					{
+						Event: event.FromNumber(event.InheritedRT, "Got RT from parent"),
+						MTID:  ste.ID,
+					},
+					{
+						Event: event.FromNumber(
+							event.SubtokenCreated, strings.TrimSpace(fmt.Sprintf("Created MT %s", req.Name)),
+						),
+						MTID: parent.ID,
+					},
+				}, *networkData,
+			)
+		},
+	); err != nil {
 		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
@@ -176,8 +199,7 @@ func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFrom
 	var cake []*fiber.Cookie
 	if tokenUpdate != nil {
 		res.TokenUpdate = tokenUpdate
-		cookie := cookies.MytokenCookie(tokenUpdate.Mytoken)
-		cake = []*fiber.Cookie{&cookie}
+		cake = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
 	}
 	return &model.Response{
 		Status:   fiber.StatusOK,
@@ -186,7 +208,9 @@ func handleMytokenFromMytoken(parent *mytoken.Mytoken, req *response.MytokenFrom
 	}
 }
 
-func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData api.ClientMetaData) (*mytokenrepo.MytokenEntry, *model.Response) {
+func createMytokenEntry(
+	parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData api.ClientMetaData,
+) (*mytokenrepo.MytokenEntry, *model.Response) {
 	rtID, dbErr := refreshtokenrepo.GetRTID(nil, parent.ID)
 	rtFound, err := dbhelper.ParseError(dbErr)
 	if err != nil {
@@ -199,7 +223,7 @@ func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytoke
 			Response: pkgModel.InvalidTokenError(""),
 		}
 	}
-	rootID, rootFound, dbErr := dbhelper.GetMTRootID(parent.ID)
+	rootID, rootFound, dbErr := dbhelper.GetMTRootID(nil, parent.ID)
 	if dbErr != nil {
 		log.WithError(dbErr).Error()
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
@@ -243,7 +267,8 @@ func createMytokenEntry(parent *mytoken.Mytoken, req *response.MytokenFromMytoke
 	}
 	ste := mytokenrepo.NewMytokenEntry(
 		mytoken.NewMytoken(parent.OIDCSubject, parent.OIDCIssuer, r, c, sc, req.Rotation),
-		req.Name, networkData)
+		req.Name, networkData,
+	)
 	encryptionKey, _, err := encryptionkeyrepo.GetEncryptionKey(nil, parent.ID, req.Mytoken.JWT)
 	if err != nil {
 		log.WithError(err).Error()
@@ -267,33 +292,35 @@ func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, jwt string, recursive bool, issuer
 			Response: api.ErrorUnknownIssuer,
 		}
 	}
-	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		rtID, err := refreshtokenrepo.GetRTID(tx, id)
-		if err != nil {
-			_, err = dbhelper.ParseError(err) // sets err to nil if token was not found;
-			// this is no error and we are done, since the token is already revoked
-			return err
-		}
-		rt, _, err := cryptstore.GetRefreshToken(tx, id, jwt)
-		if err != nil {
-			return err
-		}
-		if err = dbhelper.RevokeMT(tx, id, recursive); err != nil {
-			return err
-		}
-		count, err := refreshtokenrepo.CountRTOccurrences(tx, rtID)
-		if err != nil {
-			return err
-		}
-		if count > 0 {
-			return nil
-		}
-		if e := revoke.RefreshToken(provider, rt); e != nil {
-			apiError := e.Response.(api.Error)
-			return fmt.Errorf("%s: %s", apiError.Error, apiError.ErrorDescription)
-		}
-		return cryptstore.DeleteCrypted(tx, rtID)
-	})
+	err := db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			rtID, err := refreshtokenrepo.GetRTID(tx, id)
+			if err != nil {
+				_, err = dbhelper.ParseError(err) // sets err to nil if token was not found;
+				// this is no error and we are done, since the token is already revoked
+				return err
+			}
+			rt, _, err := cryptstore.GetRefreshToken(tx, id, jwt)
+			if err != nil {
+				return err
+			}
+			if err = dbhelper.RevokeMT(tx, id, recursive); err != nil {
+				return err
+			}
+			count, err := refreshtokenrepo.CountRTOccurrences(tx, rtID)
+			if err != nil {
+				return err
+			}
+			if count > 0 {
+				return nil
+			}
+			if e := revoke.RefreshToken(provider, rt); e != nil {
+				apiError := e.Response.(api.Error)
+				return fmt.Errorf("%s: %s", apiError.Error, apiError.ErrorDescription)
+			}
+			return cryptstore.DeleteCrypted(tx, rtID)
+		},
+	)
 	if err == nil {
 		return nil
 	}

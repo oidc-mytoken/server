@@ -18,7 +18,7 @@ func init() {
 				TokenInfoEndpoint:     utils.CombineURLPath(apiPath.V0, "/tokeninfo"),
 				RevocationEndpoint:    utils.CombineURLPath(apiPath.V0, "/token/revoke"),
 				TokenTransferEndpoint: utils.CombineURLPath(apiPath.V0, "/token/transfer"),
-				UserSettingEndpoint:   utils.CombineURLPath(apiPath.V0, "/user"),
+				UserSettingEndpoint:   utils.CombineURLPath(apiPath.V0, "/settings"),
 			},
 		},
 		other: GeneralPaths{

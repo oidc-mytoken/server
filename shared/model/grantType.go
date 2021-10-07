@@ -20,6 +20,7 @@ const ( // assert that these are in the same order as api.AllGrantTypes
 	GrantTypeOIDCFlow
 	GrantTypePollingCode
 	GrantTypeTransferCode
+	GrantTypeSSH
 	maxGrantType
 )
 

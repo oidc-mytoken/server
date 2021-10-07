@@ -6,9 +6,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	fiberUtils "github.com/gofiber/fiber/v2/utils"
 	"github.com/oidc-mytoken/api/v0"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
-	log "github.com/sirupsen/logrus"
 )
 
 func handleError(ctx *fiber.Ctx, err error) error {

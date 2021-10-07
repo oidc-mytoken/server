@@ -1,7 +1,7 @@
 package geoip
 
 import (
-	ip2location "github.com/ip2location/ip2location-go"
+	"github.com/ip2location/ip2location-go"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"

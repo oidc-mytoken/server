@@ -1,0 +1,101 @@
+package settings
+
+import (
+	"fmt"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/api/v0"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/oidc-mytoken/server/internal/db"
+	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
+	serverModel "github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/utils/auth"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
+	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
+	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
+	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
+	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
+)
+
+// HandleSettings is a helper wrapper function that handles various settings request with the help of a callback
+func HandleSettings(
+	ctx *fiber.Ctx,
+	reqMytoken *universalmytoken.UniversalMytoken,
+	logEvent *event.Event,
+	okStatus int,
+	callback func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response),
+) error {
+	mt, errRes := auth.RequireValidMytoken(nil, reqMytoken, ctx)
+	if errRes != nil {
+		return errRes.Send(ctx)
+	}
+	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
+		nil, mt, ctx.IP(), nil, nil, api.CapabilitySettings,
+	)
+	if errRes != nil {
+		return errRes.Send(ctx)
+	}
+	var tokenUpdate *my.MytokenResponse
+	var rsp my.TokenUpdatableResponse
+	if err := db.Transact(
+		func(tx *sqlx.Tx) (err error) {
+			rsp, errRes = callback(tx, mt)
+			if errRes != nil {
+				return fmt.Errorf("dummy")
+			}
+			clientMetaData := ctxUtils.ClientMetaData(ctx)
+			if err = eventService.LogEvent(
+				tx, eventService.MTEvent{
+					Event: logEvent,
+					MTID:  mt.ID,
+				}, *clientMetaData,
+			); err != nil {
+				return
+			}
+			if usedRestriction != nil {
+				if err = usedRestriction.UsedOther(tx, mt.ID); err != nil {
+					return
+				}
+			}
+			tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(
+				tx, reqMytoken.JWT, mt, *clientMetaData, reqMytoken.OriginalTokenType,
+			)
+			return
+		},
+	); err != nil {
+		if errRes != nil {
+			return errRes.Send(ctx)
+		}
+		log.Errorf("%s", errorfmt.Full(err))
+		return serverModel.ErrorToInternalServerErrorResponse(err).Send(ctx)
+	}
+
+	var cake []*fiber.Cookie
+	if tokenUpdate != nil {
+		if rsp == nil {
+			rsp = &onlyTokenUpdateRes{}
+		}
+		rsp.SetTokenUpdate(tokenUpdate)
+		cake = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
+		okStatus = fiber.StatusOK
+	}
+	return serverModel.Response{
+		Status:   okStatus,
+		Response: rsp,
+		Cookies:  cake,
+	}.Send(ctx)
+}
+
+type onlyTokenUpdateRes struct {
+	TokenUpdate *my.MytokenResponse `json:"token_update,omitempty"`
+}
+
+// SetTokenUpdate implements the pkg.TokenUpdatableResponse interface
+func (res *onlyTokenUpdateRes) SetTokenUpdate(tokenUpdate *my.MytokenResponse) {
+	res.TokenUpdate = tokenUpdate
+}

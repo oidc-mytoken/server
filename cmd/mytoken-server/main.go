@@ -5,8 +5,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/versionrepo"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/versionrepo"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"

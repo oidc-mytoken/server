@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"github.com/oidc-mytoken/api/v0"
+
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 

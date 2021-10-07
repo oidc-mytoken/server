@@ -7,15 +7,10 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
-
-	"github.com/oidc-mytoken/server/internal/oidc/pkce"
-	"github.com/oidc-mytoken/server/internal/utils/cookies"
-	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
-
-	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
@@ -27,7 +22,10 @@ import (
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/issuer"
+	"github.com/oidc-mytoken/server/internal/oidc/pkce"
 	"github.com/oidc-mytoken/server/internal/server/routes"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/shared/context"
 	pkgModel "github.com/oidc-mytoken/server/shared/model"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
@@ -49,7 +47,11 @@ func Init() {
 }
 
 // GetAuthorizationURL creates a authorization url
-func GetAuthorizationURL(provider *config.ProviderConf, oState, pkceChallenge string, restrictions restrictions.Restrictions) string {
+func GetAuthorizationURL(
+	provider *config.ProviderConf,
+	oState, pkceChallenge string,
+	restrictions restrictions.Restrictions,
+) string {
 	log.Debug("Generating authorization url")
 	scopes := restrictions.GetScopes()
 	if len(scopes) <= 0 {
@@ -72,13 +74,16 @@ func GetAuthorizationURL(provider *config.ProviderConf, oState, pkceChallenge st
 	} else if !utils.StringInSlice(oidc.ScopeOfflineAccess, oauth2Config.Scopes) {
 		oauth2Config.Scopes = append(oauth2Config.Scopes, oidc.ScopeOfflineAccess)
 	}
-	if !utils.StringInSlice(oidc.ScopeOpenID, oauth2Config.Scopes) { // if user deselected openid scope in restriction, we still need it
+	// Even if user deselected openid scope in restriction, we still need it
+	if !utils.StringInSlice(oidc.ScopeOpenID, oauth2Config.Scopes) {
 		oauth2Config.Scopes = append(oauth2Config.Scopes, oidc.ScopeOpenID)
 	}
 	auds := restrictions.GetAudiences()
 	if len(auds) > 0 {
-		additionalParams = append(additionalParams,
-			oauth2.SetAuthURLParam(provider.AudienceRequestParameter, strings.Join(auds, " ")))
+		additionalParams = append(
+			additionalParams,
+			oauth2.SetAuthURLParam(provider.AudienceRequestParameter, strings.Join(auds, " ")),
+		)
 	}
 
 	return oauth2Config.AuthCodeURL(oState, additionalParams...)
@@ -169,7 +174,9 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 		Endpoint:     provider.Endpoints.OAuth2(),
 		RedirectURL:  redirectURL,
 	}
-	token, err := oauth2Config.Exchange(context.Get(), code, oauth2.SetAuthURLParam("code_verifier", authInfo.CodeVerifier))
+	token, err := oauth2Config.Exchange(
+		context.Get(), code, oauth2.SetAuthURLParam("code_verifier", authInfo.CodeVerifier),
+	)
 	if err != nil {
 		var e *oauth2.RetrieveError
 		if errors.As(err, &e) {
@@ -209,33 +216,35 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	var ste *mytokenrepo.MytokenEntry
-	if err = db.Transact(func(tx *sqlx.Tx) error {
-		ste, err = createMytokenEntry(tx, authInfo, token, oidcSub, networkData)
-		if err != nil {
-			return err
-		}
-		at := accesstokenrepo.AccessToken{
-			Token:     token.AccessToken,
-			IP:        networkData.IP,
-			Comment:   "Initial Access Token from authorization code flow",
-			Mytoken:   ste.Token,
-			Scopes:    scopes,
-			Audiences: audiences,
-		}
-		if err = at.Store(tx); err != nil {
-			return err
-		}
-		if authInfo.PollingCode {
-			jwt, err := ste.Token.ToJWT()
+	if err = db.Transact(
+		func(tx *sqlx.Tx) error {
+			ste, err = createMytokenEntry(tx, authInfo, token, oidcSub, networkData)
 			if err != nil {
 				return err
 			}
-			if err = transfercoderepo.LinkPollingCodeToMT(tx, oState.PollingCode(), jwt, ste.ID); err != nil {
+			at := accesstokenrepo.AccessToken{
+				Token:     token.AccessToken,
+				IP:        networkData.IP,
+				Comment:   "Initial Access Token from authorization code flow",
+				Mytoken:   ste.Token,
+				Scopes:    scopes,
+				Audiences: audiences,
+			}
+			if err = at.Store(tx); err != nil {
 				return err
 			}
-		}
-		return authcodeinforepo.DeleteAuthFlowInfoByState(tx, oState)
-	}); err != nil {
+			if authInfo.PollingCode {
+				jwt, err := ste.Token.ToJWT()
+				if err != nil {
+					return err
+				}
+				if err = transfercoderepo.LinkPollingCodeToMT(tx, oState.PollingCode(), jwt, ste.ID); err != nil {
+					return err
+				}
+			}
+			return authcodeinforepo.DeleteAuthFlowInfoByState(tx, oState)
+		},
+	); err != nil {
 		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
@@ -250,7 +259,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	var cookie fiber.Cookie
+	var cookie *fiber.Cookie
 	if authInfo.ResponseType == pkgModel.ResponseTypeTransferCode {
 		cookie = cookies.TransferCodeCookie(res.TransferCode, int(res.ExpiresIn))
 	} else {
@@ -259,11 +268,17 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 	return &model.Response{
 		Status:   fiber.StatusSeeOther,
 		Response: "/home",
-		Cookies:  []*fiber.Cookie{&cookie},
+		Cookies:  []*fiber.Cookie{cookie},
 	}
 }
 
-func createMytokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut, token *oauth2.Token, oidcSub string, networkData api.ClientMetaData) (*mytokenrepo.MytokenEntry, error) {
+func createMytokenEntry(
+	tx *sqlx.Tx,
+	authFlowInfo *authcodeinforepo.AuthFlowInfoOut,
+	token *oauth2.Token,
+	oidcSub string,
+	networkData api.ClientMetaData,
+) (*mytokenrepo.MytokenEntry, error) {
 	ste := mytokenrepo.NewMytokenEntry(
 		mytoken.NewMytoken(
 			oidcSub,
@@ -271,8 +286,10 @@ func createMytokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfo
 			authFlowInfo.Restrictions,
 			authFlowInfo.Capabilities,
 			authFlowInfo.SubtokenCapabilities,
-			authFlowInfo.Rotation),
-		authFlowInfo.Name, networkData)
+			authFlowInfo.Rotation,
+		),
+		authFlowInfo.Name, networkData,
+	)
 	if err := ste.InitRefreshToken(token.RefreshToken); err != nil {
 		return nil, err
 	}

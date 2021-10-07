@@ -23,6 +23,7 @@ type TransferCodeStatus struct {
 	ResponseType    model.ResponseType `db:"response_type"`
 	ConsentDeclined db.BitBool         `db:"consent_declined"`
 	MaxTokenLen     *int               `db:"max_token_len"`
+	SSHKeyHash      db.NullString      `db:"ssh_key_hash"`
 }
 
 // CheckTransferCode checks the passed polling code in the database
@@ -58,7 +59,7 @@ func PopTokenForTransferCode(tx *sqlx.Tx, pollingCode string, clientMetadata api
 			return err
 		}
 		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.MTEventTransferCodeUsed, ""),
+			Event: event.FromNumber(event.TransferCodeUsed, ""),
 			MTID:  pt.mtID,
 		}, clientMetadata)
 	})
@@ -74,13 +75,26 @@ func LinkPollingCodeToMT(tx *sqlx.Tx, pollingCode, jwt string, mID mtid.MTID) er
 	return pc.Update(tx)
 }
 
+// LinkPollingCodeToSSHKey links a pollingCode to an ssh public key
+func LinkPollingCodeToSSHKey(tx *sqlx.Tx, pollingCode, sshKeyHash string) error {
+	pc := createProxyToken(pollingCode)
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL TransferCodeAttributes_UpdateSSHKey(?,?)`, pc.ID(), sshKeyHash)
+			return errors.WithStack(err)
+		},
+	)
+}
+
 // DeleteTransferCodeByState deletes a polling code
 func DeleteTransferCodeByState(tx *sqlx.Tx, state *state.State) error {
 	pc := createProxyToken(state.PollingCode())
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(`CALL ProxyTokens_Delete(?)`, pc.ID())
-		return errors.WithStack(err)
-	})
+	return db.RunWithinTransaction(
+		tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL ProxyTokens_Delete(?)`, pc.ID())
+			return errors.WithStack(err)
+		},
+	)
 }
 
 // DeclineConsentByState updates the polling code attribute after the consent has been declined

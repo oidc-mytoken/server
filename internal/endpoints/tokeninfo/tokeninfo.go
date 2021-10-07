@@ -46,8 +46,7 @@ func HandleTokenInfo(ctx *fiber.Ctx) error {
 func makeTokenInfoResponse(rsp interface{}, tokenUpdate *response.MytokenResponse) model.Response {
 	var cake []*fiber.Cookie
 	if tokenUpdate != nil {
-		cookie := cookies.MytokenCookie(tokenUpdate.Mytoken)
-		cake = []*fiber.Cookie{&cookie}
+		cake = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
 	}
 	return model.Response{
 		Status:   fiber.StatusOK,

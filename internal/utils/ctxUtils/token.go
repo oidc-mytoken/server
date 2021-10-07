@@ -28,14 +28,14 @@ func GetMytokenStr(ctx *fiber.Ctx) string {
 }
 
 // GetMytoken checks a fiber.Ctx for a mytoken and returns a token object
-func GetMytoken(ctx *fiber.Ctx) *universalmytoken.UniversalMytoken {
+func GetMytoken(ctx *fiber.Ctx) (*universalmytoken.UniversalMytoken, bool) {
 	tok := GetMytokenStr(ctx)
 	if tok == "" {
-		return nil
+		return nil, false
 	}
 	t, err := universalmytoken.Parse(tok)
 	if err != nil {
-		return nil
+		return nil, true
 	}
-	return &t
+	return &t, true
 }

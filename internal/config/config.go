@@ -2,6 +2,7 @@ package config
 
 import (
 	"io/ioutil"
+	"net/url"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -82,6 +83,9 @@ var defaultConfig = Config{
 			List:       onlyEnable{true},
 		},
 		WebInterface: onlyEnable{true},
+		SSH: sshConf{
+			Enabled: false,
+		},
 	},
 	ProviderByIssuer: make(map[string]*ProviderConf),
 	API: apiConf{
@@ -92,6 +96,7 @@ var defaultConfig = Config{
 // Config holds the server configuration
 type Config struct {
 	IssuerURL            string                   `yaml:"issuer"`
+	Host                 string                   // Extracted from the IssuerURL
 	Server               serverConf               `yaml:"server"`
 	GeoIPDBFile          string                   `yaml:"geo_ip_db_file"`
 	API                  apiConf                  `yaml:"api"`
@@ -119,6 +124,11 @@ type featuresConf struct {
 	TokenInfo               tokeninfoConfig        `yaml:"tokeninfo"`
 	WebInterface            onlyEnable             `yaml:"web_interface"`
 	DisabledRestrictionKeys model2.RestrictionKeys `yaml:"unsupported_restrictions"`
+	SSH                     sshConf                `yaml:"ssh"`
+}
+
+type sshConf struct {
+	Enabled bool `yaml:"enabled"`
 }
 
 type tokeninfoConfig struct {
@@ -263,11 +273,16 @@ func validate() error {
 		return errors.New("config not set")
 	}
 	if conf.IssuerURL == "" {
-		return errors.New("invalid config:issuer_url not set")
+		return errors.New("invalid config: issuer_url not set")
 	}
 	if strings.HasPrefix(conf.IssuerURL, "http://") {
 		conf.Server.Secure = false
 	}
+	u, err := url.Parse(conf.IssuerURL)
+	if err != nil {
+		return errors.Wrap(err, "invalid config: issuer_url not valid")
+	}
+	conf.Host = u.Hostname()
 	if conf.Server.TLS.Enabled {
 		if conf.Server.TLS.Key != "" && conf.Server.TLS.Cert != "" {
 			conf.Server.Port = 443
@@ -275,7 +290,7 @@ func validate() error {
 			conf.Server.TLS.Enabled = false
 		}
 	}
-	if err := conf.ServiceOperator.validate(); err != nil {
+	if err = conf.ServiceOperator.validate(); err != nil {
 		return err
 	}
 	if len(conf.Providers) <= 0 {
@@ -285,7 +300,6 @@ func validate() error {
 		if p.Issuer == "" {
 			return errors.Errorf("invalid config: provider.issuer not set (Index %d)", i)
 		}
-		var err error
 		p.Endpoints, err = oauth2x.NewConfig(context.Get(), p.Issuer).Endpoints()
 		if err != nil {
 			return errors.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)

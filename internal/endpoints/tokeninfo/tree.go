@@ -40,7 +40,7 @@ func doTokenInfoTree(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetada
 			return err
 		}
 		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.MTEventTokenInfoTree, ""),
+			Event: event.FromNumber(event.TokenInfoTree, ""),
 			MTID:  mt.ID,
 		}, *clientMetadata)
 	})

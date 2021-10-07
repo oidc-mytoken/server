@@ -5,7 +5,7 @@ import (
 
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
-	yaml "gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v3"
 )
 
 // OIDCFlow is a enum like type for oidc flows

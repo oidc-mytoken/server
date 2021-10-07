@@ -3,13 +3,8 @@ package pkg
 import (
 	"encoding/json"
 
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
-)
-
-// Redirect types
-const (
-	redirectTypeWeb    = "web"
-	redirectTypeNative = "native"
 )
 
 // AuthCodeFlowRequest holds a authorization code flow request
@@ -20,7 +15,7 @@ type AuthCodeFlowRequest struct {
 
 // Native checks if the request is native
 func (r *AuthCodeFlowRequest) Native() bool {
-	return r.RedirectType == redirectTypeNative
+	return r.RedirectType == api.RedirectTypeNative
 }
 
 // UnmarshalJSON implements the json unmarshaler interface

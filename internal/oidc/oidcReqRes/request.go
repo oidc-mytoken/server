@@ -5,9 +5,10 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/pkg/errors"
 )
 
 // RefreshRequest is the oidc request for an refresh flow

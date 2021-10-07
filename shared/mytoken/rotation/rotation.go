@@ -3,6 +3,7 @@ package rotation
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
 	helper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
@@ -27,7 +28,7 @@ func rotateMytoken(tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaD
 			return err
 		}
 		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.MTEventTokenRotated, ""),
+			Event: event.FromNumber(event.MTRotated, ""),
 			MTID:  rotated.ID,
 		}, clientMetaData)
 	}); err != nil {
