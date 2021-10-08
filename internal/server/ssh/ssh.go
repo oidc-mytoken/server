@@ -15,9 +15,9 @@ func decodeData(data, dataType string) ([]byte, error) {
 		return nil, nil
 	}
 	switch strings.ToLower(dataType) {
-	case api.MIMETYPE_JSON:
+	case api.SSHMimetypeJson:
 		return []byte(data), nil
-	case api.MIMETYPE_JSON_BASE64:
+	case api.SSHMimetypeJsonBase64:
 		d, err := base64.StdEncoding.DecodeString(data)
 		return d, errors.WithStack(err)
 	default:
@@ -50,7 +50,7 @@ func _handleSSHSession(s ssh.Session) (err error) {
 	}
 
 	switch reqType {
-	case api.SSH_REQUEST_MYTOKEN:
+	case api.SSHRequestMytoken:
 		return handleSSHMytoken(req, s.Context())
 	default:
 		return errors.New("unknown request")

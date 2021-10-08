@@ -423,6 +423,8 @@ github.com/oidc-mytoken/api v0.3.1-0.20210921092134-2599cdd1db99 h1:0b66hU44d5ww
 github.com/oidc-mytoken/api v0.3.1-0.20210921092134-2599cdd1db99/go.mod h1:S8t1XA42EFAgc3vUfis0g1LPGA4TXH0nfDynvgo6cwk=
 github.com/oidc-mytoken/api v0.3.1-0.20211007142508-81cf671ea83c h1:Yc2mlxi8f2TbUmdbNA+6GrGLy3f2cUENhJKUO5xkqNU=
 github.com/oidc-mytoken/api v0.3.1-0.20211007142508-81cf671ea83c/go.mod h1:S8t1XA42EFAgc3vUfis0g1LPGA4TXH0nfDynvgo6cwk=
+github.com/oidc-mytoken/api v0.3.1-0.20211008081732-8cd92617a430 h1:70o9TDnNsh7A2RsqR3uuiJMKjbRd4ohk2DgESi5ZzmQ=
+github.com/oidc-mytoken/api v0.3.1-0.20211008081732-8cd92617a430/go.mod h1:S8t1XA42EFAgc3vUfis0g1LPGA4TXH0nfDynvgo6cwk=
 github.com/oidc-mytoken/lib v0.2.1-0.20210730094903-f59c9a8f84e0 h1:eo1lEHaU6vkQZnAQyy7dA7JIoXpUOS/G4csV1LPIi80=
 github.com/oidc-mytoken/lib v0.2.1-0.20210730094903-f59c9a8f84e0/go.mod h1:2ITx3/ZTRyrR6GGIG3BfNdscxERXsD0Up8G3yZZDJng=
 github.com/oidc-mytoken/server v0.2.0/go.mod h1:6uFm+Za9NMK3gq4OOIeX3gs3T6leluVIWsGiM1zlQbA=
