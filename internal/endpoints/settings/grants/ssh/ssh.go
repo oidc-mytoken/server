@@ -32,6 +32,7 @@ import (
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
 
+// HandleGetSSHInfo handles requests to return information about a user's ssh keys
 func HandleGetSSHInfo(ctx *fiber.Ctx) error {
 	log.Debug("Handle get ssh info request")
 	var reqMytoken universalmytoken.UniversalMytoken
@@ -58,6 +59,7 @@ func HandleGetSSHInfo(ctx *fiber.Ctx) error {
 	)
 }
 
+// HandleDeleteSSHKey handles requests to delete a user's ssh public key
 func HandleDeleteSSHKey(ctx *fiber.Ctx) error {
 	log.Debug("Handle delete ssh key request")
 	req := request.SSHKeyDeleteRequest{}
@@ -94,6 +96,8 @@ func HandleDeleteSSHKey(ctx *fiber.Ctx) error {
 	)
 }
 
+// HandlePost handles POST requests to the ssh grant endpoint, this includes the initial request to add an ssh public
+// key as well as the following polling requests.
 func HandlePost(ctx *fiber.Ctx) error {
 	grantType, err := ctxUtils.GetGrantType(ctx)
 	if err != nil {
@@ -113,6 +117,7 @@ func HandlePost(ctx *fiber.Ctx) error {
 	}
 }
 
+// handleAddSSHKey handles the initial request to add an ssh public key
 func handleAddSSHKey(ctx *fiber.Ctx) error {
 	log.Debug("Handle add ssh key request")
 	req := request.SSHKeyAddRequest{}
@@ -200,6 +205,7 @@ func extractSSHKeyNameFromMTName(mtName string) string {
 	return mtName[prefixLen:]
 }
 
+// handlePollingCode handles the polling requests to finish adding an ssh public key
 func handlePollingCode(ctx *fiber.Ctx) error {
 	req := my.NewPollingCodeRequest()
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {

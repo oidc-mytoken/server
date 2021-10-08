@@ -210,6 +210,8 @@ func SplitIgnoreEmpty(s, del string) (ret []string) {
 	return
 }
 
+// RSplitN splits a string s at the delimiter del into n pieces. Unlike strings.SplitN RSplitN splits the string
+// starting from the right side
 func RSplitN(s, del string, n int) []string {
 	if n == 0 {
 		return nil

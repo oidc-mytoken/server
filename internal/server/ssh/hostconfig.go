@@ -23,6 +23,7 @@ func entryName(name string) string {
 	return "mytoken-" + name
 }
 
+// CreateHostConfigEntry creates an ssh config host entry for the passed ssh user name and name
 func CreateHostConfigEntry(sshUser, name string) string {
 	return fmt.Sprintf(hostEntryTemplate, entryName(name), config.Get().Host, 2222, sshUser)
 }

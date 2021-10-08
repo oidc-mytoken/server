@@ -33,7 +33,7 @@ server:
     enabled: true
     # The number of requests that are allowed within the specified time window, e.g. 10/1s 100/5min 1000/1h
     max_requests: 100
-    # The time window in which the maximum number of requests is allowed, i.e. the quota is reseted after this time.
+    # The time window in which the maximum number of requests is allowed, i.e. the quota is reset after this time.
     # The time is given in seconds.
     window: 300
     # Use the list to exclude hosts from the request limit. You can specify single IP addresses as well as subnets.

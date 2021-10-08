@@ -7,6 +7,7 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 )
 
+// GrantTypeRequest is a type for a enable/disable grant type request
 type GrantTypeRequest struct {
 	api.GrantTypeRequest
 	GrantType model.GrantType                   `json:"grant_type" xml:"grant_type" form:"grant_type"`

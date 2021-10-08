@@ -13,7 +13,7 @@ import (
 )
 
 func handleError(ctx *fiber.Ctx, err error) error {
-	// Statuscode defaults to 500
+	// Status code defaults to 500
 	code := fiber.StatusInternalServerError
 	msg := errorfmt.Error(err)
 	log.Errorf("%s", errorfmt.Full(err))

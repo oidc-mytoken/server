@@ -36,7 +36,7 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 	}
 	grantPath := utils.CombineURLPath(apiPaths.UserSettingEndpoint, "grants")
 	s.Get(grantPath, grants.HandleListGrants)
-	s.Post(grantPath, grants.HandleEnableGrants)
+	s.Post(grantPath, grants.HandleEnableGrant)
 	s.Delete(grantPath, grants.HandleDisableGrant)
 	sshGrantPath := utils.CombineURLPath(grantPath, "ssh")
 	s.Get(sshGrantPath, ssh.HandleGetSSHInfo)

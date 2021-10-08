@@ -47,6 +47,7 @@ func GetAllSSHInfo(tx *sqlx.Tx, myid mtid.MTID) (info []api.SSHKeyInfo, err erro
 	return
 }
 
+// SSHInfo is a type holding the information stored in the database related to an ssh key
 type SSHInfo struct {
 	KeyID       string        `db:"key_id"`
 	Name        db.NullString `db:"name"`
@@ -58,14 +59,16 @@ type SSHInfo struct {
 	EncryptedMT string        `db:"MT_crypt"`
 }
 
-func (i SSHInfo) Decrypt(key string) (*mytoken.Mytoken, error) {
-	decryptedMT, err := cryptUtils.AES256Decrypt(i.EncryptedMT, key)
+// Decrypt decrypts the encrypted mytoken linked to this ssh key with the passed password
+func (i SSHInfo) Decrypt(password string) (*mytoken.Mytoken, error) {
+	decryptedMT, err := cryptUtils.AES256Decrypt(i.EncryptedMT, password)
 	if err != nil {
 		return nil, err
 	}
 	return mytoken.ParseJWT(decryptedMT)
 }
 
+// Delete deletes an ssh key for the given user (given by the mytoken) from the database
 func Delete(tx *sqlx.Tx, myid mtid.MTID, keyHash string) error {
 	return db.RunWithinTransaction(
 		tx, func(tx *sqlx.Tx) error {
@@ -75,6 +78,7 @@ func Delete(tx *sqlx.Tx, myid mtid.MTID, keyHash string) error {
 	)
 }
 
+// SSHInfoIn is a type for storing an ssh public key in the database
 type SSHInfoIn struct {
 	Name        db.NullString `db:"name"`
 	KeyHash     string        `db:"ssh_key_hash"`
@@ -82,6 +86,7 @@ type SSHInfoIn struct {
 	EncryptedMT string        `db:"MT_crypt"`
 }
 
+// Insert inserts an ssh public key for the given user (given by the mytoken) into the database
 func Insert(tx *sqlx.Tx, myid mtid.MTID, data SSHInfoIn) error {
 	return db.RunWithinTransaction(
 		tx, func(tx *sqlx.Tx) error {
@@ -94,6 +99,7 @@ func Insert(tx *sqlx.Tx, myid mtid.MTID, data SSHInfoIn) error {
 	)
 }
 
+// UsedKey marks that the passed ssh key was just used
 func UsedKey(tx *sqlx.Tx, keyHash, userHash string) error {
 	return db.RunWithinTransaction(
 		tx, func(tx *sqlx.Tx) error {

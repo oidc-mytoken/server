@@ -6,6 +6,7 @@ import (
 	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 )
 
+// SSHInfoResponse is a type for the response about a user's ssh keys
 type SSHInfoResponse struct {
 	api.SSHInfoResponse
 	TokenUpdate *my.MytokenResponse `json:"token_update,omitempty"`

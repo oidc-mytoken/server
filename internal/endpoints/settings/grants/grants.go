@@ -18,6 +18,8 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 )
 
+// HandleListGrants handles GET requests to the grants endpoints and returns a list of enabled/disabled grant types for
+// the user
 func HandleListGrants(ctx *fiber.Ctx) error {
 	log.Debug("Handle get grant type request")
 	var reqMytoken universalmytoken.UniversalMytoken
@@ -37,10 +39,14 @@ func HandleListGrants(ctx *fiber.Ctx) error {
 		},
 	)
 }
-func HandleEnableGrants(ctx *fiber.Ctx) error {
+
+// HandleEnableGrant handles requests to enable a grant type
+func HandleEnableGrant(ctx *fiber.Ctx) error {
 	log.Debug("Handle enable grant type request")
 	return handleEditGrant(ctx, grantrepo.Enable, event.GrantEnabled, fiber.StatusCreated)
 }
+
+// HandleDisableGrant handles requests to disable a grant type
 func HandleDisableGrant(ctx *fiber.Ctx) error {
 	log.Debug("Handle disable grant type request")
 	return handleEditGrant(ctx, grantrepo.Disable, event.GrantDisabled, fiber.StatusNoContent)

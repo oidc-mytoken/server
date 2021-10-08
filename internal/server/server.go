@@ -116,6 +116,7 @@ func start(s *fiber.App) {
 			httpServer := fiber.New(serverConfig)
 			httpServer.All(
 				"*", func(ctx *fiber.Ctx) error {
+					//goland:noinspection HttpUrlsUsage
 					return ctx.Redirect(
 						strings.Replace(ctx.Request().URI().String(), "http://", "https://", 1),
 						fiber.StatusPermanentRedirect,

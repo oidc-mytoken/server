@@ -98,12 +98,12 @@ func (c *Cluster) startReconnector() {
 		for {
 			select {
 			case <-c.stop:
-				log.Debug("Stopping reconnector")
+				log.Debug("Stopping re-connector")
 				return
 			default:
 				log.Debug("Run checkNodesDown")
 				if c.checkNodesDown() {
-					log.Debug("Stopping reconnector")
+					log.Debug("Stopping re-connector")
 					return
 				}
 				conf := c.conf

@@ -275,6 +275,7 @@ func validate() error {
 	if conf.IssuerURL == "" {
 		return errors.New("invalid config: issuer_url not set")
 	}
+	//goland:noinspection HttpUrlsUsage
 	if strings.HasPrefix(conf.IssuerURL, "http://") {
 		conf.Server.Secure = false
 	}
@@ -300,10 +301,13 @@ func validate() error {
 		if p.Issuer == "" {
 			return errors.Errorf("invalid config: provider.issuer not set (Index %d)", i)
 		}
-		p.Endpoints, err = oauth2x.NewConfig(context.Get(), p.Issuer).Endpoints()
+		oc, err := oauth2x.NewConfig(context.Get(), p.Issuer)
 		if err != nil {
 			return errors.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
 		}
+		// Endpoints only returns an error if it does discovery but this was already done in NewConfig, so we can ignore
+		// the error value
+		p.Endpoints, _ = oc.Endpoints()
 		p.Provider, err = oidc.NewProvider(context.Get(), p.Issuer)
 		if err != nil {
 			return errors.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
@@ -325,13 +329,13 @@ func validate() error {
 		}
 	}
 	if conf.IssuerURL == "" {
-		return errors.New("invalid config: issuerurl not set")
+		return errors.New("invalid config: issuer_url not set")
 	}
 	if conf.Signing.KeyFile == "" {
-		return errors.New("invalid config: signingkeyfile not set")
+		return errors.New("invalid config: signing keyfile not set")
 	}
 	if conf.Signing.Alg == "" {
-		return errors.New("invalid config: tokensigningalg not set")
+		return errors.New("invalid config: token signing alg not set")
 	}
 	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(&conf.Features.EnabledOIDCFlows)
 	// if model.OIDCFlowIsInSlice(model.OIDCFlowDevice, conf.Features.EnabledOIDCFlows) && !conf.Features.Polling.Enabled {

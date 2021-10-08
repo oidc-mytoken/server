@@ -362,14 +362,14 @@ func (r *Restrictions) GetExpires() unixtime.UnixTime {
 	return exp
 }
 
-// GetNotBefore gets the minimal (earliest) notbefore time of all restrictions
+// GetNotBefore gets the minimal (earliest) nbf time of all restrictions
 func (r *Restrictions) GetNotBefore() unixtime.UnixTime {
 	if r == nil || len(*r) == 0 {
 		return 0
 	}
 	nbf := unixtime.UnixTime(math.MaxInt64)
 	for _, rr := range *r {
-		if rr.NotBefore == 0 { // if one entry has no notbefore the min notbefore is 0
+		if rr.NotBefore == 0 { // if one entry has no nbf the min nbf is 0
 			return 0
 		}
 		if rr.NotBefore < nbf {

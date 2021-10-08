@@ -16,8 +16,8 @@
 
 ### API
 
-- Don't redirect from `/.well-known/openid-configuration` to `/.well-known/mytoken-configuration`. Instead returning the
-  same content on both endpoints.
+- Don't redirect from `/.well-known/openid-configuration` to `/.well-known/mytoken-configuration`. Instead, returning
+  the same content on both endpoints.
 
 ### Enhancements
 

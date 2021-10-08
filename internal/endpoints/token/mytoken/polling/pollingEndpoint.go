@@ -41,6 +41,7 @@ func HandlePollingCode(ctx *fiber.Ctx) error {
 	}.Send(ctx)
 }
 
+// CheckPollingCodeReq checks a pkg.PollingCodeRequest and returns the linked mytoken if valid
 func CheckPollingCodeReq(
 	req response.PollingCodeRequest,
 	networkData api.ClientMetaData,

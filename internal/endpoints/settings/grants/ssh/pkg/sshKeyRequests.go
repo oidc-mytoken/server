@@ -7,11 +7,13 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 )
 
+// SSHKeyDeleteRequest is a type for a request to delete an ssh key
 type SSHKeyDeleteRequest struct {
 	api.SSHKeyDeleteRequest
 	Mytoken universalmytoken.UniversalMytoken `json:"mytoken" xml:"mytoken" form:"mytoken"`
 }
 
+// SSHKeyAddRequest is a type for a request to add an ssh key
 type SSHKeyAddRequest struct {
 	api.SSHKeyAddRequest
 	Mytoken      universalmytoken.UniversalMytoken `json:"mytoken" xml:"mytoken" form:"mytoken"`

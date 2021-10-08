@@ -61,6 +61,7 @@ func checkPubKey(ctx ssh.Context, key ssh.PublicKey) bool {
 	return true
 }
 
+// Serve starts the ssh server
 func Serve() {
 	ssh.Handle(handleSSHSession)
 

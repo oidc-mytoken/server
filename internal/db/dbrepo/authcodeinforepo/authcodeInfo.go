@@ -100,8 +100,8 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 				}
 			}
 			_, err := tx.NamedExec(
-				`CALL AuthInfo_Insert(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name,
-                             :expires_in, :polling_code, :rotation, :response_type, :max_token_len)`, store,
+				`CALL AuthInfo_Insert(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name, :expires_in, :polling_code, :rotation, :response_type, :max_token_len)`,
+				store,
 			)
 			return errors.WithStack(err)
 		},
