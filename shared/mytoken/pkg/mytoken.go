@@ -35,6 +35,7 @@ type Mytoken struct {
 	IssuedAt             unixtime.UnixTime         `json:"iat"`
 	ID                   mtid.MTID                 `json:"jti"`
 	SeqNo                uint64                    `json:"seq_no"`
+	Name                 string                    `json:"name,omitempty"`
 	Audience             string                    `json:"aud"`
 	OIDCSubject          string                    `json:"oidc_sub"`
 	OIDCIssuer           string                    `json:"oidc_iss"`
