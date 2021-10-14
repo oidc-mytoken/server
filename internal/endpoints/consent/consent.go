@@ -133,15 +133,17 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 			}.Send(ctx)
 		}
 	}
-	pkceCode := pkce.NewS256PKCE(utils.RandASCIIString(32))
-	if err = db.Transact(func(tx *sqlx.Tx) error {
-		if err = authcodeinforepo.UpdateTokenInfoByState(
-			tx, oState, req.Restrictions, req.Capabilities, req.SubtokenCapabilities, req.Rotation, req.TokenName,
-		); err != nil {
-			return err
-		}
-		return authcodeinforepo.SetCodeVerifier(tx, oState, pkceCode.Verifier())
-	}); err != nil {
+	pkceCode := pkce.NewS256PKCE(utils.RandASCIIString(44))
+	if err = db.Transact(
+		func(tx *sqlx.Tx) error {
+			if err = authcodeinforepo.UpdateTokenInfoByState(
+				tx, oState, req.Restrictions, req.Capabilities, req.SubtokenCapabilities, req.Rotation, req.TokenName,
+			); err != nil {
+				return err
+			}
+			return authcodeinforepo.SetCodeVerifier(tx, oState, pkceCode.Verifier())
+		},
+	); err != nil {
 		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
