@@ -133,7 +133,7 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 			}.Send(ctx)
 		}
 	}
-	pkceCode := pkce.NewS256PKCE(utils.RandASCIIString(32))
+	pkceCode := pkce.NewS256PKCE(utils.RandASCIIString(44))
 	if err = db.Transact(
 		func(tx *sqlx.Tx) error {
 			if err = authcodeinforepo.UpdateTokenInfoByState(
