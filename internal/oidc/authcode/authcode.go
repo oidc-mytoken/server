@@ -177,6 +177,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 			if !resOK {
 				res = pkgModel.OIDCError(e.Error(), "")
 			}
+			log.WithError(e).Error("error in code exchange")
 			return &model.Response{
 				Status:   e.Response.StatusCode,
 				Response: res,
