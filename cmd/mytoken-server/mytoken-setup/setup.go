@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -13,10 +14,58 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/jws"
 	"github.com/oidc-mytoken/server/internal/model/version"
+	"github.com/oidc-mytoken/server/internal/utils/dbcl"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/internal/utils/zipdownload"
 	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 )
+
+type _rootDBCredentials struct {
+	User         string
+	Password     string
+	PasswordFile string
+}
+
+var rootDBCredentials _rootDBCredentials
+
+func (cred _rootDBCredentials) ToDBConf() config.DBConf {
+	return config.DBConf{
+		Hosts:             config.Get().DB.Hosts,
+		User:              cred.User,
+		Password:          cred.Password,
+		PasswordFile:      cred.PasswordFile,
+		ReconnectInterval: config.Get().DB.ReconnectInterval,
+	}
+}
+
+var dbFlags = []cli.Flag{
+	&cli.StringFlag{
+		Name:        "user",
+		Aliases:     []string{"u", "root-user", "db-user"},
+		Usage:       "The username for the (root) user used for setting up the db",
+		EnvVars:     []string{"DB_USER"},
+		Value:       "root",
+		Destination: &rootDBCredentials.User,
+		Placeholder: "ROOT",
+	},
+	&cli.StringFlag{
+		Name:        "password",
+		Aliases:     []string{"p", "pw", "db-password", "db-pw"},
+		Usage:       "The password for the (root) user used for setting up the db",
+		EnvVars:     []string{"DB_PW", "DB_PASSWORD"},
+		Destination: &rootDBCredentials.Password,
+		Placeholder: "PASSWORD",
+	},
+	&cli.StringFlag{
+		Name:        "password-file",
+		Aliases:     []string{"pw-file"},
+		Usage:       "Read the password for connecting to the database from this file",
+		EnvVars:     []string{"DB_PASSWORD_FILE", "DB_PW_FILE"},
+		Destination: &rootDBCredentials.PasswordFile,
+		TakesFile:   true,
+		Placeholder: "FILE",
+	},
+}
 
 var app = &cli.App{
 	Name:     "mytoken-setup",
@@ -46,6 +95,26 @@ var app = &cli.App{
 					Aliases: []string{"geo-ip-db"},
 					Usage:   "Installs the ip geolocation database.",
 					Action:  installGEOIPDB,
+				},
+			},
+		},
+		&cli.Command{
+			Name:  "db",
+			Usage: "Setups for the database",
+			Flags: append([]cli.Flag{}, dbFlags...),
+			Subcommands: cli.Commands{
+				&cli.Command{
+					Name:    "db",
+					Aliases: []string{"database"},
+					Usage:   "Creates the database in the database server",
+					Action:  createDB,
+					Flags:   append([]cli.Flag{}, dbFlags...),
+				},
+				&cli.Command{
+					Name:   "user",
+					Usage:  "Creates the normal database user",
+					Action: createUser,
+					Flags:  append([]cli.Flag{}, dbFlags...),
 				},
 			},
 		},
@@ -93,4 +162,67 @@ func createSigningKey(_ *cli.Context) error {
 	log.WithField("filepath", filepath).Debug("Wrote key to file")
 	fmt.Printf("Wrote key to file '%s'.\n", filepath)
 	return nil
+}
+
+//go:embed scripts
+var sqlScripts embed.FS
+
+func readSQLFile(path string) (string, error) {
+	data, err := sqlScripts.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func _getSetVars() (string, error) {
+	return readSQLFile("scripts/vars.sql")
+}
+func getSetVarsCommands(db, user, password string) (string, error) {
+	cmds, err := _getSetVars()
+	if err != nil {
+		return "", err
+	}
+	if db != "" {
+		cmds += fmt.Sprintf(`EXECUTE setDB USING '%s';\n`, db)
+	}
+	if user != "" {
+		cmds += fmt.Sprintf(`EXECUTE setUser USING '%s';\n`, user)
+	}
+	if password != "" {
+		cmds += fmt.Sprintf(`EXECUTE setPassword USING '%s';\n`, password)
+	}
+	return cmds, nil
+}
+func getDBCmds() (string, error) {
+	return readSQLFile("scripts/db.sql")
+}
+func getUserCmds() (string, error) {
+	return readSQLFile("scripts/user.sql")
+}
+
+func createDB(_ *cli.Context) error {
+	cmds, err := getSetVarsCommands(config.Get().DB.DB, config.Get().DB.User, config.Get().DB.GetPassword())
+	if err != nil {
+		return err
+	}
+	dbCmds, err := getDBCmds()
+	if err != nil {
+		return err
+	}
+	cmds += dbCmds
+	return dbcl.RunDBCommands(cmds, rootDBCredentials.ToDBConf(), true)
+}
+
+func createUser(_ *cli.Context) error {
+	cmds, err := getSetVarsCommands(config.Get().DB.DB, config.Get().DB.User, config.Get().DB.GetPassword())
+	if err != nil {
+		return err
+	}
+	userCmds, err := getUserCmds()
+	if err != nil {
+		return err
+	}
+	cmds += userCmds
+	return dbcl.RunDBCommands(cmds, rootDBCredentials.ToDBConf(), true)
 }

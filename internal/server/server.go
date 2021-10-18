@@ -13,6 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints"
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration"
@@ -85,9 +86,7 @@ func Init() {
 func addRoutes(s fiber.Router) {
 	addWebRoutes(s)
 	s.Get(routes.GetGeneralPaths().ConfigurationEndpoint, configuration.HandleConfiguration)
-	s.Get("/.well-known/openid-configuration", func(ctx *fiber.Ctx) error {
-		return ctx.Redirect(routes.GetGeneralPaths().ConfigurationEndpoint)
-	})
+	s.Get("/.well-known/openid-configuration", configuration.HandleConfiguration)
 	s.Get(routes.GetGeneralPaths().JWKSEndpoint, endpoints.HandleJWKS)
 	s.Get(routes.GetGeneralPaths().OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
 	s.Get("/c/:consent_code", consent.HandleConsent)

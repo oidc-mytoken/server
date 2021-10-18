@@ -35,6 +35,7 @@ type Mytoken struct {
 	IssuedAt             unixtime.UnixTime         `json:"iat"`
 	ID                   mtid.MTID                 `json:"jti"`
 	SeqNo                uint64                    `json:"seq_no"`
+	Name                 string                    `json:"name,omitempty"`
 	Audience             string                    `json:"aud"`
 	OIDCSubject          string                    `json:"oidc_sub"`
 	OIDCIssuer           string                    `json:"oidc_iss"`
@@ -86,13 +87,16 @@ func (mt *Mytoken) VerifyCapabilities(required ...api.Capability) bool {
 }
 
 // NewMytoken creates a new Mytoken
-func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation) *Mytoken {
+func NewMytoken(
+	oidcSub, oidcIss, name string, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation,
+) *Mytoken {
 	now := unixtime.Now()
 	mt := &Mytoken{
 		Version:              api.TokenVer,
 		TokenType:            api.TokenType,
 		ID:                   mtid.New(),
 		SeqNo:                1,
+		Name:                 name,
 		IssuedAt:             now,
 		NotBefore:            now,
 		Issuer:               config.Get().IssuerURL,

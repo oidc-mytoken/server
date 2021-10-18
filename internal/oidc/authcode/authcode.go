@@ -177,6 +177,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 			if !resOK {
 				res = pkgModel.OIDCError(e.Error(), "")
 			}
+			log.WithError(e).Error("error in code exchange")
 			return &model.Response{
 				Status:   e.Response.StatusCode,
 				Response: res,
@@ -268,10 +269,12 @@ func createMytokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfo
 		mytoken.NewMytoken(
 			oidcSub,
 			authFlowInfo.Issuer,
+			authFlowInfo.Name,
 			authFlowInfo.Restrictions,
 			authFlowInfo.Capabilities,
 			authFlowInfo.SubtokenCapabilities,
-			authFlowInfo.Rotation),
+			authFlowInfo.Rotation,
+		),
 		authFlowInfo.Name, networkData)
 	if err := ste.InitRefreshToken(token.RefreshToken); err != nil {
 		return nil, err
