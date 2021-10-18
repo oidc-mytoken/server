@@ -269,10 +269,12 @@ func createMytokenEntry(tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfo
 		mytoken.NewMytoken(
 			oidcSub,
 			authFlowInfo.Issuer,
+			authFlowInfo.Name,
 			authFlowInfo.Restrictions,
 			authFlowInfo.Capabilities,
 			authFlowInfo.SubtokenCapabilities,
-			authFlowInfo.Rotation),
+			authFlowInfo.Rotation,
+		),
 		authFlowInfo.Name, networkData)
 	if err := ste.InitRefreshToken(token.RefreshToken); err != nil {
 		return nil, err

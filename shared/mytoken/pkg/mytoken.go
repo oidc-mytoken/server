@@ -87,13 +87,16 @@ func (mt *Mytoken) VerifyCapabilities(required ...api.Capability) bool {
 }
 
 // NewMytoken creates a new Mytoken
-func NewMytoken(oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation) *Mytoken {
+func NewMytoken(
+	oidcSub, oidcIss, name string, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation,
+) *Mytoken {
 	now := unixtime.Now()
 	mt := &Mytoken{
 		Version:              api.TokenVer,
 		TokenType:            api.TokenType,
 		ID:                   mtid.New(),
 		SeqNo:                1,
+		Name:                 name,
 		IssuedAt:             now,
 		NotBefore:            now,
 		Issuer:               config.Get().IssuerURL,
