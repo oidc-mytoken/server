@@ -2,7 +2,7 @@ const usagesAT = $('#usages_AT');
 const usagesOther = $('#usages_other');
 const restrClauses = $('#restr-clauses');
 
-$(function() {
+function initDatetimePicker() {
     let date_input = $('.datetimepicker-input');
     let options = {
         format: 'YYYY-MM-DD HH:mm:ss',
@@ -34,7 +34,9 @@ $(function() {
         $('#' + $(this).attr("id").replace("exp", "nbf")).datetimepicker("maxDate", e.date);
         GUIToRestr_Exp();
     });
+}
 
+function initCountries() {
     for (const c in countries) {
         let opt = document.createElement('option');
         opt.value = c;
@@ -42,7 +44,7 @@ $(function() {
         $('.country-select').append(opt);
     }
     $(".country-select").prop("selectedIndex", -1);
-})
+}
 
 function _addScopeValueToGUI(scope, $htmlEl) {
     let html = `<tr>
@@ -57,13 +59,15 @@ function _addScopeValueToGUI(scope, $htmlEl) {
 }
 
 function initRestrGUI(...next) {
-    const scopes = typeof(supported_scopes)!=='undefined' ? supported_scopes : getSupportedScopesFromStorage();
+    initDatetimePicker();
+    initCountries();
+    const scopes = typeof (supported_scopes) !== 'undefined' ? supported_scopes : getSupportedScopesFromStorage();
     let $table = $('#scopeTableBody');
     for (const scope of scopes) {
         _addScopeValueToGUI(scope, $table);
     }
 
-    $('.scope-checkbox').on("click", function (){
+    $('.scope-checkbox').on("click", function () {
         let allScopesInactive = $(this).parents('tbody').find('.scope-inactive');
         let allScopesActive = $(this).parents('tbody').find('.scope-active');
         let checkedScopeBoxes = $(this).parents('tbody').find('.scope-checkbox:checked');
