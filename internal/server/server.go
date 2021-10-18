@@ -103,20 +103,24 @@ func addWebRoutes(s fiber.Router) {
 }
 
 func start(s *fiber.App) {
-	if config.Get().Server.TLS.Enabled {
-		if config.Get().Server.TLS.RedirectHTTP {
-			httpServer := fiber.New(serverConfig)
-			httpServer.All("*", func(ctx *fiber.Ctx) error {
-				return ctx.Redirect(strings.Replace(ctx.Request().URI().String(), "http://", "https://", 1),
-					fiber.StatusPermanentRedirect)
-			})
-			go httpServer.Listen(":80")
-		}
-		time.Sleep(time.Millisecond) // This is just for a more pretty output with the tls header printed after the http one
-		log.Fatal(s.ListenTLS(":443", config.Get().Server.TLS.Cert, config.Get().Server.TLS.Key))
-	} else {
+	if !config.Get().Server.TLS.Enabled {
 		log.Fatal(s.Listen(fmt.Sprintf(":%d", config.Get().Server.Port)))
 	}
+	// TLS enabled
+	if config.Get().Server.TLS.RedirectHTTP {
+		httpServer := fiber.New(serverConfig)
+		httpServer.All(
+			"*", func(ctx *fiber.Ctx) error {
+				return ctx.Redirect(
+					strings.Replace(ctx.Request().URI().String(), "http://", "https://", 1),
+					fiber.StatusPermanentRedirect,
+				)
+			},
+		)
+		go httpServer.Listen(":80")
+	}
+	time.Sleep(time.Millisecond) // This is just for a more pretty output with the tls header printed after the http one
+	log.Fatal(s.ListenTLS(":443", config.Get().Server.TLS.Cert, config.Get().Server.TLS.Key))
 }
 
 // Start starts the server
