@@ -255,15 +255,31 @@ func (mt *Mytoken) ToJWT() (string, error) {
 		return mt.jwt, nil
 	}
 	var err error
-	mt.jwt, err = jwt.NewWithClaims(jwt.GetSigningMethod(config.Get().Signing.Alg), mt).SignedString(jws.GetPrivateKey())
+	mt.jwt, err = jwt.NewWithClaims(
+		jwt.GetSigningMethod(config.Get().Signing.Alg), mt,
+	).SignedString(jws.GetPrivateKey())
 	return mt.jwt, errors.WithStack(err)
 }
 
 // ParseJWT parses a token string into a Mytoken
 func ParseJWT(token string) (*Mytoken, error) {
-	tok, err := jwt.ParseWithClaims(token, &Mytoken{}, func(t *jwt.Token) (interface{}, error) {
-		return jws.GetPublicKey(), nil
-	})
+	return parseJWT(token, false)
+}
+
+// ParseJWTWithoutClaimsValidation parses a token string into a Mytoken
+func ParseJWTWithoutClaimsValidation(token string) (*Mytoken, error) {
+	return parseJWT(token, true)
+}
+
+func parseJWT(token string, skipCalimsValidation bool) (*Mytoken, error) {
+	parser := jwt.Parser{
+		SkipClaimsValidation: skipCalimsValidation,
+	}
+	tok, err := parser.ParseWithClaims(
+		token, &Mytoken{}, func(t *jwt.Token) (interface{}, error) {
+			return jws.GetPublicKey(), nil
+		},
+	)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

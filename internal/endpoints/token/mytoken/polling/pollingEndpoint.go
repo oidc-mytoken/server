@@ -65,7 +65,7 @@ func handlePollingCode(req response.PollingCodeRequest, networkData api.ClientMe
 			Response: api.ErrorAuthorizationPending,
 		}
 	}
-	mt, err := mytoken.ParseJWT(token)
+	mt, err := mytoken.ParseJWTWithoutClaimsValidation(token)
 	if err != nil {
 		log.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)

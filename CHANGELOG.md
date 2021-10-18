@@ -36,6 +36,7 @@
 - Fixed PKCE code verifier length.
 - Fixed Datetimepicker issues on consent page.
 - Fixed response type if an (oidc) error occures on the redirect step of the authorization code flow.
+- Fixed a bug where mytokens that are not yet valid could not be created
 
 ## mytoken 0.3.2
 
