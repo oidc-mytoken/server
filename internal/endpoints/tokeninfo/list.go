@@ -24,29 +24,29 @@ import (
 )
 
 func doTokenInfoList(
-	req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
 	usedRestriction *restrictions.Restriction,
 ) (tokenList []tree.MytokenEntryTree, tokenUpdate *response.MytokenResponse, err error) {
 	err = db.Transact(
-		func(tx *sqlx.Tx) error {
-			tokenList, err = tree.AllTokens(tx, mt.ID)
+		rlog, func(tx *sqlx.Tx) error {
+			tokenList, err = tree.AllTokens(rlog, tx, mt.ID)
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				return err
 			}
 			if usedRestriction == nil {
 				return nil
 			}
-			if err = usedRestriction.UsedOther(tx, mt.ID); err != nil {
+			if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
 				return err
 			}
 			tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(
-				tx, req.Mytoken.JWT, mt, *clientMetadata, req.Mytoken.OriginalTokenType,
+				rlog, tx, req.Mytoken.JWT, mt, *clientMetadata, req.Mytoken.OriginalTokenType,
 			)
 			if err != nil {
 				return err
 			}
 			return eventService.LogEvent(
-				tx, eventService.MTEvent{
+				rlog, tx, eventService.MTEvent{
 					Event: event.FromNumber(event.TokenInfoListMTs, ""),
 					MTID:  mt.ID,
 				}, *clientMetadata,
@@ -57,18 +57,18 @@ func doTokenInfoList(
 }
 
 func handleTokenInfoList(
-	req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
 ) model.Response {
 	// If we call this function it means the token is valid.
 	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
-		nil, mt, clientMetadata.IP, nil, nil, api.CapabilityListMT,
+		rlog, nil, mt, clientMetadata.IP, nil, nil, api.CapabilityListMT,
 	)
 	if errRes != nil {
 		return *errRes
 	}
-	tokenList, tokenUpdate, err := doTokenInfoList(req, mt, clientMetadata, usedRestriction)
+	tokenList, tokenUpdate, err := doTokenInfoList(rlog, req, mt, clientMetadata, usedRestriction)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return *model.ErrorToInternalServerErrorResponse(err)
 	}
 	rsp := pkg.NewTokeninfoListResponse(tokenList, tokenUpdate)

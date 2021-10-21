@@ -89,13 +89,13 @@ func (i *authFlowInfo) toAuthFlowInfo() *AuthFlowInfoOut {
 }
 
 // Store stores the AuthFlowInfoIn in the database as well as the linked polling code if it exists
-func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
-	log.Debug("Storing auth flow info")
+func (i *AuthFlowInfo) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
+	rlog.Debug("Storing auth flow info")
 	store := i.toAuthFlowInfo()
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			if i.PollingCode != nil {
-				if err := i.PollingCode.Store(tx); err != nil {
+				if err := i.PollingCode.Store(rlog, tx); err != nil {
 					return err
 				}
 			}
@@ -109,10 +109,10 @@ func (i *AuthFlowInfo) Store(tx *sqlx.Tx) error {
 }
 
 // GetAuthFlowInfoByState returns AuthFlowInfoIn by state
-func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
+func GetAuthFlowInfoByState(rlog log.Ext1FieldLogger, state *state.State) (*AuthFlowInfoOut, error) {
 	info := authFlowInfo{}
 	if err := db.Transact(
-		func(tx *sqlx.Tx) error {
+		rlog, func(tx *sqlx.Tx) error {
 			return errors.WithStack(tx.Get(&info, `CALL AuthInfo_Get(?)`, state))
 		},
 	); err != nil {
@@ -122,9 +122,9 @@ func GetAuthFlowInfoByState(state *state.State) (*AuthFlowInfoOut, error) {
 }
 
 // DeleteAuthFlowInfoByState deletes the AuthFlowInfoIn for a given state
-func DeleteAuthFlowInfoByState(tx *sqlx.Tx, state *state.State) error {
+func DeleteAuthFlowInfoByState(rlog log.Ext1FieldLogger, tx *sqlx.Tx, state *state.State) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL AuthInfo_Delete(?)`, state)
 			return errors.WithStack(err)
 		},
@@ -133,11 +133,11 @@ func DeleteAuthFlowInfoByState(tx *sqlx.Tx, state *state.State) error {
 
 // UpdateTokenInfoByState updates the stored AuthFlowInfo for the given state
 func UpdateTokenInfoByState(
-	tx *sqlx.Tx, state *state.State, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation,
-	tokenName string,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, state *state.State, r restrictions.Restrictions, c, sc api.Capabilities,
+	rot *api.Rotation, tokenName string,
 ) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(
 				`CALL AuthInfo_Update(?,?,?,?,?,?)`,
 				state, r, c, sc, rot, tokenName,
@@ -148,9 +148,9 @@ func UpdateTokenInfoByState(
 }
 
 // SetCodeVerifier stores the passed PKCE code verifier
-func SetCodeVerifier(tx *sqlx.Tx, state *state.State, verifier string) error {
+func SetCodeVerifier(rlog log.Ext1FieldLogger, tx *sqlx.Tx, state *state.State, verifier string) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL AuthInfo_SetCodeVerifier(?,?)`, state, verifier)
 			return errors.WithStack(err)
 		},

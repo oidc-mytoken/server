@@ -4,6 +4,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/shared/model"
@@ -11,9 +12,9 @@ import (
 )
 
 // Enable enables a model.GrantType for the user of the passed mtid.MTID
-func Enable(tx *sqlx.Tx, myID mtid.MTID, grant model.GrantType) error {
+func Enable(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID, grant model.GrantType) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL Grants_Enable(?,?)`, myID, grant.String())
 			return errors.WithStack(err)
 		},
@@ -21,9 +22,9 @@ func Enable(tx *sqlx.Tx, myID mtid.MTID, grant model.GrantType) error {
 }
 
 // Disable disables a model.GrantType for the user of the passed mtid.MTID
-func Disable(tx *sqlx.Tx, myID mtid.MTID, grant model.GrantType) error {
+func Disable(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID, grant model.GrantType) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL Grants_Disable(?,?)`, myID, grant.String())
 			return errors.WithStack(err)
 		},
@@ -49,10 +50,10 @@ func dbGrantInfoToAPIGrantInfo(dbGrants []grantTypeInfo) (apiGrants []api.GrantT
 }
 
 // Get returns information about a user's enabled (and also some disabled) grant types
-func Get(tx *sqlx.Tx, myID mtid.MTID) ([]api.GrantTypeInfo, error) {
+func Get(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID) ([]api.GrantTypeInfo, error) {
 	var grants []grantTypeInfo
 	if err := db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			return errors.WithStack(tx.Select(&grants, `CALL Grants_Get(?)`, myID))
 		},
 	); err != nil {
@@ -62,10 +63,10 @@ func Get(tx *sqlx.Tx, myID mtid.MTID) ([]api.GrantTypeInfo, error) {
 }
 
 // GrantEnabled checks if the passed model.GrantType is enabled for a user
-func GrantEnabled(tx *sqlx.Tx, myID mtid.MTID, grantType model.GrantType) (bool, error) {
+func GrantEnabled(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID, grantType model.GrantType) (bool, error) {
 	var enabled db.BitBool
 	if err := db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			return errors.WithStack(tx.Get(&enabled, `CALL Grants_CheckEnabled(?,?)`, myID, grantType.String()))
 		},
 	); err != nil {

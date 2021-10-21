@@ -11,9 +11,11 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/sshrepo"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
 
 func checkPubKey(ctx ssh.Context, key ssh.PublicKey) bool {
+	rlog := logger.GetSSHRequestLogger(ctx)
 	sshUser := ctx.User()
 	sshUserHash := hashUtils.SHA3_512Str([]byte(sshUser))
 	sshKeyHash := hashUtils.SHA3_512Str(key.Marshal())
@@ -31,7 +33,7 @@ func checkPubKey(ctx ssh.Context, key ssh.PublicKey) bool {
 		},
 	).Debug("Check ssh pub key")
 
-	info, err := sshrepo.GetSSHInfo(nil, sshKeyHash, sshUserHash)
+	info, err := sshrepo.GetSSHInfo(rlog, nil, sshKeyHash, sshUserHash)
 	if err != nil {
 		log.Errorf("%s", errorfmt.Full(err))
 		return false
@@ -49,7 +51,7 @@ func checkPubKey(ctx ssh.Context, key ssh.PublicKey) bool {
 	}
 	// We use tx=nil because we don't want to roll this back in case of other errors. If we come to this point the
 	// ssh key was successfully used
-	if err = sshrepo.UsedKey(nil, sshKeyHash, sshUserHash); err != nil {
+	if err = sshrepo.UsedKey(rlog, nil, sshKeyHash, sshUserHash); err != nil {
 		log.WithField("user_hash", sshUserHash).WithField(
 			"key_hash", sshKeyHash,
 		).WithError(err).Error("error while updating usage time")

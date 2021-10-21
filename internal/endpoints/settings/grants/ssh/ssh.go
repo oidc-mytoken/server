@@ -6,7 +6,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
-	log "github.com/sirupsen/logrus"
 	gossh "golang.org/x/crypto/ssh"
 
 	"github.com/oidc-mytoken/server/internal/db"
@@ -24,6 +23,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/shared/model"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
@@ -34,19 +34,20 @@ import (
 
 // HandleGetSSHInfo handles requests to return information about a user's ssh keys
 func HandleGetSSHInfo(ctx *fiber.Ctx) error {
-	log.Debug("Handle get ssh info request")
+	rlog := logger.GetRequestLogger(ctx)
+	rlog.Debug("Handle get ssh info request")
 	var reqMytoken universalmytoken.UniversalMytoken
 	return settings.HandleSettings(
 		ctx, &reqMytoken, event.FromNumber(event.SSHKeyListed, ""), fiber.StatusOK,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
-			info, err := sshrepo.GetAllSSHInfo(tx, mt.ID)
+			info, err := sshrepo.GetAllSSHInfo(rlog, tx, mt.ID)
 			if err != nil {
-				log.Errorf("%s", errorfmt.Full(err))
+				rlog.Errorf("%s", errorfmt.Full(err))
 				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
 			}
-			grantEnabled, err := grantrepo.GrantEnabled(tx, mt.ID, model.GrantTypeSSH)
+			grantEnabled, err := grantrepo.GrantEnabled(rlog, tx, mt.ID, model.GrantTypeSSH)
 			if err != nil {
-				log.Errorf("%s", errorfmt.Full(err))
+				rlog.Errorf("%s", errorfmt.Full(err))
 				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
 			}
 			return &request.SSHInfoResponse{
@@ -61,12 +62,13 @@ func HandleGetSSHInfo(ctx *fiber.Ctx) error {
 
 // HandleDeleteSSHKey handles requests to delete a user's ssh public key
 func HandleDeleteSSHKey(ctx *fiber.Ctx) error {
-	log.Debug("Handle delete ssh key request")
+	rlog := logger.GetRequestLogger(ctx)
+	rlog.Debug("Handle delete ssh key request")
 	req := request.SSHKeyDeleteRequest{}
 	if err := ctx.BodyParser(&req); err != nil {
 		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	log.Trace("Parsed delete ssh key request")
+	rlog.Trace("Parsed delete ssh key request")
 	if req.SSHKeyHash == "" {
 		if req.SSHKey == "" {
 			return serverModel.Response{
@@ -87,8 +89,8 @@ func HandleDeleteSSHKey(ctx *fiber.Ctx) error {
 	return settings.HandleSettings(
 		ctx, &req.Mytoken, event.FromNumber(event.SSHKeyRemoved, ""), fiber.StatusNoContent,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
-			if err := sshrepo.Delete(tx, mt.ID, req.SSHKeyHash); err != nil {
-				log.Errorf("%s", errorfmt.Full(err))
+			if err := sshrepo.Delete(rlog, tx, mt.ID, req.SSHKeyHash); err != nil {
+				rlog.Errorf("%s", errorfmt.Full(err))
 				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
 			}
 			return nil, nil
@@ -119,12 +121,13 @@ func HandlePost(ctx *fiber.Ctx) error {
 
 // handleAddSSHKey handles the initial request to add an ssh public key
 func handleAddSSHKey(ctx *fiber.Ctx) error {
-	log.Debug("Handle add ssh key request")
+	rlog := logger.GetRequestLogger(ctx)
+	rlog.Debug("Handle add ssh key request")
 	req := request.SSHKeyAddRequest{}
 	if err := ctx.BodyParser(&req); err != nil {
 		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	log.Trace("Parsed add ssh key request")
+	rlog.Trace("Parsed add ssh key request")
 	if req.SSHKey == "" {
 		return serverModel.Response{
 			Status:   fiber.StatusBadRequest,
@@ -143,9 +146,9 @@ func handleAddSSHKey(ctx *fiber.Ctx) error {
 	return settings.HandleSettings(
 		ctx, &req.Mytoken, event.FromNumber(event.SSHKeyAdded, ""), fiber.StatusOK,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
-			grantEnabled, err := grantrepo.GrantEnabled(tx, mt.ID, model.GrantTypeSSH)
+			grantEnabled, err := grantrepo.GrantEnabled(rlog, tx, mt.ID, model.GrantTypeSSH)
 			if err != nil {
-				log.Errorf("%s", errorfmt.Full(err))
+				rlog.Errorf("%s", errorfmt.Full(err))
 				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
 			}
 			if !grantEnabled {
@@ -177,8 +180,8 @@ func handleAddSSHKey(ctx *fiber.Ctx) error {
 				return nil, res
 			}
 			authRes := res.Response.(api.AuthCodeFlowResponse)
-			if err = transfercoderepo.LinkPollingCodeToSSHKey(tx, authRes.PollingCode, sshKeyHash); err != nil {
-				log.Errorf("%s", errorfmt.Full(err))
+			if err = transfercoderepo.LinkPollingCodeToSSHKey(rlog, tx, authRes.PollingCode, sshKeyHash); err != nil {
+				rlog.Errorf("%s", errorfmt.Full(err))
 				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
 			}
 			return &request.SSHKeyAddResponse{
@@ -207,12 +210,13 @@ func extractSSHKeyNameFromMTName(mtName string) string {
 
 // handlePollingCode handles the polling requests to finish adding an ssh public key
 func handlePollingCode(ctx *fiber.Ctx) error {
+	rlog := logger.GetRequestLogger(ctx)
 	req := my.NewPollingCodeRequest()
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	clientMetaData := ctxUtils.ClientMetaData(ctx)
-	mt, token, status, errRes := polling.CheckPollingCodeReq(req, *clientMetaData, true)
+	mt, token, status, errRes := polling.CheckPollingCodeReq(rlog, req, *clientMetaData, true)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
@@ -220,12 +224,12 @@ func handlePollingCode(ctx *fiber.Ctx) error {
 	userHash := hashUtils.SHA3_512Str([]byte(user))
 	encryptedMT, err := cryptUtils.AES256Encrypt(token, user)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return serverModel.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
-	mtName, err := mytokenrepohelper.GetMTName(nil, mt.ID)
+	mtName, err := mytokenrepohelper.GetMTName(rlog, nil, mt.ID)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return serverModel.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
 	name := extractSSHKeyNameFromMTName(mtName.String)
@@ -235,8 +239,8 @@ func handlePollingCode(ctx *fiber.Ctx) error {
 		UserHash:    userHash,
 		EncryptedMT: encryptedMT,
 	}
-	if err = sshrepo.Insert(nil, mt.ID, data); err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+	if err = sshrepo.Insert(rlog, nil, mt.ID, data); err != nil {
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return serverModel.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
 	return serverModel.Response{

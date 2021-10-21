@@ -5,6 +5,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
 
@@ -89,7 +90,7 @@ func (ste *MytokenEntry) Root() bool {
 }
 
 // Store stores the MytokenEntry in the database
-func (ste *MytokenEntry) Store(tx *sqlx.Tx, comment string) error {
+func (ste *MytokenEntry) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx, comment string) error {
 	steStore := mytokenEntryStore{
 		ID:       ste.ID,
 		SeqNo:    ste.SeqNo,
@@ -101,7 +102,7 @@ func (ste *MytokenEntry) Store(tx *sqlx.Tx, comment string) error {
 		Sub:      ste.Token.OIDCSubject,
 	}
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			if ste.rtID == nil {
 				if _, err := tx.Exec(`CALL CryptStoreRT_Insert(?,@ID)`, ste.rtEncrypted); err != nil {
 					return errors.WithStack(err)
@@ -113,14 +114,14 @@ func (ste *MytokenEntry) Store(tx *sqlx.Tx, comment string) error {
 				ste.rtID = &rtID
 			}
 			steStore.RefreshTokenID = *ste.rtID
-			if err := steStore.Store(tx); err != nil {
+			if err := steStore.Store(rlog, tx); err != nil {
 				return err
 			}
 			if err := storeEncryptionKey(tx, ste.encryptionKeyEncrypted, steStore.RefreshTokenID, ste.ID); err != nil {
 				return err
 			}
 			return eventService.LogEvent(
-				tx, eventService.MTEvent{
+				rlog, tx, eventService.MTEvent{
 					Event: event.FromNumber(event.MTCreated, comment),
 					MTID:  ste.ID,
 				}, ste.networkData,
@@ -148,9 +149,9 @@ type mytokenEntryStore struct {
 
 // Store stores the mytokenEntryStore in the database; if this is the first token for this user, the user is also added
 // to the db
-func (e *mytokenEntryStore) Store(tx *sqlx.Tx) error {
+func (e *mytokenEntryStore) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(
 				`CALL MTokens_Insert(?,?,?,?,?,?,?,?,?)`,
 				e.Sub, e.Iss, e.ID, e.SeqNo, e.ParentID, e.RootID, e.RefreshTokenID, e.Name, e.IP,

@@ -3,6 +3,7 @@ package accesstokenrepo
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model"
@@ -47,13 +48,13 @@ func (t *AccessToken) toDBObject() (*accessToken, error) {
 }
 
 // Store stores the AccessToken in the database as well as the relevant attributes
-func (t *AccessToken) Store(tx *sqlx.Tx) error {
+func (t *AccessToken) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	store, err := t.toDBObject()
 	if err != nil {
 		return err
 	}
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			var atID uint64
 			err = tx.Get(&atID, `CALL AT_Insert(?,?,?,?)`, store.Token, store.IP, store.Comment, store.MTID)
 			if err != nil {

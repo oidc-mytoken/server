@@ -17,9 +17,9 @@ import (
 )
 
 // SetVersionBefore sets that the before db migration commands for the passed version were executed
-func SetVersionBefore(tx *sqlx.Tx, version string) error {
+func SetVersionBefore(rlog log.Ext1FieldLogger, tx *sqlx.Tx, version string) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL Version_SetBefore(?)`, version)
 			return errors.WithStack(err)
 		},
@@ -27,9 +27,9 @@ func SetVersionBefore(tx *sqlx.Tx, version string) error {
 }
 
 // SetVersionAfter sets that the after db migration commands for the passed version were executed
-func SetVersionAfter(tx *sqlx.Tx, version string) error {
+func SetVersionAfter(rlog log.Ext1FieldLogger, tx *sqlx.Tx, version string) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL Version_SetAfter(?)`, version)
 			return errors.WithStack(err)
 		},
@@ -96,9 +96,9 @@ func (state DBVersionState) dBHasVersion(v string, cmds dbmigrate.Commands) bool
 }
 
 // GetVersionState returns the DBVersionState
-func GetVersionState(tx *sqlx.Tx) (state DBVersionState, err error) {
+func GetVersionState(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (state DBVersionState, err error) {
 	err = db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			err = errors.WithStack(tx.Select(&state, `CALL Version_Get()`))
 			if err == nil {
 				return nil
@@ -119,7 +119,7 @@ func GetVersionState(tx *sqlx.Tx) (state DBVersionState, err error) {
 // ConnectToVersion connects to the mytoken database and asserts that the database is up-to-date to the current version
 func ConnectToVersion() {
 	db.Connect()
-	state, err := GetVersionState(nil)
+	state, err := GetVersionState(log.StandardLogger(), nil)
 	if err != nil {
 		log.WithError(err).Fatal()
 	}

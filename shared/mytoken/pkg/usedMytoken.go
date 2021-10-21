@@ -2,6 +2,7 @@ package mytoken
 
 import (
 	"github.com/jmoiron/sqlx"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 )
@@ -13,11 +14,11 @@ type UsedMytoken struct {
 }
 
 // ToUsedMytoken turns a Mytoken into a UsedMytoken by adding information about its usages
-func (mt *Mytoken) ToUsedMytoken(tx *sqlx.Tx) (*UsedMytoken, error) {
+func (mt *Mytoken) ToUsedMytoken(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (*UsedMytoken, error) {
 	umt := &UsedMytoken{
 		Mytoken: *mt,
 	}
 	var err error
-	umt.Restrictions, err = mt.Restrictions.ToUsedRestrictions(tx, mt.ID)
+	umt.Restrictions, err = mt.Restrictions.ToUsedRestrictions(rlog, tx, mt.ID)
 	return umt, err
 }

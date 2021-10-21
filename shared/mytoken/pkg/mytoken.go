@@ -6,6 +6,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
 
@@ -171,12 +172,12 @@ func (mt *Mytoken) toMytokenResponse(jwt string) response.MytokenResponse {
 	return res
 }
 
-func (mt *Mytoken) toShortMytokenResponse(jwt string) (response.MytokenResponse, error) {
+func (mt *Mytoken) toShortMytokenResponse(rlog log.Ext1FieldLogger, jwt string) (response.MytokenResponse, error) {
 	shortToken, err := transfercoderepo.NewShortToken(jwt, mt.ID)
 	if err != nil {
 		return response.MytokenResponse{}, err
 	}
-	if err = shortToken.Store(nil); err != nil {
+	if err = shortToken.Store(rlog, nil); err != nil {
 		return response.MytokenResponse{}, err
 	}
 	res := mt.toTokenResponse()
@@ -199,19 +200,20 @@ func (mt *Mytoken) toTokenResponse() response.MytokenResponse {
 
 // CreateTransferCode creates a transfer code for the passed mytoken id
 func CreateTransferCode(
-	myID mtid.MTID, jwt string, newMT bool, responseType model.ResponseType, clientMetaData api.ClientMetaData,
+	rlog log.Ext1FieldLogger, myID mtid.MTID, jwt string, newMT bool, responseType model.ResponseType,
+	clientMetaData api.ClientMetaData,
 ) (string, uint64, error) {
 	transferCode, err := transfercoderepo.NewTransferCode(jwt, myID, newMT, responseType)
 	if err != nil {
 		return "", 0, err
 	}
 	err = db.Transact(
-		func(tx *sqlx.Tx) error {
-			if err = transferCode.Store(tx); err != nil {
+		rlog, func(tx *sqlx.Tx) error {
+			if err = transferCode.Store(rlog, tx); err != nil {
 				return err
 			}
 			return eventService.LogEvent(
-				tx, eventService.MTEvent{
+				rlog, tx, eventService.MTEvent{
 					Event: event.FromNumber(
 						event.TransferCodeCreated, fmt.Sprintf("token type: %s", responseType.String()),
 					),
@@ -226,7 +228,8 @@ func CreateTransferCode(
 
 // ToTokenResponse creates a MytokenResponse for this Mytoken according to the passed model.ResponseType
 func (mt *Mytoken) ToTokenResponse(
-	responseType model.ResponseType, maxTokenLen int, networkData api.ClientMetaData, jwt string,
+	rlog log.Ext1FieldLogger, responseType model.ResponseType, maxTokenLen int, networkData api.ClientMetaData,
+	jwt string,
 ) (response.MytokenResponse, error) {
 	if jwt == "" {
 		jwt = mt.jwt
@@ -245,10 +248,10 @@ func (mt *Mytoken) ToTokenResponse(
 	switch responseType {
 	case model.ResponseTypeShortToken:
 		if config.Get().Features.ShortTokens.Enabled {
-			return mt.toShortMytokenResponse(jwt)
+			return mt.toShortMytokenResponse(rlog, jwt)
 		}
 	case model.ResponseTypeTransferCode:
-		transferCode, expiresIn, err := CreateTransferCode(mt.ID, jwt, true, model.ResponseTypeToken, networkData)
+		transferCode, expiresIn, err := CreateTransferCode(rlog, mt.ID, jwt, true, model.ResponseTypeToken, networkData)
 		res := mt.toTokenResponse()
 		res.TransferCode = transferCode
 		res.MytokenType = model.ResponseTypeTransferCode

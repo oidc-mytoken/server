@@ -26,6 +26,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+	"github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/shared/context"
 	pkgModel "github.com/oidc-mytoken/server/shared/model"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
@@ -48,11 +49,10 @@ func Init() {
 
 // GetAuthorizationURL creates a authorization url
 func GetAuthorizationURL(
-	provider *config.ProviderConf,
-	oState, pkceChallenge string,
+	rlog log.Ext1FieldLogger, provider *config.ProviderConf, oState, pkceChallenge string,
 	restrictions restrictions.Restrictions,
 ) string {
-	log.Debug("Generating authorization url")
+	rlog.Debug("Generating authorization url")
 	scopes := restrictions.GetScopes()
 	if len(scopes) <= 0 {
 		scopes = provider.Scopes
@@ -91,7 +91,8 @@ func GetAuthorizationURL(
 
 // StartAuthCodeFlow starts an authorization code flow
 func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.Response {
-	log.Debug("Handle authcode")
+	rlog := logger.GetRequestLogger(ctx)
+	rlog.Debug("Handle authcode")
 	req := oidcReq.ToAuthCodeFlowRequest()
 	req.Restrictions.ReplaceThisIp(ctx.IP())
 	req.Restrictions.ClearUnsupportedKeys()
@@ -129,7 +130,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 		AuthorizationURL: utils.CombineURLPath(consentEndpoint, consentCode.String()),
 	}
 	if req.Native() && config.Get().Features.Polling.Enabled {
-		poll := authFlowInfo.State.PollingCode()
+		poll := authFlowInfo.State.PollingCode(rlog)
 		authFlowInfo.PollingCode = transfercoderepo.CreatePollingCode(poll, req.ResponseType, req.MaxTokenLen)
 		res.PollingInfo = api.PollingInfo{
 			PollingCode:          poll,
@@ -137,8 +138,8 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 			PollingInterval:      config.Get().Features.Polling.PollingInterval,
 		}
 	}
-	if err := authFlowInfo.Store(nil); err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+	if err := authFlowInfo.Store(rlog, nil); err != nil {
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	return &model.Response{
@@ -148,9 +149,11 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 }
 
 // CodeExchange performs an oidc code exchange it creates the mytoken and stores it in the database
-func CodeExchange(oState *state.State, code string, networkData api.ClientMetaData) *model.Response {
-	log.Debug("Handle code exchange")
-	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(oState)
+func CodeExchange(
+	rlog log.Ext1FieldLogger, oState *state.State, code string, networkData api.ClientMetaData,
+) *model.Response {
+	rlog.Debug("Handle code exchange")
+	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(rlog, oState)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &model.Response{
@@ -158,7 +161,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 				Response: api.ErrorStateMismatch,
 			}
 		}
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	provider, ok := config.Get().ProviderByIssuer[authInfo.Issuer]
@@ -184,13 +187,13 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 			if !resOK {
 				res = pkgModel.OIDCError(e.Error(), "")
 			}
-			log.WithError(e).Error("error in code exchange")
+			rlog.WithError(e).Error("error in code exchange")
 			return &model.Response{
 				Status:   e.Response.StatusCode,
 				Response: res,
 			}
 		}
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if token.RefreshToken == "" {
@@ -206,20 +209,20 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 		authInfo.Restrictions.SetMaxScopes(scopes) // Update restrictions with correct scopes
 	}
 	audiences := authInfo.Restrictions.GetAudiences()
-	if tmp, ok := jwtutils.GetAudiencesFromJWT(token.AccessToken); ok {
+	if tmp, ok := jwtutils.GetAudiencesFromJWT(rlog, token.AccessToken); ok {
 		audiences = tmp
 	}
 	authInfo.Restrictions.SetMaxAudiences(audiences) // Update restrictions with correct audiences
 
 	oidcSub, err := getSubjectFromUserinfo(provider.Provider, token)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	var ste *mytokenrepo.MytokenEntry
 	if err = db.Transact(
-		func(tx *sqlx.Tx) error {
-			ste, err = createMytokenEntry(tx, authInfo, token, oidcSub, networkData)
+		rlog, func(tx *sqlx.Tx) error {
+			ste, err = createMytokenEntry(rlog, tx, authInfo, token, oidcSub, networkData)
 			if err != nil {
 				return err
 			}
@@ -231,7 +234,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 				Scopes:    scopes,
 				Audiences: audiences,
 			}
-			if err = at.Store(tx); err != nil {
+			if err = at.Store(rlog, tx); err != nil {
 				return err
 			}
 			if authInfo.PollingCode {
@@ -239,14 +242,16 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 				if err != nil {
 					return err
 				}
-				if err = transfercoderepo.LinkPollingCodeToMT(tx, oState.PollingCode(), jwt, ste.ID); err != nil {
+				if err = transfercoderepo.LinkPollingCodeToMT(
+					rlog, tx, oState.PollingCode(rlog), jwt, ste.ID,
+				); err != nil {
 					return err
 				}
 			}
-			return authcodeinforepo.DeleteAuthFlowInfoByState(tx, oState)
+			return authcodeinforepo.DeleteAuthFlowInfoByState(rlog, tx, oState)
 		},
 	); err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if authInfo.PollingCode {
@@ -255,9 +260,9 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 			Response: "/native",
 		}
 	}
-	res, err := ste.Token.ToTokenResponse(authInfo.ResponseType, authInfo.MaxTokenLen, networkData, "")
+	res, err := ste.Token.ToTokenResponse(rlog, authInfo.ResponseType, authInfo.MaxTokenLen, networkData, "")
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	var cookie *fiber.Cookie
@@ -274,9 +279,7 @@ func CodeExchange(oState *state.State, code string, networkData api.ClientMetaDa
 }
 
 func createMytokenEntry(
-	tx *sqlx.Tx,
-	authFlowInfo *authcodeinforepo.AuthFlowInfoOut,
-	token *oauth2.Token,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut, token *oauth2.Token,
 	oidcSub string,
 	networkData api.ClientMetaData,
 ) (*mytokenrepo.MytokenEntry, error) {
@@ -294,7 +297,7 @@ func createMytokenEntry(
 	if err := ste.InitRefreshToken(token.RefreshToken); err != nil {
 		return nil, err
 	}
-	if err := ste.Store(tx, "Used grant_type oidc_flow authorization_code"); err != nil {
+	if err := ste.Store(rlog, tx, "Used grant_type oidc_flow authorization_code"); err != nil {
 		return nil, err
 	}
 	return ste, nil

@@ -16,6 +16,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+	"github.com/oidc-mytoken/server/internal/utils/logger"
 	sharedModel "github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken"
 	mytokenPkg "github.com/oidc-mytoken/server/shared/mytoken/pkg"
@@ -24,18 +25,19 @@ import (
 
 // HandleRevoke handles requests to the revocation endpoint
 func HandleRevoke(ctx *fiber.Ctx) error {
-	log.Debug("Handle revocation request")
+	rlog := logger.GetRequestLogger(ctx)
+	rlog.Debug("Handle revocation request")
 	req := api.RevocationRequest{}
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	log.Trace("Parsed mytoken request")
+	rlog.Trace("Parsed mytoken request")
 	clearCookie := false
 	if req.Token == "" {
 		req.Token = ctx.Cookies("mytoken")
 		clearCookie = true
 	}
-	errRes := revokeAnyToken(nil, req.Token, req.OIDCIssuer, req.Recursive)
+	errRes := revokeAnyToken(rlog, nil, req.Token, req.OIDCIssuer, req.Recursive)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
@@ -58,36 +60,38 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 	return ctx.SendStatus(fiber.StatusNoContent)
 }
 
-func revokeAnyToken(tx *sqlx.Tx, token, issuer string, recursive bool) (errRes *model.Response) {
+func revokeAnyToken(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, token, issuer string, recursive bool,
+) (errRes *model.Response) {
 	if utils.IsJWT(token) { // normal Mytoken
-		return revokeMytoken(tx, token, issuer, recursive)
+		return revokeMytoken(rlog, tx, token, issuer, recursive)
 	} else if len(token) == config.Get().Features.Polling.Len { // Transfer Code
-		return revokeTransferCode(tx, token, issuer)
+		return revokeTransferCode(rlog, tx, token, issuer)
 	} else { // Short Token
 		shortToken := transfercoderepo.ParseShortToken(token)
 		var valid bool
 		if err := db.RunWithinTransaction(
-			tx, func(tx *sqlx.Tx) error {
-				jwt, v, err := shortToken.JWT(tx)
+			rlog, tx, func(tx *sqlx.Tx) error {
+				jwt, v, err := shortToken.JWT(rlog, tx)
 				valid = v
 				if err != nil {
 					return err
 				}
 				token = jwt
-				return shortToken.Delete(tx)
+				return shortToken.Delete(rlog, tx)
 			},
 		); err != nil {
-			log.Errorf("%s", errorfmt.Full(err))
+			rlog.Errorf("%s", errorfmt.Full(err))
 			return model.ErrorToInternalServerErrorResponse(err)
 		}
 		if !valid {
 			return nil
 		}
-		return revokeMytoken(tx, token, issuer, recursive)
+		return revokeMytoken(rlog, tx, token, issuer, recursive)
 	}
 }
 
-func revokeMytoken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *model.Response) {
+func revokeMytoken(rlog log.Ext1FieldLogger, tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *model.Response) {
 	mt, err := mytokenPkg.ParseJWT(jwt)
 	if err != nil {
 		return nil
@@ -98,35 +102,35 @@ func revokeMytoken(tx *sqlx.Tx, jwt, issuer string, recursive bool) (errRes *mod
 			Response: sharedModel.BadRequestError("token not for specified issuer"),
 		}
 	}
-	return mytoken.RevokeMytoken(tx, mt.ID, jwt, recursive, mt.OIDCIssuer)
+	return mytoken.RevokeMytoken(rlog, tx, mt.ID, jwt, recursive, mt.OIDCIssuer)
 }
 
-func revokeTransferCode(tx *sqlx.Tx, token, issuer string) (errRes *model.Response) {
+func revokeTransferCode(rlog log.Ext1FieldLogger, tx *sqlx.Tx, token, issuer string) (errRes *model.Response) {
 	transferCode := transfercoderepo.ParseTransferCode(token)
 	err := db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
-			revokeMT, err := transferCode.GetRevokeJWT(tx)
+		rlog, tx, func(tx *sqlx.Tx) error {
+			revokeMT, err := transferCode.GetRevokeJWT(rlog, tx)
 			if err != nil {
 				return err
 			}
 			if revokeMT {
-				jwt, valid, err := transferCode.JWT(tx)
+				jwt, valid, err := transferCode.JWT(rlog, tx)
 				if err != nil {
 					return err
 				}
 				if valid { // if !valid the jwt field could not decrypted correctly, so we can skip that, but still delete
 					// the TransferCode
-					errRes = revokeAnyToken(tx, jwt, issuer, true)
+					errRes = revokeAnyToken(rlog, tx, jwt, issuer, true)
 					if errRes != nil {
 						return errors.New("placeholder")
 					}
 				}
 			}
-			return transferCode.Delete(tx)
+			return transferCode.Delete(rlog, tx)
 		},
 	)
 	if err != nil && errRes == nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	return

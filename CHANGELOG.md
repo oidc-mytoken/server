@@ -22,6 +22,7 @@
 ### Enhancements
 
 - Removed buttons from webinterface in the tokeninfo tabs. The content now loads directly when switching the tab.
+- Added request ids to response header and logging
 
 ## mytoken 0.3.2
 

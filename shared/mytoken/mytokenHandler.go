@@ -15,6 +15,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+	"github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 
 	"github.com/oidc-mytoken/api/v0"
@@ -43,17 +44,18 @@ const errResPlaceholder = "error_res"
 
 // HandleMytokenFromTransferCode handles requests to return the mytoken for a transfer code
 func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
-	log.Debug("Handle mytoken from transfercode")
+	rlog := logger.GetRequestLogger(ctx)
+	rlog.Debug("Handle mytoken from transfercode")
 	req := response.NewExchangeTransferCodeRequest()
 	if err := errors.WithStack(json.Unmarshal(ctx.Body(), &req)); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
-	log.Trace("Parsed request")
+	rlog.Trace("Parsed request")
 	var errorRes *model.Response = nil
 	var tokenStr string
 	if err := db.Transact(
-		func(tx *sqlx.Tx) error {
-			status, err := transfercoderepo.CheckTransferCode(tx, req.TransferCode)
+		rlog, func(tx *sqlx.Tx) error {
+			status, err := transfercoderepo.CheckTransferCode(rlog, tx, req.TransferCode)
 			if err != nil {
 				return err
 			}
@@ -72,7 +74,7 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 				return errors.New(errResPlaceholder)
 			}
 			tokenStr, err = transfercoderepo.PopTokenForTransferCode(
-				tx, req.TransferCode, *ctxUtils.ClientMetaData(ctx),
+				rlog, tx, req.TransferCode, *ctxUtils.ClientMetaData(ctx),
 			)
 			return err
 		},
@@ -80,18 +82,18 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 		if errorRes != nil {
 			return errorRes
 		}
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 
-	token, err := universalmytoken.Parse(tokenStr)
+	token, err := universalmytoken.Parse(rlog, tokenStr)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	mt, err := mytoken.ParseJWT(token.JWT)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	return &model.Response{
@@ -112,7 +114,8 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 
 // HandleMytokenFromMytoken handles requests to create a Mytoken from an existing Mytoken
 func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
-	log.Debug("Handle mytoken from mytoken")
+	rlog := logger.GetRequestLogger(ctx)
+	rlog.Debug("Handle mytoken from mytoken")
 	req := response.NewMytokenRequest()
 	if err := errors.WithStack(json.Unmarshal(ctx.Body(), &req)); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
@@ -128,51 +131,52 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	}
 	req.Restrictions.ReplaceThisIp(ctx.IP())
 	req.Restrictions.ClearUnsupportedKeys()
-	log.Trace("Parsed mytoken request")
+	rlog.Trace("Parsed mytoken request")
 
 	// GrantType already checked
 
-	mt, errRes := auth.RequireValidMytoken(nil, &req.Mytoken, ctx)
+	mt, errRes := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
 	if errRes != nil {
 		return errRes
 	}
-	usedRestriction, errRes := auth.RequireUsableRestriction(nil, mt, ctx.IP(), nil, nil, api.CapabilityCreateMT)
+	usedRestriction, errRes := auth.RequireUsableRestriction(rlog, nil, mt, ctx.IP(), nil, nil, api.CapabilityCreateMT)
 	if errRes != nil {
 		return errRes
 	}
-	if _, errRes = auth.RequireMatchingIssuer(mt.OIDCIssuer, &req.Issuer); errRes != nil {
+	if _, errRes = auth.RequireMatchingIssuer(rlog, mt.OIDCIssuer, &req.Issuer); errRes != nil {
 		return errRes
 	}
-	return handleMytokenFromMytoken(mt, req, ctxUtils.ClientMetaData(ctx), usedRestriction)
+	return handleMytokenFromMytoken(rlog, mt, req, ctxUtils.ClientMetaData(ctx), usedRestriction)
 }
 
 func handleMytokenFromMytoken(
-	parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData *api.ClientMetaData,
+	rlog log.Ext1FieldLogger, parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest,
+	networkData *api.ClientMetaData,
 	usedRestriction *restrictions.Restriction,
 ) *model.Response {
-	ste, errorResponse := createMytokenEntry(parent, req, *networkData)
+	ste, errorResponse := createMytokenEntry(rlog, parent, req, *networkData)
 	if errorResponse != nil {
 		return errorResponse
 	}
 	var tokenUpdate *response.MytokenResponse
 	if err := db.Transact(
-		func(tx *sqlx.Tx) (err error) {
+		rlog, func(tx *sqlx.Tx) (err error) {
 			if usedRestriction != nil {
-				if err = usedRestriction.UsedOther(tx, parent.ID); err != nil {
+				if err = usedRestriction.UsedOther(rlog, tx, parent.ID); err != nil {
 					return
 				}
 			}
 			tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(
-				tx, req.Mytoken.JWT, parent, *networkData, req.Mytoken.OriginalTokenType,
+				rlog, tx, req.Mytoken.JWT, parent, *networkData, req.Mytoken.OriginalTokenType,
 			)
 			if err != nil {
 				return
 			}
-			if err = ste.Store(tx, "Used grant_type mytoken"); err != nil {
+			if err = ste.Store(rlog, tx, "Used grant_type mytoken"); err != nil {
 				return
 			}
 			return eventService.LogEvents(
-				tx, []eventService.MTEvent{
+				rlog, tx, []eventService.MTEvent{
 					{
 						Event: event.FromNumber(event.InheritedRT, "Got RT from parent"),
 						MTID:  ste.ID,
@@ -187,13 +191,13 @@ func handleMytokenFromMytoken(
 			)
 		},
 	); err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 
-	res, err := ste.Token.ToTokenResponse(req.ResponseType, req.MaxTokenLen, *networkData, "")
+	res, err := ste.Token.ToTokenResponse(rlog, req.ResponseType, req.MaxTokenLen, *networkData, "")
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	var cake []*fiber.Cookie
@@ -209,12 +213,13 @@ func handleMytokenFromMytoken(
 }
 
 func createMytokenEntry(
-	parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest, networkData api.ClientMetaData,
+	rlog log.Ext1FieldLogger, parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest,
+	networkData api.ClientMetaData,
 ) (*mytokenrepo.MytokenEntry, *model.Response) {
-	rtID, dbErr := refreshtokenrepo.GetRTID(nil, parent.ID)
+	rtID, dbErr := refreshtokenrepo.GetRTID(rlog, nil, parent.ID)
 	rtFound, err := dbhelper.ParseError(dbErr)
 	if err != nil {
-		log.WithError(dbErr).Error()
+		rlog.WithError(dbErr).Error()
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
 	}
 	if !rtFound {
@@ -223,9 +228,9 @@ func createMytokenEntry(
 			Response: pkgModel.InvalidTokenError(""),
 		}
 	}
-	rootID, rootFound, dbErr := dbhelper.GetMTRootID(nil, parent.ID)
+	rootID, rootFound, dbErr := dbhelper.GetMTRootID(rlog, nil, parent.ID)
 	if dbErr != nil {
-		log.WithError(dbErr).Error()
+		rlog.WithError(dbErr).Error()
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
 	}
 	if !rootFound {
@@ -243,7 +248,7 @@ func createMytokenEntry(
 			Response: pkgModel.BadRequestError("requested restrictions do not respect maximum mytoken lifetime"),
 		}
 	}
-	r, ok := restrictions.Tighten(parent.Restrictions, req.Restrictions)
+	r, ok := restrictions.Tighten(rlog, parent.Restrictions, req.Restrictions)
 	if !ok && req.FailOnRestrictionsNotTighter {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
@@ -269,13 +274,13 @@ func createMytokenEntry(
 		mytoken.NewMytoken(parent.OIDCSubject, parent.OIDCIssuer, r, c, sc, req.Rotation),
 		req.Name, networkData,
 	)
-	encryptionKey, _, err := encryptionkeyrepo.GetEncryptionKey(nil, parent.ID, req.Mytoken.JWT)
+	encryptionKey, _, err := encryptionkeyrepo.GetEncryptionKey(rlog, nil, parent.ID, req.Mytoken.JWT)
 	if err != nil {
-		log.WithError(err).Error()
+		rlog.WithError(err).Error()
 		return ste, model.ErrorToInternalServerErrorResponse(err)
 	}
 	if err = ste.SetRefreshToken(rtID, encryptionKey); err != nil {
-		log.WithError(err).Error()
+		rlog.WithError(err).Error()
 		return ste, model.ErrorToInternalServerErrorResponse(err)
 	}
 	ste.ParentID = parent.ID
@@ -284,7 +289,9 @@ func createMytokenEntry(
 }
 
 // RevokeMytoken revokes a Mytoken
-func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, jwt string, recursive bool, issuer string) *model.Response {
+func RevokeMytoken(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID, jwt string, recursive bool, issuer string,
+) *model.Response {
 	provider, ok := config.Get().ProviderByIssuer[issuer]
 	if !ok {
 		return &model.Response{
@@ -293,32 +300,32 @@ func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, jwt string, recursive bool, issuer
 		}
 	}
 	err := db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
-			rtID, err := refreshtokenrepo.GetRTID(tx, id)
+		rlog, tx, func(tx *sqlx.Tx) error {
+			rtID, err := refreshtokenrepo.GetRTID(rlog, tx, id)
 			if err != nil {
 				_, err = dbhelper.ParseError(err) // sets err to nil if token was not found;
 				// this is no error and we are done, since the token is already revoked
 				return err
 			}
-			rt, _, err := cryptstore.GetRefreshToken(tx, id, jwt)
+			rt, _, err := cryptstore.GetRefreshToken(rlog, tx, id, jwt)
 			if err != nil {
 				return err
 			}
-			if err = dbhelper.RevokeMT(tx, id, recursive); err != nil {
+			if err = dbhelper.RevokeMT(rlog, tx, id, recursive); err != nil {
 				return err
 			}
-			count, err := refreshtokenrepo.CountRTOccurrences(tx, rtID)
+			count, err := refreshtokenrepo.CountRTOccurrences(rlog, tx, rtID)
 			if err != nil {
 				return err
 			}
 			if count > 0 {
 				return nil
 			}
-			if e := revoke.RefreshToken(provider, rt); e != nil {
+			if e := revoke.RefreshToken(rlog, provider, rt); e != nil {
 				apiError := e.Response.(api.Error)
 				return fmt.Errorf("%s: %s", apiError.Error, apiError.ErrorDescription)
 			}
-			return cryptstore.DeleteCrypted(tx, rtID)
+			return cryptstore.DeleteCrypted(rlog, tx, rtID)
 		},
 	)
 	if err == nil {
@@ -330,6 +337,6 @@ func RevokeMytoken(tx *sqlx.Tx, id mtid.MTID, jwt string, recursive bool, issuer
 			Response: pkgModel.OIDCError(errorfmt.Error(err), ""),
 		}
 	}
-	log.Errorf("%s", errorfmt.Full(err))
+	rlog.Errorf("%s", errorfmt.Full(err))
 	return model.ErrorToInternalServerErrorResponse(err)
 }

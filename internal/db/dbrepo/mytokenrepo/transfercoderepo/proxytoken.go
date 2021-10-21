@@ -5,6 +5,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
@@ -75,7 +76,7 @@ func (pt *proxyToken) SetJWT(jwt string, mID mtid.MTID) (err error) {
 }
 
 // JWT returns the decrypted jwt that is linked to this proxyToken
-func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
+func (pt *proxyToken) JWT(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (jwt string, valid bool, err error) {
 	jwt = pt.decryptedJWT
 	if jwt != "" {
 		valid = true
@@ -83,7 +84,7 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 	}
 	if pt.encryptedJWT == "" {
 		if err = db.RunWithinTransaction(
-			tx, func(tx *sqlx.Tx) error {
+			rlog, tx, func(tx *sqlx.Tx) error {
 				var res struct {
 					JWT  string    `db:"jwt"`
 					MTID mtid.MTID `db:"MT_id"`
@@ -113,9 +114,9 @@ func (pt *proxyToken) JWT(tx *sqlx.Tx) (jwt string, valid bool, err error) {
 }
 
 // Store stores the proxyToken
-func (pt proxyToken) Store(tx *sqlx.Tx) error {
+func (pt proxyToken) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL ProxyTokens_Insert(?,?,?)`, pt.id, pt.encryptedJWT, pt.mtID)
 			return errors.WithStack(err)
 		},
@@ -123,9 +124,9 @@ func (pt proxyToken) Store(tx *sqlx.Tx) error {
 }
 
 // Update updates the jwt of the proxyToken
-func (pt proxyToken) Update(tx *sqlx.Tx) error {
+func (pt proxyToken) Update(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL ProxyTokens_Update(?,?,?)`, pt.ID(), pt.encryptedJWT, pt.mtID)
 			return errors.WithStack(err)
 		},
@@ -134,9 +135,9 @@ func (pt proxyToken) Update(tx *sqlx.Tx) error {
 
 // Delete deletes the proxyToken from the database, it does not delete the linked Mytoken, the jwt should have been
 // retrieved earlier and the Mytoken if desired be revoked separately
-func (pt proxyToken) Delete(tx *sqlx.Tx) error {
+func (pt proxyToken) Delete(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL ProxyTokens_Delete(?)`, pt.id)
 			return errors.WithStack(err)
 		},

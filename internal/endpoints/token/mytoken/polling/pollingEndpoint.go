@@ -12,17 +12,19 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+	"github.com/oidc-mytoken/server/internal/utils/logger"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
 // HandlePollingCode handles a request on the polling endpoint
 func HandlePollingCode(ctx *fiber.Ctx) error {
+	rlog := logger.GetRequestLogger(ctx)
 	req := response.NewPollingCodeRequest()
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	clientMetaData := ctxUtils.ClientMetaData(ctx)
-	mt, token, pollingCodeStatus, errRes := CheckPollingCodeReq(req, *clientMetaData, false)
+	mt, token, pollingCodeStatus, errRes := CheckPollingCodeReq(rlog, req, *clientMetaData, false)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
@@ -30,9 +32,9 @@ func HandlePollingCode(ctx *fiber.Ctx) error {
 	if pollingCodeStatus.MaxTokenLen != nil {
 		maxTokenLen = *pollingCodeStatus.MaxTokenLen
 	}
-	res, err := mt.ToTokenResponse(pollingCodeStatus.ResponseType, maxTokenLen, *clientMetaData, token)
+	res, err := mt.ToTokenResponse(rlog, pollingCodeStatus.ResponseType, maxTokenLen, *clientMetaData, token)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
 	return model.Response{
@@ -43,21 +45,19 @@ func HandlePollingCode(ctx *fiber.Ctx) error {
 
 // CheckPollingCodeReq checks a pkg.PollingCodeRequest and returns the linked mytoken if valid
 func CheckPollingCodeReq(
-	req response.PollingCodeRequest,
-	networkData api.ClientMetaData,
-	forSSH bool,
+	rlog log.Ext1FieldLogger, req response.PollingCodeRequest, networkData api.ClientMetaData, forSSH bool,
 ) (mt *mytoken.Mytoken, token string, pollingCodeStatus transfercoderepo.TransferCodeStatus, errRes *model.Response) {
 	pollingCode := req.PollingCode
-	log.WithField("polling_code", pollingCode).WithField("for_ssh", forSSH).Debug("Handle polling code")
+	rlog.WithField("polling_code", pollingCode).WithField("for_ssh", forSSH).Debug("Handle polling code")
 	var err error
-	pollingCodeStatus, err = transfercoderepo.CheckTransferCode(nil, pollingCode)
+	pollingCodeStatus, err = transfercoderepo.CheckTransferCode(rlog, nil, pollingCode)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		errRes = model.ErrorToInternalServerErrorResponse(err)
 		return
 	}
 	if !pollingCodeStatus.Found || (pollingCodeStatus.SSHKeyHash.Valid != forSSH) {
-		log.WithField("polling_code", pollingCode).Debug("Polling code not known")
+		rlog.WithField("polling_code", pollingCode).Debug("Polling code not known")
 		errRes = &model.Response{
 			Status:   fiber.StatusUnauthorized,
 			Response: api.ErrorBadTransferCode,
@@ -65,7 +65,7 @@ func CheckPollingCodeReq(
 		return
 	}
 	if pollingCodeStatus.ConsentDeclined {
-		log.WithField("polling_code", pollingCode).Debug("Consent declined")
+		rlog.WithField("polling_code", pollingCode).Debug("Consent declined")
 		errRes = &model.Response{
 			Status:   fiber.StatusUnauthorized,
 			Response: api.ErrorConsentDeclined,
@@ -73,16 +73,16 @@ func CheckPollingCodeReq(
 		return
 	}
 	if pollingCodeStatus.Expired {
-		log.WithField("polling_code", pollingCode).Debug("Polling code expired")
+		rlog.WithField("polling_code", pollingCode).Debug("Polling code expired")
 		errRes = &model.Response{
 			Status:   fiber.StatusUnauthorized,
 			Response: api.ErrorTransferCodeExpired,
 		}
 		return
 	}
-	token, err = transfercoderepo.PopTokenForTransferCode(nil, pollingCode, networkData)
+	token, err = transfercoderepo.PopTokenForTransferCode(rlog, nil, pollingCode, networkData)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		errRes = model.ErrorToInternalServerErrorResponse(err)
 		return
 	}
@@ -95,7 +95,7 @@ func CheckPollingCodeReq(
 	}
 	mt, err = mytoken.ParseJWT(token)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		errRes = model.ErrorToInternalServerErrorResponse(err)
 		return
 	}

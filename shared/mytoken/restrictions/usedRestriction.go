@@ -2,6 +2,7 @@ package restrictions
 
 import (
 	"github.com/jmoiron/sqlx"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
@@ -16,10 +17,12 @@ type UsedRestriction struct {
 }
 
 // ToUsedRestrictions turns a Restrictions into a slice of UsedRestriction
-func (r Restrictions) ToUsedRestrictions(tx *sqlx.Tx, id mtid.MTID) (ur []UsedRestriction, err error) {
+func (r Restrictions) ToUsedRestrictions(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID) (
+	ur []UsedRestriction, err error,
+) {
 	var u UsedRestriction
 	for _, rr := range r {
-		u, err = rr.ToUsedRestriction(tx, id)
+		u, err = rr.ToUsedRestriction(rlog, tx, id)
 		if err != nil {
 			return
 		}
@@ -29,18 +32,18 @@ func (r Restrictions) ToUsedRestrictions(tx *sqlx.Tx, id mtid.MTID) (ur []UsedRe
 }
 
 // ToUsedRestriction turns a Restriction into an UsedRestriction
-func (r Restriction) ToUsedRestriction(tx *sqlx.Tx, id mtid.MTID) (UsedRestriction, error) {
+func (r Restriction) ToUsedRestriction(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID) (UsedRestriction, error) {
 	ur := UsedRestriction{
 		Restriction: r,
 	}
 	err := db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
-			at, err := r.getATUsageCounts(tx, id)
+		rlog, tx, func(tx *sqlx.Tx) error {
+			at, err := r.getATUsageCounts(rlog, tx, id)
 			if err != nil {
 				return err
 			}
 			ur.UsagesATDone = at
-			other, err := r.getOtherUsageCounts(tx, id)
+			other, err := r.getOtherUsageCounts(rlog, tx, id)
 			ur.UsagesOtherDone = other
 			return err
 		},

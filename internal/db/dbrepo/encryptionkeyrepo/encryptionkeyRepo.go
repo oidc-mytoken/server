@@ -5,6 +5,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
@@ -13,10 +14,10 @@ import (
 
 // ReencryptEncryptionKey re-encrypts the encryption key for a mytoken. This is needed when the mytoken changes, e.g. on
 // token rotation
-func ReencryptEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID, oldJWT, newJWT string) error {
+func ReencryptEncryptionKey(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID, oldJWT, newJWT string) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
-			keyID, err := getEncryptionKeyID(tx, tokenID)
+		rlog, tx, func(tx *sqlx.Tx) error {
+			keyID, err := getEncryptionKeyID(rlog, tx, tokenID)
 			if err != nil {
 				return err
 			}
@@ -39,10 +40,10 @@ func ReencryptEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID, oldJWT, newJWT strin
 }
 
 // DeleteEncryptionKey deletes the encryption key for a mytoken.
-func DeleteEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID) error {
+func DeleteEncryptionKey(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
-			keyID, err := getEncryptionKeyID(tx, tokenID)
+		rlog, tx, func(tx *sqlx.Tx) error {
+			keyID, err := getEncryptionKeyID(rlog, tx, tokenID)
 			if err != nil {
 				return err
 			}
@@ -55,9 +56,11 @@ func DeleteEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID) error {
 }
 
 // GetEncryptionKey returns the encryption key and the rtid for a mytoken
-func GetEncryptionKey(tx *sqlx.Tx, tokenID mtid.MTID, jwt string) (key []byte, rtID uint64, err error) {
+func GetEncryptionKey(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID, jwt string) (
+	key []byte, rtID uint64, err error,
+) {
 	err = db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			var res RTCryptKeyDBRes
 			if err = tx.Get(&res, `CALL EncryptionKeys_GetRTKeyForMT(?)`, tokenID); err != nil {
 				return errors.WithStack(err)
@@ -101,10 +104,10 @@ func (res RTCryptKeyDBRes) Decrypt(jwt string) (string, error) {
 }
 
 // getEncryptionKeyID returns the id of the encryption key used for encrypting the RT linked to this mytoken
-func getEncryptionKeyID(tx *sqlx.Tx, myID mtid.MTID) (uint64, error) {
+func getEncryptionKeyID(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID) (uint64, error) {
 	var res RTCryptKeyDBRes
 	err := db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			return errors.WithStack(tx.Get(&res, `CALL EncryptionKeys_GetRTKeyForMT(?)`, myID))
 		},
 	)

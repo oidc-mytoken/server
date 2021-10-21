@@ -3,6 +3,7 @@ package tree
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
 
@@ -37,10 +38,10 @@ func (ste *MytokenEntry) Root() bool {
 }
 
 // AllTokens returns information about all mytokens for the user linked to the passed mytoken
-func AllTokens(tx *sqlx.Tx, tokenID mtid.MTID) ([]MytokenEntryTree, error) {
+func AllTokens(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) ([]MytokenEntryTree, error) {
 	var tokens []MytokenEntry
 	if err := db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			return errors.WithStack(tx.Select(&tokens, `CALL MTokens_GetAllForSameUser(?)`, tokenID))
 		},
 	); err != nil {
@@ -50,10 +51,10 @@ func AllTokens(tx *sqlx.Tx, tokenID mtid.MTID) ([]MytokenEntryTree, error) {
 }
 
 // TokenSubTree returns information about all subtokens for the passed mytoken
-func TokenSubTree(tx *sqlx.Tx, tokenID mtid.MTID) (MytokenEntryTree, error) {
+func TokenSubTree(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) (MytokenEntryTree, error) {
 	var tokens []MytokenEntry
 	if err := db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			return errors.WithStack(tx.Select(&tokens, `CALL MTokens_GetSubtokens(?)`, tokenID))
 		},
 	); err != nil {

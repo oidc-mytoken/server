@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 )
 
@@ -29,11 +30,12 @@ func GetMytokenStr(ctx *fiber.Ctx) string {
 
 // GetMytoken checks a fiber.Ctx for a mytoken and returns a token object
 func GetMytoken(ctx *fiber.Ctx) (*universalmytoken.UniversalMytoken, bool) {
+	rlog := logger.GetRequestLogger(ctx)
 	tok := GetMytokenStr(ctx)
 	if tok == "" {
 		return nil, false
 	}
-	t, err := universalmytoken.Parse(tok)
+	t, err := universalmytoken.Parse(rlog, tok)
 	if err != nil {
 		return nil, true
 	}

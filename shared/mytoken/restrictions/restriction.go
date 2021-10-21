@@ -100,78 +100,78 @@ func (r *Restriction) verifyExp(now unixtime.UnixTime) bool {
 	return r.ExpiresAt == 0 ||
 		now <= r.ExpiresAt
 }
-func (r *Restriction) verifyTimeBased() bool {
-	log.Trace("Verifying time based")
+func (r *Restriction) verifyTimeBased(rlog log.Ext1FieldLogger) bool {
+	rlog.Trace("Verifying time based")
 	now := unixtime.Now()
 	return r.verifyNbf(now) && r.verifyExp(now)
 }
-func (r *Restriction) verifyIPBased(ip string) bool {
-	return r.verifyIPs(ip) && r.verifyGeoIP(ip)
+func (r *Restriction) verifyIPBased(rlog log.Ext1FieldLogger, ip string) bool {
+	return r.verifyIPs(rlog, ip) && r.verifyGeoIP(rlog, ip)
 }
-func (r *Restriction) verifyIPs(ip string) bool {
+func (r *Restriction) verifyIPs(rlog log.Ext1FieldLogger, ip string) bool {
 	if disabledRestrictionKeys().Has(model.RestrictionKeyIPs) {
 		return true
 	}
-	log.Trace("Verifying ips")
+	rlog.Trace("Verifying ips")
 	return len(r.IPs) == 0 ||
 		utils.IPIsIn(ip, r.IPs)
 }
-func (r *Restriction) verifyGeoIP(ip string) bool {
-	log.Trace("Verifying ip geo location")
-	return r.verifyGeoIPDisallow(ip) && r.verifyGeoIPAllow(ip)
+func (r *Restriction) verifyGeoIP(rlog log.Ext1FieldLogger, ip string) bool {
+	rlog.Trace("Verifying ip geo location")
+	return r.verifyGeoIPDisallow(rlog, ip) && r.verifyGeoIPAllow(rlog, ip)
 }
-func (r *Restriction) verifyGeoIPAllow(ip string) bool {
+func (r *Restriction) verifyGeoIPAllow(rlog log.Ext1FieldLogger, ip string) bool {
 	if disabledRestrictionKeys().Has(model.RestrictionKeyGeoIPAllow) {
 		return true
 	}
-	log.Trace("Verifying ip geo location allow list")
+	rlog.Trace("Verifying ip geo location allow list")
 	allow := r.GeoIPAllow
 	if len(allow) == 0 {
 		return true
 	}
 	return utils.StringInSlice(geoip.CountryCode(ip), allow)
 }
-func (r *Restriction) verifyGeoIPDisallow(ip string) bool {
+func (r *Restriction) verifyGeoIPDisallow(rlog log.Ext1FieldLogger, ip string) bool {
 	if disabledRestrictionKeys().Has(model.RestrictionKeyGeoIPDisallow) {
 		return true
 	}
-	log.Trace("Verifying ip geo location disallow list")
+	rlog.Trace("Verifying ip geo location disallow list")
 	disallow := r.GeoIPDisallow
 	if len(disallow) == 0 {
 		return true
 	}
 	return !utils.StringInSlice(geoip.CountryCode(ip), disallow)
 }
-func (r *Restriction) getATUsageCounts(tx *sqlx.Tx, myID mtid.MTID) (*int64, error) {
+func (r *Restriction) getATUsageCounts(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID) (*int64, error) {
 	hash, err := r.hash()
 	if err != nil {
 		return nil, err
 	}
-	return mytokenrepohelper.GetTokenUsagesAT(tx, myID, string(hash))
+	return mytokenrepohelper.GetTokenUsagesAT(rlog, tx, myID, string(hash))
 }
-func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, myID mtid.MTID) bool {
+func (r *Restriction) verifyATUsageCounts(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID) bool {
 	if disabledRestrictionKeys().Has(model.RestrictionKeyUsagesAT) {
 		return true
 	}
-	log.Trace("Verifying AT usage count")
+	rlog.Trace("Verifying AT usage count")
 	if r.UsagesAT == nil {
 		return true
 	}
-	usages, err := r.getATUsageCounts(tx, myID)
+	usages, err := r.getATUsageCounts(rlog, tx, myID)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return false
 	}
 	if usages == nil {
 		//  was not used before
-		log.WithFields(
+		rlog.WithFields(
 			map[string]interface{}{
 				"myID": myID.String(),
 			},
 		).Debug("Did not found restriction in database; it was not used before")
 		return *r.UsagesAT > 0
 	}
-	log.WithFields(
+	rlog.WithFields(
 		map[string]interface{}{
 			"myID":       myID.String(),
 			"used":       *usages,
@@ -180,36 +180,36 @@ func (r *Restriction) verifyATUsageCounts(tx *sqlx.Tx, myID mtid.MTID) bool {
 	).Debug("Found restriction usage in db.")
 	return *usages < *r.UsagesAT
 }
-func (r *Restriction) getOtherUsageCounts(tx *sqlx.Tx, myID mtid.MTID) (*int64, error) {
+func (r *Restriction) getOtherUsageCounts(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID) (*int64, error) {
 	hash, err := r.hash()
 	if err != nil {
 		return nil, err
 	}
-	return mytokenrepohelper.GetTokenUsagesOther(tx, myID, string(hash))
+	return mytokenrepohelper.GetTokenUsagesOther(rlog, tx, myID, string(hash))
 }
-func (r *Restriction) verifyOtherUsageCounts(tx *sqlx.Tx, id mtid.MTID) bool {
+func (r *Restriction) verifyOtherUsageCounts(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID) bool {
 	if disabledRestrictionKeys().Has(model.RestrictionKeyUsagesOther) {
 		return true
 	}
-	log.Trace("Verifying other usage count")
+	rlog.Trace("Verifying other usage count")
 	if r.UsagesOther == nil {
 		return true
 	}
-	usages, err := r.getOtherUsageCounts(tx, id)
+	usages, err := r.getOtherUsageCounts(rlog, tx, id)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return false
 	}
 	if usages == nil {
 		// was not used before
-		log.WithFields(
+		rlog.WithFields(
 			map[string]interface{}{
 				"id": id.String(),
 			},
 		).Debug("Did not found restriction in database; it was not used before")
 		return *r.UsagesOther > 0
 	}
-	log.WithFields(
+	rlog.WithFields(
 		map[string]interface{}{
 			"id":         id.String(),
 			"used":       *usages,
@@ -218,59 +218,61 @@ func (r *Restriction) verifyOtherUsageCounts(tx *sqlx.Tx, id mtid.MTID) bool {
 	).Debug("Found restriction usage in db.")
 	return *usages < *r.UsagesOther
 }
-func (r *Restriction) verify(ip string) bool {
-	return r.verifyTimeBased() &&
-		r.verifyIPBased(ip)
+func (r *Restriction) verify(rlog log.Ext1FieldLogger, ip string) bool {
+	return r.verifyTimeBased(rlog) &&
+		r.verifyIPBased(rlog, ip)
 }
-func (r *Restriction) verifyAT(tx *sqlx.Tx, ip string, id mtid.MTID) bool {
-	return r.verify(ip) && r.verifyATUsageCounts(tx, id)
+func (r *Restriction) verifyAT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, ip string, id mtid.MTID) bool {
+	return r.verify(rlog, ip) && r.verifyATUsageCounts(rlog, tx, id)
 }
-func (r *Restriction) verifyOther(tx *sqlx.Tx, ip string, id mtid.MTID) bool {
-	return r.verify(ip) &&
-		r.verifyOtherUsageCounts(tx, id)
+func (r *Restriction) verifyOther(rlog log.Ext1FieldLogger, tx *sqlx.Tx, ip string, id mtid.MTID) bool {
+	return r.verify(rlog, ip) &&
+		r.verifyOtherUsageCounts(rlog, tx, id)
 }
 
 // UsedAT will update the usages_AT value for this restriction; it should be called after this restriction was used to
 // obtain an access token;
-func (r *Restriction) UsedAT(tx *sqlx.Tx, id mtid.MTID) error {
+func (r *Restriction) UsedAT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID) error {
 	js, err := json.Marshal(r)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	return mytokenrepohelper.IncreaseTokenUsageAT(tx, id, js)
+	return mytokenrepohelper.IncreaseTokenUsageAT(rlog, tx, id, js)
 }
 
 // UsedOther will update the usages_other value for this restriction; it should be called after this restriction was
 // used for other reasons than obtaining an access token;
-func (r *Restriction) UsedOther(tx *sqlx.Tx, id mtid.MTID) error {
+func (r *Restriction) UsedOther(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID) error {
 	js, err := json.Marshal(r)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	return mytokenrepohelper.IncreaseTokenUsageOther(tx, id, js)
+	return mytokenrepohelper.IncreaseTokenUsageOther(rlog, tx, id, js)
 }
 
 // VerifyForAT verifies if this restrictions can be used to obtain an access token
-func (r Restrictions) VerifyForAT(tx *sqlx.Tx, ip string, id mtid.MTID) bool {
+func (r Restrictions) VerifyForAT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, ip string, id mtid.MTID) bool {
 	if len(r) == 0 {
 		return true
 	}
-	return len(r.GetValidForAT(tx, ip, id)) > 0
+	return len(r.GetValidForAT(rlog, tx, ip, id)) > 0
 }
 
 // VerifyForOther verifies if this restrictions can be used for other actions than obtaining an access token
-func (r Restrictions) VerifyForOther(tx *sqlx.Tx, ip string, id mtid.MTID) bool {
+func (r Restrictions) VerifyForOther(rlog log.Ext1FieldLogger, tx *sqlx.Tx, ip string, id mtid.MTID) bool {
 	if len(r) == 0 {
 		return true
 	}
-	return len(r.GetValidForOther(tx, ip, id)) > 0
+	return len(r.GetValidForOther(rlog, tx, ip, id)) > 0
 }
 
 // GetValidForAT returns the subset of Restrictions that can be used to obtain an access token
-func (r Restrictions) GetValidForAT(tx *sqlx.Tx, ip string, myID mtid.MTID) (ret Restrictions) {
+func (r Restrictions) GetValidForAT(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, ip string, myID mtid.MTID,
+) (ret Restrictions) {
 	for _, rr := range r {
-		if rr.verifyAT(tx, ip, myID) {
-			log.Trace("Found a valid restriction")
+		if rr.verifyAT(rlog, tx, ip, myID) {
+			rlog.Trace("Found a valid restriction")
 			ret = append(ret, rr)
 		}
 	}
@@ -278,9 +280,11 @@ func (r Restrictions) GetValidForAT(tx *sqlx.Tx, ip string, myID mtid.MTID) (ret
 }
 
 // GetValidForOther returns the subset of Restrictions that can be used for other actions than obtaining an access token
-func (r Restrictions) GetValidForOther(tx *sqlx.Tx, ip string, myID mtid.MTID) (ret Restrictions) {
+func (r Restrictions) GetValidForOther(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, ip string, myID mtid.MTID,
+) (ret Restrictions) {
 	for _, rr := range r {
-		if rr.verifyOther(tx, ip, myID) {
+		if rr.verifyOther(rlog, tx, ip, myID) {
 			ret = append(ret, rr)
 		}
 	}
@@ -288,10 +292,10 @@ func (r Restrictions) GetValidForOther(tx *sqlx.Tx, ip string, myID mtid.MTID) (
 }
 
 // WithScopes returns the subset of Restrictions that can be used with the specified scopes
-func (r Restrictions) WithScopes(scopes []string) (ret Restrictions) {
-	log.WithField("scopes", scopes).WithField("len", len(scopes)).Trace("Filter restrictions for scopes")
+func (r Restrictions) WithScopes(rlog log.Ext1FieldLogger, scopes []string) (ret Restrictions) {
+	rlog.WithField("scopes", scopes).WithField("len", len(scopes)).Trace("Filter restrictions for scopes")
 	if len(scopes) == 0 {
-		log.Trace("scopes empty, returning all restrictions")
+		rlog.Trace("scopes empty, returning all restrictions")
 		return r
 	}
 	for _, rr := range r {
@@ -303,10 +307,10 @@ func (r Restrictions) WithScopes(scopes []string) (ret Restrictions) {
 }
 
 // WithAudiences returns the subset of Restrictions that can be used with the specified audiences
-func (r Restrictions) WithAudiences(audiences []string) (ret Restrictions) {
-	log.WithField("audiences", audiences).WithField("len", len(audiences)).Trace("Filter restrictions for audiences")
+func (r Restrictions) WithAudiences(rlog log.Ext1FieldLogger, audiences []string) (ret Restrictions) {
+	rlog.WithField("audiences", audiences).WithField("len", len(audiences)).Trace("Filter restrictions for audiences")
 	if len(audiences) == 0 {
-		log.Trace("audiences empty, returning all restrictions")
+		rlog.Trace("audiences empty, returning all restrictions")
 		return r
 	}
 	for _, rr := range r {
@@ -440,7 +444,7 @@ func (r *Restrictions) EnforceMaxLifetime(issuer string) (changed bool) {
 
 // Tighten tightens/restricts a Restrictions with another set; if the wanted Restrictions are not tighter the original
 // ones are returned
-func Tighten(old, wanted Restrictions) (res Restrictions, ok bool) {
+func Tighten(rlog log.Ext1FieldLogger, old, wanted Restrictions) (res Restrictions, ok bool) {
 	if len(old) == 0 {
 		ok = true
 		res = wanted
@@ -448,7 +452,7 @@ func Tighten(old, wanted Restrictions) (res Restrictions, ok bool) {
 	}
 	base := Restrictions{}
 	if err := copier.CopyWithOption(&base, &old, copier.Option{DeepCopy: true}); err != nil {
-		log.WithError(err).Error()
+		rlog.WithError(err).Error()
 	}
 	var droppedRestrictionsFromWanted bool
 	for _, a := range wanted {

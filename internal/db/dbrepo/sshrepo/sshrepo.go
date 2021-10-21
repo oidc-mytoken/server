@@ -7,6 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
@@ -16,9 +17,9 @@ import (
 )
 
 // GetSSHInfo returns the SSHInfo stored in the database for the passed key and user hashes.
-func GetSSHInfo(tx *sqlx.Tx, keyHash, userHash string) (info SSHInfo, err error) {
+func GetSSHInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, keyHash, userHash string) (info SSHInfo, err error) {
 	err = db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			return errors.WithStack(tx.Get(&info, `CALL SSHInfo_Get(?,?)`, keyHash, userHash))
 		},
 	)
@@ -26,10 +27,10 @@ func GetSSHInfo(tx *sqlx.Tx, keyHash, userHash string) (info SSHInfo, err error)
 }
 
 // GetAllSSHInfo returns the SSHInfo for all ssh keys for a given user
-func GetAllSSHInfo(tx *sqlx.Tx, myid mtid.MTID) (info []api.SSHKeyInfo, err error) {
+func GetAllSSHInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID) (info []api.SSHKeyInfo, err error) {
 	dbInfo := []SSHInfo{}
 	err = db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			return errors.WithStack(tx.Select(&dbInfo, `CALL SSHInfo_GetAll(?)`, myid))
 		},
 	)
@@ -69,9 +70,9 @@ func (i SSHInfo) Decrypt(password string) (*mytoken.Mytoken, error) {
 }
 
 // Delete deletes an ssh key for the given user (given by the mytoken) from the database
-func Delete(tx *sqlx.Tx, myid mtid.MTID, keyHash string) error {
+func Delete(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID, keyHash string) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL SSHInfo_Delete(?,?)`, myid, keyHash)
 			return errors.WithStack(err)
 		},
@@ -87,9 +88,9 @@ type SSHInfoIn struct {
 }
 
 // Insert inserts an ssh public key for the given user (given by the mytoken) into the database
-func Insert(tx *sqlx.Tx, myid mtid.MTID, data SSHInfoIn) error {
+func Insert(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID, data SSHInfoIn) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(
 				`CALL SSHInfo_Insert(?,?,?,?,?)`,
 				myid, data.KeyHash, data.UserHash, data.Name, data.EncryptedMT,
@@ -100,9 +101,9 @@ func Insert(tx *sqlx.Tx, myid mtid.MTID, data SSHInfoIn) error {
 }
 
 // UsedKey marks that the passed ssh key was just used
-func UsedKey(tx *sqlx.Tx, keyHash, userHash string) error {
+func UsedKey(rlog log.Ext1FieldLogger, tx *sqlx.Tx, keyHash, userHash string) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL SSHInfo_UsedKey(?,?)`, keyHash, userHash)
 			return errors.WithStack(err)
 		},

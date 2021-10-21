@@ -13,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/gofiber/helmet/v2"
 	log "github.com/sirupsen/logrus"
 
@@ -43,9 +44,10 @@ func init() {
 
 func addMiddlewares(s fiber.Router) {
 	addRecoverMiddleware(s)
-	addFaviconMiddleware(s)
+	addRequestIDMiddleware(s)
 	addLoggerMiddleware(s)
 	addLimiterMiddleware(s)
+	addFaviconMiddleware(s)
 	addHelmetMiddleware(s)
 	addStaticFiles(s)
 	addCompressMiddleware(s)
@@ -55,7 +57,7 @@ func addLoggerMiddleware(s fiber.Router) {
 	s.Use(
 		logger.New(
 			logger.Config{
-				Format:     "${time} ${ip} ${ua} ${latency} - ${status} ${method} ${path}\n",
+				Format:     "${time} ${ip} ${ua} ${latency} - ${status} ${method} ${path} ${locals:requestid}\n",
 				TimeFormat: "2006-01-02 15:04:05",
 				Output:     loggerUtils.MustGetAccessLogger(),
 			},
@@ -113,4 +115,8 @@ func addRecoverMiddleware(s fiber.Router) {
 
 func addHelmetMiddleware(s fiber.Router) {
 	s.Use(helmet.New())
+}
+
+func addRequestIDMiddleware(s fiber.Router) {
+	s.Use(requestid.New())
 }

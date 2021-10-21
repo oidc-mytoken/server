@@ -6,7 +6,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
@@ -15,6 +14,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+	"github.com/oidc-mytoken/server/internal/utils/logger"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
@@ -30,12 +30,13 @@ func HandleSettings(
 	okStatus int,
 	callback func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response),
 ) error {
-	mt, errRes := auth.RequireValidMytoken(nil, reqMytoken, ctx)
+	rlog := logger.GetRequestLogger(ctx)
+	mt, errRes := auth.RequireValidMytoken(rlog, nil, reqMytoken, ctx)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
 	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
-		nil, mt, ctx.IP(), nil, nil, api.CapabilitySettings,
+		rlog, nil, mt, ctx.IP(), nil, nil, api.CapabilitySettings,
 	)
 	if errRes != nil {
 		return errRes.Send(ctx)
@@ -43,14 +44,14 @@ func HandleSettings(
 	var tokenUpdate *my.MytokenResponse
 	var rsp my.TokenUpdatableResponse
 	if err := db.Transact(
-		func(tx *sqlx.Tx) (err error) {
+		rlog, func(tx *sqlx.Tx) (err error) {
 			rsp, errRes = callback(tx, mt)
 			if errRes != nil {
 				return fmt.Errorf("dummy")
 			}
 			clientMetaData := ctxUtils.ClientMetaData(ctx)
 			if err = eventService.LogEvent(
-				tx, eventService.MTEvent{
+				rlog, tx, eventService.MTEvent{
 					Event: logEvent,
 					MTID:  mt.ID,
 				}, *clientMetaData,
@@ -58,12 +59,12 @@ func HandleSettings(
 				return
 			}
 			if usedRestriction != nil {
-				if err = usedRestriction.UsedOther(tx, mt.ID); err != nil {
+				if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
 					return
 				}
 			}
 			tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(
-				tx, reqMytoken.JWT, mt, *clientMetaData, reqMytoken.OriginalTokenType,
+				rlog, tx, reqMytoken.JWT, mt, *clientMetaData, reqMytoken.OriginalTokenType,
 			)
 			return
 		},
@@ -71,7 +72,7 @@ func HandleSettings(
 		if errRes != nil {
 			return errRes.Send(ctx)
 		}
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return serverModel.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
 

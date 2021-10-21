@@ -3,6 +3,7 @@ package eventrepo
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
 
@@ -19,9 +20,9 @@ type EventDBObject struct {
 }
 
 // Store stores the EventDBObject in the database
-func (e *EventDBObject) Store(tx *sqlx.Tx) error {
+func (e *EventDBObject) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(
-		tx, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(
 				`CALL Event_Insert(?, ?, ?, ?, ?)`,
 				e.MTID, e.Event.String(), e.Event.Comment, e.ClientMetaData.IP, e.ClientMetaData.UserAgent,

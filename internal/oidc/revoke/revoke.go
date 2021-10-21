@@ -11,7 +11,7 @@ import (
 )
 
 // RefreshToken revokes a refresh token
-func RefreshToken(provider *config.ProviderConf, rt string) *model.Response {
+func RefreshToken(rlog log.Ext1FieldLogger, provider *config.ProviderConf, rt string) *model.Response {
 	if provider.Endpoints.Revocation == "" {
 		return nil
 	}
@@ -22,7 +22,7 @@ func RefreshToken(provider *config.ProviderConf, rt string) *model.Response {
 		SetError(&oidcReqRes.OIDCErrorResponse{}).
 		Post(provider.Endpoints.Revocation)
 	if err != nil {
-		log.WithError(err).Error()
+		rlog.WithError(err).Error()
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if errRes, ok := httpRes.Error().(*oidcReqRes.OIDCErrorResponse); ok && errRes != nil && errRes.Error != "" {
