@@ -52,10 +52,16 @@ var defaultConfig = Config{
 			Dir:    "/var/log/mytoken",
 			StdErr: false,
 		},
-		Internal: LoggerConf{
-			Dir:    "/var/log/mytoken",
-			StdErr: false,
-			Level:  "error",
+		Internal: internalLoggerConf{
+			LoggerConf: LoggerConf{
+				Dir:    "/var/log/mytoken",
+				StdErr: false,
+				Level:  "error",
+			},
+			Smart: smartLoggerConf{
+				Enabled: true,
+				Dir:     "", // if empty equal to normal logging dir
+			},
 		},
 	},
 	ServiceDocumentation: "https://docs-sdm.scc.kit.edu/mytoken/",
@@ -149,8 +155,13 @@ type onlyEnable struct {
 }
 
 type loggingConf struct {
-	Access   LoggerConf `yaml:"access"`
-	Internal LoggerConf `yaml:"internal"`
+	Access   LoggerConf         `yaml:"access"`
+	Internal internalLoggerConf `yaml:"internal"`
+}
+
+type internalLoggerConf struct {
+	LoggerConf `yaml:",inline"`
+	Smart      smartLoggerConf `yaml:"smart"`
 }
 
 // LoggerConf holds configuration related to logging
@@ -158,6 +169,36 @@ type LoggerConf struct {
 	Dir    string `yaml:"dir"`
 	StdErr bool   `yaml:"stderr"`
 	Level  string `yaml:"level"`
+}
+
+type smartLoggerConf struct {
+	Enabled bool   `yaml:"enabled"`
+	Dir     string `yaml:"dir"`
+}
+
+func checkLoggingDirExists(dir string) error {
+	if dir != "" && !fileutil.FileExists(dir) {
+		return errors.Errorf("logging directory '%s' does not exist", dir)
+	}
+	return nil
+}
+
+func (log *loggingConf) validate() error {
+	if err := checkLoggingDirExists(log.Access.Dir); err != nil {
+		return err
+	}
+	if err := checkLoggingDirExists(log.Internal.Dir); err != nil {
+		return err
+	}
+	if log.Internal.Smart.Enabled {
+		if log.Internal.Smart.Dir == "" {
+			log.Internal.Smart.Dir = log.Internal.Dir
+		}
+		if err := checkLoggingDirExists(log.Internal.Smart.Dir); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type pollingConf struct {
@@ -290,6 +331,9 @@ func validate() error {
 		} else {
 			conf.Server.TLS.Enabled = false
 		}
+	}
+	if err = conf.Logging.validate(); err != nil {
+		return err
 	}
 	if err = conf.ServiceOperator.validate(); err != nil {
 		return err

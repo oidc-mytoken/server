@@ -86,6 +86,14 @@ logging:
     stderr: false
     # The minimal log level that should be logged
     level: "error"
+    # Configuration for 'smart' logging. If enabled internal logging is usually logged from the minimal log level as
+    # usual, but if an error occurs an special error log is logged to a dedicated file that contains all log entries
+    # (with all log levels, also levels that normally wouldn't be logged) for that particular request.
+    smart:
+      # Unless false smart logging is enabled
+      enabled: true
+      # The directory where the error log files are stored. If omitted it is equal to the normal internal logging dir
+      dir: "/var/log/mytoken/errors"
 
 # URL with documentation about the service
 service_documentation: "https://mytoken-docs.data.kit.edu/"

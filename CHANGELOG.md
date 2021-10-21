@@ -14,6 +14,10 @@
 
 ## mytoken 0.4.0
 
+### Features
+
+- Smart Logging: Only log up to a certain log level on default, but on error log everything
+
 ### API
 
 - Don't redirect from `/.well-known/openid-configuration` to `/.well-known/mytoken-configuration`. Instead, returning
