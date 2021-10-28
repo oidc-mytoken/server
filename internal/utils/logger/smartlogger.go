@@ -33,8 +33,10 @@ func (h *rootHook) Levels() []log.Level {
 	return log.AllLevels
 }
 func (h *rootHook) Fire(e *log.Entry) error {
-	if err := h.buffer.Fire(e); err != nil {
-		return err
+	if !h.error.firedBefore {
+		if err := h.buffer.Fire(e); err != nil {
+			return err
+		}
 	}
 	if h.error.firedBefore || log.ErrorLevel >= e.Level {
 		if err := h.error.Fire(e); err != nil {
@@ -53,26 +55,40 @@ type errorHook struct {
 func (h *errorHook) Levels() []log.Level {
 	return log.AllLevels // we must be triggered at
 }
-func (h *errorHook) Fire(_ *log.Entry) error {
-	if !h.firedBefore {
+func (h *errorHook) Fire(e *log.Entry) (err error) {
+	var logData []byte
+	if h.firedBefore {
+		logData, err = e.Bytes()
+		if err != nil {
+			return
+		}
+	} else {
+		logData = h.smartLoggerContext.buffer.Bytes()
 		// from now on we will log all future log messages directly to file (if there are any)
 		h.firedBefore = true
+		h.smartLoggerContext.buffer.Reset()
 	}
-	logData := h.smartLoggerContext.buffer.Bytes()
-	if _, err := h.file.Write(logData); err != nil {
-		return err
+	file, errr := h.getFile()
+	if errr != nil {
+		return errr
 	}
-	h.smartLoggerContext.buffer.Reset()
-	return nil
+	if _, err = file.Write(logData); err != nil {
+		return
+	}
+	return
 }
 
-func newErrorHook(ctx *smartLoggerContext) (*errorHook, error) {
-	h := &errorHook{
+func (h *errorHook) getFile() (io.Writer, error) {
+	var err error
+	if h.file == nil {
+		h.file, err = getFile(filepath.Join(config.Get().Logging.Internal.Smart.Dir, h.smartLoggerContext.id))
+	}
+	return h.file, err
+}
+func newErrorHook(ctx *smartLoggerContext) *errorHook {
+	return &errorHook{
 		smartLoggerContext: ctx,
 	}
-	var err error
-	h.file, err = getFile(filepath.Join(config.Get().Logging.Internal.Smart.Dir, h.smartLoggerContext.id))
-	return h, err
 }
 func newBufferHook(ctx *smartLoggerContext) log.Hook {
 	return &writer.Hook{
@@ -80,12 +96,11 @@ func newBufferHook(ctx *smartLoggerContext) log.Hook {
 		LogLevels: log.AllLevels,
 	}
 }
-func newRootHook(ctx *smartLoggerContext) (*rootHook, error) {
-	eh, err := newErrorHook(ctx)
+func newRootHook(ctx *smartLoggerContext) *rootHook {
 	return &rootHook{
 		buffer: newBufferHook(ctx),
-		error:  eh,
-	}, err
+		error:  newErrorHook(ctx),
+	}
 }
 
 func smartPrepareLogger(rootH *rootHook) *log.Logger {
@@ -119,12 +134,7 @@ func getIDlogger(id string) log.Ext1FieldLogger {
 			id:     id,
 		},
 	}
-	var err error
-	smartLog.rootHook, err = newRootHook(&smartLog.ctx)
-	if err != nil {
-		log.WithError(err).Error("cannot create smart logger")
-		return getLogEntry(id, log.StandardLogger())
-	}
+	smartLog.rootHook = newRootHook(&smartLog.ctx)
 	logger := smartPrepareLogger(smartLog.rootHook)
 	smartLog.Entry = getLogEntry(id, logger)
 	return smartLog
