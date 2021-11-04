@@ -28,6 +28,10 @@
 - Removed buttons from webinterface in the tokeninfo tabs. The content now loads directly when switching the tab.
 - Added request ids to response header and logging
 
+### Bugfixes
+
+- Fixed a bug where restrictions did not behave correctly when multiple subnets were used
+
 ## mytoken 0.3.2
 
 - Fixed password prompt for migratedb
