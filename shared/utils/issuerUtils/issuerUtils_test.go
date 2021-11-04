@@ -2,96 +2,150 @@ package issuerUtils
 
 import "testing"
 
-func TestCombineSubIssValid(t *testing.T) {
-	str := CombineSubIss("sub", "iss")
-	expected := "sub@iss"
-	if str != expected {
-		t.Errorf("Expected '%s', got '%s'", expected, str)
+func TestCombineSubIss(t *testing.T) {
+	tests := []struct {
+		name     string
+		sub      string
+		iss      string
+		expected string
+	}{
+		{
+			name:     "Valid",
+			sub:      "sub",
+			iss:      "iss",
+			expected: "sub@iss",
+		},
+		{
+			name:     "EmptyIss",
+			sub:      "sub",
+			iss:      "",
+			expected: "",
+		},
+		{
+			name:     "EmptySub",
+			sub:      "",
+			iss:      "iss",
+			expected: "",
+		},
 	}
-}
-func TestCombineSubIssEmptyIss(t *testing.T) {
-	str := CombineSubIss("sub", "")
-	expected := ""
-	if str != expected {
-		t.Errorf("Expected '%s', got '%s'", expected, str)
-	}
-}
-func TestCombineSubIssEmptySub(t *testing.T) {
-	str := CombineSubIss("", "iss")
-	expected := ""
-	if str != expected {
-		t.Errorf("Expected '%s', got '%s'", expected, str)
-	}
-}
-
-func TestCompareIssuerURLBothEmpty(t *testing.T) {
-	if CompareIssuerURLs("", "") != true {
-		t.Errorf("Empty issuer urls should be equal")
-	}
-}
-func TestCompareIssuerURLOneEmpty(t *testing.T) {
-	a := "https://example.com"
-	b := ""
-	if CompareIssuerURLs(a, b) == true {
-		t.Errorf("An empty issuer url should not equal a non-empty")
-	}
-	if CompareIssuerURLs(b, a) == true {
-		t.Errorf("An empty issuer url should not equal a non-empty")
-	}
-}
-func TestCompareIssuerURLSame(t *testing.T) {
-	a := "https://example.com"
-	b := a
-	if CompareIssuerURLs(a, b) != true {
-		t.Errorf("Equal strings should be equal")
-	}
-	a = "https://example.com/"
-	b = a
-	if CompareIssuerURLs(a, b) != true {
-		t.Errorf("Equal strings should be equal")
-	}
-}
-func TestCompareIssuerURLDifferentSlash(t *testing.T) {
-	a := "https://example.com"
-	b := "https://example.com/"
-	if CompareIssuerURLs(a, b) != true {
-		t.Errorf("Issuer urls only differing in trailing slash should be equal")
-	}
-	if CompareIssuerURLs(b, a) != true {
-		t.Errorf("Issuer urls only differing in trailing slash should be equal")
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				str := CombineSubIss(test.sub, test.iss)
+				if str != test.expected {
+					t.Errorf("Expected '%s', got '%s'", test.expected, str)
+				}
+			},
+		)
 	}
 }
 
-func TestGetIssuerWithAndWithoutSlashEmpty(t *testing.T) {
-	iss0, iss1 := GetIssuerWithAndWithoutSlash("")
-	iss0Expected := ""
-	iss1Expected := "/"
-	if iss0 != iss0Expected {
-		t.Errorf("Iss0 Expected '%s', got '%s'", iss0Expected, iss0)
+func TestCompareIssuerURLs(t *testing.T) {
+	tests := []struct {
+		name     string
+		url1     string
+		url2     string
+		expected bool
+	}{
+		{
+			name:     "BothEmpty",
+			url1:     "",
+			url2:     "",
+			expected: true,
+		},
+		{
+			name:     "OneEmpty",
+			url1:     "",
+			url2:     "https://example.com",
+			expected: false,
+		},
+		{
+			name:     "SameTrailingSlash",
+			url1:     "https://example.com/",
+			url2:     "https://example.com/",
+			expected: true,
+		},
+		{
+			name:     "SameNoTrailingSlash",
+			url1:     "https://example.com",
+			url2:     "https://example.com",
+			expected: true,
+		},
+		{
+			name:     "SameDifferentTrailingSlash",
+			url1:     "https://example.com/",
+			url2:     "https://example.com",
+			expected: true,
+		},
 	}
-	if iss1 != iss1Expected {
-		t.Errorf("Iss1 Expected '%s', got '%s'", iss1Expected, iss1)
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				pairs := [2][2]string{
+					{
+						test.url1,
+						test.url2,
+					},
+					{
+						test.url2,
+						test.url1,
+					},
+				}
+				for _, p := range pairs {
+					if CompareIssuerURLs(p[0], p[1]) != test.expected {
+						fmt := "URLs '%s' and '%s' are not correctly recognized as "
+						if test.expected {
+							fmt += "equal"
+						} else {
+							fmt += "different"
+						}
+						t.Errorf(fmt, p[0], p[1])
+					}
+				}
+			},
+		)
 	}
 }
-func TestGetIssuerWithAndWithoutSlashTrailingSlash(t *testing.T) {
-	iss0, iss1 := GetIssuerWithAndWithoutSlash("https://example.com/")
-	iss0Expected := "https://example.com"
-	iss1Expected := "https://example.com/"
-	if iss0 != iss0Expected {
-		t.Errorf("Iss0 Expected '%s', got '%s'", iss0Expected, iss0)
+
+func TestGetIssuerWithAndWithoutSlash(t *testing.T) {
+	tests := []struct {
+		name               string
+		in                 string
+		expectedOutWithout string
+		expectedOutWith    string
+	}{
+		{
+			name:               "Empty",
+			in:                 "",
+			expectedOutWithout: "",
+			expectedOutWith:    "/",
+		},
+		{
+			name:               "TrailingSlash",
+			in:                 "https://example.com/",
+			expectedOutWithout: "https://example.com",
+			expectedOutWith:    "https://example.com/",
+		},
+		{
+			name:               "NoTrailingSlash",
+			in:                 "https://example.com",
+			expectedOutWithout: "https://example.com",
+			expectedOutWith:    "https://example.com/",
+		},
 	}
-	if iss1 != iss1Expected {
-		t.Errorf("Iss1 Expected '%s', got '%s'", iss1Expected, iss1)
-	}
-}
-func TestGetIssuerWithAndWithoutSlashNoTrailingSlash(t *testing.T) {
-	iss0, iss1 := GetIssuerWithAndWithoutSlash("https://example.com")
-	iss0Expected := "https://example.com"
-	iss1Expected := "https://example.com/"
-	if iss0 != iss0Expected {
-		t.Errorf("Iss0 Expected '%s', got '%s'", iss0Expected, iss0)
-	}
-	if iss1 != iss1Expected {
-		t.Errorf("Iss1 Expected '%s', got '%s'", iss1Expected, iss1)
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				issWO, issW := GetIssuerWithAndWithoutSlash(test.in)
+				if issWO != test.expectedOutWithout {
+					t.Errorf(
+						"Expected '%s' as issuer without trailing slash, but got '%s'", test.expectedOutWithout, issWO,
+					)
+				}
+				if issW != test.expectedOutWith {
+					t.Errorf("Expected '%s' as issuer with trailing slash, but got '%s'", test.expectedOutWith, issW)
+				}
+			},
+		)
 	}
 }

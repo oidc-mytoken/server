@@ -1,439 +1,605 @@
 package utils
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/jinzhu/copier"
+)
 
 func fail(t *testing.T, expected, got []string) {
 	t.Errorf("Expected '%v', got '%v'", expected, got)
 }
 
-func testCombineURLs(t *testing.T, a, b, expected string) {
-	url := CombineURLPath(a, b)
-	if url != expected {
-		t.Errorf("Expected '%s', got '%s'", expected, url)
+func TestCombineURLPath(t *testing.T) {
+	tests := []struct {
+		name     string
+		a        string
+		b        string
+		expected string
+	}{
+		{
+			name:     "Empty",
+			a:        "",
+			b:        "",
+			expected: "",
+		},
+		{
+			name:     "LastEmpty",
+			a:        "https://example.com",
+			b:        "",
+			expected: "https://example.com",
+		},
+		{
+			name:     "FirstEmpty",
+			a:        "",
+			b:        "https://example.com",
+			expected: "https://example.com",
+		},
+		{
+			name:     "NoSlashes",
+			a:        "https://example.com",
+			b:        "api",
+			expected: "https://example.com/api",
+		},
+		{
+			name:     "TrailingSlash",
+			a:        "https://example.com",
+			b:        "api/",
+			expected: "https://example.com/api/",
+		},
+		{
+			name:     "SlashOnA",
+			a:        "https://example.com/",
+			b:        "api",
+			expected: "https://example.com/api",
+		},
+		{
+			name:     "SlashOnB",
+			a:        "https://example.com",
+			b:        "/api",
+			expected: "https://example.com/api",
+		},
+		{
+			name:     "BothSlashes",
+			a:        "https://example.com/",
+			b:        "/api",
+			expected: "https://example.com/api",
+		},
 	}
-}
-func TestCombineURLPathAllEmpty(t *testing.T) {
-	a := ""
-	b := ""
-	expected := ""
-	testCombineURLs(t, a, b, expected)
-}
-func TestCombineURLPathOneEmpty(t *testing.T) {
-	a := "https://example.com"
-	b := ""
-	expected := a
-	testCombineURLs(t, a, b, expected)
-	testCombineURLs(t, b, a, expected)
-}
-func TestCombineURLPathNoSlash(t *testing.T) {
-	a := "https://example.com"
-	b := "api"
-	expected := "https://example.com/api"
-	testCombineURLs(t, a, b, expected)
-}
-func TestCombineURLPathNoSlashTrailingSlash(t *testing.T) {
-	a := "https://example.com"
-	b := "api/"
-	expected := "https://example.com/api/"
-	testCombineURLs(t, a, b, expected)
-}
-func TestCombineURLPathOneSlashA(t *testing.T) {
-	a := "https://example.com/"
-	b := "api"
-	expected := "https://example.com/api"
-	testCombineURLs(t, a, b, expected)
-}
-func TestCombineURLPathOneSlashB(t *testing.T) {
-	a := "https://example.com"
-	b := "/api"
-	expected := "https://example.com/api"
-	testCombineURLs(t, a, b, expected)
-}
-func TestCombineURLPathBothSlash(t *testing.T) {
-	a := "https://example.com/"
-	b := "/api"
-	expected := "https://example.com/api"
-	testCombineURLs(t, a, b, expected)
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				url := CombineURLPath(test.a, test.b)
+				if url != test.expected {
+					t.Errorf("Expected '%s', got '%s'", test.expected, url)
+				}
+			},
+		)
+	}
 }
 
-func testIntersectList(t *testing.T, a, b, expected []string) {
-	intersect := IntersectSlices(a, b)
-	if len(intersect) != len(expected) {
-		fail(t, expected, intersect)
+func TestIntersectSlices(t *testing.T) {
+	tests := []struct {
+		name     string
+		a        []string
+		b        []string
+		expected []string
+	}{
+		{
+			name:     "AllEmpty",
+			a:        []string{},
+			b:        []string{},
+			expected: []string{},
+		},
+		{
+			name: "FirstEmpty",
+			a:    []string{},
+			b: []string{
+				"not",
+				"empty",
+			},
+			expected: []string{},
+		},
+		{
+			name: "SecondEmpty",
+			a: []string{
+				"not",
+				"empty",
+			},
+			b:        []string{},
+			expected: []string{},
+		},
+		{
+			name: "NoIntersection",
+			a: []string{
+				"not",
+				"empty",
+			},
+			b: []string{
+				"other",
+				"values",
+			},
+			expected: []string{},
+		},
+		{
+			name: "Same",
+			a: []string{
+				"not",
+				"empty",
+			},
+			b: []string{
+				"not",
+				"empty",
+			},
+			expected: []string{
+				"not",
+				"empty",
+			},
+		},
+		{
+			name: "SomeIntersection",
+			a: []string{
+				"not",
+				"empty",
+				"same",
+			},
+			b: []string{
+				"other",
+				"same",
+				"different",
+			},
+			expected: []string{"same"},
+		},
+		{
+			name: "SubSet",
+			a: []string{
+				"not",
+				"empty",
+				"same",
+			},
+			b: []string{
+				"not",
+				"same",
+			},
+			expected: []string{
+				"not",
+				"same",
+			},
+		},
 	}
-	for i, ee := range expected {
-		if ee != intersect[i] {
-			fail(t, expected, intersect)
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				intersect := IntersectSlices(test.a, test.b)
+				if len(intersect) != len(test.expected) {
+					fail(t, test.expected, intersect)
+				}
+				for i, ee := range test.expected {
+					if ee != intersect[i] {
+						fail(t, test.expected, intersect)
+					}
+				}
+			},
+		)
+	}
+}
+
+func TestIsSubSet(t *testing.T) {
+	tests := []struct {
+		name     string
+		a        []string
+		b        []string
+		expected bool
+	}{
+		{
+			name:     "AllEmpty",
+			a:        []string{},
+			b:        []string{},
+			expected: true,
+		},
+		{
+			name: "FirstEmpty",
+			a:    []string{},
+			b: []string{
+				"some",
+				"value",
+			},
+			expected: true,
+		},
+		{
+			name: "SecondEmpty",
+			a: []string{
+				"some",
+				"value",
+			},
+			b:        []string{},
+			expected: false,
+		},
+		{
+			name: "Same",
+			a: []string{
+				"some",
+				"value",
+			},
+			b: []string{
+				"some",
+				"value",
+			},
+			expected: true,
+		},
+		{
+			name: "SameDifferentOrder",
+			a: []string{
+				"some",
+				"value",
+			},
+			b: []string{
+				"value",
+				"some",
+			},
+			expected: true,
+		},
+		{
+			name: "TrueSubSet",
+			a:    []string{"value"},
+			b: []string{
+				"some",
+				"value",
+			},
+			expected: true,
+		},
+		{
+			name: "SuperSet",
+			a: []string{
+				"some",
+				"value",
+			},
+			b:        []string{"value"},
+			expected: false,
+		},
+		{
+			name: "Distinct",
+			a: []string{
+				"value",
+				"different",
+			},
+			b: []string{
+				"some",
+				"other",
+			},
+			expected: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				ok := IsSubSet(test.a, test.b)
+				if ok != test.expected {
+					if test.expected {
+						t.Errorf("Actually '%v' is a subset of '%v'", test.a, test.b)
+					} else {
+						t.Errorf("Actually '%v' is not a subset of '%v'", test.a, test.b)
+					}
+				}
+			},
+		)
+	}
+}
+
+func TestSliceUnion(t *testing.T) {
+	tests := []struct {
+		name         string
+		a            []string
+		b            []string
+		expected     []string
+		secondExpect []string
+	}{
+		{
+			name:     "AllEmpty",
+			a:        []string{},
+			b:        []string{},
+			expected: []string{},
+		},
+		{
+			name: "OneEmpty",
+			a:    []string{},
+			b: []string{
+				"a",
+				"b",
+			},
+			expected: []string{
+				"a",
+				"b",
+			},
+		},
+		{
+			name: "Same",
+			a: []string{
+				"a",
+				"b",
+			},
+			b: []string{
+				"a",
+				"b",
+			},
+			expected: []string{
+				"a",
+				"b",
+			},
+		},
+		{
+			name: "Distinct",
+			a: []string{
+				"a",
+				"b",
+			},
+			b: []string{
+				"c",
+				"d",
+			},
+			expected: []string{
+				"a",
+				"b",
+				"c",
+				"d",
+			},
+			secondExpect: []string{
+				"c",
+				"d",
+				"a",
+				"b",
+			},
+		},
+		{
+			name: "Mixed",
+			a: []string{
+				"a",
+				"b",
+				"c",
+			},
+			b: []string{
+				"c",
+				"d",
+				"e",
+			},
+			expected: []string{
+				"a",
+				"b",
+				"c",
+				"d",
+				"e",
+			},
+			secondExpect: []string{
+				"c",
+				"d",
+				"e",
+				"a",
+				"b",
+			},
+		},
+	}
+	for _, test := range tests {
+		if test.secondExpect == nil {
+			test.secondExpect = test.expected
 		}
-	}
-}
-func TestIntersectSlicesAllEmpty(t *testing.T) {
-	a := []string{}
-	b := []string{}
-	expected := []string{}
-	testIntersectList(t, a, b, expected)
-}
-func TestIntersectSlicesOneEmpty(t *testing.T) {
-	a := []string{}
-	b := []string{
-		"not",
-		"empty",
-	}
-	expected := []string{}
-	testIntersectList(t, a, b, expected)
-	testIntersectList(t, b, a, expected)
-}
-func TestIntersectSlicesNoIntersection(t *testing.T) {
-	a := []string{
-		"some",
-		"values",
-	}
-	b := []string{
-		"completely",
-		"different",
-	}
-	expected := []string{}
-	testIntersectList(t, a, b, expected)
-	testIntersectList(t, b, a, expected)
-}
-func TestIntersectSlicesSame(t *testing.T) {
-	a := []string{
-		"some",
-		"values",
-	}
-	testIntersectList(t, a, a, a)
-}
-func TestIntersectSlicesSomeIntersection(t *testing.T) {
-	a := []string{
-		"some",
-		"values",
-	}
-	b := []string{
-		"some",
-		"different",
-	}
-	expected := []string{"some"}
-	testIntersectList(t, a, b, expected)
-	testIntersectList(t, b, a, expected)
-}
-func TestIntersectSlicesSubSet(t *testing.T) {
-	a := []string{
-		"some",
-		"values",
-	}
-	b := []string{
-		"some",
-		"more",
-		"values",
-	}
-	expected := []string{
-		"some",
-		"values",
-	}
-	testIntersectList(t, a, b, expected)
-	testIntersectList(t, b, a, expected)
-}
-
-func testIsSubSet(t *testing.T, a, b []string, expected bool) {
-	ok := IsSubSet(a, b)
-	if ok != expected {
-		if expected {
-			t.Errorf("Actually '%v' is a subset of '%v'", a, b)
-		} else {
-			t.Errorf("Actually '%v' is not a subset of '%v'", a, b)
-		}
-	}
-}
-func TestIsSubSetAllEmpty(t *testing.T) {
-	a := []string{}
-	b := []string{}
-	testIsSubSet(t, a, b, true)
-}
-func TestIsSubSetOneEmpty(t *testing.T) {
-	a := []string{}
-	b := []string{
-		"some",
-		"values",
-	}
-	testIsSubSet(t, a, b, true)
-	testIsSubSet(t, b, a, false)
-}
-func TestIsSubSetSubset(t *testing.T) {
-	a := []string{"some"}
-	b := []string{
-		"some",
-		"values",
-	}
-	testIsSubSet(t, a, b, true)
-	testIsSubSet(t, b, a, false)
-}
-func TestIsSubSetDistinct(t *testing.T) {
-	a := []string{"other"}
-	b := []string{
-		"some",
-		"values",
-	}
-	testIsSubSet(t, a, b, false)
-	testIsSubSet(t, b, a, false)
-}
-
-func TestSliceUnion_Empty(t *testing.T) {
-	a := []string{}
-	b := []string{}
-	exp := []string{}
-	u := SliceUnion(a, b)
-	checkSlice(t, u, exp)
-	u = SliceUnion(b, a)
-	checkSlice(t, u, exp)
-}
-func TestSliceUnion_OneEmpty(t *testing.T) {
-	a := []string{}
-	b := []string{
-		"a",
-		"b",
-	}
-	exp := []string{
-		"a",
-		"b",
-	}
-	u := SliceUnion(a, b)
-	checkSlice(t, u, exp)
-	u = SliceUnion(b, a)
-	checkSlice(t, u, exp)
-}
-func TestSliceUnion_Same(t *testing.T) {
-	a := []string{
-		"a",
-		"b",
-	}
-	b := []string{
-		"a",
-		"b",
-	}
-	exp := []string{
-		"a",
-		"b",
-	}
-	u := SliceUnion(a, b)
-	checkSlice(t, u, exp)
-	u = SliceUnion(b, a)
-	checkSlice(t, u, exp)
-}
-func TestSliceUnion_Distinct(t *testing.T) {
-	a := []string{
-		"a",
-		"b",
-	}
-	b := []string{
-		"c",
-		"d",
-	}
-	exp := []string{
-		"a",
-		"b",
-		"c",
-		"d",
-	}
-	u := SliceUnion(a, b)
-	checkSlice(t, u, exp)
-	exp = []string{
-		"c",
-		"d",
-		"a",
-		"b",
-	}
-	u = SliceUnion(b, a)
-	checkSlice(t, u, exp)
-}
-func TestSliceUnion_Mixed(t *testing.T) {
-	a := []string{
-		"a",
-		"b",
-		"c",
-	}
-	b := []string{
-		"c",
-		"b",
-		"d",
-	}
-	exp := []string{
-		"a",
-		"b",
-		"c",
-		"d",
-	}
-	u := SliceUnion(a, b)
-	checkSlice(t, u, exp)
-	exp = []string{
-		"c",
-		"b",
-		"d",
-		"a",
-	}
-	u = SliceUnion(b, a)
-	checkSlice(t, u, exp)
-}
-
-func TestStringInSliceFirstPosition(t *testing.T) {
-	str := "key"
-	slice := []string{
-		str,
-		"other",
-		"another",
-	}
-	found := StringInSlice(str, slice)
-	if found != true {
-		t.Errorf("'%s' not found in slice '%v'", str, slice)
-	}
-}
-func TestStringInSliceLastPosition(t *testing.T) {
-	str := "key"
-	slice := []string{
-		"other",
-		"another",
-		str,
-	}
-	found := StringInSlice(str, slice)
-	if found != true {
-		t.Errorf("'%s' not found in slice '%v'", str, slice)
-	}
-}
-func TestStringInSliceMidPosition(t *testing.T) {
-	str := "key"
-	slice := []string{
-		"other",
-		str,
-		"another",
-	}
-	found := StringInSlice(str, slice)
-	if found != true {
-		t.Errorf("'%s' not found in slice '%v'", str, slice)
-	}
-}
-func TestStringInSliceOnly(t *testing.T) {
-	str := "key"
-	slice := []string{str}
-	found := StringInSlice(str, slice)
-	if found != true {
-		t.Errorf("'%s' not found in slice '%v'", str, slice)
-	}
-}
-func TestStringInSliceEmpty(t *testing.T) {
-	str := "key"
-	slice := []string{}
-	found := StringInSlice(str, slice)
-	if found != false {
-		t.Errorf("'%s' not found in slice '%v'", str, slice)
-	}
-}
-func TestStringInSliceNotFound(t *testing.T) {
-	str := "key"
-	slice := []string{
-		"only",
-		"other",
-		"strings",
-	}
-	found := StringInSlice(str, slice)
-	if found != false {
-		t.Errorf("'%s' not found in slice '%v'", str, slice)
+		t.Run(
+			test.name, func(t *testing.T) {
+				u := SliceUnion(test.a, test.b)
+				checkSlice(t, u, test.expected)
+				u = SliceUnion(test.b, test.a)
+				checkSlice(t, u, test.secondExpect)
+			},
+		)
 	}
 }
 
-func TestReplaceStringInSlice_Normal(t *testing.T) {
-	strs := []string{
-		"a",
-		"b",
-		"c",
+func TestStringInSlice(t *testing.T) {
+	tests := []struct {
+		name     string
+		str      string
+		slice    []string
+		expected bool
+	}{
+		{
+			name: "First Position",
+			str:  "key",
+			slice: []string{
+				"key",
+				"second",
+				"third",
+			},
+			expected: true,
+		},
+		{
+			name: "Mid Position",
+			str:  "key",
+			slice: []string{
+				"first",
+				"key",
+				"third",
+			},
+			expected: true,
+		},
+		{
+			name: "Last Position",
+			str:  "key",
+			slice: []string{
+				"first",
+				"second",
+				"key",
+			},
+			expected: true,
+		},
+		{
+			name:     "Only Key",
+			str:      "key",
+			slice:    []string{"key"},
+			expected: true,
+		},
+		{
+			name:     "Empty Slice",
+			str:      "key",
+			slice:    []string{},
+			expected: false,
+		},
+		{
+			name: "Not Found",
+			str:  "key",
+			slice: []string{
+				"first",
+				"second",
+				"third",
+			},
+			expected: false,
+		},
 	}
-	o := "a"
-	n := "b"
-	exp := []string{
-		"b",
-		"b",
-		"c",
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				found := StringInSlice(test.str, test.slice)
+				if found != test.expected {
+					fmt := "'%s'%s found in slice '%+q', but should%s"
+					if found {
+						t.Errorf(fmt, test.str, "", test.slice, " not")
+					} else {
+						t.Errorf(fmt, test.str, " not", test.slice, "have")
+					}
+				}
+			},
+		)
 	}
-	ReplaceStringInSlice(&strs, o, n, true)
-	checkSlice(t, strs, exp)
 }
-func TestReplaceStringInSlice_Multiple(t *testing.T) {
-	strs := []string{
-		"a",
-		"b",
-		"d",
-		"a",
-		"c",
+
+func TestReplaceStringInSlice(t *testing.T) {
+	tests := []struct {
+		name        string
+		in          []string
+		str         string
+		replace     string
+		expectedCIS []string
+		expectedCS  []string
+	}{
+		{
+			name: "Normal",
+			in: []string{
+				"a",
+				"b",
+				"c",
+			},
+			str:     "a",
+			replace: "b",
+			expectedCIS: []string{
+				"b",
+				"b",
+				"c",
+			},
+			expectedCS: []string{
+				"b",
+				"b",
+				"c",
+			},
+		},
+		{
+			name: "Multiple",
+			in: []string{
+				"a",
+				"b",
+				"c",
+				"a",
+				"d",
+			},
+			str:     "a",
+			replace: "b",
+			expectedCIS: []string{
+				"b",
+				"b",
+				"c",
+				"b",
+				"d",
+			},
+			expectedCS: []string{
+				"b",
+				"b",
+				"c",
+				"b",
+				"d",
+			},
+		},
+		{
+			name: "Case Sensitivity",
+			in: []string{
+				"a",
+				"b",
+				"A",
+				"B",
+			},
+			str:     "a",
+			replace: "b",
+			expectedCIS: []string{
+				"b",
+				"b",
+				"b",
+				"B",
+			},
+			expectedCS: []string{
+				"b",
+				"b",
+				"A",
+				"B",
+			},
+		},
+		{
+			name:        "Empty Slice",
+			in:          []string{},
+			str:         "a",
+			replace:     "b",
+			expectedCIS: []string{},
+			expectedCS:  []string{},
+		},
+		{
+			name: "Not Found",
+			in: []string{
+				"a",
+				"b",
+				"c",
+				"a",
+				"d",
+			},
+			str:     "g",
+			replace: "h",
+			expectedCIS: []string{
+				"a",
+				"b",
+				"c",
+				"a",
+				"d",
+			},
+			expectedCS: []string{
+				"a",
+				"b",
+				"c",
+				"a",
+				"d",
+			},
+		},
 	}
-	o := "a"
-	n := "b"
-	exp := []string{
-		"b",
-		"b",
-		"d",
-		"b",
-		"c",
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				var in []string
+				copier.Copy(&in, &test.in)
+				ReplaceStringInSlice(&in, test.str, test.replace, true)
+				checkSlice(t, in, test.expectedCS)
+				copier.Copy(&in, &test.in)
+				ReplaceStringInSlice(&in, test.str, test.replace, false)
+				checkSlice(t, in, test.expectedCIS)
+			},
+		)
 	}
-	ReplaceStringInSlice(&strs, o, n, true)
-	checkSlice(t, strs, exp)
-}
-func TestReplaceStringInSlice_CaseSensitivity(t *testing.T) {
-	strs := []string{
-		"a",
-		"b",
-		"A",
-		"b",
-	}
-	o := "a"
-	n := "c"
-	exp := []string{
-		"c",
-		"b",
-		"A",
-		"b",
-	}
-	ReplaceStringInSlice(&strs, o, n, true)
-	checkSlice(t, strs, exp)
-	strs = []string{
-		"a",
-		"b",
-		"A",
-		"b",
-	}
-	exp = []string{
-		"c",
-		"b",
-		"c",
-		"b",
-	}
-	ReplaceStringInSlice(&strs, o, n, false)
-	checkSlice(t, strs, exp)
-}
-func TestReplaceStringInSlice_Empty(t *testing.T) {
-	strs := []string{}
-	o := "a"
-	n := "b"
-	exp := []string{}
-	ReplaceStringInSlice(&strs, o, n, true)
-	checkSlice(t, strs, exp)
-}
-func TestReplaceStringInSlice_NotFound(t *testing.T) {
-	strs := []string{
-		"a",
-		"b",
-		"c",
-	}
-	o := "d"
-	n := "b"
-	exp := []string{
-		"a",
-		"b",
-		"c",
-	}
-	ReplaceStringInSlice(&strs, o, n, true)
-	checkSlice(t, strs, exp)
 }
 
 func failSlice(t *testing.T, a, exp []string) {
-	t.Errorf("Expected '%+v', but go '%+v'", exp, a)
+	t.Errorf("Expected '%+v', but got '%+v'", exp, a)
 }
 func checkSlice(t *testing.T, a, exp []string) {
 	if len(a) != len(exp) {
@@ -447,73 +613,103 @@ func checkSlice(t *testing.T, a, exp []string) {
 		}
 	}
 }
-func TestUniqueSlice_Empty(t *testing.T) {
-	a := []string{}
-	exp := []string{}
-	u := UniqueSlice(a)
-	checkSlice(t, u, exp)
-}
-func TestUniqueSlice_Unique(t *testing.T) {
-	a := []string{
-		"a",
-		"b",
-		"c",
+
+func TestUniqueSlice(t *testing.T) {
+	tests := []struct {
+		name     string
+		in       []string
+		expected []string
+	}{
+		{
+			name:     "Empty",
+			in:       []string{},
+			expected: []string{},
+		},
+		{
+			name: "Unique",
+			in: []string{
+				"a",
+				"b",
+				"c",
+			},
+			expected: []string{
+				"a",
+				"b",
+				"c",
+			},
+		},
+		{
+			name: "Duplicates",
+			in: []string{
+				"a",
+				"b",
+				"c",
+				"a",
+				"d",
+				"d",
+				"d",
+				"e",
+				"f",
+				"b",
+			},
+			expected: []string{
+				"a",
+				"b",
+				"c",
+				"d",
+				"e",
+				"f",
+			},
+		},
 	}
-	exp := []string{
-		"a",
-		"b",
-		"c",
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				u := UniqueSlice(test.in)
+				checkSlice(t, u, test.expected)
+			},
+		)
 	}
-	u := UniqueSlice(a)
-	checkSlice(t, u, exp)
-}
-func TestUniqueSlice_Duplicates(t *testing.T) {
-	a := []string{
-		"a",
-		"b",
-		"a",
-		"c",
-		"c",
-		"d",
-		"c",
-		"e",
-	}
-	exp := []string{
-		"a",
-		"b",
-		"c",
-		"d",
-		"e",
-	}
-	u := UniqueSlice(a)
-	checkSlice(t, u, exp)
 }
 
-func TestSplitIgnoreEmpty_Empty(t *testing.T) {
-	s := ""
-	exp := []string{}
-	split := SplitIgnoreEmpty(s, " ")
-	checkSlice(t, split, exp)
-}
-func TestSplitIgnoreEmpty_Normal(t *testing.T) {
-	s := "a b c d"
-	exp := []string{
-		"a",
-		"b",
-		"c",
-		"d",
+func TestSplitIgnoreEmpty(t *testing.T) {
+	tests := []struct {
+		name     string
+		str      string
+		expected []string
+	}{
+		{
+			name:     "Empty",
+			str:      "",
+			expected: []string{},
+		},
+		{
+			name: "Normal",
+			str:  "a b c d",
+			expected: []string{
+				"a",
+				"b",
+				"c",
+				"d",
+			},
+		},
+		{
+			name: "Multiple Empty",
+			str:  "a b  c   d",
+			expected: []string{
+				"a",
+				"b",
+				"c",
+				"d",
+			},
+		},
 	}
-	split := SplitIgnoreEmpty(s, " ")
-	checkSlice(t, split, exp)
-}
-func TestSplitIgnoreEmpty_MultipleEmpty(t *testing.T) {
-	s := "a b  c    d"
-	exp := []string{
-		"a",
-		"b",
-		"c",
-		"d",
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				split := SplitIgnoreEmpty(test.str, " ")
+				checkSlice(t, split, test.expected)
+			},
+		)
 	}
-	split := SplitIgnoreEmpty(s, " ")
-	checkSlice(t, split, exp)
 }
