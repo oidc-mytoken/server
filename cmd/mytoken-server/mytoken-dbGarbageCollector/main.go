@@ -18,10 +18,12 @@ func main() {
 }
 
 func execSimpleQuery(sql string) {
-	if err := db.RunWithinTransaction(nil, func(tx *sqlx.Tx) error {
-		_, err := tx.Exec(sql)
-		return err
-	}); err != nil {
+	if err := db.RunWithinTransaction(
+		log.StandardLogger(), nil, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(sql)
+			return err
+		},
+	); err != nil {
 		log.WithError(err).Error()
 	}
 }
