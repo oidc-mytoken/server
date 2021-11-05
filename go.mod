@@ -7,7 +7,7 @@ require (
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/coreos/go-oidc/v3 v3.1.0
 	github.com/fatih/structs v1.1.0
-	github.com/go-resty/resty/v2 v2.6.0
+	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gofiber/fiber/v2 v2.20.1
 	github.com/gofiber/helmet/v2 v2.2.3
