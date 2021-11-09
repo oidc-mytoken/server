@@ -30,7 +30,7 @@ func NewOIDCFlowRequest() *OIDCFlowRequest {
 			},
 		},
 		ResponseType: model.ResponseTypeToken,
-		redirectType: api.RedirectTypeWeb,
+		redirectType: api.RedirectTypeNative,
 		GrantType:    -1,
 	}
 }
