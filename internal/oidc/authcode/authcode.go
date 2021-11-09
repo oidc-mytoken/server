@@ -34,6 +34,7 @@ import (
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 	"github.com/oidc-mytoken/server/shared/utils/jwtutils"
+	"github.com/oidc-mytoken/server/shared/utils/ternary"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
@@ -103,6 +104,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 			Response: api.ErrorUnknownIssuer,
 		}
 	}
+	req.Issuer = provider.Issuer
 	exp := req.Restrictions.GetExpires()
 	if exp > 0 && exp < unixtime.Now() {
 		return &model.Response{
@@ -112,19 +114,11 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 	}
 
 	oState, consentCode := state.CreateState()
-	authFlowInfoO := authcodeinforepo.AuthFlowInfoOut{
-		State:                oState,
-		Issuer:               provider.Issuer,
-		Restrictions:         req.Restrictions,
-		Capabilities:         req.Capabilities,
-		SubtokenCapabilities: req.SubtokenCapabilities,
-		Name:                 req.Name,
-		Rotation:             req.Rotation,
-		ResponseType:         req.ResponseType,
-		MaxTokenLen:          req.MaxTokenLen,
-	}
 	authFlowInfo := authcodeinforepo.AuthFlowInfo{
-		AuthFlowInfoOut: authFlowInfoO,
+		AuthFlowInfoOut: authcodeinforepo.AuthFlowInfoOut{
+			State:               oState,
+			AuthCodeFlowRequest: req,
+		},
 	}
 	res := api.AuthCodeFlowResponse{
 		AuthorizationURL: utils.CombineURLPath(consentEndpoint, consentCode.String()),
@@ -273,7 +267,7 @@ func CodeExchange(
 	}
 	return &model.Response{
 		Status:   fiber.StatusSeeOther,
-		Response: "/home",
+		Response: ternary.IfNotEmptyOr(authInfo.RedirectURL, "/home"),
 		Cookies:  []*fiber.Cookie{cookie},
 	}
 }

@@ -19,6 +19,7 @@ type OIDCFlowRequest struct {
 	Restrictions        restrictions.Restrictions `json:"restrictions"`
 	ResponseType        model.ResponseType        `json:"response_type"`
 	redirectType        string
+	redirectURL         string
 }
 
 // NewOIDCFlowRequest creates a new OIDCFlowRequest with default values where they can be omitted
@@ -40,15 +41,22 @@ func (r *OIDCFlowRequest) SetRedirectType(redirect string) {
 	r.redirectType = redirect
 }
 
+// SetRedirectURL sets the (hidden) redirect url
+func (r *OIDCFlowRequest) SetRedirectURL(url string) {
+	r.redirectURL = url
+}
+
 // MarshalJSON implements the json.Marshaler interface
 func (r OIDCFlowRequest) MarshalJSON() ([]byte, error) {
 	type ofr OIDCFlowRequest
 	o := struct {
 		ofr
 		RedirectType string `json:"redirect_type,omitempty"`
+		RedirectURL  string `json:"redirect_url,omitempty"`
 	}{
 		ofr:          ofr(r),
 		RedirectType: r.redirectType,
+		RedirectURL:  r.redirectURL,
 	}
 	data, err := json.Marshal(o)
 	return data, errors.WithStack(err)
@@ -60,14 +68,17 @@ func (r *OIDCFlowRequest) UnmarshalJSON(data []byte) error {
 	o := struct {
 		ofr
 		RedirectType string `json:"redirect_type"`
+		RedirectURL  string `json:"redirect_url"`
 	}{
 		ofr: ofr(*NewOIDCFlowRequest()),
 	}
 	o.RedirectType = o.redirectType
+	o.RedirectURL = o.redirectURL
 	if err := json.Unmarshal(data, &o); err != nil {
 		return errors.WithStack(err)
 	}
 	o.redirectType = o.RedirectType
+	o.redirectURL = o.RedirectURL
 	*r = OIDCFlowRequest(o.ofr)
 	if r.SubtokenCapabilities != nil && !r.Capabilities.Has(api.CapabilityCreateMT) {
 		r.SubtokenCapabilities = nil
@@ -80,6 +91,7 @@ func (r OIDCFlowRequest) ToAuthCodeFlowRequest() AuthCodeFlowRequest {
 	return AuthCodeFlowRequest{
 		OIDCFlowRequest: r,
 		RedirectType:    r.redirectType,
+		RedirectURL:     r.redirectURL,
 	}
 }
 

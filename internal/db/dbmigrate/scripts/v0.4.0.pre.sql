@@ -1,69 +1,5 @@
 # noinspection SqlResolveForFile
 
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
-# noinspection SqlResolveForFile
-
 # Tables
 DROP VIEW IF EXISTS MyTokens;
 
@@ -74,6 +10,26 @@ ALTER TABLE Users
 
 ALTER TABLE TransferCodesAttributes
     ADD ssh_key_hash VARCHAR(128) NULL;
+
+TRUNCATE TABLE AuthInfo;
+ALTER TABLE AuthInfo
+    ADD request_json JSON NOT NULL;
+ALTER TABLE AuthInfo
+    DROP COLUMN iss;
+ALTER TABLE AuthInfo
+    DROP COLUMN restrictions;
+ALTER TABLE AuthInfo
+    DROP COLUMN capabilities;
+ALTER TABLE AuthInfo
+    DROP COLUMN name;
+ALTER TABLE AuthInfo
+    DROP COLUMN subtoken_capabilities;
+ALTER TABLE AuthInfo
+    DROP COLUMN rotation;
+ALTER TABLE AuthInfo
+    DROP COLUMN response_type;
+ALTER TABLE AuthInfo
+    DROP COLUMN max_token_len;
 
 # CryptStore
 CREATE TABLE `CryptPayloadTypes`
@@ -260,31 +216,19 @@ END;;
 CREATE OR REPLACE PROCEDURE AuthInfo_Get(IN STATE TEXT)
 BEGIN
     SELECT state_h,
-           iss,
-           restrictions,
-           capabilities,
-           subtoken_capabilities,
-           name,
+           request_json,
            polling_code,
-           rotation,
-           response_type,
-           max_token_len,
            code_verifier
         FROM AuthInfo
         WHERE state_h = STATE
           AND expires_at >= CURRENT_TIMESTAMP();
 END;;
 
-CREATE OR REPLACE PROCEDURE AuthInfo_Insert(IN STATE_H_ VARCHAR(128), IN ISS_ TEXT, IN RESTRICTIONS_ LONGTEXT,
-                                            IN CAPABILITIES_ LONGTEXT, IN SUBTOKEN_CAPABILITIES_ LONGTEXT,
-                                            IN NAME_ TEXT,
-                                            IN EXPIRES_IN_ INT, IN POLLING_CODE_ BIT, IN ROTATION_ LONGTEXT,
-                                            IN RESPONSE_TYPE_ VARCHAR(128), IN MAX_TOKEN_LEN_ INT)
+CREATE OR REPLACE PROCEDURE AuthInfo_Insert(IN STATE_H_ VARCHAR(128), IN REQUEST LONGTEXT,
+                                            IN EXPIRES_IN_ INT, IN POLLING_CODE_ BIT)
 BEGIN
-    INSERT INTO AuthInfo (`state_h`, `iss`, `restrictions`, `capabilities`, `subtoken_capabilities`, `name`,
-                          `expires_in`, `polling_code`, `rotation`, `response_type`, `max_token_len`)
-        VALUES (STATE_H_, ISS_, RESTRICTIONS_, CAPABILITIES_, SUBTOKEN_CAPABILITIES_, NAME_, EXPIRES_IN_, POLLING_CODE_,
-                ROTATION_, RESPONSE_TYPE_, MAX_TOKEN_LEN_);
+    INSERT INTO AuthInfo (`state_h`, `request_json`, `expires_in`, `polling_code`)
+        VALUES (STATE_H_, REQUEST, EXPIRES_IN_, POLLING_CODE_);
 END;;
 
 CREATE OR REPLACE PROCEDURE AuthInfo_SetCodeVerifier(IN STATE TEXT, IN VERIFIER TEXT)
@@ -292,15 +236,10 @@ BEGIN
     UPDATE AuthInfo SET code_verifier = VERIFIER WHERE state_h = STATE;
 END;;
 
-CREATE OR REPLACE PROCEDURE AuthInfo_Update(IN STATE TEXT, IN RESTRICTIONS_ LONGTEXT, IN CAPABILITIES_ LONGTEXT,
-                                            IN SUBTOKEN_CAPABILITIES_ LONGTEXT, IN ROTATION_ LONGTEXT, IN NAME_ TEXT)
+CREATE OR REPLACE PROCEDURE AuthInfo_Update(IN STATE TEXT, IN REQUEST LONGTEXT)
 BEGIN
     UPDATE AuthInfo
-    SET restrictions          = RESTRICTIONS_,
-        capabilities          = CAPABILITIES_,
-        subtoken_capabilities = SUBTOKEN_CAPABILITIES_,
-        rotation              = ROTATION_,
-        name                  = NAME_
+    SET request_json = REQUEST
         WHERE state_h = STATE;
 END;;
 

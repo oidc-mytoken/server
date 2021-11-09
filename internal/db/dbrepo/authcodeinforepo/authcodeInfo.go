@@ -5,12 +5,11 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 
 	"github.com/oidc-mytoken/api/v0"
 
-	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
@@ -25,67 +24,34 @@ type AuthFlowInfo struct {
 
 // AuthFlowInfoOut holds database information about a started authorization flow
 type AuthFlowInfoOut struct {
-	State                *state.State
-	Issuer               string
-	Restrictions         restrictions.Restrictions
-	Capabilities         api.Capabilities
-	SubtokenCapabilities api.Capabilities
-	Name                 string
-	PollingCode          bool
-	Rotation             *api.Rotation
-	ResponseType         model.ResponseType
-	MaxTokenLen          int
-	CodeVerifier         string
+	State *state.State
+	pkg.AuthCodeFlowRequest
+	PollingCode  bool
+	CodeVerifier string
 }
 
 type authFlowInfo struct {
-	State                *state.State `db:"state_h"`
-	Issuer               string       `db:"iss"`
-	Restrictions         restrictions.Restrictions
-	Capabilities         api.Capabilities
-	SubtokenCapabilities api.Capabilities `db:"subtoken_capabilities"`
-	Name                 db.NullString
-	PollingCode          db.BitBool `db:"polling_code"`
-	ExpiresIn            int64      `db:"expires_in"`
-	Rotation             *api.Rotation
-	ResponseType         model.ResponseType `db:"response_type"`
-	MaxTokenLen          *int               `db:"max_token_len"`
-	CodeVerifier         db.NullString      `db:"code_verifier"`
+	State                   *state.State `db:"state_h"`
+	pkg.AuthCodeFlowRequest `db:"request_json"`
+	PollingCode             db.BitBool    `db:"polling_code"`
+	CodeVerifier            db.NullString `db:"code_verifier"`
 }
 
 func (i *AuthFlowInfo) toAuthFlowInfo() *authFlowInfo {
 	return &authFlowInfo{
-		State:                i.State,
-		Issuer:               i.Issuer,
-		Restrictions:         i.Restrictions,
-		Capabilities:         i.Capabilities,
-		SubtokenCapabilities: i.SubtokenCapabilities,
-		Name:                 db.NewNullString(i.Name),
-		ExpiresIn:            config.Get().Features.Polling.PollingCodeExpiresAfter,
-		PollingCode:          i.PollingCode != nil,
-		Rotation:             i.Rotation,
-		ResponseType:         i.ResponseType,
-		MaxTokenLen:          utils.NewInt(i.MaxTokenLen),
+		State:               i.State,
+		AuthCodeFlowRequest: i.AuthCodeFlowRequest,
+		PollingCode:         i.PollingCode != nil,
 	}
 }
 
 func (i *authFlowInfo) toAuthFlowInfo() *AuthFlowInfoOut {
-	o := &AuthFlowInfoOut{
-		State:                i.State,
-		Issuer:               i.Issuer,
-		Restrictions:         i.Restrictions,
-		Capabilities:         i.Capabilities,
-		SubtokenCapabilities: i.SubtokenCapabilities,
-		Name:                 i.Name.String,
-		PollingCode:          bool(i.PollingCode),
-		Rotation:             i.Rotation,
-		ResponseType:         i.ResponseType,
-		CodeVerifier:         i.CodeVerifier.String,
+	return &AuthFlowInfoOut{
+		State:               i.State,
+		AuthCodeFlowRequest: i.AuthCodeFlowRequest,
+		PollingCode:         bool(i.PollingCode),
+		CodeVerifier:        i.CodeVerifier.String,
 	}
-	if i.MaxTokenLen != nil {
-		o.MaxTokenLen = *i.MaxTokenLen
-	}
-	return o
 }
 
 // Store stores the AuthFlowInfoIn in the database as well as the linked polling code if it exists
@@ -99,9 +65,9 @@ func (i *AuthFlowInfo) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 					return err
 				}
 			}
-			_, err := tx.NamedExec(
-				`CALL AuthInfo_Insert(:state_h, :iss, :restrictions, :capabilities, :subtoken_capabilities, :name, :expires_in, :polling_code, :rotation, :response_type, :max_token_len)`,
-				store,
+			_, err := tx.Exec(
+				`CALL AuthInfo_Insert(?, ?, ?, ?)`, store.State, store.AuthCodeFlowRequest,
+				config.Get().Features.Polling.PollingCodeExpiresAfter, store.PollingCode,
 			)
 			return errors.WithStack(err)
 		},
@@ -113,7 +79,15 @@ func GetAuthFlowInfoByState(rlog log.Ext1FieldLogger, state *state.State) (*Auth
 	info := authFlowInfo{}
 	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
-			return errors.WithStack(tx.Get(&info, `CALL AuthInfo_Get(?)`, state))
+			row := tx.QueryRowx(`CALL AuthInfo_Get(?)`, state)
+			if err := row.Err(); err != nil {
+				return errors.WithStack(err)
+			}
+			return errors.WithStack(
+				row.Scan(
+					&info.State, &info.AuthCodeFlowRequest, &info.PollingCode, &info.CodeVerifier,
+				),
+			)
 		},
 	); err != nil {
 		return nil, err
@@ -138,9 +112,18 @@ func UpdateTokenInfoByState(
 ) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			_, err := tx.Exec(
-				`CALL AuthInfo_Update(?,?,?,?,?,?)`,
-				state, r, c, sc, rot, tokenName,
+			info, err := GetAuthFlowInfoByState(rlog, state)
+			if err != nil {
+				return err
+			}
+			info.Restrictions = r
+			info.Capabilities = c
+			info.SubtokenCapabilities = sc
+			info.Rotation = rot
+			info.Name = tokenName
+			_, err = tx.Exec(
+				`CALL AuthInfo_Update(?,?)`,
+				state, info.AuthCodeFlowRequest,
 			)
 			return errors.WithStack(err)
 		},
