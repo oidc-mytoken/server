@@ -34,6 +34,7 @@ type Mytoken struct {
 	ExpiresAt            unixtime.UnixTime         `json:"exp,omitempty"`
 	NotBefore            unixtime.UnixTime         `json:"nbf"`
 	IssuedAt             unixtime.UnixTime         `json:"iat"`
+	AuthTime             unixtime.UnixTime         `json:"auth_time,omitempty"`
 	ID                   mtid.MTID                 `json:"jti"`
 	SeqNo                uint64                    `json:"seq_no"`
 	Name                 string                    `json:"name,omitempty"`
@@ -90,6 +91,7 @@ func (mt *Mytoken) VerifyCapabilities(required ...api.Capability) bool {
 // NewMytoken creates a new Mytoken
 func NewMytoken(
 	oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation,
+	authTime unixtime.UnixTime,
 ) *Mytoken {
 	now := unixtime.Now()
 	mt := &Mytoken{
@@ -99,6 +101,7 @@ func NewMytoken(
 		SeqNo:                1,
 		IssuedAt:             now,
 		NotBefore:            now,
+		AuthTime:             authTime,
 		Issuer:               config.Get().IssuerURL,
 		Subject:              utils.CreateMytokenSubject(oidcSub, oidcIss),
 		Audience:             config.Get().IssuerURL,

@@ -271,8 +271,8 @@ func createMytokenEntry(
 		sc = api.TightenCapabilities(capsFromParent, req.SubtokenCapabilities)
 	}
 	ste := mytokenrepo.NewMytokenEntry(
-		mytoken.NewMytoken(parent.OIDCSubject, parent.OIDCIssuer, r, c, sc, req.Rotation),
-		req.Name, networkData,
+		mytoken.NewMytoken(parent.OIDCSubject, parent.OIDCIssuer, r, c, sc, req.Rotation, parent.AuthTime), req.Name,
+		networkData,
 	)
 	encryptionKey, _, err := encryptionkeyrepo.GetEncryptionKey(rlog, nil, parent.ID, req.Mytoken.JWT)
 	if err != nil {

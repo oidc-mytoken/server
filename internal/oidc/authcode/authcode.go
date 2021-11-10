@@ -274,10 +274,9 @@ func CodeExchange(
 
 func createMytokenEntry(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut, token *oauth2.Token,
-	oidcSub string,
-	networkData api.ClientMetaData,
+	oidcSub string, networkData api.ClientMetaData,
 ) (*mytokenrepo.MytokenEntry, error) {
-	ste := mytokenrepo.NewMytokenEntry(
+	mte := mytokenrepo.NewMytokenEntry(
 		mytoken.NewMytoken(
 			oidcSub,
 			authFlowInfo.Issuer,
@@ -285,16 +284,18 @@ func createMytokenEntry(
 			authFlowInfo.Capabilities,
 			authFlowInfo.SubtokenCapabilities,
 			authFlowInfo.Rotation,
+			unixtime.Now(),
 		),
 		authFlowInfo.Name, networkData,
 	)
-	if err := ste.InitRefreshToken(token.RefreshToken); err != nil {
+	mte.Token.AuthTime = unixtime.Now()
+	if err := mte.InitRefreshToken(token.RefreshToken); err != nil {
 		return nil, err
 	}
-	if err := ste.Store(rlog, tx, "Used grant_type oidc_flow authorization_code"); err != nil {
+	if err := mte.Store(rlog, tx, "Used grant_type oidc_flow authorization_code"); err != nil {
 		return nil, err
 	}
-	return ste, nil
+	return mte, nil
 }
 
 func getSubjectFromUserinfo(provider *oidc.Provider, token *oauth2.Token) (string, error) {
