@@ -17,10 +17,10 @@ import (
 )
 
 // GetSSHInfo returns the SSHInfo stored in the database for the passed key and user hashes.
-func GetSSHInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, keyHash, userHash string) (info SSHInfo, err error) {
+func GetSSHInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, keyFP, userHash string) (info SSHInfo, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			return errors.WithStack(tx.Get(&info, `CALL SSHInfo_Get(?,?)`, keyHash, userHash))
+			return errors.WithStack(tx.Get(&info, `CALL SSHInfo_Get(?,?)`, keyFP, userHash))
 		},
 	)
 	return
@@ -34,11 +34,14 @@ func GetAllSSHInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID) (info 
 			return errors.WithStack(tx.Select(&dbInfo, `CALL SSHInfo_GetAll(?)`, myid))
 		},
 	)
+	if err != nil {
+		return
+	}
 	for _, i := range dbInfo {
 		apiI := api.SSHKeyInfo{
-			Name:       i.Name.String,
-			SSHKeyHash: i.KeyHash,
-			Created:    i.Created.Unix(),
+			Name:              i.Name.String,
+			SSHKeyFingerprint: i.KeyFingerprint,
+			Created:           i.Created.Unix(),
 		}
 		if i.LastUsed.Valid {
 			apiI.LastUsed = utils.NewInt64(i.LastUsed.Time.Unix())
@@ -50,14 +53,14 @@ func GetAllSSHInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID) (info 
 
 // SSHInfo is a type holding the information stored in the database related to an ssh key
 type SSHInfo struct {
-	KeyID       string        `db:"key_id"`
-	Name        db.NullString `db:"name"`
-	KeyHash     string        `db:"ssh_key_hash"`
-	UserHash    string        `db:"ssh_user_hash"`
-	Created     time.Time     `db:"created"`
-	LastUsed    sql.NullTime  `db:"last_used"`
-	Enabled     db.BitBool    `db:"enabled"`
-	EncryptedMT string        `db:"MT_crypt"`
+	KeyID          string        `db:"key_id"`
+	Name           db.NullString `db:"name"`
+	KeyFingerprint string        `db:"ssh_key_fp"`
+	UserHash       string        `db:"ssh_user_hash"`
+	Created        time.Time     `db:"created"`
+	LastUsed       sql.NullTime  `db:"last_used"`
+	Enabled        db.BitBool    `db:"enabled"`
+	EncryptedMT    string        `db:"MT_crypt"`
 }
 
 // Decrypt decrypts the encrypted mytoken linked to this ssh key with the passed password
@@ -81,19 +84,20 @@ func Delete(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID, keyHash strin
 
 // SSHInfoIn is a type for storing an ssh public key in the database
 type SSHInfoIn struct {
-	Name        db.NullString `db:"name"`
-	KeyHash     string        `db:"ssh_key_hash"`
-	UserHash    string        `db:"ssh_user_hash"`
-	EncryptedMT string        `db:"MT_crypt"`
+	MTID           mtid.MTID     `db:"MT_id"`
+	Name           db.NullString `db:"name"`
+	KeyFingerprint string        `db:"ssh_key_fp"`
+	UserHash       string        `db:"ssh_user_hash"`
+	EncryptedMT    string        `db:"MT_crypt"`
 }
 
 // Insert inserts an ssh public key for the given user (given by the mytoken) into the database
-func Insert(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID, data SSHInfoIn) error {
+func Insert(rlog log.Ext1FieldLogger, tx *sqlx.Tx, data SSHInfoIn) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(
 				`CALL SSHInfo_Insert(?,?,?,?,?)`,
-				myid, data.KeyHash, data.UserHash, data.Name, data.EncryptedMT,
+				data.MTID, data.KeyFingerprint, data.UserHash, data.Name, data.EncryptedMT,
 			)
 			return errors.WithStack(err)
 		},
@@ -101,10 +105,10 @@ func Insert(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID, data SSHInfoI
 }
 
 // UsedKey marks that the passed ssh key was just used
-func UsedKey(rlog log.Ext1FieldLogger, tx *sqlx.Tx, keyHash, userHash string) error {
+func UsedKey(rlog log.Ext1FieldLogger, tx *sqlx.Tx, keyFP, userHash string) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			_, err := tx.Exec(`CALL SSHInfo_UsedKey(?,?)`, keyHash, userHash)
+			_, err := tx.Exec(`CALL SSHInfo_UsedKey(?,?)`, keyFP, userHash)
 			return errors.WithStack(err)
 		},
 	)

@@ -51,7 +51,7 @@ func _handleSSHSession(s ssh.Session) (err error) {
 
 	switch reqType {
 	case api.SSHRequestMytoken:
-		return handleSSHMytoken(req, s.Context())
+		return handleSSHMytoken(req, s)
 	default:
 		return errors.New("unknown request")
 	}

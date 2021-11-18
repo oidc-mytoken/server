@@ -56,7 +56,7 @@ func CheckPollingCodeReq(
 		errRes = model.ErrorToInternalServerErrorResponse(err)
 		return
 	}
-	if !pollingCodeStatus.Found || (pollingCodeStatus.SSHKeyHash.Valid != forSSH) {
+	if !pollingCodeStatus.Found || (pollingCodeStatus.SSHKeyFingerprint.Valid != forSSH) {
 		rlog.WithField("polling_code", pollingCode).Debug("Polling code not known")
 		errRes = &model.Response{
 			Status:   fiber.StatusUnauthorized,

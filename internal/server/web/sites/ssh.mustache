@@ -1,0 +1,213 @@
+<h3>SSH Grant Type</h3>
+<p>
+    Below you can find information about your ssh keys usable with this grant type. You can also add or remove ssh keys.
+</p>
+<p>
+    To add a new ssh key you have to configure what can be done with this ssh key (capabilities) and upload the ssh key.
+    You can also define restrictions. Then you have to do the OIDC authorization code flow and authenticate against the
+    OpenID Provider to activate the new ssh key. After returning to this webpage, we will present you your ssh username.
+    Make sure to save it (you can also download an ssh host entry). If you loose the ssh user name, we cannot give it to
+    you; in this case the ssh key has to be deleted and readded.
+</p>
+<div class="d-flex justify-content-between">
+    <div id="sshGrantStatus">
+        <div id="sshGrantStatusEnabled" class="d-none">
+            <h4>
+                SSH Grant is Enabled
+                <a href="#" role="button" class="hover-item" onclick="$('#disableModal').modal()" data-toggle="tooltip"
+                   data-placement="top" title="Disable SSH Grant">
+                    <i class="fas fa-times-circle text-danger hover-text"></i>
+                    <i class="fas fa-check-circle text-success non-hover-text"></i>
+                </a>
+            </h4>
+        </div>
+        <div id="sshGrantStatusDisabled" class="d-none">
+            <h4>
+                SSH Grant is Disabled
+                <a href="#" role="button" class="hover-item" onclick="$('#enableModal').modal()" data-toggle="tooltip"
+                   data-placement="top" title="Enable SSH Grant">
+                    <i class="fas fa-check-circle text-success hover-text"></i>
+                    <i class="fas fa-times-circle text-danger non-hover-text"></i>
+                </a>
+            </h4>
+        </div>
+
+
+        <div class="modal fade" tabindex="-1" role="dialog" id="enableModal">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Enable SSH Grant</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">Confirm to enable the 'SSH' Grant Type.</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="enableSSH()">
+                            Enable
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" tabindex="-1" role="dialog" id="disableModal">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Disable SSH Grant</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">Confirm to disable the 'SSH' Grant Type.</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="disableSSH()">
+                            Disable
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button type="button" class="btn btn-success" id="addSSHKeyBtn" onclick="$('#addModal').modal()"><i
+            class="fas fa-plus-circle"></i> Add SSH Key
+    </button>
+</div>
+
+<table class="table table-striped bg-my_grey mt-2">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Fingerprint</th>
+        <th>Created</th>
+        <th>Last Used</th>
+    </tr>
+    </thead>
+    <tbody id="sshKeys">
+    <tr id="noSSHKeyEntry">
+        <td colspan="5" class="text-muted text-center">No ssh key active</td>
+    </tr>
+    </tbody>
+</table>
+
+
+<div class="modal fade" tabindex="-1" role="dialog" id="addModal">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+        <div class="modal-content bg-my_grey">
+            <div class="modal-header">
+                <h5 class="modal-title">Add SSH Key</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="sshForm">
+                <div class="modal-body">
+                    <div>
+                        <div>
+                            <label for="keyName">Token Name</label>
+                            <input type="text" class="form-control" id="keyName" name="name"
+                                   aria-describedby="keyNameHelp" placeholder="Name">
+                            <small id="keyNameHelp" class="form-text text-muted">Give the SSH Key a name, so you can
+                                identify it better.</small>
+                        </div>
+                        <div>
+                            <label for="ssh_key_div">SSH Public Key</label>
+                            <div class="input-group" id="ssh_key_div">
+                           <textarea id="ssh_key" class="form-control" rows="8"
+                                     placeholder="Begins with 'ssh-rsa', 'ecdsa-sha2-nistp256', 'ecdsa-sha2-nistp384', 'ecdsa-sha2-nistp521', 'ssh-ed25519', 'sk-ecdsa-sha2-nistp256@openssh.com', or 'sk-ssh-ed25519@openssh.com'"></textarea>
+                                <button role="button" type="button"
+                                        class="btn bg-my_blue_dark input-group-append d-inline-block align-middle"
+                                        onclick="$('#ssh_key_file').click()">Upload Key File
+                                </button>
+                                <input type="file" class="d-none" id="ssh_key_file">
+                            </div>
+                            <small class="form-text text-muted">Paste your ssh public key here or upload it</small>
+                        </div>
+
+                        <div class="mt-3">
+                            <h5>Configure how this ssh key can be used</h5>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="alert border">
+                                        {{> capabilities}}
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="alert border">
+                                        {{> restrictions}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="addSSHKey()">Add SSH Key</button>
+                </div>
+            </div>
+
+
+            <div id="sshResult" class="d-none">
+                <div class="modal-body">
+                    <div id="follow-instructions">
+                        <div class="alert bg-my_blue_dark">
+                            <h4>To add your ssh key follow the following link and authenticate:</h4>
+                            <a id="authorization-url" target="_blank" rel="noopener noreferrer" href=""
+                               style="font-size: 2em;"></a>
+                        </div>
+                    </div>
+                    <div id="sshResult-color" class="alert" role="alert">
+                        <h4 id="sshResult-heading-success" class="alert-heading d-none">Your SSH Config</h4>
+                        <h4 id="sshResult-heading-error" class="alert-heading d-none">Error</h4>
+                        <h4 id="sshResult-heading-pending" class="alert-heading d-none">Authorization Pending</h4>
+                        <div id="pending-spinner" class="spinner-border text-primary d-none" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <div id="sshSuccessContent" class="d-none">
+                            <p>
+                                Your SSH Key is now activated. Please use the following ssh user name: '<span
+                                    class="sshUserName"></span>'
+                            </p>
+                            <div class="alert alert-danger">
+                                Your ssh user name for this ssh key is: '<span class="sshUserName"></span>'<br>
+                                <span class="font-weight-bold">You must save this username! After closing this window we cannot display it to you again.</span>
+                            </div>
+                            <div id="sshHostConfigDiv" class="d-none">
+                                <p>You can save and use the following ssh host entry:</p>
+                                <button class="btn btn-copy" id="sshHostConfigCopy" data-toggle="tooltip"
+                                        data-placement="bottom"
+                                        title="Copy to clipboard" data-clipboard-target="#sshHostConfig">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                                <pre class="card-text code" id="sshHostConfig"></pre>
+                            </div>
+                        </div>
+                        <div id="sshErrorContent" class="d-none">
+                            <pre class="card-text" id="sshErrorPre"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" tabindex="-1" role="dialog" id="error-modal">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content bg-danger">
+            <div class="modal-header">
+                <h5 class="modal-title">Error</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="error-modal-msg"></div>
+        </div>
+    </div>
+</div>

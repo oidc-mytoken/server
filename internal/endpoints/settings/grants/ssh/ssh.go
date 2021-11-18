@@ -56,7 +56,7 @@ func HandleGetSSHInfo(ctx *fiber.Ctx) error {
 					SSHKeyInfo:   info,
 				},
 			}, nil
-		},
+		}, false,
 	)
 }
 
@@ -69,7 +69,7 @@ func HandleDeleteSSHKey(ctx *fiber.Ctx) error {
 		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	rlog.Trace("Parsed delete ssh key request")
-	if req.SSHKeyHash == "" {
+	if req.SSHKeyFingerprint == "" {
 		if req.SSHKey == "" {
 			return serverModel.Response{
 				Status:   fiber.StatusBadRequest,
@@ -83,18 +83,18 @@ func HandleDeleteSSHKey(ctx *fiber.Ctx) error {
 				Response: model.BadRequestError("could not parse ssh public key"),
 			}.Send(ctx)
 		}
-		req.SSHKeyHash = hashUtils.SHA3_512Str(sshKey.Marshal())
+		req.SSHKeyFingerprint = gossh.FingerprintSHA256(sshKey)
 	}
 
 	return settings.HandleSettings(
-		ctx, &req.Mytoken, event.FromNumber(event.SSHKeyRemoved, ""), fiber.StatusNoContent,
+		ctx, &req.Mytoken, nil, fiber.StatusNoContent,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
-			if err := sshrepo.Delete(rlog, tx, mt.ID, req.SSHKeyHash); err != nil {
+			if err := sshrepo.Delete(rlog, tx, mt.ID, req.SSHKeyFingerprint); err != nil {
 				rlog.Errorf("%s", errorfmt.Full(err))
 				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
 			}
 			return nil, nil
-		},
+		}, true,
 	)
 }
 
@@ -141,7 +141,7 @@ func handleAddSSHKey(ctx *fiber.Ctx) error {
 			Response: model.BadRequestError("could not parse ssh public key"),
 		}.Send(ctx)
 	}
-	sshKeyHash := hashUtils.SHA3_512Str(sshKey.Marshal())
+	sshKeyFP := gossh.FingerprintSHA256(sshKey)
 
 	return settings.HandleSettings(
 		ctx, &req.Mytoken, event.FromNumber(event.SSHKeyAdded, ""), fiber.StatusOK,
@@ -160,6 +160,23 @@ func handleAddSSHKey(ctx *fiber.Ctx) error {
 					},
 				}
 			}
+			allSSHKeys, err := sshrepo.GetAllSSHInfo(rlog, tx, mt.ID)
+			if err != nil {
+				rlog.Errorf("%s", errorfmt.Full(err))
+				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
+			}
+			for _, k := range allSSHKeys {
+				if k.SSHKeyFingerprint == sshKeyFP {
+					return nil, &serverModel.Response{
+						Status: fiber.StatusConflict,
+						Response: api.Error{
+							Error:            api.ErrorStrInvalidRequest,
+							ErrorDescription: "ssh key already added",
+						},
+					}
+				}
+			}
+
 			mytokenReq := my.OIDCFlowRequest{
 				OIDCFlowRequest: api.OIDCFlowRequest{
 					GeneralMytokenRequest: api.GeneralMytokenRequest{
@@ -180,14 +197,14 @@ func handleAddSSHKey(ctx *fiber.Ctx) error {
 				return nil, res
 			}
 			authRes := res.Response.(api.AuthCodeFlowResponse)
-			if err = transfercoderepo.LinkPollingCodeToSSHKey(rlog, tx, authRes.PollingCode, sshKeyHash); err != nil {
+			if err = transfercoderepo.LinkPollingCodeToSSHKey(rlog, tx, authRes.PollingCode, sshKeyFP); err != nil {
 				rlog.Errorf("%s", errorfmt.Full(err))
 				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
 			}
 			return &request.SSHKeyAddResponse{
 				AuthCodeFlowResponse: authRes,
 			}, nil
-		},
+		}, false,
 	)
 }
 
@@ -234,12 +251,13 @@ func handlePollingCode(ctx *fiber.Ctx) error {
 	}
 	name := extractSSHKeyNameFromMTName(mtName.String)
 	data := sshrepo.SSHInfoIn{
-		Name:        db.NewNullString(name),
-		KeyHash:     status.SSHKeyHash.String,
-		UserHash:    userHash,
-		EncryptedMT: encryptedMT,
+		MTID:           mt.ID,
+		Name:           db.NewNullString(name),
+		KeyFingerprint: status.SSHKeyFingerprint.String,
+		UserHash:       userHash,
+		EncryptedMT:    encryptedMT,
 	}
-	if err = sshrepo.Insert(rlog, nil, mt.ID, data); err != nil {
+	if err = sshrepo.Insert(rlog, nil, data); err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
 		return serverModel.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}

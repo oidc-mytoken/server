@@ -29,6 +29,7 @@ func HandleSettings(
 	logEvent *event.Event,
 	okStatus int,
 	callback func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response),
+	tokenGoneAfterCallback bool,
 ) error {
 	rlog := logger.GetRequestLogger(ctx)
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, reqMytoken, ctx)
@@ -49,14 +50,19 @@ func HandleSettings(
 			if errRes != nil {
 				return fmt.Errorf("dummy")
 			}
-			clientMetaData := ctxUtils.ClientMetaData(ctx)
-			if err = eventService.LogEvent(
-				rlog, tx, eventService.MTEvent{
-					Event: logEvent,
-					MTID:  mt.ID,
-				}, *clientMetaData,
-			); err != nil {
+			if tokenGoneAfterCallback {
 				return
+			}
+			clientMetaData := ctxUtils.ClientMetaData(ctx)
+			if logEvent != nil {
+				if err = eventService.LogEvent(
+					rlog, tx, eventService.MTEvent{
+						Event: logEvent,
+						MTID:  mt.ID,
+					}, *clientMetaData,
+				); err != nil {
+					return
+				}
 			}
 			if usedRestriction != nil {
 				if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {

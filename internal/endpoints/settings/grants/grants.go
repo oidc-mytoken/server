@@ -38,7 +38,7 @@ func HandleListGrants(ctx *fiber.Ctx) error {
 					GrantTypes: grants,
 				},
 			}, nil
-		},
+		}, false,
 	)
 }
 
@@ -61,9 +61,15 @@ func handleEditGrant(
 	dbCallBack func(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID, grant model.GrantType) error,
 	evt, okStatus int,
 ) error {
-	req := request.GrantTypeRequest{}
+	req := request.GrantTypeRequest{GrantType: -1}
 	if err := ctx.BodyParser(&req); err != nil {
 		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
+	}
+	if !req.GrantType.Valid() {
+		return serverModel.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: model.BadRequestError("no valid 'grant_type' found"),
+		}.Send(ctx)
 	}
 	rlog.Trace("Parsed grant type request")
 
@@ -74,6 +80,6 @@ func handleEditGrant(
 				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
 			}
 			return nil, nil
-		},
+		}, false,
 	)
 }

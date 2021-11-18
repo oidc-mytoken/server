@@ -6,8 +6,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 )
 
-const hostEntryTemplate = `
-# Host entry for mytoken
+const hostEntryTemplate = `# Host entry for mytoken
 Host %s
 	HostName %s
 	Port %d

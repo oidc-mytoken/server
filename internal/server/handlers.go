@@ -30,6 +30,7 @@ func handleHome(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
 		loggedIn:        true,
 		restrictionsGUI: true,
+		"home":          true,
 		"restrictions": consent.WebRestrictions{
 			Restrictions: restrictions.Restrictions{
 				{ExpiresAt: unixtime.InSeconds(3600 * 24 * 7)},
@@ -39,6 +40,38 @@ func handleHome(ctx *fiber.Ctx) error {
 		"subtoken-capabilities": consent.WebCapabilities(api.AllCapabilities),
 	}
 	return ctx.Render("sites/home", binding, layoutMain)
+}
+
+func handleSettings(ctx *fiber.Ctx) error {
+	binding := map[string]interface{}{
+		loggedIn:   true,
+		"settings": true,
+		"grants": []struct {
+			DisplayName string
+			Name        string
+			Description string
+			Link        string
+		}{
+			{
+				DisplayName: "SSH",
+				Name:        "ssh",
+				Description: "The SSH grant type allows you to link an ssh key and use ssh authentication for various actions.",
+				Link:        "/settings/grants/ssh",
+			},
+		},
+	}
+	return ctx.Render("sites/settings", binding, layoutMain)
+}
+func handleSSH(ctx *fiber.Ctx) error {
+	binding := map[string]interface{}{
+		"settings-ssh":          true,
+		loggedIn:                true,
+		"restr-gui":             true,
+		"restrictions":          consent.WebRestrictions{},
+		"capabilities":          consent.WebCapabilities(api.AllCapabilities),
+		"subtoken-capabilities": consent.WebCapabilities(api.AllCapabilities),
+	}
+	return ctx.Render("sites/ssh", binding, layoutMain)
 }
 
 func handleNativeCallback(ctx *fiber.Ctx) error {

@@ -1,6 +1,7 @@
-const usagesAT = $('#usages_AT');
-const usagesOther = $('#usages_other');
-const restrClauses = $('#restr-clauses');
+const $usagesAT = $('#usages_AT');
+const $usagesOther = $('#usages_other');
+const $restrClauses = $('#restr-clauses');
+const $scopeTableBody = $('#scopeTableBody');
 
 function initDatetimePicker() {
     let date_input = $('.datetimepicker-input');
@@ -48,12 +49,12 @@ function initCountries() {
 
 function _addScopeValueToGUI(scope, $htmlEl) {
     let html = `<tr>
-                            <td><span class="table-item">`+scope+`</span></td>
+                            <td><span class="table-item">${scope}</span></td>
                             <td>
                                 <i class="fas fa-check-circle text-success scope-active"></i>
                                 <i class="fas fa-times-circle text-danger scope-inactive d-none"></i>
                             </td>
-                            <td><input class="form-check-input scope-checkbox" id="scope_`+scope+`" type="checkbox" value="`+scope+`"></td>
+                            <td><input class="form-check-input scope-checkbox" id="scope_${scope}" type="checkbox" value="${scope}"></td>
                         </tr>`;
     $htmlEl.append(html);
 }
@@ -62,9 +63,8 @@ function initRestrGUI(...next) {
     initDatetimePicker();
     initCountries();
     const scopes = typeof (supported_scopes) !== 'undefined' ? supported_scopes : getSupportedScopesFromStorage();
-    let $table = $('#scopeTableBody');
     for (const scope of scopes) {
-        _addScopeValueToGUI(scope, $table);
+        _addScopeValueToGUI(scope, $scopeTableBody);
     }
 
     $('.scope-checkbox').on("click", function () {
@@ -90,7 +90,7 @@ function initRestrGUI(...next) {
             allScopesActive.showB();
         }
     })
-    $('#scopeTableBody').find('.scope-checkbox').on("click", function (){
+    $scopeTableBody.find('.scope-checkbox').on("click", function () {
         GUIToRestr_Scopes();
     })
 
@@ -184,7 +184,7 @@ function GUIToRestr_Scopes() {
         return;
     }
     let scopes = []
-    checkedScopeBoxes.each(function(i){
+    checkedScopeBoxes.each(function () {
         scopes.push($(this).val());
     })
     GUISetRestr('scope', scopes.join(' '));
@@ -203,7 +203,7 @@ function GUIToRestr_GeoIPDisallow() {
 }
 
 function GUIToRestr_UsagesAT() {
-    let usages = usagesAT.val()
+    let usages = $usagesAT.val()
     if (usages === "") {
         GUIDelRestr('usages_AT');
     } else {
@@ -212,7 +212,7 @@ function GUIToRestr_UsagesAT() {
 }
 
 function GUIToRestr_UsagesOther() {
-    let usages = usagesOther.val()
+    let usages = $usagesOther.val()
     if (usages === "") {
         GUIDelRestr('usages_other');
     } else {
@@ -220,17 +220,17 @@ function GUIToRestr_UsagesOther() {
     }
 }
 
-usagesAT.on('change', GUIToRestr_UsagesAT);
-usagesOther.on('change', GUIToRestr_UsagesOther);
+$usagesAT.on('change', GUIToRestr_UsagesAT);
+$usagesOther.on('change', GUIToRestr_UsagesOther);
 
 function _addListItem(value, tableBody) {
-    let html = `<tr><td class="align-middle"><span class="table-item">`+value+`</span></td><td class="align-middle"><button class="btn btn-small btn-delete-list-item"><i class="fas fa-minus"></i></button></td></tr>`;
+    let html = `<tr><td class="align-middle"><span class="table-item">` + value + `</span></td><td class="align-middle"><button class="btn btn-small btn-delete-list-item"><i class="fas fa-minus"></i></button></td></tr>`;
     tableBody.append(html);
-    $('.btn-delete-list-item').off("click").on("click", function (){
+    $('.btn-delete-list-item').off("click").on("click", function () {
         let tablebodyId = $(this).parents('.list-table').attr("id");
         $(this).parents("tr").remove();
         if (tableBody.hasClass('restr')) {
-            _guiToRestr_Table("#"+tablebodyId, tablebodyId.split('TableBody')[0]);
+            _guiToRestr_Table("#" + tablebodyId, tablebodyId.split('TableBody')[0]);
         }
     })
     let tbodyId = tableBody.attr("id");
@@ -278,22 +278,22 @@ function restrClauseToGUI() {
             _addListItem(country, $('#geoip_disallowTableBody'));
         }
     }
-    usagesAT.val(restr.usages_AT);
-    usagesOther.val(restr.usages_other);
+    $usagesAT.val(restr.usages_AT);
+    $usagesOther.val(restr.usages_other);
 }
 
 function newRestrClauseBtn(index) {
     let btn = `<button type="button" id="restr-clause-`+index+`" class="btn btn-info restr-btn">`+index+`</button>`;
-    restrClauses.append(btn);
-    $('#restr-clause-'+index).on('click', function (){
-        let i = Number($(this).text())-1;
+    $restrClauses.append(btn);
+    $('#restr-clause-' + index).on('click', function () {
+        let i = Number($(this).text()) - 1;
         GUIMarkActiveClause(i);
         restrClauseToGUI();
     })
 }
 
 function drawRestrictionClauseBtns() {
-    restrClauses.find('button.restr-btn').remove();
+    $restrClauses.find('button.restr-btn').remove();
     for (let i=0; i<restrictions.length; i++) {
         let index = i+1;
         newRestrClauseBtn(index);

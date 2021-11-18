@@ -19,12 +19,12 @@ import (
 
 // TransferCodeStatus holds information about the status of a polling code
 type TransferCodeStatus struct {
-	Found           bool               `db:"found"`
-	Expired         bool               `db:"expired"`
-	ResponseType    model.ResponseType `db:"response_type"`
-	ConsentDeclined db.BitBool         `db:"consent_declined"`
-	MaxTokenLen     *int               `db:"max_token_len"`
-	SSHKeyHash      db.NullString      `db:"ssh_key_hash"`
+	Found             bool               `db:"found"`
+	Expired           bool               `db:"expired"`
+	ResponseType      model.ResponseType `db:"response_type"`
+	ConsentDeclined   db.BitBool         `db:"consent_declined"`
+	MaxTokenLen       *int               `db:"max_token_len"`
+	SSHKeyFingerprint db.NullString      `db:"ssh_key_fp"`
 }
 
 // CheckTransferCode checks the passed polling code in the database

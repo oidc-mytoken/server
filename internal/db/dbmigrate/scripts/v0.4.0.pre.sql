@@ -9,7 +9,7 @@ ALTER TABLE Users
     DROP COLUMN jwt_pk;
 
 ALTER TABLE TransferCodesAttributes
-    ADD ssh_key_hash VARCHAR(128) NULL;
+    ADD ssh_key_fp VARCHAR(128) NULL;
 
 TRUNCATE TABLE AuthInfo;
 ALTER TABLE AuthInfo
@@ -102,7 +102,7 @@ SELECT `pt`.`id`                AS `id`,
        `tca`.`response_type`    AS `response_type`,
        `tca`.`max_token_len`    AS `max_token_len`,
        `tca`.`consent_declined` AS `consent_declined`,
-       `tca`.`ssh_key_hash`     AS `ssh_key_hash`
+       `tca`.ssh_key_fp         AS `ssh_key_fp`
     FROM ((`ProxyTokens` `pt` JOIN `CryptStore` `cs` ON (`pt`.`jwt_crypt` = `cs`.`id`))
              JOIN `TransferCodesAttributes` `tca` ON (`pt`.`id` = `tca`.`id`));
 
@@ -120,14 +120,14 @@ SELECT `mt`.`id`               AS `id`,
        `cyp`.`crypt`           AS `refresh_token`,
        `cyp`.`updated`         AS `rt_updated`,
        `keys`.`encryption_key` AS `encryption_key`
-FROM (((`MTokens` `mt`
-    JOIN `CryptStore` `cyp` ON
-        (`mt`.`rt_id` = `cyp`.`id`))
-    JOIN `RT_EncryptionKeys` `rkeys` ON
-        (`mt`.`id` = `rkeys`.`MT_id`
-            AND `mt`.`rt_id` = `rkeys`.`rt_id`))
-         JOIN `EncryptionKeys` `keys` ON
-    (`rkeys`.`key_id` = `keys`.`id`));
+    FROM (((`MTokens` `mt`
+        JOIN `CryptStore` `cyp` ON
+            (`mt`.`rt_id` = `cyp`.`id`))
+        JOIN `RT_EncryptionKeys` `rkeys` ON
+            (`mt`.`id` = `rkeys`.`MT_id`
+                AND `mt`.`rt_id` = `rkeys`.`rt_id`))
+             JOIN `EncryptionKeys` `keys` ON
+        (`rkeys`.`key_id` = `keys`.`id`));
 
 
 -- RTCryptStore source
@@ -167,24 +167,32 @@ SELECT `CryptStore`.`id`      AS `id`,
             WHERE `CryptPayloadTypes`.`payload_type` = 'MT');
 
 -- SSHPublicKeys definition
-CREATE TABLE `SSHPublicKeys`
+CREATE TABLE SSHPublicKeys
 (
-    `user`          BIGINT(20) UNSIGNED NOT NULL,
-    `ssh_key_hash`  VARCHAR(128)        NOT NULL,
-    `key_id`        BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `name`          TEXT                         DEFAULT NULL,
-    `MT_crypt`      BIGINT(20) UNSIGNED NOT NULL,
-    `ssh_user_hash` VARCHAR(128)        NOT NULL,
-    `created`       DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP(),
-    `last_used`     DATETIME                     DEFAULT NULL,
-    PRIMARY KEY (`user`, `ssh_key_hash`),
-    UNIQUE KEY `SSHPublicKeys_UN` (`key_id`),
-    UNIQUE KEY `SSHPublicKeys_UN_1` (`ssh_user_hash`),
-    KEY `SSHPublicKeys_FK_1` (`MT_crypt`),
-    CONSTRAINT `SSHPublicKeys_FK` FOREIGN KEY (`user`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT `SSHPublicKeys_FK_1` FOREIGN KEY (`MT_crypt`) REFERENCES `CryptStore` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4;
+    user          BIGINT UNSIGNED                      NOT NULL,
+    ssh_key_fp    VARCHAR(128)                         NOT NULL,
+    key_id        BIGINT UNSIGNED AUTO_INCREMENT,
+    MT_crypt      BIGINT UNSIGNED                      NOT NULL,
+    created       DATETIME DEFAULT CURRENT_TIMESTAMP() NOT NULL,
+    last_used     DATETIME                             NULL,
+    ssh_user_hash VARCHAR(128)                         NOT NULL,
+    name          TEXT                                 NULL,
+    MT_id         VARCHAR(128)                         NOT NULL,
+    PRIMARY KEY (user, ssh_key_fp),
+    CONSTRAINT ssh_pub_keys_UN
+        UNIQUE (key_id),
+    CONSTRAINT ssh_pub_keys_UN_1
+        UNIQUE (ssh_user_hash),
+    CONSTRAINT SSHPublicKeys_FK
+        FOREIGN KEY (MT_id) REFERENCES MTokens (id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT ssh_pub_keys_FK
+        FOREIGN KEY (user) REFERENCES Users (id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT ssh_pub_keys_FK_1
+        FOREIGN KEY (MT_crypt) REFERENCES CryptStore (id)
+            ON UPDATE CASCADE ON DELETE CASCADE
+);
 
 # Procedures
 DELIMITER ;;
@@ -501,25 +509,40 @@ BEGIN
     SELECT COUNT(1) FROM MTokens WHERE rt_id = RTID;
 END;;
 
-CREATE OR REPLACE PROCEDURE SSHInfo_Delete(IN MTID VARCHAR(128), IN KEYH VARCHAR(128))
+CREATE OR REPLACE PROCEDURE SSHInfo_Delete(IN MTID VARCHAR(128), IN FP VARCHAR(128))
 BEGIN
-    DELETE
-        FROM SSHPublicKeys
-        WHERE `user` = (SELECT m.`user_id` FROM MTokens m WHERE m.id = MTID)
-          AND ssh_key_hash = KEYH;
+    DECLARE uid BIGINT UNSIGNED;
+    DECLARE sshMTID VARCHAR(128);
+    DECLARE cid BIGINT UNSIGNED;
+    DECLARE rid BIGINT UNSIGNED;
+    DECLARE rckid BIGINT UNSIGNED;
+    DECLARE rtCount INT;
+
+    SELECT m.`user_id` FROM MTokens m WHERE m.id = MTID INTO uid;
+    SELECT s.MT_id, s.key_id FROM SSHPublicKeys s WHERE s.ssh_key_fp = FP AND s.user = uid INTO sshMTID, cid;
+    SELECT m.`rt_id` FROM MTokens m WHERE m.id = sshMTID INTO rid;
+    SELECT k.`key_id` FROM RT_EncryptionKeys k WHERE k.rt_id = rid AND k.MT_id = sshMTID INTO rckid;
+    CALL EncryptionKeys_Delete(rckid);
+    CALL MTokens_Delete(sshMTID);
+    SELECT COUNT(1) FROM MTokens WHERE rt_id = rid INTO rtCount;
+    IF (rtCount = 0) THEN
+        CALL CryptStore_Delete(rid);
+    END IF;
+    CALL CryptStore_Delete(cid);
+    DELETE FROM SSHPublicKeys WHERE `user` = uid AND ssh_key_fp = FP;
 END;;
 
 CREATE OR REPLACE PROCEDURE SSHInfo_Get(IN KeyHash VARCHAR(128), IN UserHash VARCHAR(128))
 BEGIN
     SELECT spk.key_id,
            spk.name,
-           spk.ssh_key_hash,
+           spk.ssh_key_fp,
            spk.ssh_user_hash,
            spk.created,
            spk.last_used,
            e.enabled,
            ms.crypt AS MT_crypt
-        FROM ((SELECT * FROM SSHPublicKeys WHERE ssh_key_hash = KeyHash AND ssh_user_hash = UserHash) spk
+        FROM ((SELECT * FROM SSHPublicKeys WHERE ssh_key_fp = KeyHash AND ssh_user_hash = UserHash) spk
             JOIN (SELECT ug.user_id, ug.enabled
                       FROM (UserGrants ug
                                JOIN
@@ -533,22 +556,22 @@ END;;
 
 CREATE OR REPLACE PROCEDURE SSHInfo_GetAll(IN MTID VARCHAR(128))
 BEGIN
-    SELECT s.ssh_key_hash, s.name, s.created, s.last_used
+    SELECT s.ssh_key_fp, s.name, s.created, s.last_used
         FROM SSHPublicKeys s
         WHERE s.`user` = (SELECT m.`user_id` FROM MTokens m WHERE m.id = MTID);
 END;;
 
-CREATE OR REPLACE PROCEDURE SSHInfo_Insert(IN MTID VARCHAR(128), IN SSH_KEY_H VARCHAR(128), IN SSH_USER_H VARCHAR(128),
+CREATE OR REPLACE PROCEDURE SSHInfo_Insert(IN MTID VARCHAR(128), IN KEY_FP VARCHAR(128), IN SSH_USER_H VARCHAR(128),
                                            IN NAME_ TEXT, IN ENCRYPTED_MT TEXT)
 BEGIN
     CALL CryptStoreMT_Insert(ENCRYPTED_MT, @CRYPT_ID);
-    INSERT INTO SSHPublicKeys (user, ssh_key_hash, ssh_user_hash, name, MT_crypt)
-        VALUES ((SELECT m.user_id FROM MTokens m WHERE m.id = MTID), SSH_KEY_H, SSH_USER_H, NAME_, @CRYPT_ID);
+    INSERT INTO SSHPublicKeys (user, ssh_key_fp, ssh_user_hash, name, MT_crypt, MT_id)
+        VALUES ((SELECT m.user_id FROM MTokens m WHERE m.id = MTID), KEY_FP, SSH_USER_H, NAME_, @CRYPT_ID, MTID);
 END;;
 
-CREATE OR REPLACE PROCEDURE SSHInfo_UsedKey(IN KEY_H VARCHAR(128), IN USER_H VARCHAR(128))
+CREATE OR REPLACE PROCEDURE SSHInfo_UsedKey(IN KEY_FP VARCHAR(128), IN USER_H VARCHAR(128))
 BEGIN
-    UPDATE SSHPublicKeys SET last_used = CURRENT_TIMESTAMP() WHERE ssh_key_hash = KEY_H AND ssh_user_hash = USER_H;
+    UPDATE SSHPublicKeys SET last_used = CURRENT_TIMESTAMP() WHERE ssh_key_fp = KEY_FP AND ssh_user_hash = USER_H;
 END;;
 
 CREATE OR REPLACE PROCEDURE TokenUsages_GetAT(IN MTID VARCHAR(128), IN RHASH CHAR(128))
@@ -592,9 +615,9 @@ BEGIN
         VALUES (TCID, EXPIRES_IN_, REVOKE_MT_, RESPONSE_TYPE_, MAX_TOKEN_LEN_);
 END;;
 
-CREATE OR REPLACE PROCEDURE TransferCodeAttributes_UpdateSSHKey(IN PCID VARCHAR(128), IN SSHKH VARCHAR(128))
+CREATE OR REPLACE PROCEDURE TransferCodeAttributes_UpdateSSHKey(IN PCID VARCHAR(128), IN KEY_FP VARCHAR(128))
 BEGIN
-    UPDATE TransferCodesAttributes SET ssh_key_hash=SSHKH WHERE id = PCID;
+    UPDATE TransferCodesAttributes SET ssh_key_fp=KEY_FP WHERE id = PCID;
 END;;
 
 CREATE OR REPLACE PROCEDURE TransferCodes_GetStatus(IN PCID VARCHAR(128))
@@ -604,7 +627,7 @@ BEGIN
            response_type,
            consent_declined,
            max_token_len,
-           ssh_key_hash
+           ssh_key_fp
         FROM TransferCodes
         WHERE id = PCID;
 END;;
@@ -665,8 +688,6 @@ INSERT IGNORE INTO Events (event)
     VALUES ('ssh_keys_listed');
 INSERT IGNORE INTO Events (event)
     VALUES ('ssh_key_added');
-INSERT IGNORE INTO Events (event)
-    VALUES ('ssh_key_removed');
 
 DELETE
     FROM Grants

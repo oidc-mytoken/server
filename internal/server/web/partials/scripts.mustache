@@ -7,23 +7,42 @@
         <script src="/static/js/login.js"></script>
     {{/logged-in}}
     {{#logged-in}}
+        <script src="/static/js/lib/bootstrap4-toggle.min.js"></script>
+        <script src="/static/js/logout.js"></script>
+    {{/logged-in}}
+    {{#home}}
         <script src="/static/js/lib/clipboard.min.js"></script>
         <script src="/static/js/lib/user-agent.min.js"></script>
-        <script src="/static/js/lib/behave.min.js"></script>
-        <script src="/static/js/lib/bootstrap4-toggle.min.js"></script>
+        <script src="/static/js/mt-helper.js"></script>
         <script src="/static/js/home.js"></script>
         <script src="/static/js/create-at.js"></script>
         <script src="/static/js/tokeninfo.js"></script>
+        <script src="/static/js/lib/behave.min.js"></script>
         <script src="/static/js/restrictions.js"></script>
         <script src="/static/js/rotation.js"></script>
         <script src="/static/js/create-mt.js"></script>
-        <script src="/static/js/logout.js"></script>
-    {{/logged-in}}
+    {{/home}}
+    {{#settings}}
+        <script src="/static/js/tokeninfo.js"></script>
+        <script src="/static/js/mt-helper.js"></script>
+        <script src="/static/js/settings-helper.js"></script>
+        <script src="/static/js/settings.js"></script>
+    {{/settings}}
+    {{#settings-ssh}}
+        <script src="/static/js/lib/clipboard.min.js"></script>
+        <script src="/static/js/tokeninfo.js"></script>
+        <script src="/static/js/mt-helper.js"></script>
+        <script src="/static/js/settings-helper.js"></script>
+        <script src="/static/js/ssh.js"></script>
+        <script src="/static/js/lib/behave.min.js"></script>
+        <script src="/static/js/restrictions.js"></script>
+        <script src="/static/js/capabilities.js"></script>
+    {{/settings-ssh}}
 {{/empty-navbar}}
 {{#consent}}
-    <script src="/static/js/lib/behave.min.js"></script>
     <script src="/static/js/rotation.js"></script>
     <script src="/static/js/capabilities.js"></script>
+    <script src="/static/js/lib/behave.min.js"></script>
     <script src="/static/js/restrictions.js"></script>
     <script src="/static/js/lib/bootstrap4-toggle.min.js"></script>
     <script src="/static/js/consent.js"></script>

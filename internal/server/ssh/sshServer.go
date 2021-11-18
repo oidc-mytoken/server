@@ -7,6 +7,7 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	log "github.com/sirupsen/logrus"
+	gossh "golang.org/x/crypto/ssh"
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/sshrepo"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
@@ -18,7 +19,7 @@ func checkPubKey(ctx ssh.Context, key ssh.PublicKey) bool {
 	rlog := logger.GetSSHRequestLogger(ctx)
 	sshUser := ctx.User()
 	sshUserHash := hashUtils.SHA3_512Str([]byte(sshUser))
-	sshKeyHash := hashUtils.SHA3_512Str(key.Marshal())
+	sshKeyFP := gossh.FingerprintSHA256(key)
 	ip := ctx.RemoteAddr().String()
 	if addr, ok := ctx.RemoteAddr().(*net.TCPAddr); ok {
 		ip = addr.IP.String()
@@ -27,33 +28,33 @@ func checkPubKey(ctx ssh.Context, key ssh.PublicKey) bool {
 	log.WithFields(
 		log.Fields{
 			"user_hash":  sshUserHash,
-			"key_hash":   sshKeyHash,
+			"key_fp":     sshKeyFP,
 			"ip":         ip,
 			"user_agent": userAgent,
 		},
 	).Debug("Check ssh pub key")
 
-	info, err := sshrepo.GetSSHInfo(rlog, nil, sshKeyHash, sshUserHash)
+	info, err := sshrepo.GetSSHInfo(rlog, nil, sshKeyFP, sshUserHash)
 	if err != nil {
 		log.Errorf("%s", errorfmt.Full(err))
 		return false
 	}
 	if !info.Enabled {
-		log.WithField("user_hash", sshUserHash).WithField("key_hash", sshKeyHash).Trace("SSH grant not enabled")
+		log.WithField("user_hash", sshUserHash).WithField("key_fp", sshKeyFP).Trace("SSH grant not enabled")
 		return false
 	}
 	mt, err := info.Decrypt(sshUser)
 	if err != nil {
 		log.WithField("user_hash", sshUserHash).WithField(
-			"key_hash", sshKeyHash,
+			"key_fp", sshKeyFP,
 		).WithError(err).Error("Could not decrypt stored mytoken")
 		return false
 	}
 	// We use tx=nil because we don't want to roll this back in case of other errors. If we come to this point the
 	// ssh key was successfully used
-	if err = sshrepo.UsedKey(rlog, nil, sshKeyHash, sshUserHash); err != nil {
+	if err = sshrepo.UsedKey(rlog, nil, sshKeyFP, sshUserHash); err != nil {
 		log.WithField("user_hash", sshUserHash).WithField(
-			"key_hash", sshKeyHash,
+			"key_fp", sshKeyFP,
 		).WithError(err).Error("error while updating usage time")
 		return false
 	}
