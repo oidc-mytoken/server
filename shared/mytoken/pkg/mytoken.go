@@ -21,6 +21,7 @@ import (
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
@@ -46,6 +47,16 @@ type Mytoken struct {
 	SubtokenCapabilities api.Capabilities          `json:"subtoken_capabilities,omitempty"`
 	Rotation             *api.Rotation             `json:"rotation,omitempty"`
 	jwt                  string
+}
+
+// ToUniversalMytoken returns a universalmytoken.UniversalMytoken for this Mytoken
+func (mt *Mytoken) ToUniversalMytoken() universalmytoken.UniversalMytoken {
+	jwt, _ := mt.ToJWT()
+	return universalmytoken.UniversalMytoken{
+		JWT:               jwt,
+		OriginalToken:     jwt,
+		OriginalTokenType: model.ResponseTypeToken,
+	}
 }
 
 // Rotate returns a Mytoken and returns the new *Mytoken

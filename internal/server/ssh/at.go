@@ -6,18 +6,18 @@ import (
 	"github.com/gliderlabs/ssh"
 	"github.com/oidc-mytoken/api/v0"
 
-	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/endpoints/token/access"
+	"github.com/oidc-mytoken/server/internal/endpoints/token/access/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/shared/model"
-	mytoken2 "github.com/oidc-mytoken/server/shared/mytoken"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/utils/ternary"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
-func handleSSHMytoken(reqData []byte, s ssh.Session) error {
+func handleSSHAT(reqData []byte, s ssh.Session) error {
 	ctx := s.Context()
-	req := pkg.NewMytokenRequest()
+	req := pkg.NewAccessTokenRequest()
 	req.GrantType = model.GrantTypeMytoken
 	if len(reqData) > 0 {
 		if err := json.Unmarshal(reqData, &req); err != nil {
@@ -31,29 +31,30 @@ func handleSSHMytoken(reqData []byte, s ssh.Session) error {
 	}
 	req.Mytoken = mt.ToUniversalMytoken()
 	rlog := logger.GetSSHRequestLogger(ctx.Value("session").(string))
-	rlog.Debug("Handle mytoken from ssh")
-
-	req.Restrictions.ReplaceThisIp(clientMetaData.IP)
-	req.Restrictions.ClearUnsupportedKeys()
-	rlog.Trace("Parsed mytoken request")
+	rlog.Debug("Handle AT from ssh")
+	rlog.Trace("Parsed AT request")
 
 	errRes := auth.RequireMytokenNotRevoked(rlog, nil, mt)
 	if errRes != nil {
 		return writeErrRes(s, errRes)
 	}
-	usedRestriction, errRes := auth.RequireUsableRestriction(
-		rlog, nil, mt, clientMetaData.IP, nil, nil, api.CapabilityCreateMT,
+	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
+		rlog, nil, mt, clientMetaData.IP,
+		utils.SplitIgnoreEmpty(req.Scope, " "),
+		utils.SplitIgnoreEmpty(req.Audience, " "),
+		api.CapabilityAT,
 	)
 	if errRes != nil {
 		return writeErrRes(s, errRes)
 	}
-	if _, errRes = auth.RequireMatchingIssuer(rlog, mt.OIDCIssuer, &req.Issuer); errRes != nil {
+	provider, errRes := auth.RequireMatchingIssuer(rlog, mt.OIDCIssuer, &req.Issuer)
+	if errRes != nil {
 		return writeErrRes(s, errRes)
 	}
-	res := mytoken2.HandleMytokenFromMytokenReq(rlog, mt, req, &clientMetaData, usedRestriction)
+	res := access.HandleAccessTokenRefresh(rlog, mt, req, clientMetaData, provider, usedRestriction)
 	if res.Status >= 400 {
 		return writeErrRes(s, errRes)
 	}
-	tokenRes := res.Response.(pkg.MytokenResponse)
-	return writeString(s, ternary.IfNotEmptyOr(tokenRes.Mytoken, tokenRes.TransferCode))
+	tokenRes := res.Response.(pkg.AccessTokenResponse)
+	return writeString(s, tokenRes.AccessToken)
 }

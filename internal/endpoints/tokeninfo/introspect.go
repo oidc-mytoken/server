@@ -17,9 +17,9 @@ import (
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
-func handleTokenInfoIntrospect(
+// HandleTokenInfoIntrospect handles token introspection
+func HandleTokenInfoIntrospect(
 	rlog log.Ext1FieldLogger,
-	_ pkg.TokenInfoRequest,
 	mt *mytoken.Mytoken,
 	clientMetadata *api.ClientMetaData,
 ) model.Response {

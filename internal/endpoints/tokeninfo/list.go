@@ -56,7 +56,8 @@ func doTokenInfoList(
 	return
 }
 
-func handleTokenInfoList(
+// HandleTokenInfoList handles a tokeninfo list request
+func HandleTokenInfoList(
 	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
 ) model.Response {
 	// If we call this function it means the token is valid.

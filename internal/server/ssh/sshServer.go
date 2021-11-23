@@ -16,7 +16,8 @@ import (
 )
 
 func checkPubKey(ctx ssh.Context, key ssh.PublicKey) bool {
-	rlog := logger.GetSSHRequestLogger(ctx)
+	sessionID := ctx.SessionID()
+	rlog := logger.GetSSHRequestLogger(sessionID)
 	sshUser := ctx.User()
 	sshUserHash := hashUtils.SHA3_512Str([]byte(sshUser))
 	sshKeyFP := gossh.FingerprintSHA256(key)
@@ -61,6 +62,7 @@ func checkPubKey(ctx ssh.Context, key ssh.PublicKey) bool {
 	ctx.SetValue("mytoken", mt)
 	ctx.SetValue("ip", ip)
 	ctx.SetValue("user_agent", userAgent)
+	ctx.SetValue("session", sessionID)
 	return true
 }
 

@@ -65,10 +65,11 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		return errRes.Send(ctx)
 	}
 
-	return handleAccessTokenRefresh(rlog, mt, req, *ctxUtils.ClientMetaData(ctx), provider, usedRestriction).Send(ctx)
+	return HandleAccessTokenRefresh(rlog, mt, req, *ctxUtils.ClientMetaData(ctx), provider, usedRestriction).Send(ctx)
 }
 
-func handleAccessTokenRefresh(
+// HandleAccessTokenRefresh handles an access token request
+func HandleAccessTokenRefresh(
 	rlog log.Ext1FieldLogger, mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData api.ClientMetaData,
 	provider *config.ProviderConf, usedRestriction *restrictions.Restriction,
 ) *serverModel.Response {

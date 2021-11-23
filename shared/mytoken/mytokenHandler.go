@@ -146,10 +146,11 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	if _, errRes = auth.RequireMatchingIssuer(rlog, mt.OIDCIssuer, &req.Issuer); errRes != nil {
 		return errRes
 	}
-	return handleMytokenFromMytoken(rlog, mt, req, ctxUtils.ClientMetaData(ctx), usedRestriction)
+	return HandleMytokenFromMytokenReq(rlog, mt, req, ctxUtils.ClientMetaData(ctx), usedRestriction)
 }
 
-func handleMytokenFromMytoken(
+// HandleMytokenFromMytokenReq handles a mytoken request (from an existing mytoken)
+func HandleMytokenFromMytokenReq(
 	rlog log.Ext1FieldLogger, parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest,
 	networkData *api.ClientMetaData,
 	usedRestriction *restrictions.Restriction,

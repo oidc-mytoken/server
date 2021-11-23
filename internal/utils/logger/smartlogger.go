@@ -5,7 +5,6 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/gliderlabs/ssh"
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/writer"
@@ -146,6 +145,6 @@ func GetRequestLogger(ctx *fiber.Ctx) log.Ext1FieldLogger {
 }
 
 // GetSSHRequestLogger returns a logrus.Ext1FieldLogger that always includes an ssh request's id
-func GetSSHRequestLogger(ctx ssh.Context) log.Ext1FieldLogger {
-	return getIDlogger(ctx.SessionID())
+func GetSSHRequestLogger(sessionId string) log.Ext1FieldLogger {
+	return getIDlogger(sessionId)
 }

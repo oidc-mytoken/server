@@ -55,7 +55,8 @@ func doTokenInfoTree(
 	return
 }
 
-func handleTokenInfoTree(
+// HandleTokenInfoTree handles a tokeninfo list subtokens request
+func HandleTokenInfoTree(
 	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
 ) model.Response {
 	// If we call this function it means the token is valid.
