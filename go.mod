@@ -14,7 +14,7 @@ require (
 	github.com/gofiber/template v1.6.18
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/ip2location/ip2location-go v8.3.0+incompatible
-	github.com/jinzhu/copier v0.3.2
+	github.com/jinzhu/copier v0.3.4
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/lestrrat-go/jwx v1.2.11
 	github.com/oidc-mytoken/api v0.3.1-0.20211013093443-16bc819db98a
