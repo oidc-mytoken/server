@@ -26,7 +26,7 @@ func HandleListGrants(ctx *fiber.Ctx) error {
 	rlog.Debug("Handle get grant type request")
 	var reqMytoken universalmytoken.UniversalMytoken
 
-	return settings.HandleSettings(
+	return settings.HandleSettingsHelper(
 		ctx, &reqMytoken, event.FromNumber(event.GrantsListed, ""), fiber.StatusOK,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
 			grants, err := grantrepo.Get(rlog, tx, mt.ID)
@@ -73,7 +73,7 @@ func handleEditGrant(
 	}
 	rlog.Trace("Parsed grant type request")
 
-	return settings.HandleSettings(
+	return settings.HandleSettingsHelper(
 		ctx, &req.Mytoken, event.FromNumber(evt, req.GrantType.String()), okStatus,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
 			if err := dbCallBack(rlog, tx, mt.ID, req.GrantType); err != nil {

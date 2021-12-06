@@ -7,9 +7,11 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
 
+	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
@@ -20,10 +22,31 @@ import (
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
-// HandleSettings is a helper wrapper function that handles various settings request with the help of a callback
-func HandleSettings(
+// InitSettings initializes the settings metadata
+func InitSettings() {
+	apiPaths := routes.GetCurrentAPIPaths()
+	settingsMetadata.GrantTypeEndpoint = utils.CombineURLPath(
+		config.Get().IssuerURL, apiPaths.UserSettingEndpoint, "grants",
+	)
+}
+
+var settingsMetadata = api.SettingsMetaData{
+	GrantTypeEndpoint: "grants",
+}
+
+func HandleSettings(ctx *fiber.Ctx) error {
+	res := serverModel.Response{
+		Status:   fiber.StatusOK,
+		Response: settingsMetadata,
+	}
+	return res.Send(ctx)
+}
+
+// HandleSettingsHelper is a helper wrapper function that handles various settings request with the help of a callback
+func HandleSettingsHelper(
 	ctx *fiber.Ctx,
 	reqMytoken *universalmytoken.UniversalMytoken,
 	logEvent *event.Event,
