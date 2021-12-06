@@ -20,6 +20,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/consent"
 	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
 	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/server/apiPath"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/server/ssh"
 )
@@ -70,7 +71,10 @@ func Init() {
 	addRoutes(server)
 	server.Use(
 		func(ctx *fiber.Ctx) error {
-			if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" {
+			path := ctx.Path()
+			if !strings.HasPrefix(path, apiPath.Prefix) && ctx.Accepts(
+				fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8,
+			) != "" {
 				ctx.Status(fiber.StatusNotFound)
 				return ctx.Render(
 					"sites/404", map[string]interface{}{
@@ -81,7 +85,8 @@ func Init() {
 			return model.Response{
 				Status: fiber.StatusNotFound,
 				Response: api.Error{
-					Error: "not_found",
+					Error:            "not_found",
+					ErrorDescription: path,
 				},
 			}.Send(ctx)
 		},
