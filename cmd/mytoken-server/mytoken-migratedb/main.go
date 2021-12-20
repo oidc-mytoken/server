@@ -8,7 +8,7 @@ import (
 
 	"github.com/Songmu/prompter"
 	log "github.com/sirupsen/logrus"
-	"github.com/zachmann/cli/v2"
+	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
 
 	"github.com/oidc-mytoken/server/internal/config"

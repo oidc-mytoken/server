@@ -418,8 +418,6 @@ github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLA
 github.com/nishanths/exhaustive v0.0.0-20200525081945-8e46705b6132 h1:NjznefjSrral0MiR4KlB41io/d3OklvhcgQUdfZTqJE=
 github.com/nishanths/exhaustive v0.0.0-20200525081945-8e46705b6132/go.mod h1:wBEpHwM2OdmeNpdCvRPUlkEbBuaFmcK4Wv8Q7FuGW3c=
 github.com/oidc-mytoken/api v0.0.0-20210730065550-117f733ae8a1/go.mod h1:S8t1XA42EFAgc3vUfis0g1LPGA4TXH0nfDynvgo6cwk=
-github.com/oidc-mytoken/api v0.3.1-0.20211122133435-98ae775fc098 h1:5Yu+c39ZA3Bp8xTyWA78d5Y+Chs/6oaAIxQi9bIJbMo=
-github.com/oidc-mytoken/api v0.3.1-0.20211122133435-98ae775fc098/go.mod h1:S8t1XA42EFAgc3vUfis0g1LPGA4TXH0nfDynvgo6cwk=
 github.com/oidc-mytoken/api v0.3.1-0.20211129095159-80e6f2b314fc h1:NCmLDSXzHe+y8m+f9OgNwrGYGSImJ6+oNyqvN5UE0LA=
 github.com/oidc-mytoken/api v0.3.1-0.20211129095159-80e6f2b314fc/go.mod h1:S8t1XA42EFAgc3vUfis0g1LPGA4TXH0nfDynvgo6cwk=
 github.com/oidc-mytoken/lib v0.2.1-0.20210730094903-f59c9a8f84e0 h1:eo1lEHaU6vkQZnAQyy7dA7JIoXpUOS/G4csV1LPIi80=
@@ -560,8 +558,8 @@ github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9de
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
-github.com/zachmann/cli/v2 v2.3.1-0.20210512144416-96dd678d93c7 h1:9Glvc2CvvmSJDS9SI0glTlEuNWyw0orKlnvjERE5Jl8=
-github.com/zachmann/cli/v2 v2.3.1-0.20210512144416-96dd678d93c7/go.mod h1:QDdR6j5y3j9f94QTmu5+uimav/s4PiVVF0SU5Ec18Qc=
+github.com/zachmann/cli/v2 v2.3.1-0.20211220102037-d619fd40a704 h1:dpR/K16zQgc/5xTQ66RevZikjkFzsCt6IeNDFyHltaM=
+github.com/zachmann/cli/v2 v2.3.1-0.20211220102037-d619fd40a704/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/XcUArI=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
