@@ -61,7 +61,7 @@ func HandleTokenInfoTree(
 ) model.Response {
 	// If we call this function it means the token is valid.
 	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
-		rlog, nil, mt, clientMetadata.IP, nil, nil, api.CapabilityTokeninfoTree,
+		rlog, nil, mt, clientMetadata.IP, nil, nil, api.CapabilityTokeninfoSubtokens,
 	)
 	if errRes != nil {
 		return *errRes

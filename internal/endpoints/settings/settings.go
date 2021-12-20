@@ -49,6 +49,7 @@ func HandleSettings(ctx *fiber.Ctx) error {
 func HandleSettingsHelper(
 	ctx *fiber.Ctx,
 	reqMytoken *universalmytoken.UniversalMytoken,
+	requiredCapability api.Capability,
 	logEvent *event.Event,
 	okStatus int,
 	callback func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response),
@@ -60,7 +61,7 @@ func HandleSettingsHelper(
 		return errRes.Send(ctx)
 	}
 	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
-		rlog, nil, mt, ctx.IP(), nil, nil, api.CapabilitySettings,
+		rlog, nil, mt, ctx.IP(), nil, nil, requiredCapability,
 	)
 	if errRes != nil {
 		return errRes.Send(ctx)
@@ -122,6 +123,7 @@ func HandleSettingsHelper(
 }
 
 type onlyTokenUpdateRes struct {
+	api.OnlyTokenUpdateResponse
 	TokenUpdate *my.MytokenResponse `json:"token_update,omitempty"`
 }
 

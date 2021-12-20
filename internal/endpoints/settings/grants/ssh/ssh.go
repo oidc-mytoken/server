@@ -38,7 +38,7 @@ func HandleGetSSHInfo(ctx *fiber.Ctx) error {
 	rlog.Debug("Handle get ssh info request")
 	var reqMytoken universalmytoken.UniversalMytoken
 	return settings.HandleSettingsHelper(
-		ctx, &reqMytoken, event.FromNumber(event.SSHKeyListed, ""), fiber.StatusOK,
+		ctx, &reqMytoken, api.CapabilitySSHGrantRead, event.FromNumber(event.SSHKeyListed, ""), fiber.StatusOK,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
 			info, err := sshrepo.GetAllSSHInfo(rlog, tx, mt.ID)
 			if err != nil {
@@ -87,7 +87,7 @@ func HandleDeleteSSHKey(ctx *fiber.Ctx) error {
 	}
 
 	return settings.HandleSettingsHelper(
-		ctx, &req.Mytoken, nil, fiber.StatusNoContent,
+		ctx, &req.Mytoken, api.CapabilitySSHGrant, nil, fiber.StatusNoContent,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
 			if err := sshrepo.Delete(rlog, tx, mt.ID, req.SSHKeyFingerprint); err != nil {
 				rlog.Errorf("%s", errorfmt.Full(err))
@@ -144,7 +144,7 @@ func handleAddSSHKey(ctx *fiber.Ctx) error {
 	sshKeyFP := gossh.FingerprintSHA256(sshKey)
 
 	return settings.HandleSettingsHelper(
-		ctx, &req.Mytoken, event.FromNumber(event.SSHKeyAdded, ""), fiber.StatusOK,
+		ctx, &req.Mytoken, api.CapabilitySSHGrant, event.FromNumber(event.SSHKeyAdded, ""), fiber.StatusOK,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
 			grantEnabled, err := grantrepo.GrantEnabled(rlog, tx, mt.ID, model.GrantTypeSSH)
 			if err != nil {
