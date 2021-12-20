@@ -18,7 +18,6 @@ func init() {
 	client.SetRetryCount(2)
 	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
 	client.SetTimeout(20 * time.Second)
-	client.GetClient()
 	context.SetClient(client.GetClient())
 }
 
