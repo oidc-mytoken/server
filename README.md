@@ -12,16 +12,22 @@
 
 # mytoken
 
-`mytoken` is a central web service with the goal to easily obtain OpenID Connect access tokens across devices.
+`Mytoken` is a web service to obtain OpenID Connect Access Tokens in an easy but secure way for extended periods of time
+and across multiple devices. In particular, `mytoken` was developed to provide OIDC Access Tokens to long-running
+compute jobs.
 
-A user can create a special string called `mytoken`. This mytoken then can be used to obtain OpenID Connect access
-tokens from any device. The power of a mytoken can be restricted by the user, so they can create exactly the token they
-need for a certain use case.
+Access Tokens can be obtained via so-called **`mytokens`**: A new token type that can be easily used as a Bearer token
+from any device. These `mytokens` can be restricted according to the particular use case to only allow the needed
+privileges.
 
-The mytoken command line client can be found at [https://github.com/oidc-mytoken/client](https://github.com/oidc-mytoken/client).
-
-A go library for interacting with the mytoken server can be found at [https://github.com/oidc-mytoken/lib](https://github.com/oidc-mytoken/lib).
+`Mytoken` focuses on integration with the command line through our
+[command line client](https://github.com/oidc-mytoken/client)
+<!-- and [oidc-agent](https://github.com/indigo-dc/oidc-agent) -->
+but also offers a web interface. A demo instance is available
+at  [https://mytoken.data.kit.edu/](https://mytoken.data.kit.edu/).
+`Mytoken` is a central web service with the goal to easily obtain OpenID Connect access tokens across devices.
 
 Documentation is available at [https://mytoken-docs.data.kit.edu/](https://mytoken-docs.data.kit.edu/).
 
-A demo instance of mytoken is running at [https://mytoken.data.kit.edu/](https://mytoken.data.kit.edu/).
+A go library for interacting with the mytoken server can be found
+at [https://github.com/oidc-mytoken/lib](https://github.com/oidc-mytoken/lib).
