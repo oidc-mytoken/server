@@ -16,7 +16,7 @@ require (
 	github.com/ip2location/ip2location-go v8.3.0+incompatible
 	github.com/jinzhu/copier v0.3.2
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/lestrrat-go/jwx v1.2.11
+	github.com/lestrrat-go/jwx v1.2.17
 	github.com/oidc-mytoken/api v0.3.1-0.20211013093443-16bc819db98a
 	github.com/oidc-mytoken/lib v0.2.1-0.20210730094903-f59c9a8f84e0
 	github.com/pkg/errors v0.9.1
