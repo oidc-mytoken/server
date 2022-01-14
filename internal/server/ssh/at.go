@@ -53,7 +53,7 @@ func handleSSHAT(reqData []byte, s ssh.Session) error {
 	}
 	res := access.HandleAccessTokenRefresh(rlog, mt, req, clientMetaData, provider, usedRestriction)
 	if res.Status >= 400 {
-		return writeErrRes(s, errRes)
+		return writeErrRes(s, res)
 	}
 	tokenRes := res.Response.(pkg.AccessTokenResponse)
 	return writeString(s, tokenRes.AccessToken)

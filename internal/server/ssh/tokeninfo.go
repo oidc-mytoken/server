@@ -27,7 +27,7 @@ func handleIntrospect(s ssh.Session) error {
 	}
 	res := tokeninfo.HandleTokenInfoIntrospect(rlog, mt, &clientMetaData)
 	if res.Status >= 400 {
-		return writeErrRes(s, errRes)
+		return writeErrRes(s, &res)
 	}
 	return writeJSON(s, res.Response)
 }
@@ -48,7 +48,7 @@ func handleHistory(s ssh.Session) error {
 	}
 	res := tokeninfo.HandleTokenInfoHistory(rlog, pkg.TokenInfoRequest{}, mt, &clientMetaData)
 	if res.Status >= 400 {
-		return writeErrRes(s, errRes)
+		return writeErrRes(s, &res)
 	}
 	return writeJSON(s, res.Response)
 }
@@ -69,7 +69,7 @@ func handleSubtokens(s ssh.Session) error {
 	}
 	res := tokeninfo.HandleTokenInfoTree(rlog, pkg.TokenInfoRequest{}, mt, &clientMetaData)
 	if res.Status >= 400 {
-		return writeErrRes(s, errRes)
+		return writeErrRes(s, &res)
 	}
 	return writeJSON(s, res.Response)
 }
@@ -90,7 +90,7 @@ func handleListMytokens(s ssh.Session) error {
 	}
 	res := tokeninfo.HandleTokenInfoList(rlog, pkg.TokenInfoRequest{}, mt, &clientMetaData)
 	if res.Status >= 400 {
-		return writeErrRes(s, errRes)
+		return writeErrRes(s, &res)
 	}
 	return writeJSON(s, res.Response)
 }

@@ -52,7 +52,7 @@ func handleSSHMytoken(reqData []byte, s ssh.Session) error {
 	}
 	res := mytoken2.HandleMytokenFromMytokenReq(rlog, mt, req, &clientMetaData, usedRestriction)
 	if res.Status >= 400 {
-		return writeErrRes(s, errRes)
+		return writeErrRes(s, res)
 	}
 	tokenRes := res.Response.(pkg.MytokenResponse)
 	return writeString(s, ternary.IfNotEmptyOr(tokenRes.Mytoken, tokenRes.TransferCode))
