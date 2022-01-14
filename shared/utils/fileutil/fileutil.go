@@ -2,7 +2,6 @@
 package fileutil
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -57,7 +56,7 @@ func Append(path, content string, doNotCreateIfDoesNotExist ...bool) error {
 func MustReadFile(filename string) []byte {
 	filename = evalSymlink(filename)
 	log.WithField("filepath", filename).Trace("Found file. Reading config file ...")
-	file, err := ioutil.ReadFile(filename)
+	file, err := os.ReadFile(filename)
 	if err != nil {
 		log.WithError(err).Error("Error reading config file")
 		os.Exit(1)
