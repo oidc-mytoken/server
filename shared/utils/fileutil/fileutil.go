@@ -37,6 +37,21 @@ func FileExists(path string) bool {
 	}
 }
 
+// Append appends content to a file
+func Append(path, content string, doNotCreateIfDoesNotExist ...bool) error {
+	create := os.O_CREATE
+	if len(doNotCreateIfDoesNotExist) > 0 && doNotCreateIfDoesNotExist[0] {
+		create = 0
+	}
+	f, err := os.OpenFile(evalSymlink(path), os.O_APPEND|create|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = f.WriteString(content)
+	return err
+}
+
 // MustReadFile reads a given config file and returns the content. If an error
 // occurs mytoken terminates.
 func MustReadFile(filename string) []byte {
