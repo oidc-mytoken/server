@@ -35,12 +35,22 @@ const (
 var normalCapabilities = []string{
 	api.CapabilityAT.Name,
 	api.CapabilityCreateMT.Name,
+	api.CapabilityTokeninfo.Name,
 	api.CapabilityTokeninfoIntrospect.Name,
 	api.CapabilityTokeninfoHistory.Name,
-	api.CapabilityTokeninfoTree.Name,
+	api.CapabilityTokeninfoSubtokens.Name,
+	api.CapabilityGrantsRead.Name,
+	api.CapabilitySSHGrantRead.Name,
 }
-var warningCapabilities = []string{api.CapabilityListMT.Name}
-var dangerCapabilities = []string{api.CapabilitySettings.Name}
+var warningCapabilities = []string{
+	api.CapabilityListMT.Name,
+	api.CapabilitySettingsRead.Name,
+	api.CapabilitySSHGrant.Name,
+}
+var dangerCapabilities = []string{
+	api.CapabilitySettings.Name,
+	api.CapabilityGrants.Name,
+}
 
 func (c WebCapability) getIntClass() int {
 	if c.intClass != nil {

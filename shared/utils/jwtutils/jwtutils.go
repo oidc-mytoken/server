@@ -33,6 +33,18 @@ func GetFromJWT(rlog log.Ext1FieldLogger, token string, key ...string) (values R
 	return values
 }
 
+// GetValueFromJWT returns the value for the given key
+func GetValueFromJWT(rlog log.Ext1FieldLogger, token, key string) interface{} {
+	res := GetFromJWT(rlog, token, key)
+	if len(res) != 1 {
+		return nil
+	}
+	if !res[0].Set {
+		return nil
+	}
+	return res[0].Value
+}
+
 // GetStringFromJWT returns a string value for the given key
 func GetStringFromJWT(rlog log.Ext1FieldLogger, token, key string) (string, bool) {
 	res := GetFromJWT(rlog, token, key)

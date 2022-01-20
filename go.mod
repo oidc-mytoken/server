@@ -14,6 +14,7 @@ require (
 	github.com/gofiber/helmet/v2 v2.2.1
 	github.com/gofiber/template v1.6.16
 	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/ip2location/ip2location-go v8.3.0+incompatible
 	github.com/jinzhu/copier v0.3.2
 	github.com/jmoiron/sqlx v1.3.4
@@ -30,6 +31,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20210125201302-af13f521f196
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56
+	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
 

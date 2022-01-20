@@ -15,15 +15,13 @@ $('#login-form').on('submit', function(e){
     ]
     data['capabilities'] = [
         "create_mytoken",
-        "tokeninfo_introspect",
-        "tokeninfo_history",
-        "tokeninfo_tree"
+        "tokeninfo",
     ]
     data['subtoken_capabilities'] = [
         "AT",
         "settings",
         "list_mytokens",
-        "tokeninfo_introspect"
+        "tokeninfo:introspect"
     ]
     data['rotation'] = {
         "on_other": true,

@@ -150,9 +150,9 @@ func getVersionForNode(node string) (string, error) {
 	if !strings.HasPrefix(node, "http") {
 		node = "https://" + node
 	}
-	my, err := mytokenlib.NewMytokenProvider(node)
+	my, err := mytokenlib.NewMytokenServer(node)
 	if err != nil {
 		return "", err
 	}
-	return my.Version, nil
+	return my.ServerMetadata.Version, nil
 }

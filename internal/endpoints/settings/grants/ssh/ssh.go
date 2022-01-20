@@ -205,7 +205,9 @@ func handleAddSSHKey(ctx *fiber.Ctx) error {
 				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
 			}
 			return &request.SSHKeyAddResponse{
-				AuthCodeFlowResponse: authRes,
+				SSHKeyAddResponse: api.SSHKeyAddResponse{
+					AuthCodeFlowResponse: authRes,
+				},
 			}, nil
 		}, false,
 	)
@@ -266,7 +268,7 @@ func handlePollingCode(ctx *fiber.Ctx) error {
 	}
 	return serverModel.Response{
 		Status: fiber.StatusOK,
-		Response: request.SSHKeyAddFinalResponse{
+		Response: api.SSHKeyAddFinalResponse{
 			SSHUser:       user,
 			SSHHostConfig: ssh.CreateHostConfigEntry(user, name),
 		},
