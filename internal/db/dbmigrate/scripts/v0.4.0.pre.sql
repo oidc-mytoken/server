@@ -519,7 +519,7 @@ BEGIN
     DECLARE rtCount INT;
 
     SELECT m.`user_id` FROM MTokens m WHERE m.id = MTID INTO uid;
-    SELECT s.MT_id, s.key_id FROM SSHPublicKeys s WHERE s.ssh_key_fp = FP AND s.user = uid INTO sshMTID, cid;
+    SELECT s.MT_id, s.MT_crypt FROM SSHPublicKeys s WHERE s.ssh_key_fp = FP AND s.user = uid INTO sshMTID, cid;
     SELECT m.`rt_id` FROM MTokens m WHERE m.id = sshMTID INTO rid;
     SELECT k.`key_id` FROM RT_EncryptionKeys k WHERE k.rt_id = rid AND k.MT_id = sshMTID INTO rckid;
     CALL EncryptionKeys_Delete(rckid);

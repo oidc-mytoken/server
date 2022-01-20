@@ -142,6 +142,9 @@ func handleAddSSHKey(ctx *fiber.Ctx) error {
 		}.Send(ctx)
 	}
 	sshKeyFP := gossh.FingerprintSHA256(sshKey)
+	if len(req.Capabilities) == 0 {
+		req.Capabilities = api.Capabilities{api.CapabilityAT}
+	}
 
 	return settings.HandleSettingsHelper(
 		ctx, &req.Mytoken, api.CapabilitySSHGrant, event.FromNumber(event.SSHKeyAdded, ""), fiber.StatusOK,

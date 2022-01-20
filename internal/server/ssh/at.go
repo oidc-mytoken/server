@@ -18,10 +18,11 @@ import (
 func handleSSHAT(reqData []byte, s ssh.Session) error {
 	ctx := s.Context()
 	req := pkg.NewAccessTokenRequest()
-	req.GrantType = model.GrantTypeMytoken
 	if len(reqData) > 0 {
 		if err := json.Unmarshal(reqData, &req); err != nil {
-			return err
+			if err.Error() != "token not valid" {
+				return err
+			}
 		}
 	}
 	mt := ctx.Value("mytoken").(*mytoken.Mytoken)
@@ -29,6 +30,7 @@ func handleSSHAT(reqData []byte, s ssh.Session) error {
 		IP:        ctx.Value("ip").(string),
 		UserAgent: ctx.Value("user_agent").(string),
 	}
+	req.GrantType = model.GrantTypeMytoken
 	req.Mytoken = mt.ToUniversalMytoken()
 	rlog := logger.GetSSHRequestLogger(ctx.Value("session").(string))
 	rlog.Debug("Handle AT from ssh")
