@@ -101,7 +101,7 @@ func (mt *Mytoken) VerifyCapabilities(required ...api.Capability) bool {
 
 // NewMytoken creates a new Mytoken
 func NewMytoken(
-	oidcSub, oidcIss string, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation,
+	oidcSub, oidcIss, name string, r restrictions.Restrictions, c, sc api.Capabilities, rot *api.Rotation,
 	authTime unixtime.UnixTime,
 ) *Mytoken {
 	now := unixtime.Now()
@@ -110,6 +110,7 @@ func NewMytoken(
 		TokenType:            api.TokenType,
 		ID:                   mtid.New(),
 		SeqNo:                1,
+		Name:                 name,
 		IssuedAt:             now,
 		NotBefore:            now,
 		AuthTime:             authTime,
@@ -289,7 +290,19 @@ func (mt *Mytoken) ToJWT() (string, error) {
 
 // ParseJWT parses a token string into a Mytoken
 func ParseJWT(token string) (*Mytoken, error) {
-	tok, err := jwt.ParseWithClaims(
+	return parseJWT(token, false)
+}
+
+// ParseJWTWithoutClaimsValidation parses a token string into a Mytoken
+func ParseJWTWithoutClaimsValidation(token string) (*Mytoken, error) {
+	return parseJWT(token, true)
+}
+
+func parseJWT(token string, skipCalimsValidation bool) (*Mytoken, error) {
+	parser := jwt.Parser{
+		SkipClaimsValidation: skipCalimsValidation,
+	}
+	tok, err := parser.ParseWithClaims(
 		token, &Mytoken{}, func(t *jwt.Token) (interface{}, error) {
 			return jws.GetPublicKey(), nil
 		},

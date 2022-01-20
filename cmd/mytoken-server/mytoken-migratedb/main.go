@@ -124,8 +124,10 @@ var app = &cli.App{
 		} else if os.Getenv("MYTOKEN_NODES") != "" {
 			mytokenNodes = strings.Split(os.Getenv("MYTOKEN_NODES"), ",")
 		} else if !force {
-			return fmt.Errorf("No mytoken servers specified. Please provide mytoken servers or use '-f' to " +
-				"force database migration.")
+			return fmt.Errorf(
+				"No mytoken servers specified. Please provide mytoken servers or use '-f' to " +
+					"force database migration.",
+			)
 		}
 		if dbConfig.GetPassword() == "" {
 			dbConfig.Password = prompter.Password(fmt.Sprintf("Enter db password for user '%s'", dbConfig.User))

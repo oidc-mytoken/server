@@ -118,25 +118,25 @@ func start(s *fiber.App) {
 	if config.Get().Features.SSH.Enabled {
 		go ssh.Serve()
 	}
-	if config.Get().Server.TLS.Enabled {
-		if config.Get().Server.TLS.RedirectHTTP {
-			httpServer := fiber.New(serverConfig)
-			httpServer.All(
-				"*", func(ctx *fiber.Ctx) error {
-					//goland:noinspection HttpUrlsUsage
-					return ctx.Redirect(
-						strings.Replace(ctx.Request().URI().String(), "http://", "https://", 1),
-						fiber.StatusPermanentRedirect,
-					)
-				},
-			)
-			go log.WithError(httpServer.Listen(":80")).Fatal()
-		}
-		time.Sleep(time.Millisecond) // This is just for a more pretty output with the tls header printed after the http one
-		log.WithError(s.ListenTLS(":443", config.Get().Server.TLS.Cert, config.Get().Server.TLS.Key)).Fatal()
-	} else {
+	if !config.Get().Server.TLS.Enabled {
 		log.WithError(s.Listen(fmt.Sprintf(":%d", config.Get().Server.Port))).Fatal()
 	}
+	// TLS enabled
+	if config.Get().Server.TLS.RedirectHTTP {
+		httpServer := fiber.New(serverConfig)
+		httpServer.All(
+			"*", func(ctx *fiber.Ctx) error {
+				//goland:noinspection HttpUrlsUsage
+				return ctx.Redirect(
+					strings.Replace(ctx.Request().URI().String(), "http://", "https://", 1),
+					fiber.StatusPermanentRedirect,
+				)
+			},
+		)
+		go log.WithError(httpServer.Listen(":80")).Fatal()
+	}
+	time.Sleep(time.Millisecond) // This is just for a more pretty output with the tls header printed after the http one
+	log.WithError(s.ListenTLS(":443", config.Get().Server.TLS.Cert, config.Get().Server.TLS.Key)).Fatal()
 }
 
 // Start starts the server

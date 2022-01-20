@@ -11,7 +11,7 @@ import (
 )
 
 // RunDBCommands executes SQL stmts through the mysql cli
-func RunDBCommands(cmds string, dbConfig config.DBConf, printOutput bool) error {
+func RunDBCommands(cmds string, dbConfig config.DBConf, printOutput bool) error { // skipcq RVV-A0005
 	mysqlCmd := fmt.Sprintf(
 		"mysql -u%s -p%s --protocol tcp -h %s",
 		dbConfig.User, dbConfig.GetPassword(), dbConfig.Hosts[0],

@@ -280,6 +280,7 @@ func createMytokenEntry(
 		mytoken.NewMytoken(
 			oidcSub,
 			authFlowInfo.Issuer,
+			authFlowInfo.Name,
 			authFlowInfo.Restrictions,
 			authFlowInfo.Capabilities,
 			authFlowInfo.SubtokenCapabilities,

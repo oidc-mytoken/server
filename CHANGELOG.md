@@ -18,19 +18,39 @@
 
 - Smart Logging: Only log up to a certain log level on default, but on error log everything
 
-### API
-
-- Don't redirect from `/.well-known/openid-configuration` to `/.well-known/mytoken-configuration`. Instead, returning
-  the same content on both endpoints.
-
 ### Enhancements
 
-- Removed buttons from webinterface in the tokeninfo tabs. The content now loads directly when switching the tab.
 - Added request ids to response header and logging
 
 ### Bugfixes
 
 - Fixed a bug where restrictions did not behave correctly when multiple subnets were used
+
+## mytoken 0.3.3
+
+### Mytoken
+
+- Added the name of a mytoken to the JWT.
+
+### API
+
+- Don't redirect from `/.well-known/openid-configuration` to `/.well-known/mytoken-configuration`. Instead returning the
+  same content on both endpoints.
+
+### Enhancements
+
+- Removed buttons from webinterface in the tokeninfo tabs. The content now loads directly when switching the tab.
+- Removed most need for CDNs; now self-hosting resources.
+- Added setup of db database and db user to the setup utility.
+- Made Link in the web interface on the create-mytoken page better visible.
+
+### Bugfixes
+
+- Fixed the error returned from the server if no capability for a mytoken was provided.
+- Fixed PKCE code verifier length.
+- Fixed Datetimepicker issues on consent page.
+- Fixed response type if an (oidc) error occures on the redirect step of the authorization code flow.
+- Fixed a bug where mytokens that are not yet valid could not be created
 
 ## mytoken 0.3.2
 

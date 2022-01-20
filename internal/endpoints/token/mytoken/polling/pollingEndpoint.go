@@ -93,7 +93,7 @@ func CheckPollingCodeReq(
 		}
 		return
 	}
-	mt, err = mytoken.ParseJWT(token)
+	mt, err = mytoken.ParseJWTWithoutClaimsValidation(token)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
 		errRes = model.ErrorToInternalServerErrorResponse(err)
