@@ -1,0 +1,15 @@
+<li class="list-group-item capability subtoken-capability bg-secondary">
+    {{#ReadWriteCapability}}
+        {{> sub-capability-single-part}}
+    {{/ReadWriteCapability}}
+    <ul class="list-group">
+        {{#ReadOnlyCapability}}
+            <li class="list-group-item capability">
+                {{> sub-capability-single-part}}
+            </li>
+        {{/ReadOnlyCapability}}
+        {{#Children}}
+            {{> sub-capabilities-part}}
+        {{/Children}}
+    </ul>
+</li>

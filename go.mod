@@ -16,11 +16,11 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/ip2location/ip2location-go v8.3.0+incompatible
-	github.com/jinzhu/copier v0.3.2
+	github.com/jinzhu/copier v0.3.5
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/lestrrat-go/jwx v1.2.6
-	github.com/oidc-mytoken/api v0.3.1-0.20211220153443-bf41385a02b3
-	github.com/oidc-mytoken/lib v0.2.1-0.20210730094903-f59c9a8f84e0
+	github.com/oidc-mytoken/api v0.3.1-0.20220117084015-d21eb7b909ec
+	github.com/oidc-mytoken/lib v0.2.2-0.20211223095212-32c942773b34
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1

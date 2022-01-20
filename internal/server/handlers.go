@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/oidc-mytoken/api/v0"
 
 	consent "github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
@@ -36,8 +35,8 @@ func handleHome(ctx *fiber.Ctx) error {
 				{ExpiresAt: unixtime.InSeconds(3600 * 24 * 7)},
 			},
 		},
-		"capabilities":          consent.WebCapabilities(api.AllCapabilities),
-		"subtoken-capabilities": consent.WebCapabilities(api.AllCapabilities),
+		"capabilities":          consent.AllWebCapabilities(),
+		"subtoken-capabilities": consent.AllWebCapabilities(),
 	}
 	return ctx.Render("sites/home", binding, layoutMain)
 }
@@ -68,8 +67,8 @@ func handleSSH(ctx *fiber.Ctx) error {
 		loggedIn:                true,
 		"restr-gui":             true,
 		"restrictions":          consent.WebRestrictions{},
-		"capabilities":          consent.WebCapabilities(api.AllCapabilities),
-		"subtoken-capabilities": consent.WebCapabilities(api.AllCapabilities),
+		"capabilities":          consent.AllWebCapabilities(),
+		"subtoken-capabilities": consent.AllWebCapabilities(),
 	}
 	return ctx.Render("sites/ssh", binding, layoutMain)
 }

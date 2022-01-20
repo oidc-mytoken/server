@@ -33,23 +33,21 @@ import (
 // handleConsent displays a consent page
 func handleConsent(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut) error {
 	c := authInfo.Capabilities
-	sc := authInfo.SubtokenCapabilities
 	binding := map[string]interface{}{
-		"consent":          true,
-		"empty-navbar":     true,
-		"restr-gui":        true,
-		"restrictions":     pkg.WebRestrictions{Restrictions: authInfo.Restrictions},
-		"capabilities":     pkg.WebCapabilities(c),
-		"iss":              authInfo.Issuer,
-		"supported_scopes": strings.Join(config.Get().ProviderByIssuer[authInfo.Issuer].Scopes, " "),
-		"token-name":       authInfo.Name,
-		"rotation":         authInfo.Rotation,
+		"consent":               true,
+		"empty-navbar":          true,
+		"restr-gui":             true,
+		"restrictions":          pkg.WebRestrictions{Restrictions: authInfo.Restrictions},
+		"capabilities":          pkg.AllWebCapabilities(),
+		"subtoken-capabilities": pkg.AllWebCapabilities(),
+		"checked-capabilities":  c.Strings(),
+		"iss":                   authInfo.Issuer,
+		"supported_scopes":      strings.Join(config.Get().ProviderByIssuer[authInfo.Issuer].Scopes, " "),
+		"token-name":            authInfo.Name,
+		"rotation":              authInfo.Rotation,
 	}
 	if c.Has(api.CapabilityCreateMT) {
-		if len(sc) == 0 {
-			sc = c
-		}
-		binding["subtoken-capabilities"] = pkg.WebCapabilities(sc)
+		binding["checked-subtoken-capabilities"] = authInfo.SubtokenCapabilities.Strings()
 	}
 	return ctx.Render("sites/consent", binding, "layouts/main-no-container")
 }

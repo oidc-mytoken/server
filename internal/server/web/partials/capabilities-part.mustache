@@ -1,0 +1,22 @@
+<li class="list-group-item capability">
+    {{#ReadWriteCapability}}
+        {{> capability-single-part}}
+    {{/ReadWriteCapability}}
+    <ul class="list-group">
+        {{#ReadOnlyCapability}}
+            <li class="list-group-item capability">
+                {{> capability-single-part}}
+            </li>
+        {{/ReadOnlyCapability}}
+        {{#Children}}
+            {{> capabilities-part}}
+        {{/Children}}
+        {{#IsCreateMT}}
+            <div id="subtokenCapabilities">
+                {{#subtoken-capabilities}}
+                    {{> sub-capabilities-part}}
+                {{/subtoken-capabilities}}
+            </div>
+        {{/IsCreateMT}}
+    </ul>
+</li>

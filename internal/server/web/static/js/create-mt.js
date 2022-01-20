@@ -1,5 +1,4 @@
 
-const subtokenCapabilityChecks = $('.subtoken-capability-check');
 const mtResult = $('#mt-result');
 const mtResultColor = $('#mt-result-color');
 const mtConfig = $('#mt-config');
@@ -10,7 +9,6 @@ const mtErrorHeading = $('#mt-result-heading-error');
 const mtResultMsg = $('#mt-result-msg');
 const mtCopyButton = $('#mt-result-copy');
 const authURL = $('#authorization-url');
-const capabilityCreateMytoken = $('#cp-create_mytoken');
 const maxTokenLenDiv = $('#max_token_len_div');
 const tokenTypeBadge = $('#token-badge');
 
@@ -18,19 +16,9 @@ const tokenTypeBadge = $('#token-badge');
 $(function () {
     $('#cp-AT').prop('checked', true)
     $('#cp-tokeninfo_introspect').prop('checked', true)
-    if (!capabilityCreateMytoken.prop("checked")) {
-        $('#subtokenCapabilities').hideB();
-    }
 })
 
-capabilityCreateMytoken.on("click", function() {
-    let enabled = $(this).prop("checked");
-    subtokenCapabilityChecks.prop("disabled", !enabled);
-    if (!enabled) {
-        subtokenCapabilityChecks.prop("checked", false);
-    }
-    $('#subtokenCapabilities').toggleClass('d-none');
-});
+
 
 
 $('#next-mt').on('click', function(){
@@ -55,12 +43,8 @@ $('#get-mt').on('click', function(){
         "oidc_flow": "authorization_code",
         "redirect_type": "native",
         "restrictions": restrictions,
-        "capabilities": $('.capability-check:checked').map(function(_, el) {
-            return $(el).val();
-        }).get(),
-        "subtoken_capabilities": $('.subtoken-capability-check:checked').map(function(_, el) {
-            return $(el).val();
-        }).get()
+        "capabilities": getCheckedCapabilities(),
+        "subtoken_capabilities": getCheckedSubtokenCapabilities()
     };
     let token_type = $('#select-token-type').val();
     if (token_type==="auto") {

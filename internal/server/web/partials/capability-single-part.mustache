@@ -1,0 +1,33 @@
+<div class="d-flex justify-content-between">
+    <div class="mr-2">
+        <input class="capability-check mr-1" id="cp-{{Name}}" type="checkbox" value="{{Name}}">
+        <span>
+        <i class="fas fa-check-circle text-success capability-active d-none"></i>
+        <i class="fas fa-times-circle text-danger capability-inactive"></i>
+    </span>
+    </div>
+    <div class="flex-fill">
+        <div class="d-flex justify-content-between">
+            <h6>
+                {{Name}}
+                <span class="pl-1" style="font-size: 1rem;">
+                {{^IsReadOnly}}
+                    <i class="fas fa-pencil-alt" data-toggle="tooltip" data-placement="top" title=""
+                       data-original-title="Allows full access."></i>
+                {{/IsReadOnly}}
+                    {{#IsReadOnly}}
+                        <i class="fas fa-book-open" data-toggle="tooltip" data-placement="top" title=""
+                           data-original-title="Allows only read access. Click to allow full access."></i>
+                    {{/IsReadOnly}}
+                </span>
+            </h6>
+            <i class="fas fa-exclamation-circle {{ColorClass}}" data-toggle="tooltip"
+               data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
+        </div>
+        <small>{{Description}}</small>
+        {{#IsCreateMT}}
+            <small><br>A created mytoken can have the following
+                capabilities:</small>
+        {{/IsCreateMT}}
+    </div>
+</div>
