@@ -96,9 +96,7 @@ func searchCapability(name string, searchParent bool) *WebCapability {
 	return searchCapabilityS(allWebCapabilities, name, searchParent)
 }
 func searchCapabilityS(slice []*WebCapability, name string, searchParent bool) *WebCapability {
-	if strings.HasPrefix(name, api.CapabilityReadOnlyPrefix) {
-		name = name[len(api.CapabilityReadOnlyPrefix):]
-	}
+	name = strings.TrimPrefix(name, api.CapabilityReadOnlyPrefix)
 	for _, c := range slice {
 		if !searchParent && c.ReadWriteCapability.Name == name {
 			return c

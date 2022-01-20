@@ -28,7 +28,7 @@ type rootHook struct {
 	error  *errorHook
 }
 
-func (h *rootHook) Levels() []log.Level {
+func (*rootHook) Levels() []log.Level {
 	return log.AllLevels
 }
 func (h *rootHook) Fire(e *log.Entry) error {
@@ -51,7 +51,7 @@ type errorHook struct {
 	file        io.Writer
 }
 
-func (h *errorHook) Levels() []log.Level {
+func (*errorHook) Levels() []log.Level {
 	return log.AllLevels // we must be triggered at
 }
 func (h *errorHook) Fire(e *log.Entry) (err error) {
