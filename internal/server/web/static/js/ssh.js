@@ -4,9 +4,6 @@ const $addSSHKeyBtn = $('#addSSHKeyBtn');
 const $sshKeyTable = $('#sshKeys');
 const $sshKeyFile = $('#ssh_key_file');
 const $sshKeyInput = $('#ssh_key');
-const $subtokenCapabilityChecks = $('.subtoken-capability-check');
-const $capabilityChecks = $('.capability-check');
-const $capabilityCreateMytoken = $('#cp-create_mytoken');
 const $sshResult = $('#sshResult');
 const $sshResultColor = $('#sshResult-color');
 const $sshForm = $('#sshForm');
@@ -38,15 +35,7 @@ $(function () {
         initRestrGUI,
         initSSH,
     );
-    $subtokenCapabilityChecks.prop('checked', true);
-    $subtokenCapabilityChecks.prop('disabled', false);
-    $capabilityChecks.prop('checked', true);
 })
-
-$capabilityCreateMytoken.on("click", function () {
-    $('#subtokenCapabilities').toggleClass('d-none');
-});
-
 
 $('#addModal').on('hidden.bs.modal', function () {
     window.clearInterval(intervalID);
