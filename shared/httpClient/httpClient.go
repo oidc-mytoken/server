@@ -24,7 +24,7 @@ func init() {
 // Init initializes the http client
 func Init(hostURL string) {
 	if hostURL != "" {
-		client.SetHostURL(hostURL)
+		client.SetBaseURL(hostURL)
 	}
 	if log.IsLevelEnabled(log.DebugLevel) {
 		client.SetDebug(true)
