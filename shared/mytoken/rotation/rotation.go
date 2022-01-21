@@ -57,7 +57,8 @@ func RotateMytokenAfterAT(
 	return rotateMytoken(rlog, tx, oldJWT, old, clientMetaData)
 }
 
-// RotateMytokenAfterOther rotates a mytoken after it was used for other usages than AT if rotation is enabled for that case
+// RotateMytokenAfterOther rotates a mytoken after it was used for other usages than AT if rotation is enabled for that
+// case
 func RotateMytokenAfterOther(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData,
 ) (*mytoken.Mytoken, bool, error) {

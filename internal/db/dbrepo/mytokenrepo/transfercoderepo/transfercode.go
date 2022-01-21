@@ -79,7 +79,8 @@ func (tc TransferCode) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	)
 }
 
-// GetRevokeJWT returns a bool indicating if the linked jwt should also be revoked when this TransferCode is revoked or not
+// GetRevokeJWT returns a bool indicating if the linked jwt should also be revoked when this TransferCode is revoked or
+// not
 func (tc TransferCode) GetRevokeJWT(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (bool, error) {
 	var revokeMT db.BitBool
 	err := db.RunWithinTransaction(

@@ -402,7 +402,8 @@ func (r *Restrictions) GetAudiences() (auds []string) {
 }
 
 // SetMaxScopes sets the maximum scopes, i.e. all scopes are stripped from the restrictions if not included in the
-// passed argument. This is used to eliminate requested scopes that are dropped by the provider. Don't use it to eliminate scopes that are not enabled for the oidc client, because it also could be a custom scope.
+// passed argument. This is used to eliminate requested scopes that are dropped by the provider. Don't use it to
+// eliminate scopes that are not enabled for the oidc client, because it also could be a custom scope.
 func (r *Restrictions) SetMaxScopes(mScopes []string) {
 	for _, rr := range *r {
 		rScopes := utils.SplitIgnoreEmpty(rr.Scope, " ")

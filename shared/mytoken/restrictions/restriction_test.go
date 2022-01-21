@@ -299,7 +299,8 @@ func tightenCase8() tightenTestCase {
 		wanted: Restrictions{
 			{
 				Restriction: api.Restriction{
-					Scope: "a b c d", // This is semantically different from base, because it allows a token with all the scopes combined. One might want to not allow this.
+					Scope: "a b c d", // This is semantically different from base,
+					// because it allows a token with all the scopes combined. One might want to not allow this.
 				},
 				ExpiresAt: 50,
 			},

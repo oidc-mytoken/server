@@ -36,7 +36,8 @@ func TestSHA3_512Str(t *testing.T) {
 func TestHMACBasedHash(t *testing.T) {
 	data := `{"nbf":1599939600,"exp":1599948600,"ip":["192.168.0.31"],"usages_AT":11}`
 	hash := HMACBasedHash([]byte(data))
-	expected := "eyJuYmYiOjE1OTk5Mzk2MDAsImV4cCI6MTU5OTk0ODYwMCwiaXAiOlsiMTkyLjE2OC4wLjMxIl0sInVzYWdlc19BVCI6MTF9L3Lomh4pL9+cwcig05q2/MSuKFRsr6CMVw2iUcQjRAhdOt8qGVwg1R08eICUg8sKiwNDpXr92k1iWIMDcvuA/Q=="
+	expected := "eyJuYmYiOjE1OTk5Mzk2MDAsImV4cCI6MTU5OTk0ODYwMCwiaXAiOlsiMTkyLjE2OC4wLjMxIl0sInVzYWdlc19BVCI6MTF9L3" +
+		"Lomh4pL9+cwcig05q2/MSuKFRsr6CMVw2iUcQjRAhdOt8qGVwg1R08eICUg8sKiwNDpXr92k1iWIMDcvuA/Q=="
 	if hash != expected {
 		t.Errorf(hashFailFmt, hash, expected)
 	}
