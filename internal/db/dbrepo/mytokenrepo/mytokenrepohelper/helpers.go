@@ -26,19 +26,6 @@ func ParseError(err error) (bool, error) {
 	return true, nil
 }
 
-// GetMTRootID returns the id of the root mytoken of the passed mytoken id
-func GetMTRootID(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID) (mtid.MTID, bool, error) {
-	var rootID mtid.MTID
-	found, err := ParseError(
-		db.RunWithinTransaction(
-			rlog, tx, func(tx *sqlx.Tx) error {
-				return errors.WithStack(tx.Get(&rootID, `CALL MTokens_GetRoot(?)`, id))
-			},
-		),
-	)
-	return rootID, found, err
-}
-
 // recursiveRevokeMT revokes the passed mytoken as well as all children
 func recursiveRevokeMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID) error {
 	return db.RunWithinTransaction(

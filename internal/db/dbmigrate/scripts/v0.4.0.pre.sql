@@ -3,6 +3,11 @@
 # Tables
 DROP VIEW IF EXISTS MyTokens;
 
+ALTER TABLE MTokens
+    DROP FOREIGN KEY Mytokens_FK_1;
+ALTER TABLE MTokens
+    DROP COLUMN root_id;
+
 ALTER TABLE Users
     DROP COLUMN token_tracing;
 ALTER TABLE Users
@@ -106,30 +111,6 @@ SELECT `pt`.`id`                AS `id`,
     FROM ((`ProxyTokens` `pt` JOIN `CryptStore` `cs` ON (`pt`.`jwt_crypt` = `cs`.`id`))
              JOIN `TransferCodesAttributes` `tca` ON (`pt`.`id` = `tca`.`id`));
 
-
-CREATE OR REPLACE ALGORITHM = UNDEFINED VIEW `MyTokens` AS
-SELECT `mt`.`id`               AS `id`,
-       `mt`.`seqno`            AS `seqno`,
-       `mt`.`parent_id`        AS `parent_id`,
-       `mt`.`root_id`          AS `root_id`,
-       `mt`.`name`             AS `name`,
-       `mt`.`created`          AS `created`,
-       `mt`.`ip_created`       AS `ip_created`,
-       `mt`.`user_id`          AS `user_id`,
-       `mt`.`rt_id`            AS `rt_id`,
-       `cyp`.`crypt`           AS `refresh_token`,
-       `cyp`.`updated`         AS `rt_updated`,
-       `keys`.`encryption_key` AS `encryption_key`
-    FROM (((`MTokens` `mt`
-        JOIN `CryptStore` `cyp` ON
-            (`mt`.`rt_id` = `cyp`.`id`))
-        JOIN `RT_EncryptionKeys` `rkeys` ON
-            (`mt`.`id` = `rkeys`.`MT_id`
-                AND `mt`.`rt_id` = `rkeys`.`rt_id`))
-             JOIN `EncryptionKeys` `keys` ON
-        (`rkeys`.`key_id` = `keys`.`id`));
-
-
 -- RTCryptStore source
 CREATE OR REPLACE ALGORITHM = UNDEFINED VIEW `RTCryptStore` AS
 SELECT `CryptStore`.`id`      AS `id`,
@@ -209,8 +190,7 @@ BEGIN
     SELECT LAST_INSERT_ID();
 END;;
 
-CREATE
-    DEFINER = root@`%` FUNCTION AddToCryptStore(CRYPT_ TEXT, PAYLOAD_T INT UNSIGNED) RETURNS BIGINT UNSIGNED
+CREATE FUNCTION AddToCryptStore(CRYPT_ TEXT, PAYLOAD_T INT UNSIGNED) RETURNS BIGINT UNSIGNED
 BEGIN
     INSERT INTO CryptStore (crypt, payload_type) VALUES (CRYPT_, PAYLOAD_T);
     RETURN LAST_INSERT_ID();
@@ -401,7 +381,7 @@ END;;
 
 CREATE OR REPLACE PROCEDURE MTokens_GetForUser(IN UID BIGINT UNSIGNED)
 BEGIN
-    SELECT id, parent_id, root_id, name, created, ip_created AS ip FROM MTokens WHERE user_id = UID ORDER BY created;
+    SELECT id, parent_id, name, created, ip_created AS ip FROM MTokens WHERE user_id = UID ORDER BY created;
 END;;
 
 CREATE OR REPLACE PROCEDURE MTokens_GetRTID(IN MTID VARCHAR(128))
@@ -409,31 +389,38 @@ BEGIN
     SELECT rt_id FROM MTokens WHERE id = MTID;
 END;;
 
-CREATE OR REPLACE PROCEDURE MTokens_GetRoot(IN MTID VARCHAR(128))
-BEGIN
-    SELECT root_id FROM MTokens WHERE id = MTID;
-END;;
-
 CREATE OR REPLACE PROCEDURE MTokens_GetSubtokens(IN MTID VARCHAR(128))
 BEGIN
-    DECLARE ROOTID VARCHAR(128);
-    SELECT root_id FROM MTokens m WHERE m.id = MTID INTO ROOTID;
-    IF (ROOTID IS NULL) THEN
-        SET ROOTID = MTID;
-    END IF;
-    SELECT m.id, m.parent_id, m.root_id, m.name, m.created, m.ip_created AS ip
+    CREATE TEMPORARY TABLE IF NOT EXISTS effected_MTIDs (id VARCHAR(128));
+    TRUNCATE effected_MTIDs;
+    INSERT INTO effected_MTIDs
+    WITH RECURSIVE childs AS (
+        SELECT id, parent_id
+            FROM MTokens
+            WHERE id = MTID
+        UNION ALL
+        SELECT mt.id, mt.parent_id
+            FROM MTokens mt
+                     INNER JOIN childs c
+            WHERE mt.parent_id = c.id
+    )
+    SELECT id
+        FROM childs;
+    SELECT m.id, m.parent_id, m.name, m.created, m.ip_created AS ip
         FROM MTokens m
-        WHERE m.id = MTID
-           OR m.root_id = ROOTID;
+        WHERE m.id IN
+              (SELECT id
+                   FROM effected_MTIDs);
+    DROP TABLE effected_MTIDs;
 END;;
 
 CREATE OR REPLACE PROCEDURE MTokens_Insert(IN SUB TEXT, IN ISS TEXT, IN MTID VARCHAR(128), IN SEQNO_ BIGINT UNSIGNED,
-                                           IN PARENT VARCHAR(128), IN ROOT VARCHAR(128), IN RTID BIGINT UNSIGNED,
+                                           IN PARENT VARCHAR(128), IN RTID BIGINT UNSIGNED,
                                            IN NAME_ TEXT, IN IP TEXT)
 BEGIN
     CALL Users_GetID(SUB, ISS, @UID);
-    INSERT INTO MTokens (id, seqno, parent_id, root_id, rt_id, name, ip_created, user_id)
-        VALUES (MTID, SEQNO_, PARENT, ROOT, RTID, NAME_, IP, @UID);
+    INSERT INTO MTokens (id, seqno, parent_id, rt_id, name, ip_created, user_id)
+        VALUES (MTID, SEQNO_, PARENT, RTID, NAME_, IP, @UID);
 END;;
 
 CREATE OR REPLACE PROCEDURE MTokens_RevokeRec(IN MTID VARCHAR(128))

@@ -23,7 +23,6 @@ type MytokenEntry struct {
 	ID                     mtid.MTID
 	SeqNo                  uint64
 	ParentID               mtid.MTID `db:"parent_id"`
-	RootID                 mtid.MTID `db:"root_id"`
 	Token                  *mytoken.Mytoken
 	rtID                   *uint64
 	refreshToken           string
@@ -36,30 +35,30 @@ type MytokenEntry struct {
 }
 
 // InitRefreshToken links a refresh token to this MytokenEntry
-func (ste *MytokenEntry) InitRefreshToken(rt string) error {
-	ste.refreshToken = rt
-	ste.encryptionKey = cryptUtils.RandomBytes(32)
-	tmp, err := cryptUtils.AESEncrypt(ste.refreshToken, ste.encryptionKey)
+func (mte *MytokenEntry) InitRefreshToken(rt string) error {
+	mte.refreshToken = rt
+	mte.encryptionKey = cryptUtils.RandomBytes(32)
+	tmp, err := cryptUtils.AESEncrypt(mte.refreshToken, mte.encryptionKey)
 	if err != nil {
 		return err
 	}
-	ste.rtEncrypted = tmp
-	jwt, err := ste.Token.ToJWT()
+	mte.rtEncrypted = tmp
+	jwt, err := mte.Token.ToJWT()
 	if err != nil {
 		return err
 	}
-	tmp, err = cryptUtils.AES256Encrypt(base64.StdEncoding.EncodeToString(ste.encryptionKey), jwt)
+	tmp, err = cryptUtils.AES256Encrypt(base64.StdEncoding.EncodeToString(mte.encryptionKey), jwt)
 	if err != nil {
 		return err
 	}
-	ste.encryptionKeyEncrypted = tmp
+	mte.encryptionKeyEncrypted = tmp
 	return nil
 }
 
 // SetRefreshToken updates the refresh token for this MytokenEntry
-func (ste *MytokenEntry) SetRefreshToken(rtID uint64, key []byte) error {
-	ste.encryptionKey = key
-	jwt, err := ste.Token.ToJWT()
+func (mte *MytokenEntry) SetRefreshToken(rtID uint64, key []byte) error {
+	mte.encryptionKey = key
+	jwt, err := mte.Token.ToJWT()
 	if err != nil {
 		return err
 	}
@@ -67,8 +66,8 @@ func (ste *MytokenEntry) SetRefreshToken(rtID uint64, key []byte) error {
 	if err != nil {
 		return err
 	}
-	ste.encryptionKeyEncrypted = tmp
-	ste.rtID = &rtID
+	mte.encryptionKeyEncrypted = tmp
+	mte.rtID = &rtID
 	return nil
 }
 
@@ -85,46 +84,45 @@ func NewMytokenEntry(mt *mytoken.Mytoken, name string, networkData api.ClientMet
 }
 
 // Root checks if this MytokenEntry is a root token
-func (ste *MytokenEntry) Root() bool {
-	return !ste.RootID.HashValid()
+func (mte *MytokenEntry) Root() bool {
+	return !mte.ParentID.HashValid()
 }
 
 // Store stores the MytokenEntry in the database
-func (ste *MytokenEntry) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx, comment string) error {
+func (mte *MytokenEntry) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx, comment string) error {
 	steStore := mytokenEntryStore{
-		ID:       ste.ID,
-		SeqNo:    ste.SeqNo,
-		ParentID: ste.ParentID,
-		RootID:   ste.RootID,
-		Name:     db.NewNullString(ste.Name),
-		IP:       ste.IP,
-		Iss:      ste.Token.OIDCIssuer,
-		Sub:      ste.Token.OIDCSubject,
+		ID:       mte.ID,
+		SeqNo:    mte.SeqNo,
+		ParentID: mte.ParentID,
+		Name:     db.NewNullString(mte.Name),
+		IP:       mte.IP,
+		Iss:      mte.Token.OIDCIssuer,
+		Sub:      mte.Token.OIDCSubject,
 	}
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			if ste.rtID == nil {
-				if _, err := tx.Exec(`CALL CryptStoreRT_Insert(?,@ID)`, ste.rtEncrypted); err != nil {
+			if mte.rtID == nil {
+				if _, err := tx.Exec(`CALL CryptStoreRT_Insert(?,@ID)`, mte.rtEncrypted); err != nil {
 					return errors.WithStack(err)
 				}
 				var rtID uint64
 				if err := tx.Get(&rtID, `SELECT @ID`); err != nil {
 					return errors.WithStack(err)
 				}
-				ste.rtID = &rtID
+				mte.rtID = &rtID
 			}
-			steStore.RefreshTokenID = *ste.rtID
+			steStore.RefreshTokenID = *mte.rtID
 			if err := steStore.Store(rlog, tx); err != nil {
 				return err
 			}
-			if err := storeEncryptionKey(tx, ste.encryptionKeyEncrypted, steStore.RefreshTokenID, ste.ID); err != nil {
+			if err := storeEncryptionKey(tx, mte.encryptionKeyEncrypted, steStore.RefreshTokenID, mte.ID); err != nil {
 				return err
 			}
 			return eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{
 					Event: event.FromNumber(event.MTCreated, comment),
-					MTID:  ste.ID,
-				}, ste.networkData,
+					MTID:  mte.ID,
+				}, mte.networkData,
 			)
 		},
 	)
@@ -153,8 +151,8 @@ func (e *mytokenEntryStore) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(
-				`CALL MTokens_Insert(?,?,?,?,?,?,?,?,?)`,
-				e.Sub, e.Iss, e.ID, e.SeqNo, e.ParentID, e.RootID, e.RefreshTokenID, e.Name, e.IP,
+				`CALL MTokens_Insert(?,?,?,?,?,?,?,?)`,
+				e.Sub, e.Iss, e.ID, e.SeqNo, e.ParentID, e.RefreshTokenID, e.Name, e.IP,
 			)
 			return errors.WithStack(err)
 		},

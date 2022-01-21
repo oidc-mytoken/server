@@ -18,7 +18,6 @@ type MytokenEntry struct {
 	api.MytokenEntry `json:",inline"`
 	ID               mtid.MTID         `json:"-"`
 	ParentID         mtid.MTID         `db:"parent_id" json:"-"`
-	RootID           mtid.MTID         `db:"root_id" json:"-"`
 	Name             db.NullString     `json:"name,omitempty"`
 	CreatedAt        unixtime.UnixTime `db:"created" json:"created"`
 }
@@ -31,10 +30,7 @@ type MytokenEntryTree struct {
 
 // Root checks if this MytokenEntry is a root token
 func (ste *MytokenEntry) Root() bool {
-	if ste.ID.Hash() == ste.RootID.Hash() {
-		return true
-	}
-	return !ste.RootID.HashValid()
+	return !ste.ParentID.HashValid()
 }
 
 // AllTokens returns information about all mytokens for the user linked to the passed mytoken

@@ -22,7 +22,6 @@ func TestMytokenEntry_Root(t *testing.T) {
 			name: "HasParentAsRoot",
 			mt: MytokenEntry{
 				ParentID: parentRoot,
-				RootID:   parentRoot,
 			},
 			expected: false,
 		},
@@ -30,7 +29,6 @@ func TestMytokenEntry_Root(t *testing.T) {
 			name: "HasParentAndRoot",
 			mt: MytokenEntry{
 				ParentID: mtid.New(),
-				RootID:   mtid.New(),
 			},
 			expected: false,
 		},

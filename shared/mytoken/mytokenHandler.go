@@ -229,20 +229,6 @@ func createMytokenEntry(
 			Response: pkgModel.InvalidTokenError(""),
 		}
 	}
-	rootID, rootFound, dbErr := dbhelper.GetMTRootID(rlog, nil, parent.ID)
-	if dbErr != nil {
-		rlog.WithError(dbErr).Error()
-		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
-	}
-	if !rootFound {
-		return nil, &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.InvalidTokenError(""),
-		}
-	}
-	if !rootID.HashValid() {
-		rootID = parent.ID
-	}
 	if changed := req.Restrictions.EnforceMaxLifetime(parent.OIDCIssuer); changed && req.FailOnRestrictionsNotTighter {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
@@ -285,7 +271,6 @@ func createMytokenEntry(
 		return ste, model.ErrorToInternalServerErrorResponse(err)
 	}
 	ste.ParentID = parent.ID
-	ste.RootID = rootID
 	return ste, nil
 }
 
