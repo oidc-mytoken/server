@@ -24,9 +24,9 @@ function useSettingsToken(callback) {
                     ]
                 },
                 function (res) {
-                    let tok = res['mytoken'];
-                    storageSet('settings_mytoken', tok, true);
-                    callback(tok);
+                    let token = res['mytoken'];
+                    storageSet('settings_mytoken', token, true);
+                    callback(token);
                 },
                 function (errRes) {
                     $errorModalMsg.text(getErrorMessage(errRes));

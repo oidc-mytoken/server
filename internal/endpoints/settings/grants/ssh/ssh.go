@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	log "github.com/sirupsen/logrus"
 	gossh "golang.org/x/crypto/ssh"
 
 	"github.com/oidc-mytoken/server/internal/db"
@@ -149,68 +150,80 @@ func handleAddSSHKey(ctx *fiber.Ctx) error {
 	return settings.HandleSettingsHelper(
 		ctx, &req.Mytoken, api.CapabilitySSHGrant, event.FromNumber(event.SSHKeyAdded, ""), fiber.StatusOK,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
-			grantEnabled, err := grantrepo.GrantEnabled(rlog, tx, mt.ID, model.GrantTypeSSH)
-			if err != nil {
-				rlog.Errorf("%s", errorfmt.Full(err))
-				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
-			}
-			if !grantEnabled {
-				return nil, &serverModel.Response{
-					Status: fiber.StatusForbidden,
-					Response: api.Error{
-						Error:            api.ErrorStrAccessDenied,
-						ErrorDescription: "'ssh' grant type not enabled",
-					},
-				}
-			}
-			allSSHKeys, err := sshrepo.GetAllSSHInfo(rlog, tx, mt.ID)
-			if err != nil {
-				rlog.Errorf("%s", errorfmt.Full(err))
-				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
-			}
-			for _, k := range allSSHKeys {
-				if k.SSHKeyFingerprint == sshKeyFP {
-					return nil, &serverModel.Response{
-						Status: fiber.StatusConflict,
-						Response: api.Error{
-							Error:            api.ErrorStrInvalidRequest,
-							ErrorDescription: "ssh key already added",
-						},
-					}
-				}
-			}
-
-			mytokenReq := my.OIDCFlowRequest{
-				OIDCFlowRequest: api.OIDCFlowRequest{
-					GeneralMytokenRequest: api.GeneralMytokenRequest{
-						Issuer:               mt.OIDCIssuer,
-						GrantType:            api.GrantTypeOIDCFlow,
-						Capabilities:         req.Capabilities,
-						SubtokenCapabilities: req.SubtokenCapabilities,
-						Name:                 embedSSHKeyNameInMTName(req.Name),
-					},
-				},
-				OIDCFlow:     model.OIDCFlowAuthorizationCode,
-				Restrictions: req.Restrictions,
-				ResponseType: model.ResponseTypeToken,
-			}
-			mytokenReq.SetRedirectType(api.RedirectTypeNative)
-			res := authcode.StartAuthCodeFlow(ctx, mytokenReq)
-			if res.Status >= 400 {
-				return nil, res
-			}
-			authRes := res.Response.(api.AuthCodeFlowResponse)
-			if err = transfercoderepo.LinkPollingCodeToSSHKey(rlog, tx, authRes.PollingCode, sshKeyFP); err != nil {
-				rlog.Errorf("%s", errorfmt.Full(err))
-				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
-			}
-			return &request.SSHKeyAddResponse{
-				SSHKeyAddResponse: api.SSHKeyAddResponse{
-					AuthCodeFlowResponse: authRes,
-				},
-			}, nil
+			return handleAddSSHSettingsCallback(rlog, ctx, req, sshKeyFP, tx, mt)
 		}, false,
 	)
+}
+
+func handleAddSSHSettingsCallback(
+	rlog log.Ext1FieldLogger, ctx *fiber.Ctx, req request.SSHKeyAddRequest,
+	sshKeyFP string,
+	tx *sqlx.Tx,
+	mt *mytoken.Mytoken,
+) (
+	my.TokenUpdatableResponse,
+	*serverModel.Response,
+) {
+	grantEnabled, err := grantrepo.GrantEnabled(rlog, tx, mt.ID, model.GrantTypeSSH)
+	if err != nil {
+		rlog.Errorf("%s", errorfmt.Full(err))
+		return nil, serverModel.ErrorToInternalServerErrorResponse(err)
+	}
+	if !grantEnabled {
+		return nil, &serverModel.Response{
+			Status: fiber.StatusForbidden,
+			Response: api.Error{
+				Error:            api.ErrorStrAccessDenied,
+				ErrorDescription: "'ssh' grant type not enabled",
+			},
+		}
+	}
+	allSSHKeys, err := sshrepo.GetAllSSHInfo(rlog, tx, mt.ID)
+	if err != nil {
+		rlog.Errorf("%s", errorfmt.Full(err))
+		return nil, serverModel.ErrorToInternalServerErrorResponse(err)
+	}
+	for _, k := range allSSHKeys {
+		if k.SSHKeyFingerprint == sshKeyFP {
+			return nil, &serverModel.Response{
+				Status: fiber.StatusConflict,
+				Response: api.Error{
+					Error:            api.ErrorStrInvalidRequest,
+					ErrorDescription: "ssh key already added",
+				},
+			}
+		}
+	}
+
+	mytokenReq := my.OIDCFlowRequest{
+		OIDCFlowRequest: api.OIDCFlowRequest{
+			GeneralMytokenRequest: api.GeneralMytokenRequest{
+				Issuer:               mt.OIDCIssuer,
+				GrantType:            api.GrantTypeOIDCFlow,
+				Capabilities:         req.Capabilities,
+				SubtokenCapabilities: req.SubtokenCapabilities,
+				Name:                 embedSSHKeyNameInMTName(req.Name),
+			},
+		},
+		OIDCFlow:     model.OIDCFlowAuthorizationCode,
+		Restrictions: req.Restrictions,
+		ResponseType: model.ResponseTypeToken,
+	}
+	mytokenReq.SetRedirectType(api.RedirectTypeNative)
+	res := authcode.StartAuthCodeFlow(ctx, mytokenReq)
+	if res.Status >= 400 {
+		return nil, res
+	}
+	authRes := res.Response.(api.AuthCodeFlowResponse)
+	if err = transfercoderepo.LinkPollingCodeToSSHKey(rlog, tx, authRes.PollingCode, sshKeyFP); err != nil {
+		rlog.Errorf("%s", errorfmt.Full(err))
+		return nil, serverModel.ErrorToInternalServerErrorResponse(err)
+	}
+	return &request.SSHKeyAddResponse{
+		SSHKeyAddResponse: api.SSHKeyAddResponse{
+			AuthCodeFlowResponse: authRes,
+		},
+	}, nil
 }
 
 const mtNamePrefix = "mytoken for ssh-grant"

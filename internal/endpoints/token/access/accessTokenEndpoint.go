@@ -68,25 +68,35 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	return HandleAccessTokenRefresh(rlog, mt, req, *ctxUtils.ClientMetaData(ctx), provider, usedRestriction).Send(ctx)
 }
 
+func parseScopesAndAudienceToUse(
+	reqScope, reqAud string, usedRestriction *restrictions.Restriction,
+	providerScopes []string,
+) (
+	string,
+	string,
+) {
+	scopes := strings.Join(providerScopes, " ") // default if no restrictions apply
+	auds := ""                                  // default if no restrictions apply
+	if usedRestriction != nil {
+		if reqScope != "" {
+			scopes = reqScope
+		} else if usedRestriction.Scope != "" {
+			scopes = usedRestriction.Scope
+		}
+		if reqAud != "" {
+			auds = reqAud
+		} else if len(usedRestriction.Audiences) > 0 {
+			auds = strings.Join(usedRestriction.Audiences, " ")
+		}
+	}
+	return scopes, auds
+}
+
 // HandleAccessTokenRefresh handles an access token request
 func HandleAccessTokenRefresh(
 	rlog log.Ext1FieldLogger, mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData api.ClientMetaData,
 	provider *config.ProviderConf, usedRestriction *restrictions.Restriction,
 ) *serverModel.Response {
-	scopes := strings.Join(provider.Scopes, " ") // default if no restrictions apply
-	auds := ""                                   // default if no restrictions apply
-	if usedRestriction != nil {
-		if req.Scope != "" {
-			scopes = req.Scope
-		} else if usedRestriction.Scope != "" {
-			scopes = usedRestriction.Scope
-		}
-		if req.Audience != "" {
-			auds = req.Audience
-		} else if len(usedRestriction.Audiences) > 0 {
-			auds = strings.Join(usedRestriction.Audiences, " ")
-		}
-	}
 	rt, rtFound, dbErr := cryptstore.GetRefreshToken(rlog, nil, mt.ID, req.Mytoken.JWT)
 	if dbErr != nil {
 		rlog.Errorf("%s", errorfmt.Full(dbErr))
@@ -99,6 +109,7 @@ func HandleAccessTokenRefresh(
 		}
 	}
 
+	scopes, auds := parseScopesAndAudienceToUse(req.Scope, req.Audience, usedRestriction, provider.Scopes)
 	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(rlog, provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
@@ -110,6 +121,7 @@ func HandleAccessTokenRefresh(
 			Response: model.OIDCError(oidcErrRes.Error, oidcErrRes.ErrorDescription),
 		}
 	}
+
 	retScopes := oidcRes.Scopes
 	if retScopes == "" {
 		retScopes = scopes
@@ -123,6 +135,7 @@ func HandleAccessTokenRefresh(
 		Scopes:    utils.SplitIgnoreEmpty(retScopes, " "),
 		Audiences: retAudiences,
 	}
+
 	var tokenUpdate *response.MytokenResponse
 	if err = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {

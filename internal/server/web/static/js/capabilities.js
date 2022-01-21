@@ -14,9 +14,6 @@ $capabilityCreateMytoken.on("click", function () {
     let enabled = $(this).prop("checked");
     let $capabilityCheck = $('.subtoken-capability-check');
     $capabilityCheck.prop("disabled", !enabled);
-    // if (!enabled) {
-    //     $capabilityCheck.prop("checked", false);
-    // }
     $('#subtokenCapabilities').toggleClass('d-none');
 });
 

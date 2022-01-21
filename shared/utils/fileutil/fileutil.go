@@ -42,7 +42,7 @@ func Append(path, content string, doNotCreateIfDoesNotExist ...bool) error {
 	if len(doNotCreateIfDoesNotExist) > 0 && doNotCreateIfDoesNotExist[0] {
 		create = 0
 	}
-	f, err := os.OpenFile(evalSymlink(path), os.O_APPEND|create|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(evalSymlink(path), os.O_APPEND|create|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
 	}
@@ -58,8 +58,7 @@ func MustReadFile(filename string) []byte {
 	log.WithField("filepath", filename).Trace("Found file. Reading config file ...")
 	file, err := os.ReadFile(filename)
 	if err != nil {
-		log.WithError(err).Error("Error reading config file")
-		os.Exit(1)
+		log.WithError(err).Fatal("Error reading config file")
 	}
 	log.WithField("filepath", filename).Info("Read config file")
 	return file

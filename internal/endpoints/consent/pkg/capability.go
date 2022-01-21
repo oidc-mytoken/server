@@ -59,34 +59,34 @@ func init() {
 	for level := 0; level <= maxLevel; level++ {
 		unhandledReadOnlyNames := make(map[string]*webCapability)
 		for _, c := range capabilitiesByLevel[level] {
-			if !strings.HasPrefix(c.Name, api.CapabilityReadOnlyPrefix) {
-				wc := &WebCapability{ReadWriteCapability: c}
-				roc, readOnlyPossible := unhandledReadOnlyNames[c.Name]
-				if readOnlyPossible {
-					delete(unhandledReadOnlyNames, c.Name)
-					wc.ReadOnlyCapability = roc
+			if strings.HasPrefix(c.Name, api.CapabilityReadOnlyPrefix) {
+				var readOnlyCapability webCapability
+				c.IsReadOnly = true
+				if err := copier.Copy(&readOnlyCapability, c); err != nil {
+					panic(err)
 				}
-				parent := searchCapability(c.Name, true)
-				if parent == nil {
-					allWebCapabilities = append(allWebCapabilities, wc)
-				} else if parent.Children == nil {
-					parent.Children = []*WebCapability{wc}
+				wc := searchCapability(c.Name, false)
+				if wc == nil { // capability not added yet
+					unhandledReadOnlyNames[c.Name] = &readOnlyCapability
 				} else {
-					parent.Children = append(parent.Children, wc)
+					wc.ReadOnlyCapability = &readOnlyCapability
 				}
 				continue
 			}
-			// readOnly
-			var readOnlyCapability webCapability
-			c.IsReadOnly = true
-			if err := copier.Copy(&readOnlyCapability, c); err != nil {
-				panic(err)
+			// read-write
+			wc := &WebCapability{ReadWriteCapability: c}
+			roc, readOnlyPossible := unhandledReadOnlyNames[c.Name]
+			if readOnlyPossible {
+				delete(unhandledReadOnlyNames, c.Name)
+				wc.ReadOnlyCapability = roc
 			}
-			wc := searchCapability(c.Name, false)
-			if wc == nil { // capability not added yet
-				unhandledReadOnlyNames[c.Name] = &readOnlyCapability
+			parent := searchCapability(c.Name, true)
+			if parent == nil {
+				allWebCapabilities = append(allWebCapabilities, wc)
+			} else if parent.Children == nil {
+				parent.Children = []*WebCapability{wc}
 			} else {
-				wc.ReadOnlyCapability = &readOnlyCapability
+				parent.Children = append(parent.Children, wc)
 			}
 		}
 	}
@@ -142,7 +142,7 @@ var dangerCapabilities = []string{
 	api.CapabilityGrants.Name,
 }
 
-func (c webCapability) getIntClass() int {
+func (c *webCapability) getIntClass() int {
 	if c.intClass != nil {
 		return *c.intClass
 	}

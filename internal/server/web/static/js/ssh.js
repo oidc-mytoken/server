@@ -250,7 +250,6 @@ function polling(code, interval) {
                 let message;
                 switch (error) {
                     case "authorization_pending":
-                        // message = "Authorization still pending.";
                         sshShowPending();
                         return;
                     case "access_denied":
