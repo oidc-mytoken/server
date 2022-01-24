@@ -47,14 +47,14 @@ function initCountries() {
     $(".country-select").prop("selectedIndex", -1);
 }
 
-function _addScopeValueToGUI(scope, $htmlEl) {
+function _addScopeValueToGUI(scope, $htmlEl, prefix) {
     let html = `<tr>
                             <td><span class="table-item">${scope}</span></td>
                             <td>
                                 <i class="fas fa-check-circle text-success scope-active"></i>
                                 <i class="fas fa-times-circle text-danger scope-inactive d-none"></i>
                             </td>
-                            <td><input class="form-check-input scope-checkbox" id="scope_${scope}" type="checkbox" value="${scope}"></td>
+                            <td><input class="form-check-input scope-checkbox" id="${prefix}_scope_${scope}" type="checkbox" value="${scope}"></td>
                         </tr>`;
     $htmlEl.append(html);
 }
@@ -64,7 +64,7 @@ function initRestrGUI(...next) {
     initCountries();
     const scopes = typeof (supported_scopes) !== 'undefined' ? supported_scopes : getSupportedScopesFromStorage();
     for (const scope of scopes) {
-        _addScopeValueToGUI(scope, $scopeTableBody);
+        _addScopeValueToGUI(scope, $scopeTableBody, "restr");
     }
 
     $('.scope-checkbox').on("click", function () {
@@ -258,7 +258,7 @@ function restrClauseToGUI() {
 
     if (restr.scope) {
         for (const s of restr.scope.split(' ')) {
-            $('#scope_'+escapeSelector(s)).click();
+            $('#restr_scope_' + escapeSelector(s)).click();
         }
     }
     if (restr.ip) {

@@ -35,7 +35,7 @@ $('#select-token-type').on('change', function (){
     }
 })
 
-function getMT() {
+function sendCreateMTReq() {
     let data = {
         "name": $('#tokenName').val(),
         "oidc_issuer": storageGet("oidc_issuer"),
@@ -100,7 +100,7 @@ $('#get-mt').on('click', function () {
         " to create an unrestricted mytoken?")) {
         return;
     }
-    getMT();
+    sendCreateMTReq();
 })
 
 function mtShowPending() {
