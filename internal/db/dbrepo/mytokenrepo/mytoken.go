@@ -1,6 +1,7 @@
 package mytokenrepo
 
 import (
+	"database/sql"
 	"encoding/base64"
 
 	"github.com/jmoiron/sqlx"
@@ -15,6 +16,7 @@ import (
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
+	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
 // MytokenEntry holds the information of a MytokenEntry as stored in the
@@ -32,6 +34,7 @@ type MytokenEntry struct {
 	Name                   string
 	IP                     string `db:"ip_created"`
 	networkData            api.ClientMetaData
+	expiresAt              unixtime.UnixTime
 }
 
 // InitRefreshToken links a refresh token to this MytokenEntry
@@ -80,6 +83,7 @@ func NewMytokenEntry(mt *mytoken.Mytoken, name string, networkData api.ClientMet
 		Name:        name,
 		IP:          networkData.IP,
 		networkData: networkData,
+		expiresAt:   mt.Restrictions.GetExpires(),
 	}
 }
 
@@ -91,13 +95,14 @@ func (mte *MytokenEntry) Root() bool {
 // Store stores the MytokenEntry in the database
 func (mte *MytokenEntry) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx, comment string) error {
 	steStore := mytokenEntryStore{
-		ID:       mte.ID,
-		SeqNo:    mte.SeqNo,
-		ParentID: mte.ParentID,
-		Name:     db.NewNullString(mte.Name),
-		IP:       mte.IP,
-		Iss:      mte.Token.OIDCIssuer,
-		Sub:      mte.Token.OIDCSubject,
+		ID:        mte.ID,
+		SeqNo:     mte.SeqNo,
+		ParentID:  mte.ParentID,
+		Name:      db.NewNullString(mte.Name),
+		IP:        mte.IP,
+		Iss:       mte.Token.OIDCIssuer,
+		Sub:       mte.Token.OIDCSubject,
+		ExpiresAt: db.NewNullTime(mte.expiresAt.Time()),
 	}
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
@@ -143,6 +148,7 @@ type mytokenEntryStore struct {
 	IP             string `db:"ip_created"`
 	Iss            string
 	Sub            string
+	ExpiresAt      sql.NullTime
 }
 
 // Store stores the mytokenEntryStore in the database; if this is the first token for this user, the user is also added
@@ -151,8 +157,8 @@ func (e *mytokenEntryStore) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(
-				`CALL MTokens_Insert(?,?,?,?,?,?,?,?)`,
-				e.Sub, e.Iss, e.ID, e.SeqNo, e.ParentID, e.RefreshTokenID, e.Name, e.IP,
+				`CALL MTokens_Insert(?,?,?,?,?,?,?,?,?)`,
+				e.Sub, e.Iss, e.ID, e.SeqNo, e.ParentID, e.RefreshTokenID, e.Name, e.IP, e.ExpiresAt,
 			)
 			return errors.WithStack(err)
 		},

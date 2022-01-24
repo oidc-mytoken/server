@@ -7,6 +7,8 @@ ALTER TABLE MTokens
     DROP FOREIGN KEY Mytokens_FK_1;
 ALTER TABLE MTokens
     DROP COLUMN root_id;
+ALTER TABLE MTokens
+    ADD expires_at DATETIME NULL;
 
 ALTER TABLE Users
     DROP COLUMN token_tracing;
@@ -231,6 +233,42 @@ BEGIN
         WHERE state_h = STATE;
 END;;
 
+CREATE OR REPLACE PROCEDURE Cleanup()
+BEGIN
+    CALL Cleanup_MTokens();
+    CALL Cleanup_AuthInfo();
+    CALL Cleanup_ProxyTokens();
+END;;
+
+CREATE OR REPLACE PROCEDURE Cleanup_AuthInfo()
+BEGIN
+    DELETE FROM AuthInfo WHERE expires_at < CURRENT_TIMESTAMP();
+END;;
+
+CREATE OR REPLACE PROCEDURE Cleanup_MTokens()
+BEGIN
+    DELETE FROM MTokens WHERE expires_at < CURRENT_TIMESTAMP();
+END;;
+
+CREATE OR REPLACE PROCEDURE Cleanup_ProxyTokens()
+BEGIN
+    DELETE
+        FROM ProxyTokens
+        WHERE id IN (SELECT id
+                         FROM TransferCodesAttributes
+                         WHERE expires_at < CURRENT_TIMESTAMP());
+END;;
+
+CREATE OR REPLACE PROCEDURE cleanup_schedule_disable()
+BEGIN
+    ALTER EVENT cleanup_schedule DISABLE;
+END;;
+
+CREATE OR REPLACE PROCEDURE cleanup_schedule_enable()
+BEGIN
+    ALTER EVENT cleanup_schedule ENABLE;
+END;;
+
 CREATE OR REPLACE PROCEDURE CryptStoreAT_Insert(IN EncryptedAT TEXT, OUT ID BIGINT UNSIGNED)
 BEGIN
     SET ID = (SELECT AddToCryptStore(EncryptedAT,
@@ -414,13 +452,13 @@ BEGIN
     DROP TABLE effected_MTIDs;
 END;;
 
-CREATE OR REPLACE PROCEDURE MTokens_Insert(IN SUB TEXT, IN ISS TEXT, IN MTID VARCHAR(128), IN SEQNO_ BIGINT UNSIGNED,
-                                           IN PARENT VARCHAR(128), IN RTID BIGINT UNSIGNED,
-                                           IN NAME_ TEXT, IN IP TEXT)
+CREATE OR REPLACE PROCEDURE MTokens_Insert(IN SUB TEXT, IN ISS TEXT, IN MTID VARCHAR(128),
+                                           IN SEQNO_ BIGINT UNSIGNED, IN PARENT VARCHAR(128),
+                                           IN RTID BIGINT UNSIGNED, IN NAME_ TEXT, IN IP TEXT, IN EXPIRES_AT_ DATETIME)
 BEGIN
     CALL Users_GetID(SUB, ISS, @UID);
-    INSERT INTO MTokens (id, seqno, parent_id, rt_id, name, ip_created, user_id)
-        VALUES (MTID, SEQNO_, PARENT, RTID, NAME_, IP, @UID);
+    INSERT INTO MTokens (id, seqno, parent_id, rt_id, name, ip_created, user_id, expires_at)
+        VALUES (MTID, SEQNO_, PARENT, RTID, NAME_, IP, @UID, EXPIRES_AT_);
 END;;
 
 CREATE OR REPLACE PROCEDURE MTokens_RevokeRec(IN MTID VARCHAR(128))
@@ -652,6 +690,11 @@ BEGIN
     ON DUPLICATE KEY UPDATE bef=CURRENT_TIMESTAMP();
 END;;
 DELIMITER ;
+
+
+# Events
+SET GLOBAL event_scheduler = ON;
+CREATE EVENT IF NOT EXISTS cleanup_schedule ON SCHEDULE EVERY 1 DAY STARTS (TIMESTAMP(CURRENT_DATE) + INTERVAL 1 DAY) DO CALL Cleanup();
 
 
 # Predefined Values

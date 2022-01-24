@@ -210,12 +210,13 @@ type pollingConf struct {
 
 // DBConf is type for holding configuration for a db
 type DBConf struct {
-	Hosts             []string `yaml:"hosts"`
-	User              string   `yaml:"user"`
-	Password          string   `yaml:"password"`
-	PasswordFile      string   `yaml:"password_file"`
-	DB                string   `yaml:"db"`
-	ReconnectInterval int64    `yaml:"try_reconnect_interval"`
+	Hosts                  []string `yaml:"hosts"`
+	User                   string   `yaml:"user"`
+	Password               string   `yaml:"password"`
+	PasswordFile           string   `yaml:"password_file"`
+	DB                     string   `yaml:"db"`
+	ReconnectInterval      int64    `yaml:"try_reconnect_interval"`
+	EnableScheduledCleanup bool     `yaml:"schedule_cleanup"`
 }
 
 type serverConf struct {
