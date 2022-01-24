@@ -35,7 +35,7 @@ $('#select-token-type').on('change', function (){
     }
 })
 
-$('#get-mt').on('click', function(){
+function getMT() {
     let data = {
         "name": $('#tokenName').val(),
         "oidc_issuer": storageGet("oidc_issuer"),
@@ -54,7 +54,7 @@ $('#get-mt').on('click', function(){
     }
     let rot = getRotationFromForm();
     if (rot) {
-       data["rotation"] = rot;
+        data["rotation"] = rot;
     }
     data = JSON.stringify(data);
     $.ajax({
@@ -69,16 +69,38 @@ $('#get-mt').on('click', function(){
             authURL.text(url);
             polling(code, interval)
         },
-        error: function(errRes){
+        error: function (errRes) {
             let errMsg = getErrorMessage(errRes);
             mtShowError(errMsg);
         },
         dataType: "json",
-        contentType : "application/json"
+        contentType: "application/json"
     });
     mtShowPending();
     mtResult.showB();
     mtConfig.hideB();
+}
+
+function checkRestrEmpty() {
+    if (restrictions.length === 0) {
+        return true;
+    }
+    let found = false;
+    restrictions.forEach(function (r) {
+        if (Object.keys(r).length > 0) {
+            found = true;
+            return;
+        }
+    })
+    return !found;
+}
+
+$('#get-mt').on('click', function () {
+    if (checkRestrEmpty() && !confirm("You do not have any restrictions defined for this mytoken. Do you really want" +
+        " to create an unrestricted mytoken?")) {
+        return;
+    }
+    getMT();
 })
 
 function mtShowPending() {

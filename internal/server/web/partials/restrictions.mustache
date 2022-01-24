@@ -23,6 +23,13 @@
     <textarea class="mt-5 form-control" id="restrictionsArea" autocomplete="off" cols=50 rows=20
               onkeyup="updateRestrFromJSONEditor()"></textarea>
 </div>
-<script>if (typeof restrictions === 'undefined') {
-    restrictions = {{&restrictions.Text}}?{{&restrictions.Text}}: [{}];
-}</script>
+<script>
+    if (typeof restrictions === 'undefined') {
+        {{#restrictions}}
+            restrictions = {{&Text}}?{{&Text}}: [{}];
+        {{/restrictions}}
+        {{^restrictions}}
+            restrictions = [{}];
+        {{/restrictions}}
+    }
+</script>
