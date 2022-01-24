@@ -26,13 +26,6 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-  - id: garbage
-    main: ./cmd/mytoken-server/mytoken-dbGarbageCollector
-    binary: mytoken-dbgc
-    env:
-      - CGO_ENABLED=0
-    goos:
-      - linux
 archives:
   - replacements:
       darwin: Darwin
@@ -92,20 +85,6 @@ nfpms:
     release: 1
     section: misc
     bindir: /usr/bin
-  - id: garbage-pkg
-    package_name: mytoken-server-dbgc
-    builds:
-      - garbage
-    homepage: https://mytoken-doc.data.kit.edu/server/intro
-    maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
-    description: A garbage collector for the mytoken database. It deletes expired entries.
-    license: MIT
-    formats:
-      - deb
-      - rpm
-    release: 1
-    section: misc
-    bindir: /usr/bin
 dockers:
   - goos: linux
     goarch: amd64
@@ -156,23 +135,6 @@ dockers:
       - "--pull"
       - "--label=org.opencontainers.image.created={{.Date}}"
       - "--label=org.opencontainers.image.title=mytoken-migratedb"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-  - goos: linux
-    goarch: amd64
-    ids:
-      - garbage
-    image_templates:
-      - "oidcmytoken/mytoken-dbgc:latest"
-      - "oidcmytoken/mytoken-dbgc:{{ .Tag }}"
-      - "oidcmytoken/mytoken-dbgc:v{{ .Major }}"
-      - "oidcmytoken/mytoken-dbgc:v{{ .Major }}.{{ .Minor }}"
-    skip_push: true
-    dockerfile: cmd/mytoken-server/mytoken-dbGarbageCollector/Dockerfile
-    build_flag_templates:
-      - "--pull"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title=mytoken-dbgc"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - "--label=org.opencontainers.image.version={{.Version}}"
 checksum:
