@@ -89,7 +89,6 @@ function checkRestrEmpty() {
     restrictions.forEach(function (r) {
         if (Object.keys(r).length > 0) {
             found = true;
-            return;
         }
     })
     return !found;
