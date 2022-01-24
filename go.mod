@@ -10,7 +10,6 @@ require (
 	github.com/gliderlabs/ssh v0.3.3
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-sql-driver/mysql v1.6.0
-	github.com/goccy/go-json v0.9.4 // indirect
 	github.com/gofiber/fiber/v2 v2.25.0
 	github.com/gofiber/helmet/v2 v2.2.5
 	github.com/gofiber/template v1.6.21
@@ -19,7 +18,7 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/klauspost/compress v1.14.1 // indirect
-	github.com/lestrrat-go/jwx v1.2.17
+	github.com/lestrrat-go/jwx v1.2.18
 	github.com/oidc-mytoken/api v0.3.1-0.20220117084015-d21eb7b909ec
 	github.com/oidc-mytoken/lib v0.2.2-0.20211223095212-32c942773b34
 	github.com/pkg/errors v0.9.1
