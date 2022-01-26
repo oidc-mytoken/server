@@ -70,6 +70,7 @@ func GrantEnabled(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID, grantTy
 			return errors.WithStack(tx.Get(&enabled, `CALL Grants_CheckEnabled(?,?)`, myID, grantType.String()))
 		},
 	); err != nil {
+		_, err = db.ParseError(err) // if no rows found, that's not an error, but grant is not enabled
 		return false, err
 	}
 	return bool(enabled), nil
