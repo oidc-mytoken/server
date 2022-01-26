@@ -19,7 +19,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/klauspost/compress v1.14.1 // indirect
 	github.com/lestrrat-go/jwx v1.2.18
-	github.com/oidc-mytoken/api v0.3.1-0.20220117084015-d21eb7b909ec
+	github.com/oidc-mytoken/api v0.3.1-0.20220126162415-1144aa9a8465
 	github.com/oidc-mytoken/lib v0.2.2-0.20211223095212-32c942773b34
 	github.com/pires/go-proxyproto v0.6.1
 	github.com/pkg/errors v0.9.1

@@ -3,6 +3,7 @@ package configuration
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/oidc-mytoken/api/v0"
+	gossh "golang.org/x/crypto/ssh"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration/pkg"
@@ -126,5 +127,19 @@ func addTokenInfo(mytokenConfig *pkg.MytokenConfiguration) {
 func addSSHGrant(mytokenconfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.SSH.Enabled {
 		pkgModel.GrantTypeSSH.AddToSliceIfNotFound(&mytokenconfig.MytokenEndpointGrantTypesSupported)
+		mytokenconfig.SSHKeys = createSSHKeyInfos()
 	}
+}
+
+func createSSHKeyInfos() []api.SSHKeyMetadata {
+	keys := make([]api.SSHKeyMetadata, len(config.Get().Features.SSH.PrivateKeys))
+	for i, sk := range config.Get().Features.SSH.PrivateKeys {
+		pk := sk.PublicKey()
+		keyType := pk.Type()
+		keys[i] = api.SSHKeyMetadata{
+			Type:        keyType,
+			Fingerprint: gossh.FingerprintSHA256(pk),
+		}
+	}
+	return keys
 }

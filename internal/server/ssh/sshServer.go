@@ -83,6 +83,9 @@ func Serve() {
 	if err := server.SetOption(ssh.NoPty()); err != nil {
 		log.WithError(err).Fatal()
 	}
+	for _, k := range config.Get().Features.SSH.PrivateKeys {
+		server.AddHostKey(k)
+	}
 	ln, err := net.Listen("tcp", server.Addr)
 	if err != nil {
 		log.WithError(err).Fatal()

@@ -266,8 +266,8 @@ github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3Rllmb
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/oidc-mytoken/api v0.3.1-0.20211220153443-bf41385a02b3/go.mod h1:RMeAl6ICLnemFQU4g57IHCP8m9WZg8PjXNVkodMiNi8=
-github.com/oidc-mytoken/api v0.3.1-0.20220117084015-d21eb7b909ec h1:tb4Ji7J8MN+gQudg0r9C8J0A5oz7WQM37wuQ6VSj7Ro=
-github.com/oidc-mytoken/api v0.3.1-0.20220117084015-d21eb7b909ec/go.mod h1:RMeAl6ICLnemFQU4g57IHCP8m9WZg8PjXNVkodMiNi8=
+github.com/oidc-mytoken/api v0.3.1-0.20220126162415-1144aa9a8465 h1:/WphZw9dlTInqnLJgfrMn3WpgVmiO3ktYqPOlLWwGDA=
+github.com/oidc-mytoken/api v0.3.1-0.20220126162415-1144aa9a8465/go.mod h1:RMeAl6ICLnemFQU4g57IHCP8m9WZg8PjXNVkodMiNi8=
 github.com/oidc-mytoken/lib v0.2.2-0.20211223095212-32c942773b34 h1:aZTABz2Z4nARZ3P+1pxM+q5FYlHVHsMduPILSNwhc50=
 github.com/oidc-mytoken/lib v0.2.2-0.20211223095212-32c942773b34/go.mod h1:Z0vvLgDuV5t3fLlJGzx+Qn15IWbz1WTgkm4xfSaWPEM=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=

@@ -8,6 +8,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v3"
 
 	model2 "github.com/oidc-mytoken/server/internal/model"
@@ -134,8 +135,10 @@ type featuresConf struct {
 }
 
 type sshConf struct {
-	Enabled          bool `yaml:"enabled"`
-	UseProxyProtocol bool `yaml:"use_proxy_protocol"`
+	Enabled          bool         `yaml:"enabled"`
+	UseProxyProtocol bool         `yaml:"use_proxy_protocol"`
+	KeyFiles         []string     `yaml:"keys"`
+	PrivateKeys      []ssh.Signer `yaml:"-"`
 }
 
 type tokeninfoConfig struct {
@@ -384,9 +387,22 @@ func validate() error {
 		return errors.New("invalid config: token signing alg not set")
 	}
 	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(&conf.Features.EnabledOIDCFlows)
-	// if model.OIDCFlowIsInSlice(model.OIDCFlowDevice, conf.Features.EnabledOIDCFlows) && !conf.Features.Polling.Enabled {
-	// 	return errors.New("oidc flow device flow requires polling_codes to be enabled")
-	// }
+	if conf.Features.SSH.Enabled {
+		if len(conf.Features.SSH.KeyFiles) == 0 {
+			return errors.New("invalid config: ssh feature enabled, but no ssh private key set")
+		}
+		for _, pkf := range conf.Features.SSH.KeyFiles {
+			pemBytes, err := ioutil.ReadFile(pkf)
+			if err != nil {
+				return errors.Wrap(err, "reading ssh private key")
+			}
+			signer, err := ssh.ParsePrivateKey(pemBytes)
+			if err != nil {
+				return errors.Wrap(err, "parsing ssh private key")
+			}
+			conf.Features.SSH.PrivateKeys = append(conf.Features.SSH.PrivateKeys, signer)
+		}
+	}
 	if !conf.Features.TokenInfo.Introspect.Enabled && conf.Features.WebInterface.Enabled {
 		return errors.New("web interface requires tokeninfo.introspect to be enabled")
 	}
