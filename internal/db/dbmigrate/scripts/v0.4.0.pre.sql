@@ -4,52 +4,51 @@
 DROP VIEW IF EXISTS MyTokens;
 
 ALTER TABLE MTokens
-    DROP FOREIGN KEY Mytokens_FK_1;
+    DROP FOREIGN KEY IF EXISTS Mytokens_FK_1;
 ALTER TABLE MTokens
-    DROP COLUMN root_id;
+    DROP COLUMN IF EXISTS root_id;
 ALTER TABLE MTokens
-    ADD expires_at DATETIME NULL;
+    ADD IF NOT EXISTS expires_at DATETIME NULL;
 
 ALTER TABLE Users
-    DROP COLUMN token_tracing;
+    DROP COLUMN IF EXISTS token_tracing;
 ALTER TABLE Users
-    DROP COLUMN jwt_pk;
+    DROP COLUMN IF EXISTS jwt_pk;
 
 ALTER TABLE TransferCodesAttributes
-    ADD ssh_key_fp VARCHAR(128) NULL;
+    ADD IF NOT EXISTS ssh_key_fp VARCHAR(128) NULL;
 
 TRUNCATE TABLE AuthInfo;
 ALTER TABLE AuthInfo
-    ADD request_json JSON NOT NULL;
+    ADD IF NOT EXISTS request_json JSON NOT NULL;
 ALTER TABLE AuthInfo
-    DROP COLUMN iss;
+    DROP COLUMN IF EXISTS iss;
 ALTER TABLE AuthInfo
-    DROP COLUMN restrictions;
+    DROP COLUMN IF EXISTS restrictions;
 ALTER TABLE AuthInfo
-    DROP COLUMN capabilities;
+    DROP COLUMN IF EXISTS capabilities;
 ALTER TABLE AuthInfo
-    DROP COLUMN name;
+    DROP COLUMN IF EXISTS name;
 ALTER TABLE AuthInfo
-    DROP COLUMN subtoken_capabilities;
+    DROP COLUMN IF EXISTS subtoken_capabilities;
 ALTER TABLE AuthInfo
-    DROP COLUMN rotation;
+    DROP COLUMN IF EXISTS rotation;
 ALTER TABLE AuthInfo
-    DROP COLUMN response_type;
+    DROP COLUMN IF EXISTS response_type;
 ALTER TABLE AuthInfo
-    DROP COLUMN max_token_len;
+    DROP COLUMN IF EXISTS max_token_len;
 
 # CryptStore
-CREATE TABLE `CryptPayloadTypes`
+CREATE TABLE IF NOT EXISTS `CryptPayloadTypes`
 (
     `id`           INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
     `payload_type` VARCHAR(128)     NOT NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `CryptPayloadTypes_UN` (`payload_type`)
 ) ENGINE = InnoDB
-  AUTO_INCREMENT = 4
   DEFAULT CHARSET = utf8mb4;
 
-RENAME TABLE RefreshTokens TO CryptStore;
+RENAME TABLE IF EXISTS RefreshTokens TO CryptStore;
 ALTER TABLE CryptStore
     CHANGE rt crypt TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;
 ALTER TABLE CryptStore
@@ -150,7 +149,7 @@ SELECT `CryptStore`.`id`      AS `id`,
             WHERE `CryptPayloadTypes`.`payload_type` = 'MT');
 
 -- SSHPublicKeys definition
-CREATE TABLE SSHPublicKeys
+CREATE TABLE IF NOT EXISTS SSHPublicKeys
 (
     user          BIGINT UNSIGNED                      NOT NULL,
     ssh_key_fp    VARCHAR(128)                         NOT NULL,
@@ -166,16 +165,17 @@ CREATE TABLE SSHPublicKeys
         UNIQUE (key_id),
     CONSTRAINT ssh_pub_keys_UN_1
         UNIQUE (ssh_user_hash),
-    CONSTRAINT SSHPublicKeys_FK
+    CONSTRAINT ssh_pub_keys_FK
         FOREIGN KEY (MT_id) REFERENCES MTokens (id)
             ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT ssh_pub_keys_FK
+    CONSTRAINT ssh_pub_keys_FK_1
         FOREIGN KEY (user) REFERENCES Users (id)
             ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT ssh_pub_keys_FK_1
+    CONSTRAINT ssh_pub_keys_FK_2
         FOREIGN KEY (MT_crypt) REFERENCES CryptStore (id)
             ON UPDATE CASCADE ON DELETE CASCADE
-);
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
 
 # Procedures
 DELIMITER ;;
@@ -192,10 +192,10 @@ BEGIN
     SELECT LAST_INSERT_ID();
 END;;
 
-CREATE FUNCTION AddToCryptStore(CRYPT_ TEXT, PAYLOAD_T INT UNSIGNED) RETURNS BIGINT UNSIGNED
+CREATE OR REPLACE PROCEDURE AddToCryptStore(CRYPT_ TEXT, PAYLOAD_T INT UNSIGNED, OUT ID BIGINT UNSIGNED)
 BEGIN
     INSERT INTO CryptStore (crypt, payload_type) VALUES (CRYPT_, PAYLOAD_T);
-    RETURN LAST_INSERT_ID();
+    SET ID = LAST_INSERT_ID();
 END;;
 
 CREATE OR REPLACE PROCEDURE AuthInfo_Delete(IN STATE TEXT)
@@ -271,14 +271,14 @@ END;;
 
 CREATE OR REPLACE PROCEDURE CryptStoreAT_Insert(IN EncryptedAT TEXT, OUT ID BIGINT UNSIGNED)
 BEGIN
-    SET ID = (SELECT AddToCryptStore(EncryptedAT,
-                                     (SELECT cpt.id FROM CryptPayloadTypes cpt WHERE cpt.payload_type = 'AT')));
+    CALL AddToCryptStore(EncryptedAT,
+                         (SELECT cpt.id FROM CryptPayloadTypes cpt WHERE cpt.payload_type = 'AT'), ID);
 END;;
 
 CREATE OR REPLACE PROCEDURE CryptStoreMT_Insert(IN EncryptedMT TEXT, OUT ID BIGINT UNSIGNED)
 BEGIN
-    SET ID = (SELECT AddToCryptStore(EncryptedMT,
-                                     (SELECT cpt.id FROM CryptPayloadTypes cpt WHERE cpt.payload_type = 'MT')));
+    CALL AddToCryptStore(EncryptedMT,
+                         (SELECT cpt.id FROM CryptPayloadTypes cpt WHERE cpt.payload_type = 'MT'), ID);
 END;;
 
 CREATE OR REPLACE PROCEDURE CryptStoreRT_Get(IN MTID VARCHAR(128))
@@ -288,8 +288,8 @@ END;;
 
 CREATE OR REPLACE PROCEDURE CryptStoreRT_Insert(IN EncryptedRT TEXT, OUT ID BIGINT UNSIGNED)
 BEGIN
-    SET ID = (SELECT AddToCryptStore(EncryptedRT,
-                                     (SELECT cpt.id FROM CryptPayloadTypes cpt WHERE cpt.payload_type = 'RT')));
+    CALL AddToCryptStore(EncryptedRT,
+                         (SELECT cpt.id FROM CryptPayloadTypes cpt WHERE cpt.payload_type = 'RT'), ID);
 END;;
 
 CREATE OR REPLACE PROCEDURE CryptStore_Delete(IN CRYPTID BIGINT UNSIGNED)
@@ -709,9 +709,9 @@ INSERT IGNORE INTO CryptPayloadTypes (payload_type)
     VALUES ('MT');
 
 INSERT IGNORE INTO Events (event)
-    VALUES ('settings_grant_enable');
+    VALUES ('settings_grant_enabled');
 INSERT IGNORE INTO Events (event)
-    VALUES ('settings_grant_disable');
+    VALUES ('settings_grant_disabled');
 INSERT IGNORE INTO Events (event)
     VALUES ('settings_grants_listed');
 INSERT IGNORE INTO Events (event)
