@@ -134,7 +134,8 @@ type featuresConf struct {
 }
 
 type sshConf struct {
-	Enabled bool `yaml:"enabled"`
+	Enabled          bool `yaml:"enabled"`
+	UseProxyProtocol bool `yaml:"use_proxy_protocol"`
 }
 
 type tokeninfoConfig struct {

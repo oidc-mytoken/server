@@ -25,7 +25,8 @@ server:
     cert:
     # The TLS certificate key file
     key:
-  # If behind a load balancer or reverse proxy, set this option. Mytoken will read the client's ip address from this header.
+  # If behind a load balancer or reverse proxy, set this option.
+  # Mytoken will read the client's ip address from this header.
   # proxy_header: "X-FORWARDED-FOR"
   # Configure the request limits (these are per IP)
   request_limits:
@@ -145,7 +146,8 @@ features:
     enabled: true
     len: 64 # Default 64, min 32
 
-  # Support for transfer codes for mytokens; transfer codes have the same len as polling codes and expire after the same time
+  # Support for transfer codes for mytokens; transfer codes have the same len as polling codes and expire after the same
+  # time
   transfer_codes:
     enabled: true
 
@@ -167,6 +169,9 @@ features:
 
   ssh:
     enabled: true
+    # If true the haproxy proxy protocl (https://www.haproxy.org/download/2.3/doc/proxy-protocol.txt) is used to
+    # receive client information, i.e. the client's ip from the proxy; the proxy must support this
+    use_proxy_protocol: false
 
 # The list of supported providers
 providers:
@@ -177,7 +182,7 @@ providers:
     scopes:
       - openid
       - profile
-    # Maximum lifetime for mytokens for this issuer, given in seconds. On default the lifetime of mytokens is not restricted.
-    # Setting this value to 0, means that there is no maximum lifetime.
+    # Maximum lifetime for mytokens for this issuer, given in seconds. On default the lifetime of mytokens is not
+    # restricted. Setting this value to 0, means that there is no maximum lifetime.
     mytokens_max_lifetime: 0
 

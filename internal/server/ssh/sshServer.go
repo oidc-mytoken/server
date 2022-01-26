@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/gliderlabs/ssh"
+	"github.com/pires/go-proxyproto"
 	log "github.com/sirupsen/logrus"
 	gossh "golang.org/x/crypto/ssh"
 
+	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/sshrepo"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
@@ -81,5 +83,15 @@ func Serve() {
 	if err := server.SetOption(ssh.NoPty()); err != nil {
 		log.WithError(err).Fatal()
 	}
-	log.WithError(server.ListenAndServe()).Fatal()
+	ln, err := net.Listen("tcp", server.Addr)
+	if err != nil {
+		log.WithError(err).Fatal()
+	}
+	if config.Get().Features.SSH.UseProxyProtocol {
+		ln = &proxyproto.Listener{
+			Listener:          ln,
+			ReadHeaderTimeout: 1 * time.Second,
+		}
+	}
+	log.WithError(server.Serve(ln)).Fatal()
 }
