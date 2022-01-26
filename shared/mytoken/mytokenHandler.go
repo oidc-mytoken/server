@@ -218,7 +218,7 @@ func createMytokenEntry(
 	networkData api.ClientMetaData,
 ) (*mytokenrepo.MytokenEntry, *model.Response) {
 	rtID, dbErr := refreshtokenrepo.GetRTID(rlog, nil, parent.ID)
-	rtFound, err := dbhelper.ParseError(dbErr)
+	rtFound, err := db.ParseError(dbErr)
 	if err != nil {
 		rlog.WithError(dbErr).Error()
 		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
@@ -289,7 +289,7 @@ func RevokeMytoken(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			rtID, err := refreshtokenrepo.GetRTID(rlog, tx, id)
 			if err != nil {
-				_, err = dbhelper.ParseError(err) // sets err to nil if token was not found;
+				_, err = db.ParseError(err) // sets err to nil if token was not found;
 				// this is no error and we are done, since the token is already revoked
 				return err
 			}

@@ -130,3 +130,14 @@ func Transact(rlog log.Ext1FieldLogger, fn func(*sqlx.Tx) error) error {
 func RunWithinTransaction(rlog log.Ext1FieldLogger, tx *sqlx.Tx, fn func(*sqlx.Tx) error) error {
 	return db.RunWithinTransaction(rlog, tx, fn)
 }
+
+// ParseError parses the passed error for a sql.ErrNoRows
+func ParseError(err error) (bool, error) {
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		err = nil
+	}
+	return false, err
+}

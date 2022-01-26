@@ -14,18 +14,6 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
 
-// ParseError parses the passed error for a sql.ErrNoRows
-func ParseError(err error) (bool, error) {
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
-		} else {
-			return false, err
-		}
-	}
-	return true, nil
-}
-
 // recursiveRevokeMT revokes the passed mytoken as well as all children
 func recursiveRevokeMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID) error {
 	return db.RunWithinTransaction(

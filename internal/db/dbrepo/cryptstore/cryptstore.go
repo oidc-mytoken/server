@@ -7,7 +7,6 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
-	helper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
 )
@@ -43,7 +42,7 @@ func UpdateRefreshToken(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID
 // GetRefreshToken returns the refresh token for a mytoken id
 func GetRefreshToken(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID, jwt string) (string, bool, error) {
 	var rt encryptionkeyrepo.RTCryptKeyDBRes
-	found, err := helper.ParseError(
+	found, err := db.ParseError(
 		db.RunWithinTransaction(
 			rlog, tx, func(tx *sqlx.Tx) error {
 				return errors.WithStack(tx.Get(&rt, `CALL EncryptionKeys_GetRTKeyForMT(?)`, myid))
