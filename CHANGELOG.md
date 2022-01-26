@@ -22,6 +22,11 @@
 
 - Added request ids to response header and logging
 
+### Security Fixes
+
+- Fixed a bug, where mytokens could be created from any mytoken not only from mytokens with the `create_mytoken`
+  capability.
+
 ### Bugfixes
 
 - Fixed a bug where restrictions did not behave correctly when multiple subnets were used

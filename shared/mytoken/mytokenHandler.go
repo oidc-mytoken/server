@@ -139,7 +139,9 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	if errRes != nil {
 		return errRes
 	}
-	usedRestriction, errRes := auth.RequireUsableRestriction(rlog, nil, mt, ctx.IP(), nil, nil, api.CapabilityCreateMT)
+	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
+		rlog, nil, mt, ctx.IP(), nil, nil, api.CapabilityCreateMT,
+	)
 	if errRes != nil {
 		return errRes
 	}
