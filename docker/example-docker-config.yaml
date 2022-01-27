@@ -138,17 +138,20 @@ features:
   token_rotation:
     enabled: true
 
-  # Support for the access_token grant, i.e. a user can use an AT to obtain an ST.
-  access_token_grant:
-    enabled: true
-
-  # Support for the private_key_jwt grant, i.e. a user can use an signed jwt to obtain an ST.
-  signed_jwt_grant:
-    enabled: true
-
   # Provides a web interface for in browser usage
   web_interface:
     enabled: true
+
+  ssh:
+    enabled: true
+    # If true the haproxy proxy protocl (https://www.haproxy.org/download/2.3/doc/proxy-protocol.txt) is used to
+    # receive client information, i.e. the client's ip from the proxy; the proxy must support this
+    use_proxy_protocol: true
+    # The ssh private key files of the server
+    keys:
+      - /run/secrets/ssh_host_ecdsa_key
+      - /run/secrets/ssh_host_ed25519_key
+      - /run/secrets/ssh_host_rsa_key
 
 # The list of supported providers
 providers:
