@@ -22,40 +22,53 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 )
 
-func doTokenInfoTree(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData, usedRestriction *restrictions.Restriction) (tokenTree tree.MytokenEntryTree, tokenUpdate *response.MytokenResponse, err error) {
-	err = db.Transact(func(tx *sqlx.Tx) error {
-		tokenTree, err = tree.TokenSubTree(tx, mt.ID)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return err
-		}
-		if usedRestriction == nil {
-			return nil
-		}
-		if err = usedRestriction.UsedOther(tx, mt.ID); err != nil {
-			return err
-		}
-		tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(
-			tx, req.Mytoken.JWT, mt, *clientMetadata, req.Mytoken.OriginalTokenType)
-		if err != nil {
-			return err
-		}
-		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.MTEventTokenInfoTree, ""),
-			MTID:  mt.ID,
-		}, *clientMetadata)
-	})
+func doTokenInfoTree(
+	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+	usedRestriction *restrictions.Restriction,
+) (tokenTree tree.MytokenEntryTree, tokenUpdate *response.MytokenResponse, err error) {
+	err = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			tokenTree, err = tree.TokenSubTree(rlog, tx, mt.ID)
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
+				return err
+			}
+			if usedRestriction == nil {
+				return nil
+			}
+			if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
+				return err
+			}
+			tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(
+				rlog, tx, req.Mytoken.JWT, mt, *clientMetadata, req.Mytoken.OriginalTokenType,
+			)
+			if err != nil {
+				return err
+			}
+			return eventService.LogEvent(
+				rlog, tx, eventService.MTEvent{
+					Event: event.FromNumber(event.TokenInfoTree, ""),
+					MTID:  mt.ID,
+				}, *clientMetadata,
+			)
+		},
+	)
 	return
 }
 
-func handleTokenInfoTree(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
+// HandleTokenInfoTree handles a tokeninfo list subtokens request
+func HandleTokenInfoTree(
+	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+) model.Response {
 	// If we call this function it means the token is valid.
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(nil, mt, clientMetadata.IP, nil, nil, api.CapabilityTokeninfoTree)
+	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
+		rlog, nil, mt, clientMetadata.IP, nil, nil, api.CapabilityTokeninfoSubtokens,
+	)
 	if errRes != nil {
 		return *errRes
 	}
-	tokenTree, tokenUpdate, err := doTokenInfoTree(req, mt, clientMetadata, usedRestriction)
+	tokenTree, tokenUpdate, err := doTokenInfoTree(rlog, req, mt, clientMetadata, usedRestriction)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return *model.ErrorToInternalServerErrorResponse(err)
 	}
 	rsp := pkg.NewTokeninfoTreeResponse(tokenTree, tokenUpdate)

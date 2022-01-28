@@ -1,5 +1,4 @@
 
-const subtokenCapabilityChecks = $('.subtoken-capability-check');
 const mtResult = $('#mt-result');
 const mtResultColor = $('#mt-result-color');
 const mtConfig = $('#mt-config');
@@ -10,7 +9,6 @@ const mtErrorHeading = $('#mt-result-heading-error');
 const mtResultMsg = $('#mt-result-msg');
 const mtCopyButton = $('#mt-result-copy');
 const authURL = $('#authorization-url');
-const capabilityCreateMytoken = $('#cp-create_mytoken');
 const maxTokenLenDiv = $('#max_token_len_div');
 const tokenTypeBadge = $('#token-badge');
 
@@ -18,19 +16,9 @@ const tokenTypeBadge = $('#token-badge');
 $(function () {
     $('#cp-AT').prop('checked', true)
     $('#cp-tokeninfo_introspect').prop('checked', true)
-    if (!capabilityCreateMytoken.prop("checked")) {
-        $('#subtokenCapabilities').hideB();
-    }
 })
 
-capabilityCreateMytoken.on("click", function() {
-    let enabled = $(this).prop("checked");
-    subtokenCapabilityChecks.prop("disabled", !enabled);
-    if (!enabled) {
-        subtokenCapabilityChecks.prop("checked", false);
-    }
-    $('#subtokenCapabilities').toggleClass('d-none');
-});
+
 
 
 $('#next-mt').on('click', function(){
@@ -47,7 +35,7 @@ $('#select-token-type').on('change', function (){
     }
 })
 
-$('#get-mt').on('click', function(){
+function sendCreateMTReq() {
     let data = {
         "name": $('#tokenName').val(),
         "oidc_issuer": storageGet("oidc_issuer"),
@@ -55,12 +43,8 @@ $('#get-mt').on('click', function(){
         "oidc_flow": "authorization_code",
         "redirect_type": "native",
         "restrictions": restrictions,
-        "capabilities": $('.capability-check:checked').map(function(_, el) {
-            return $(el).val();
-        }).get(),
-        "subtoken_capabilities": $('.subtoken-capability-check:checked').map(function(_, el) {
-            return $(el).val();
-        }).get()
+        "capabilities": getCheckedCapabilities(),
+        "subtoken_capabilities": getCheckedSubtokenCapabilities()
     };
     let token_type = $('#select-token-type').val();
     if (token_type==="auto") {
@@ -70,7 +54,7 @@ $('#get-mt').on('click', function(){
     }
     let rot = getRotationFromForm();
     if (rot) {
-       data["rotation"] = rot;
+        data["rotation"] = rot;
     }
     data = JSON.stringify(data);
     $.ajax({
@@ -85,16 +69,37 @@ $('#get-mt').on('click', function(){
             authURL.text(url);
             polling(code, interval)
         },
-        error: function(errRes){
+        error: function (errRes) {
             let errMsg = getErrorMessage(errRes);
             mtShowError(errMsg);
         },
         dataType: "json",
-        contentType : "application/json"
+        contentType: "application/json"
     });
     mtShowPending();
     mtResult.showB();
     mtConfig.hideB();
+}
+
+function checkRestrEmpty() {
+    if (restrictions.length === 0) {
+        return true;
+    }
+    let found = false;
+    restrictions.forEach(function (r) {
+        if (Object.keys(r).length > 0) {
+            found = true;
+        }
+    })
+    return !found;
+}
+
+$('#get-mt').on('click', function () {
+    if (checkRestrEmpty() && !confirm("You do not have any restrictions defined for this mytoken. Do you really want" +
+        " to create an unrestricted mytoken?")) {
+        return;
+    }
+    sendCreateMTReq();
 })
 
 function mtShowPending() {

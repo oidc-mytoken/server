@@ -1,11 +1,11 @@
 package restrictions
 
 import (
-	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/oidc-mytoken/api/v0"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
@@ -26,763 +26,1336 @@ func checkRestrictions(t *testing.T, exp, a Restrictions, okExp, ok bool) {
 		}
 	}
 }
-func TestTighten_RestrictEmpty(t *testing.T) {
-	base := Restrictions{}
-	wanted := Restrictions{
-		{
-			Restriction: api.Restriction{
-				Scope: "a b c",
-			},
-			ExpiresAt: 100,
-		},
-	}
-	expected := wanted
-	res, ok := Tighten(base, wanted)
-	checkRestrictions(t, expected, res, true, ok)
-}
-func TestTighten_RestrictEmpty2(t *testing.T) {
-	base := Restrictions{}
-	wanted := Restrictions{
-		{
-			Restriction: api.Restriction{
-				Scope: "a b c",
-			},
-			ExpiresAt: 100,
-		},
-		{
-			Restriction: api.Restriction{
-				Scope: "d",
-			},
-			ExpiresAt: 100,
-		},
-	}
-	expected := wanted
-	res, ok := Tighten(base, wanted)
-	checkRestrictions(t, expected, res, true, ok)
-}
-func TestTighten_RequestEmpty(t *testing.T) {
-	base := Restrictions{
-		{
-			Restriction: api.Restriction{
-				Scope: "a b c",
-			},
-			ExpiresAt: 500,
-		},
-		{
-			Restriction: api.Restriction{
-				Scope: "a",
-			},
-			ExpiresAt: 1000,
-		},
-		{
-			Restriction: api.Restriction{
-				Scope: "d",
-			},
-			ExpiresAt: 50,
-		},
-	}
-	wanted := Restrictions{}
-	expected := base
-	res, ok := Tighten(base, wanted)
-	checkRestrictions(t, expected, res, true, ok)
-}
-func TestTighten_RestrictToOne(t *testing.T) {
-	base := Restrictions{
-		{
-			Restriction: api.Restriction{
-				Scope: "a b c",
-			},
-			ExpiresAt: 500,
-		},
-		{
-			Restriction: api.Restriction{
-				Scope: "a",
-			},
-			ExpiresAt: 1000,
-		},
-		{
-			Restriction: api.Restriction{
-				Scope: "d",
-			},
-			ExpiresAt: 50,
-		},
-	}
-	wanted := Restrictions{
-		{
-			Restriction: api.Restriction{
-				Scope: "a b c",
-			},
-			ExpiresAt: 100,
-		},
-	}
-	expected := wanted
-	res, ok := Tighten(base, wanted)
-	checkRestrictions(t, expected, res, true, ok)
+
+type tightenTestCase struct {
+	name     string
+	base     Restrictions
+	wanted   Restrictions
+	expected Restrictions
+	okExp    bool
 }
 
-func TestTighten_RestrictToTwo(t *testing.T) {
-	base := Restrictions{
-		{
-			Restriction: api.Restriction{
-				Scope: "a b c",
-			},
-			ExpiresAt: 500,
-		},
-		{
-			Restriction: api.Restriction{
-				Scope: "a",
-			},
-			ExpiresAt: 1000,
-		},
-		{
-			Restriction: api.Restriction{
-				Scope: "d",
-			},
-			ExpiresAt: 50,
-		},
-	}
-	wanted := Restrictions{
-		{
-			Restriction: api.Restriction{
-				Scope: "a b c",
-			},
-			ExpiresAt: 100,
-		},
-		{
-			Restriction: api.Restriction{
-				Scope: "d",
-			},
-			ExpiresAt: 50,
-		},
-	}
-	expected := wanted
-	res, ok := Tighten(base, wanted)
-	checkRestrictions(t, expected, res, true, ok)
-}
-func TestTighten_RestrictToTwo2(t *testing.T) {
-	base := Restrictions{
-		{
-			Restriction: api.Restriction{
-				Scope: "a b c",
-			},
-			ExpiresAt: 500,
-		},
-	}
-	wanted := Restrictions{
-		{
-			Restriction: api.Restriction{
-				Scope: "a c",
-			},
-			ExpiresAt: 100,
-		},
-		{
-			Restriction: api.Restriction{
-				Scope: "b",
-			},
-			ExpiresAt: 50,
-		},
-	}
-	expected := wanted
-	res, ok := Tighten(base, wanted)
-	checkRestrictions(t, expected, res, true, ok)
-}
-func TestTighten_RestrictConflict(t *testing.T) {
-	base := Restrictions{
-		{
-			Restriction: api.Restriction{
-				Scope: "a b c",
-			},
-			ExpiresAt: 500,
-		},
-		{
-			Restriction: api.Restriction{
-				Scope: "a",
-			},
-			ExpiresAt: 1000,
-		},
-		{
-			Restriction: api.Restriction{
-				Scope: "d",
-			},
-			ExpiresAt: 50,
-		},
-	}
-	wanted := Restrictions{
-		{
-			Restriction: api.Restriction{
-				Scope: "a b c d",
-			},
-			ExpiresAt: 100,
-		},
-	}
-	expected := base
-	res, ok := Tighten(base, wanted)
-	checkRestrictions(t, expected, res, false, ok)
-}
-func TestTighten_RestrictDontCombineTwo(t *testing.T) {
-	base := Restrictions{
-		{
-			Restriction: api.Restriction{
-				Scope: "a b c",
-			},
-			ExpiresAt: 500,
-		},
-		{
-			Restriction: api.Restriction{
-				Scope: "d",
-			},
-			ExpiresAt: 50,
-		},
-	}
-	wanted := Restrictions{
-		{
-			Restriction: api.Restriction{
-				Scope: "a b c d", // This is semantically different from base, because it allows a token with all the scopes combined. One might want to not allow this.
-			},
-			ExpiresAt: 50,
-		},
-	}
-	expected := base
-	res, ok := Tighten(base, wanted)
-	checkRestrictions(t, expected, res, false, ok)
-}
-func TestTighten_RestrictDontExtendUsages1(t *testing.T) {
-	base := Restrictions{
-		{
-			Restriction: api.Restriction{
-				UsagesAT: utils.NewInt64(10),
-			},
-		},
-	}
-	wanted := Restrictions{
-		{
-			Restriction: api.Restriction{
-				UsagesAT: utils.NewInt64(11),
-			},
-		},
-	}
-	expected := base
-	res, ok := Tighten(base, wanted)
-	checkRestrictions(t, expected, res, false, ok)
-}
-func TestTighten_RestrictDontExtendUsages2(t *testing.T) {
-	base := Restrictions{
-		{
-			Restriction: api.Restriction{
-				UsagesAT: utils.NewInt64(10),
-			},
-		},
-	}
-	wanted := Restrictions{
-		{
-			Restriction: api.Restriction{
-				UsagesAT: utils.NewInt64(4),
-			},
-		},
-		{
-			Restriction: api.Restriction{
-				UsagesAT: utils.NewInt64(4),
-			},
-		},
-		{
-			Restriction: api.Restriction{
-				UsagesAT: utils.NewInt64(4),
-			},
-		},
-	}
-	expected := Restrictions{
-		{
-			Restriction: api.Restriction{
-				UsagesAT: utils.NewInt64(4),
-			},
-		},
-		{
-			Restriction: api.Restriction{
-				UsagesAT: utils.NewInt64(4),
-			},
-		},
-	}
-	res, ok := Tighten(base, wanted)
-	checkRestrictions(t, expected, res, false, ok)
-}
-func TestTighten_RestrictSplitUsages(t *testing.T) {
-	base := Restrictions{
-		{
-			Restriction: api.Restriction{
-				UsagesAT: utils.NewInt64(10),
-			},
-		},
-	}
-	wanted := Restrictions{
-		{
-			Restriction: api.Restriction{
-				UsagesAT: utils.NewInt64(5),
-			},
-		},
-		{
-			Restriction: api.Restriction{
-				UsagesAT: utils.NewInt64(3),
-			},
-		},
-		{
-			Restriction: api.Restriction{
-				UsagesAT: utils.NewInt64(2),
-			},
-		},
-	}
-	expected := wanted
-	res, ok := Tighten(base, wanted)
-	checkRestrictions(t, expected, res, true, ok)
-}
+func TestTighten(t *testing.T) {
 
-func testIsTighter(t *testing.T, a, b Restriction, expected bool) {
-	tighter := a.isTighterThan(b)
-	if tighter != expected {
-		if expected {
-			t.Errorf("Actually '%+v' is tighter than '%+v'", a, b)
-		} else {
-			t.Errorf("Actually '%+v' is not tighter than '%+v'", a, b)
-		}
+	tests := []tightenTestCase{
+		tightenCase1(),
+		tightenCase2(),
+		tightenCase3(),
+		tightenCase4(),
+		tightenCase5(),
+		tightenCase6(),
+		tightenCase7(),
+		tightenCase8(),
+		tightenCase9(),
+		tightenCase10(),
+		tightenCase11(),
 	}
-}
-func TestIsTighterThanBothEmpty(t *testing.T) {
-	a := Restriction{}
-	b := Restriction{}
-	testIsTighter(t, a, b, true)
-}
-func TestIsTighterThanOneEmpty(t *testing.T) {
-	a := Restriction{}
-	b := Restriction{Restriction: api.Restriction{Scope: "some"}}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanNotBefore(t *testing.T) {
-	a := Restriction{NotBefore: 50}
-	b := Restriction{NotBefore: 100}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanNotBeforeOneEmpty(t *testing.T) {
-	a := Restriction{}
-	b := Restriction{NotBefore: 100}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanExpiresAt(t *testing.T) {
-	a := Restriction{ExpiresAt: 200}
-	b := Restriction{ExpiresAt: 100}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanExpiresAtOneEmpty(t *testing.T) {
-	a := Restriction{}
-	b := Restriction{ExpiresAt: 100}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanScope(t *testing.T) {
-	a := Restriction{Restriction: api.Restriction{Scope: "some scope"}}
-	b := Restriction{Restriction: api.Restriction{Scope: "some"}}
-	c := Restriction{Restriction: api.Restriction{Scope: "some other"}}
-	d := Restriction{Restriction: api.Restriction{Scope: "completely different"}}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-	testIsTighter(t, a, c, false)
-	testIsTighter(t, b, c, true)
-	testIsTighter(t, c, a, false)
-	testIsTighter(t, c, b, false)
-	testIsTighter(t, a, d, false)
-	testIsTighter(t, d, a, false)
-}
-func TestIsTighterThanScopeOneEmpty(t *testing.T) {
-	a := Restriction{}
-	b := Restriction{Restriction: api.Restriction{Scope: "some scopes"}}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanIP(t *testing.T) {
-	a := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}}
-	b := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12", "192.168.0.14"}}}
-	c := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}}
-	d := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.1.2", "192.168.0.12"}}}
-	e := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24", "192.168.1.2"}}}
-	testIsTighter(t, a, b, true)
-	testIsTighter(t, b, a, false)
-	testIsTighter(t, a, c, true)
-	testIsTighter(t, b, c, true)
-	testIsTighter(t, c, a, false)
-	testIsTighter(t, c, b, false)
-	testIsTighter(t, a, d, true)
-	testIsTighter(t, d, a, false)
-	testIsTighter(t, a, e, true)
-	testIsTighter(t, e, a, false)
-	testIsTighter(t, d, e, true)
-	testIsTighter(t, e, d, false)
-}
-func TestIsTighterThanIPOneEmpty(t *testing.T) {
-	a := Restriction{}
-	b := Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12", "192.168.0.14"}}}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanGeoIPAllow(t *testing.T) {
-	a := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"de", "us"}}}
-	b := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"de"}}}
-	c := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"fr", "de"}}}
-	d := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"jp", "cn"}}}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-	testIsTighter(t, a, c, false)
-	testIsTighter(t, b, c, true)
-	testIsTighter(t, c, a, false)
-	testIsTighter(t, c, b, false)
-	testIsTighter(t, a, d, false)
-	testIsTighter(t, d, a, false)
-}
-func TestIsTighterThanGeoIPAllowOneEmpty(t *testing.T) {
-	a := Restriction{}
-	b := Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"de", "us"}}}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanGeoIPDisallow(t *testing.T) {
-	a := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"de", "us"}}}
-	b := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"de"}}}
-	c := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"fr", "de"}}}
-	d := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"jp", "cn"}}}
-	testIsTighter(t, a, b, true)
-	testIsTighter(t, b, a, false)
-	testIsTighter(t, a, c, false)
-	testIsTighter(t, b, c, false)
-	testIsTighter(t, c, a, false)
-	testIsTighter(t, c, b, true)
-	testIsTighter(t, a, d, false)
-	testIsTighter(t, d, a, false)
-}
-func TestIsTighterThanGeoIPDisallowOneEmpty(t *testing.T) {
-	a := Restriction{}
-	b := Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"de", "us"}}}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanUsagesAT(t *testing.T) {
-	a := Restriction{Restriction: api.Restriction{UsagesAT: utils.NewInt64(20)}}
-	b := Restriction{Restriction: api.Restriction{UsagesAT: utils.NewInt64(10)}}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanUsagesATOneEmpty(t *testing.T) {
-	a := Restriction{}
-	b := Restriction{Restriction: api.Restriction{UsagesAT: utils.NewInt64(10)}}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanUsagesOther(t *testing.T) {
-	a := Restriction{Restriction: api.Restriction{UsagesOther: utils.NewInt64(20)}}
-	b := Restriction{Restriction: api.Restriction{UsagesOther: utils.NewInt64(10)}}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanUsagesOtherOneEmpty(t *testing.T) {
-	a := Restriction{}
-	b := Restriction{Restriction: api.Restriction{UsagesOther: utils.NewInt64(20)}}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanMultiple1(t *testing.T) {
-	a := Restriction{}
-	b := Restriction{
-		Restriction: api.Restriction{
-			Scope:       "a",
-			UsagesAT:    utils.NewInt64(50),
-			UsagesOther: utils.NewInt64(100),
-		},
-	}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanMultiple2(t *testing.T) {
-	a := Restriction{
-		Restriction: api.Restriction{
-			Scope:       "a",
-			UsagesAT:    utils.NewInt64(20),
-			UsagesOther: utils.NewInt64(20),
-		},
-	}
-	b := Restriction{
-		Restriction: api.Restriction{
-			Scope:       "a b",
-			UsagesAT:    utils.NewInt64(50),
-			UsagesOther: utils.NewInt64(100),
-		},
-	}
-	testIsTighter(t, a, b, true)
-	testIsTighter(t, b, a, false)
-}
-func TestIsTighterThanMultiple3(t *testing.T) {
-	a := Restriction{
-		Restriction: api.Restriction{
-			UsagesAT:    utils.NewInt64(100),
-			UsagesOther: utils.NewInt64(50),
-		},
-	}
-	b := Restriction{
-		Restriction: api.Restriction{
-			UsagesAT:    utils.NewInt64(50),
-			UsagesOther: utils.NewInt64(100),
-		},
-	}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, false)
-}
-func TestIsTighterThanMultiple4(t *testing.T) {
-	a := Restriction{
-		Restriction: api.Restriction{
-			Scope:       "a b c",
-			UsagesAT:    utils.NewInt64(20),
-			UsagesOther: utils.NewInt64(20),
-		},
-	}
-	b := Restriction{
-		Restriction: api.Restriction{
-			Scope:       "a c b d",
-			UsagesAT:    utils.NewInt64(50),
-			UsagesOther: utils.NewInt64(100),
-		},
-	}
-	testIsTighter(t, a, b, true)
-	testIsTighter(t, b, a, false)
-}
-func TestIsTighterThanMultipleE(t *testing.T) {
-	a := Restriction{
-		Restriction: api.Restriction{
-			Scope:       "a b c",
-			UsagesAT:    utils.NewInt64(20),
-			UsagesOther: utils.NewInt64(20),
-		},
-	}
-	b := a
-	testIsTighter(t, a, b, true)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanAll1(t *testing.T) {
-	a := Restriction{
-		NotBefore: 500,
-		ExpiresAt: 1000,
-		Restriction: api.Restriction{
-			Scope:         "a b c",
-			Audiences:     []string{"a", "b", "c"},
-			IPs:           []string{"a", "b", "c"},
-			GeoIPAllow:    []string{"a", "b", "c"},
-			GeoIPDisallow: []string{"a", "b", "c"},
-			UsagesAT:      utils.NewInt64(20),
-			UsagesOther:   utils.NewInt64(20),
-		},
-	}
-	b := a
-	testIsTighter(t, a, b, true)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanAll2(t *testing.T) {
-	a := Restriction{
-		NotBefore: 500,
-		ExpiresAt: 1000,
-		Restriction: api.Restriction{
-			Scope:         "a b c",
-			Audiences:     []string{"a", "b", "c"},
-			IPs:           []string{"a", "b", "c"},
-			GeoIPAllow:    []string{"a", "b", "c"},
-			GeoIPDisallow: []string{"a", "b", "c"},
-			UsagesAT:      utils.NewInt64(20),
-			UsagesOther:   utils.NewInt64(20),
-		},
-	}
-	b := Restriction{
-		NotBefore: 700,
-		ExpiresAt: 1000,
-		Restriction: api.Restriction{
-			Scope:         "a b c",
-			Audiences:     []string{"a", "b", "c"},
-			IPs:           []string{"a", "b", "c"},
-			GeoIPAllow:    []string{"a", "b", "c"},
-			GeoIPDisallow: []string{"a", "b", "c"},
-			UsagesAT:      utils.NewInt64(20),
-			UsagesOther:   utils.NewInt64(20),
-		},
-	}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, true)
-}
-func TestIsTighterThanAll3(t *testing.T) {
-	a := Restriction{
-		NotBefore: 500,
-		ExpiresAt: 1000,
-		Restriction: api.Restriction{
-			Scope:         "a c",
-			Audiences:     []string{"a", "b", "c"},
-			IPs:           []string{"a", "b", "c"},
-			GeoIPAllow:    []string{"a", "b", "c"},
-			GeoIPDisallow: []string{"a", "b", "c"},
-			UsagesAT:      utils.NewInt64(20),
-			UsagesOther:   utils.NewInt64(20),
-		},
-	}
-	b := Restriction{
-		NotBefore: 700,
-		ExpiresAt: 1000,
-		Restriction: api.Restriction{
-			Scope:         "a b c",
-			Audiences:     []string{"a", "b", "c"},
-			IPs:           []string{"a", "b", "c"},
-			GeoIPAllow:    []string{"a", "b", "c"},
-			GeoIPDisallow: []string{"a", "b", "c"},
-			UsagesAT:      utils.NewInt64(20),
-			UsagesOther:   utils.NewInt64(20),
-		},
-	}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, false)
-}
-func TestIsTighterThanAll4(t *testing.T) {
-	a := Restriction{
-		NotBefore: 500,
-		ExpiresAt: 1000,
-		Restriction: api.Restriction{
-			Scope:         "a b c",
-			Audiences:     []string{"a", "b", "c"},
-			IPs:           []string{"a", "b", "c"},
-			GeoIPAllow:    []string{"a", "b", "c"},
-			GeoIPDisallow: []string{"a", "b", "c"},
-			UsagesAT:      utils.NewInt64(20),
-			UsagesOther:   utils.NewInt64(20),
-		},
-	}
-	b := Restriction{
-		NotBefore: 700,
-		ExpiresAt: 900,
-		Restriction: api.Restriction{
-			Scope:         "b c",
-			Audiences:     []string{"a", "c"},
-			IPs:           []string{"b", "c"},
-			GeoIPAllow:    []string{"a"},
-			GeoIPDisallow: []string{"a", "b"},
-			UsagesAT:      utils.NewInt64(10),
-			UsagesOther:   utils.NewInt64(0),
-		},
-	}
-	testIsTighter(t, a, b, false)
-	testIsTighter(t, b, a, false)
-}
 
-func TestRestrictions_GetExpiresEmpty(t *testing.T) {
-	r := Restrictions{}
-	expires := r.GetExpires()
-	var expected unixtime.UnixTime = 0
-	if expected != expires {
-		t.Errorf("Expected %d, but got %d", expected, expires)
-	}
-}
-func TestRestrictions_GetExpiresInfinite(t *testing.T) {
-	r := Restrictions{
-		{ExpiresAt: 0},
-	}
-	expires := r.GetExpires()
-	var expected unixtime.UnixTime = 0
-	if expected != expires {
-		t.Errorf("Expected %d, but got %d", expected, expires)
-	}
-}
-func TestRestrictions_GetExpiresOne(t *testing.T) {
-	r := Restrictions{
-		{ExpiresAt: 100},
-	}
-	expires := r.GetExpires()
-	var expected unixtime.UnixTime = 100
-	if expected != expires {
-		t.Errorf("Expected %d, but got %d", expected, expires)
-	}
-}
-func TestRestrictions_GetExpiresMultiple(t *testing.T) {
-	r := Restrictions{
-		{ExpiresAt: 100},
-		{ExpiresAt: 300},
-		{ExpiresAt: 200},
-	}
-	expires := r.GetExpires()
-	var expected unixtime.UnixTime = 300
-	if expected != expires {
-		t.Errorf("Expected %d, but got %d", expected, expires)
-	}
-}
-func TestRestrictions_GetExpiresMultipleAndInfinite(t *testing.T) {
-	r := Restrictions{
-		{ExpiresAt: 100},
-		{ExpiresAt: 0},
-		{ExpiresAt: 300},
-		{ExpiresAt: 200},
-	}
-	expires := r.GetExpires()
-	var expected unixtime.UnixTime = 0
-	if expected != expires {
-		t.Errorf("Expected %d, but got %d", expected, expires)
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				res, ok := Tighten(log.StandardLogger(), test.base, test.wanted)
+				checkRestrictions(t, test.expected, res, test.okExp, ok)
+			},
+		)
 	}
 }
 
-func TestRestrictions_GetNotBeforeEmpty(t *testing.T) {
-	r := Restrictions{}
-	expires := r.GetNotBefore()
-	var expected unixtime.UnixTime = 0
-	if expected != expires {
-		t.Errorf("Expected %d, but got %d", expected, expires)
+func tightenCase1() tightenTestCase {
+	test := tightenTestCase{
+		name: "Empty Base",
+		base: Restrictions{},
+		wanted: Restrictions{
+			{
+				Restriction: api.Restriction{
+					Scope: "a b c",
+				},
+				ExpiresAt: 100,
+			},
+		},
+		okExp: true,
 	}
+	test.expected = test.wanted
+	return test
 }
-func TestRestrictions_GetNotBeforeInfinite(t *testing.T) {
-	r := Restrictions{
-		{NotBefore: 0},
+
+func tightenCase2() tightenTestCase {
+	test := tightenTestCase{
+		name: "Empty Base, Multiple Wanted",
+		base: Restrictions{},
+		wanted: Restrictions{
+			{
+				Restriction: api.Restriction{
+					Scope: "a b c",
+				},
+				ExpiresAt: 100,
+			},
+			{
+				Restriction: api.Restriction{
+					Scope: "d",
+				},
+				ExpiresAt: 100,
+			},
+		},
+		okExp: true,
 	}
-	expires := r.GetNotBefore()
-	var expected unixtime.UnixTime = 0
-	if expected != expires {
-		t.Errorf("Expected %d, but got %d", expected, expires)
-	}
+	test.expected = test.wanted
+	return test
 }
-func TestRestrictions_GetNotBeforeOne(t *testing.T) {
-	r := Restrictions{
-		{NotBefore: 100},
+
+func tightenCase3() tightenTestCase {
+	test := tightenTestCase{
+		name: "Wanted Empty",
+		base: Restrictions{
+			{
+				Restriction: api.Restriction{
+					Scope: "a b c",
+				},
+				ExpiresAt: 500,
+			},
+			{
+				Restriction: api.Restriction{
+					Scope: "a",
+				},
+				ExpiresAt: 1000,
+			},
+			{
+				Restriction: api.Restriction{
+					Scope: "d",
+				},
+				ExpiresAt: 50,
+			},
+		},
+		wanted: Restrictions{},
+		okExp:  true,
 	}
-	expires := r.GetNotBefore()
-	var expected unixtime.UnixTime = 100
-	if expected != expires {
-		t.Errorf("Expected %d, but got %d", expected, expires)
-	}
+	test.expected = test.base
+	return test
 }
-func TestRestrictions_GetNotBeforeMultiple(t *testing.T) {
-	r := Restrictions{
-		{NotBefore: 100},
-		{NotBefore: 300},
-		{NotBefore: 200},
+
+func tightenCase4() tightenTestCase {
+	test := tightenTestCase{
+		name: "Restrict to One",
+		base: Restrictions{
+			{
+				Restriction: api.Restriction{
+					Scope: "a b c",
+				},
+				ExpiresAt: 500,
+			},
+			{
+				Restriction: api.Restriction{
+					Scope: "a",
+				},
+				ExpiresAt: 1000,
+			},
+			{
+				Restriction: api.Restriction{
+					Scope: "d",
+				},
+				ExpiresAt: 50,
+			},
+		},
+		wanted: Restrictions{
+			{
+				Restriction: api.Restriction{
+					Scope: "a b c",
+				},
+				ExpiresAt: 100,
+			},
+		},
+		okExp: true,
 	}
-	expires := r.GetNotBefore()
-	var expected unixtime.UnixTime = 100
-	if expected != expires {
-		t.Errorf("Expected %d, but got %d", expected, expires)
-	}
+	test.expected = test.wanted
+	return test
 }
-func TestRestrictions_GetNotBeforeMultipleAndInfinite(t *testing.T) {
-	r := Restrictions{
-		{NotBefore: 100},
-		{NotBefore: 0},
-		{NotBefore: 300},
-		{NotBefore: 200},
+
+func tightenCase5() tightenTestCase {
+	test := tightenTestCase{
+		name: "Restrict to Two",
+		base: Restrictions{
+			{
+				Restriction: api.Restriction{
+					Scope: "a b c",
+				},
+				ExpiresAt: 500,
+			},
+			{
+				Restriction: api.Restriction{
+					Scope: "a",
+				},
+				ExpiresAt: 1000,
+			},
+			{
+				Restriction: api.Restriction{
+					Scope: "d",
+				},
+				ExpiresAt: 50,
+			},
+		},
+		wanted: Restrictions{
+			{
+				Restriction: api.Restriction{
+					Scope: "a b c",
+				},
+				ExpiresAt: 100,
+			},
+			{
+				Restriction: api.Restriction{
+					Scope: "d",
+				},
+				ExpiresAt: 50,
+			},
+		},
+		okExp: true,
 	}
-	expires := r.GetNotBefore()
-	var expected unixtime.UnixTime = 0
-	if expected != expires {
-		t.Errorf("Expected %d, but got %d", expected, expires)
+	test.expected = test.wanted
+	return test
+}
+func tightenCase6() tightenTestCase {
+	test := tightenTestCase{
+		name: "Restrict to Two 2",
+		base: Restrictions{
+			{
+				Restriction: api.Restriction{
+					Scope: "a b c",
+				},
+				ExpiresAt: 500,
+			},
+		},
+		wanted: Restrictions{
+			{
+				Restriction: api.Restriction{
+					Scope: "a c",
+				},
+				ExpiresAt: 100,
+			},
+			{
+				Restriction: api.Restriction{
+					Scope: "b",
+				},
+				ExpiresAt: 50,
+			},
+		},
+		okExp: true,
+	}
+	test.expected = test.wanted
+	return test
+}
+func tightenCase7() tightenTestCase {
+	test := tightenTestCase{
+		name: "Conflict",
+		base: Restrictions{
+			{
+				Restriction: api.Restriction{
+					Scope: "a b c",
+				},
+				ExpiresAt: 500,
+			},
+			{
+				Restriction: api.Restriction{
+					Scope: "a",
+				},
+				ExpiresAt: 1000,
+			},
+			{
+				Restriction: api.Restriction{
+					Scope: "d",
+				},
+				ExpiresAt: 50,
+			},
+		},
+		wanted: Restrictions{
+			{
+				Restriction: api.Restriction{
+					Scope: "a b c d",
+				},
+				ExpiresAt: 100,
+			},
+		},
+		okExp: false,
+	}
+	test.expected = test.base
+	return test
+}
+
+func tightenCase8() tightenTestCase {
+	test := tightenTestCase{
+		name: "Do not combine two clauses",
+		base: Restrictions{
+			{
+				Restriction: api.Restriction{
+					Scope: "a b c",
+				},
+				ExpiresAt: 500,
+			},
+			{
+				Restriction: api.Restriction{
+					Scope: "d",
+				},
+				ExpiresAt: 50,
+			},
+		},
+		wanted: Restrictions{
+			{
+				Restriction: api.Restriction{
+					Scope: "a b c d", // This is semantically different from base,
+					// because it allows a token with all the scopes combined. One might want to not allow this.
+				},
+				ExpiresAt: 50,
+			},
+		},
+		okExp: false,
+	}
+	test.expected = test.base
+	return test
+}
+
+func tightenCase9() tightenTestCase {
+	test := tightenTestCase{
+		name: "Do not extend usages 1",
+		base: Restrictions{
+			{
+				Restriction: api.Restriction{
+					UsagesAT: utils.NewInt64(10),
+				},
+			},
+		},
+		wanted: Restrictions{
+			{
+				Restriction: api.Restriction{
+					UsagesAT: utils.NewInt64(11),
+				},
+			},
+		},
+		okExp: false,
+	}
+	test.expected = test.base
+	return test
+}
+
+func tightenCase10() tightenTestCase {
+	test := tightenTestCase{
+		name: "Do not extend usages 2",
+		base: Restrictions{
+			{
+				Restriction: api.Restriction{
+					UsagesAT: utils.NewInt64(10),
+				},
+			},
+		},
+		wanted: Restrictions{
+			{
+				Restriction: api.Restriction{
+					UsagesAT: utils.NewInt64(4),
+				},
+			},
+			{
+				Restriction: api.Restriction{
+					UsagesAT: utils.NewInt64(4),
+				},
+			},
+			{
+				Restriction: api.Restriction{
+					UsagesAT: utils.NewInt64(4),
+				},
+			},
+		},
+		expected: Restrictions{
+			{
+				Restriction: api.Restriction{
+					UsagesAT: utils.NewInt64(4),
+				},
+			},
+			{
+				Restriction: api.Restriction{
+					UsagesAT: utils.NewInt64(4),
+				},
+			},
+		},
+		okExp: false,
+	}
+	return test
+}
+
+func tightenCase11() tightenTestCase {
+	test := tightenTestCase{
+		name: "Split Usages",
+		base: Restrictions{
+			{
+				Restriction: api.Restriction{
+					UsagesAT: utils.NewInt64(10),
+				},
+			},
+		},
+		wanted: Restrictions{
+			{
+				Restriction: api.Restriction{
+					UsagesAT: utils.NewInt64(5),
+				},
+			},
+			{
+				Restriction: api.Restriction{
+					UsagesAT: utils.NewInt64(3),
+				},
+			},
+			{
+				Restriction: api.Restriction{
+					UsagesAT: utils.NewInt64(2),
+				},
+			},
+		},
+		okExp: true,
+	}
+	test.expected = test.wanted
+	return test
+}
+
+func TestRestriction_isTighterThan(t *testing.T) {
+	tests := []struct {
+		name     string
+		a        Restriction
+		b        Restriction
+		expected bool
+	}{
+		{
+			name:     "Both Empty",
+			a:        Restriction{},
+			b:        Restriction{},
+			expected: true,
+		},
+		{
+			name:     "A Empty",
+			a:        Restriction{},
+			b:        Restriction{Restriction: api.Restriction{Scope: "some"}},
+			expected: false,
+		},
+		{
+			name:     "B Empty",
+			a:        Restriction{Restriction: api.Restriction{Scope: "some"}},
+			b:        Restriction{},
+			expected: true,
+		},
+		{
+			name:     "Not Before 1",
+			a:        Restriction{NotBefore: 50},
+			b:        Restriction{NotBefore: 100},
+			expected: false,
+		},
+		{
+			name:     "Not Before 2",
+			a:        Restriction{NotBefore: 100},
+			b:        Restriction{NotBefore: 50},
+			expected: true,
+		},
+		{
+			name:     "Not Before, A Empty",
+			a:        Restriction{},
+			b:        Restriction{NotBefore: 50},
+			expected: false,
+		},
+		{
+			name:     "Not Before, B Empty",
+			a:        Restriction{NotBefore: 50},
+			b:        Restriction{},
+			expected: true,
+		},
+		{
+			name:     "Expires At 1",
+			a:        Restriction{ExpiresAt: 50},
+			b:        Restriction{ExpiresAt: 100},
+			expected: true,
+		},
+		{
+			name:     "Expires At 2",
+			a:        Restriction{ExpiresAt: 100},
+			b:        Restriction{ExpiresAt: 50},
+			expected: false,
+		},
+		{
+			name:     "Expires At, A Empty",
+			a:        Restriction{},
+			b:        Restriction{ExpiresAt: 50},
+			expected: false,
+		},
+		{
+			name:     "Expires At, B Empty",
+			a:        Restriction{ExpiresAt: 50},
+			b:        Restriction{},
+			expected: true,
+		},
+		{
+			name:     "scope 1",
+			a:        Restriction{Restriction: api.Restriction{Scope: "some scope"}},
+			b:        Restriction{Restriction: api.Restriction{Scope: "some"}},
+			expected: false,
+		},
+		{
+			name:     "scope 2",
+			a:        Restriction{Restriction: api.Restriction{Scope: "some"}},
+			b:        Restriction{Restriction: api.Restriction{Scope: "some scope"}},
+			expected: true,
+		},
+		{
+			name:     "scope 3",
+			a:        Restriction{Restriction: api.Restriction{Scope: "some scope"}},
+			b:        Restriction{Restriction: api.Restriction{Scope: "some other"}},
+			expected: false,
+		},
+		{
+			name:     "scope 4",
+			a:        Restriction{Restriction: api.Restriction{Scope: "some other"}},
+			b:        Restriction{Restriction: api.Restriction{Scope: "some scope"}},
+			expected: false,
+		},
+		{
+			name:     "scope 5",
+			a:        Restriction{Restriction: api.Restriction{Scope: "some other"}},
+			b:        Restriction{Restriction: api.Restriction{Scope: "completely different"}},
+			expected: false,
+		},
+		{
+			name:     "scope A empty",
+			a:        Restriction{},
+			b:        Restriction{Restriction: api.Restriction{Scope: "some scopes"}},
+			expected: false,
+		},
+		{
+			name:     "scope B empty",
+			a:        Restriction{Restriction: api.Restriction{Scope: "some scopes"}},
+			b:        Restriction{},
+			expected: true,
+		},
+		{
+			name: "IP",
+			a:    Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}},
+			b: Restriction{
+				Restriction: api.Restriction{
+					IPs: []string{
+						"192.168.0.12",
+						"192.168.0.14",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "IP Reversed",
+			a: Restriction{
+				Restriction: api.Restriction{
+					IPs: []string{
+						"192.168.0.12",
+						"192.168.0.14",
+					},
+				},
+			},
+			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}},
+			expected: false,
+		},
+		{
+			name: "IP with explicit net",
+			a:    Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12/24"}}},
+			b: Restriction{
+				Restriction: api.Restriction{
+					IPs: []string{
+						"192.168.0.12",
+						"192.168.0.14",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "IP with explicit net Reversed",
+			a: Restriction{
+				Restriction: api.Restriction{
+					IPs: []string{
+						"192.168.0.12",
+						"192.168.0.14",
+					},
+				},
+			},
+			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12/24"}}},
+			expected: false,
+		},
+		{
+			name:     "IP Subnet",
+			a:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}},
+			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}},
+			expected: true,
+		},
+		{
+			name:     "IP Subnet Reversed",
+			a:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}},
+			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}},
+			expected: false,
+		},
+		{
+			name: "IP Subnet + IP",
+			a:    Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}},
+			b: Restriction{
+				Restriction: api.Restriction{
+					IPs: []string{
+						"192.168.0.0/24",
+						"192.168.1.2",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "IP Subnet + IP Reversed",
+			a: Restriction{
+				Restriction: api.Restriction{
+					IPs: []string{
+						"192.168.0.0/24",
+						"192.168.1.2",
+					},
+				},
+			},
+			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}},
+			expected: false,
+		},
+		{
+			name: "IP Subnets + IP",
+			a:    Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}},
+			b: Restriction{
+				Restriction: api.Restriction{
+					IPs: []string{
+						"192.168.0.0/24",
+						"192.168.1.2",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "IP Subnets + IP Reversed",
+			a: Restriction{
+				Restriction: api.Restriction{
+					IPs: []string{
+						"192.168.0.0/24",
+						"192.168.1.2",
+					},
+				},
+			},
+			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}},
+			expected: false,
+		},
+		{
+			name:     "IP Different sized Subnets",
+			a:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}},
+			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/16"}}},
+			expected: true,
+		},
+		{
+			name:     "IP Different sized Subnets Reversed",
+			a:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/16"}}},
+			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}},
+			expected: false,
+		},
+		{
+			name:     "IP Different sized Subnets 2",
+			a:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.128.0/24"}}},
+			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/16"}}},
+			expected: true,
+		},
+		{
+			name:     "IP Different sized Subnets 2 Reversed",
+			a:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/16"}}},
+			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.128.0/24"}}},
+			expected: false,
+		},
+		{
+			name:     "IP Different Subnets",
+			a:        Restriction{Restriction: api.Restriction{IPs: []string{"193.168.0.0/24"}}},
+			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/16"}}},
+			expected: false,
+		},
+		{
+			name:     "IP Different Subnets Reversed",
+			a:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/16"}}},
+			b:        Restriction{Restriction: api.Restriction{IPs: []string{"193.168.0.0/24"}}},
+			expected: false,
+		},
+		{
+			name: "IP A empty",
+			a:    Restriction{},
+			b: Restriction{
+				Restriction: api.Restriction{
+					IPs: []string{
+						"192.168.0.12",
+						"192.168.0.42",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "IP B empty",
+			a: Restriction{
+				Restriction: api.Restriction{
+					IPs: []string{
+						"192.168.0.12",
+						"192.168.0.42",
+					},
+				},
+			},
+			b:        Restriction{},
+			expected: true,
+		},
+		{
+			name: "GeoIP Allow Subset",
+			a: Restriction{
+				Restriction: api.Restriction{
+					GeoIPAllow: []string{
+						"de",
+						"us",
+					},
+				},
+			},
+			b:        Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"de"}}},
+			expected: false,
+		},
+		{
+			name: "GeoIP Allow Subset Reversed",
+			a:    Restriction{Restriction: api.Restriction{GeoIPAllow: []string{"de"}}},
+			b: Restriction{
+				Restriction: api.Restriction{
+					GeoIPAllow: []string{
+						"de",
+						"us",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "GeoIP Allow Intersection",
+			a: Restriction{
+				Restriction: api.Restriction{
+					GeoIPAllow: []string{
+						"de",
+						"fr",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					GeoIPAllow: []string{
+						"de",
+						"us",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "GeoIP Allow Distinct",
+			a: Restriction{
+				Restriction: api.Restriction{
+					GeoIPAllow: []string{
+						"de",
+						"fr",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					GeoIPAllow: []string{
+						"jp",
+						"us",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "GeoIP Allow A Empty",
+			a:    Restriction{Restriction: api.Restriction{}},
+			b: Restriction{
+				Restriction: api.Restriction{
+					GeoIPAllow: []string{
+						"jp",
+						"us",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "GeoIP Allow B Empty",
+			a: Restriction{
+				Restriction: api.Restriction{
+					GeoIPAllow: []string{
+						"jp",
+						"us",
+					},
+				},
+			},
+			b:        Restriction{Restriction: api.Restriction{}},
+			expected: true,
+		},
+		{
+			name: "GeoIP Disallow Subset",
+			a: Restriction{
+				Restriction: api.Restriction{
+					GeoIPDisallow: []string{
+						"de",
+						"us",
+					},
+				},
+			},
+			b:        Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"de"}}},
+			expected: true,
+		},
+		{
+			name: "GeoIP Disallow Subset Reversed",
+			a:    Restriction{Restriction: api.Restriction{GeoIPDisallow: []string{"de"}}},
+			b: Restriction{
+				Restriction: api.Restriction{
+					GeoIPDisallow: []string{
+						"de",
+						"us",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "GeoIP Disallow Intersection",
+			a: Restriction{
+				Restriction: api.Restriction{
+					GeoIPDisallow: []string{
+						"de",
+						"fr",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					GeoIPDisallow: []string{
+						"de",
+						"us",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "GeoIP Disallow Distinct",
+			a: Restriction{
+				Restriction: api.Restriction{
+					GeoIPDisallow: []string{
+						"de",
+						"fr",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					GeoIPDisallow: []string{
+						"jp",
+						"us",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "GeoIP Disallow A Empty",
+			a:    Restriction{Restriction: api.Restriction{}},
+			b: Restriction{
+				Restriction: api.Restriction{
+					GeoIPDisallow: []string{
+						"jp",
+						"us",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "GeoIP Disallow B Empty",
+			a: Restriction{
+				Restriction: api.Restriction{
+					GeoIPDisallow: []string{
+						"jp",
+						"us",
+					},
+				},
+			},
+			b:        Restriction{Restriction: api.Restriction{}},
+			expected: true,
+		},
+		{
+			name:     "Usages AT",
+			a:        Restriction{Restriction: api.Restriction{UsagesAT: utils.NewInt64(20)}},
+			b:        Restriction{Restriction: api.Restriction{UsagesAT: utils.NewInt64(10)}},
+			expected: false,
+		},
+		{
+			name:     "Usages AT Reversed",
+			a:        Restriction{Restriction: api.Restriction{UsagesAT: utils.NewInt64(10)}},
+			b:        Restriction{Restriction: api.Restriction{UsagesAT: utils.NewInt64(20)}},
+			expected: true,
+		},
+		{
+			name:     "Usages AT A Empty",
+			a:        Restriction{},
+			b:        Restriction{Restriction: api.Restriction{UsagesAT: utils.NewInt64(20)}},
+			expected: false,
+		},
+		{
+			name:     "Usages AT B Empty",
+			a:        Restriction{Restriction: api.Restriction{UsagesAT: utils.NewInt64(20)}},
+			b:        Restriction{},
+			expected: true,
+		},
+		{
+			name:     "Usages Other",
+			a:        Restriction{Restriction: api.Restriction{UsagesOther: utils.NewInt64(20)}},
+			b:        Restriction{Restriction: api.Restriction{UsagesOther: utils.NewInt64(10)}},
+			expected: false,
+		},
+		{
+			name:     "Usages Other Reversed",
+			a:        Restriction{Restriction: api.Restriction{UsagesOther: utils.NewInt64(10)}},
+			b:        Restriction{Restriction: api.Restriction{UsagesOther: utils.NewInt64(20)}},
+			expected: true,
+		},
+		{
+			name:     "Usages Other A Empty",
+			a:        Restriction{},
+			b:        Restriction{Restriction: api.Restriction{UsagesOther: utils.NewInt64(20)}},
+			expected: false,
+		},
+		{
+			name:     "Usages Other B Empty",
+			a:        Restriction{Restriction: api.Restriction{UsagesOther: utils.NewInt64(20)}},
+			b:        Restriction{},
+			expected: true,
+		},
+		{
+			name: "Multiple A Empty",
+			a:    Restriction{},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Scope:       "a",
+					UsagesAT:    utils.NewInt64(50),
+					UsagesOther: utils.NewInt64(100),
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Multiple B Empty",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Scope:       "a",
+					UsagesAT:    utils.NewInt64(50),
+					UsagesOther: utils.NewInt64(100),
+				},
+			},
+			b:        Restriction{},
+			expected: true,
+		},
+		{
+			name: "Multiple 1",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Scope:       "a",
+					UsagesAT:    utils.NewInt64(20),
+					UsagesOther: utils.NewInt64(20),
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Scope:       "a b",
+					UsagesAT:    utils.NewInt64(50),
+					UsagesOther: utils.NewInt64(100),
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Multiple 1 Reversed",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Scope:       "a b",
+					UsagesAT:    utils.NewInt64(50),
+					UsagesOther: utils.NewInt64(100),
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Scope:       "a",
+					UsagesAT:    utils.NewInt64(20),
+					UsagesOther: utils.NewInt64(20),
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Multiple 2",
+			a: Restriction{
+				Restriction: api.Restriction{
+					UsagesAT:    utils.NewInt64(100),
+					UsagesOther: utils.NewInt64(50),
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					UsagesAT:    utils.NewInt64(50),
+					UsagesOther: utils.NewInt64(100),
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Multiple 2 Reversed",
+			a: Restriction{
+				Restriction: api.Restriction{
+					UsagesAT:    utils.NewInt64(50),
+					UsagesOther: utils.NewInt64(100),
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					UsagesAT:    utils.NewInt64(100),
+					UsagesOther: utils.NewInt64(50),
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Multiple Equal",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Scope:       "a b c",
+					UsagesAT:    utils.NewInt64(20),
+					UsagesOther: utils.NewInt64(20),
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Scope:       "a b c",
+					UsagesAT:    utils.NewInt64(20),
+					UsagesOther: utils.NewInt64(20),
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "All Equal",
+			a: Restriction{
+				NotBefore: 500,
+				ExpiresAt: 1000,
+				Restriction: api.Restriction{
+					Scope: "a b c",
+					Audiences: []string{
+						"a",
+						"b",
+						"c",
+					},
+					IPs: []string{
+						"a",
+						"b",
+						"c",
+					},
+					GeoIPAllow: []string{
+						"a",
+						"b",
+						"c",
+					},
+					GeoIPDisallow: []string{
+						"a",
+						"b",
+						"c",
+					},
+					UsagesAT:    utils.NewInt64(20),
+					UsagesOther: utils.NewInt64(20),
+				},
+			},
+			b: Restriction{
+				NotBefore: 500,
+				ExpiresAt: 1000,
+				Restriction: api.Restriction{
+					Scope: "a b c",
+					Audiences: []string{
+						"a",
+						"b",
+						"c",
+					},
+					IPs: []string{
+						"a",
+						"b",
+						"c",
+					},
+					GeoIPAllow: []string{
+						"a",
+						"b",
+						"c",
+					},
+					GeoIPDisallow: []string{
+						"a",
+						"b",
+						"c",
+					},
+					UsagesAT:    utils.NewInt64(20),
+					UsagesOther: utils.NewInt64(20),
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "All",
+			a: Restriction{
+				NotBefore: 500,
+				ExpiresAt: 1000,
+				Restriction: api.Restriction{
+					Scope: "a b c",
+					Audiences: []string{
+						"a",
+						"b",
+						"c",
+					},
+					IPs: []string{
+						"a",
+						"b",
+						"c",
+					},
+					GeoIPAllow: []string{
+						"a",
+						"b",
+						"c",
+					},
+					GeoIPDisallow: []string{
+						"a",
+						"b",
+						"c",
+					},
+					UsagesAT:    utils.NewInt64(20),
+					UsagesOther: utils.NewInt64(20),
+				},
+			},
+			b: Restriction{
+				NotBefore: 700,
+				ExpiresAt: 1000,
+				Restriction: api.Restriction{
+					Scope: "a b c",
+					Audiences: []string{
+						"a",
+						"b",
+						"c",
+					},
+					IPs: []string{
+						"a",
+						"b",
+						"c",
+					},
+					GeoIPAllow: []string{
+						"a",
+						"b",
+						"c",
+					},
+					GeoIPDisallow: []string{
+						"a",
+						"b",
+						"c",
+					},
+					UsagesAT:    utils.NewInt64(20),
+					UsagesOther: utils.NewInt64(20),
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "All Reversed",
+			a: Restriction{
+				NotBefore: 700,
+				ExpiresAt: 1000,
+				Restriction: api.Restriction{
+					Scope: "a b c",
+					Audiences: []string{
+						"a",
+						"b",
+						"c",
+					},
+					IPs: []string{
+						"a",
+						"b",
+						"c",
+					},
+					GeoIPAllow: []string{
+						"a",
+						"b",
+						"c",
+					},
+					GeoIPDisallow: []string{
+						"a",
+						"b",
+						"c",
+					},
+					UsagesAT:    utils.NewInt64(20),
+					UsagesOther: utils.NewInt64(20),
+				},
+			},
+			b: Restriction{
+				NotBefore: 500,
+				ExpiresAt: 1000,
+				Restriction: api.Restriction{
+					Scope: "a b c",
+					Audiences: []string{
+						"a",
+						"b",
+						"c",
+					},
+					IPs: []string{
+						"a",
+						"b",
+						"c",
+					},
+					GeoIPAllow: []string{
+						"a",
+						"b",
+						"c",
+					},
+					GeoIPDisallow: []string{
+						"a",
+						"b",
+						"c",
+					},
+					UsagesAT:    utils.NewInt64(20),
+					UsagesOther: utils.NewInt64(20),
+				},
+			},
+			expected: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				tighter := test.a.isTighterThan(test.b)
+				if tighter != test.expected {
+					if test.expected {
+						t.Errorf("Actually '%+v' is tighter than '%+v'", test.a, test.b)
+					} else {
+						t.Errorf("Actually '%+v' is not tighter than '%+v'", test.a, test.b)
+					}
+				}
+			},
+		)
 	}
 }
 
-func TestRestriction_Hash(t *testing.T) {
+func TestRestrictions_GetExpires(t *testing.T) {
+	tests := []struct {
+		name     string
+		r        Restrictions
+		expected unixtime.UnixTime
+	}{
+		{
+			name:     "Empty",
+			r:        Restrictions{},
+			expected: 0,
+		},
+		{
+			name:     "Infinite",
+			r:        Restrictions{{ExpiresAt: 0}},
+			expected: 0,
+		},
+		{
+			name:     "One",
+			r:        Restrictions{{ExpiresAt: 100}},
+			expected: 100,
+		},
+		{
+			name: "Multiple",
+			r: Restrictions{
+				{ExpiresAt: 100},
+				{ExpiresAt: 300},
+				{ExpiresAt: 500},
+			},
+			expected: 500,
+		},
+		{
+			name: "Multiple and Infinite",
+			r: Restrictions{
+				{ExpiresAt: 100},
+				{ExpiresAt: 300},
+				{ExpiresAt: 0},
+				{ExpiresAt: 500},
+			},
+			expected: 0,
+		},
+	}
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				expires := test.r.GetExpires()
+				if test.expected != expires {
+					t.Errorf("Expected %d, but got %d", test.expected, expires)
+				}
+			},
+		)
+	}
+}
+
+func TestRestrictions_GetNotBefore(t *testing.T) {
+	tests := []struct {
+		name     string
+		r        Restrictions
+		expected unixtime.UnixTime
+	}{
+		{
+			name:     "Empty",
+			r:        Restrictions{},
+			expected: 0,
+		},
+		{
+			name:     "Infinite",
+			r:        Restrictions{{NotBefore: 0}},
+			expected: 0,
+		},
+		{
+			name:     "One",
+			r:        Restrictions{{NotBefore: 100}},
+			expected: 100,
+		},
+		{
+			name: "Multiple",
+			r: Restrictions{
+				{NotBefore: 100},
+				{NotBefore: 300},
+				{NotBefore: 500},
+			},
+			expected: 100,
+		},
+		{
+			name: "Multiple and Infinite",
+			r: Restrictions{
+				{NotBefore: 100},
+				{NotBefore: 300},
+				{NotBefore: 0},
+				{NotBefore: 500},
+			},
+			expected: 0,
+		},
+	}
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				nbf := test.r.GetNotBefore()
+				if test.expected != nbf {
+					t.Errorf("Expected %d, but got %d", test.expected, nbf)
+				}
+			},
+		)
+	}
+}
+
+func TestRestriction_hash(t *testing.T) {
 	r := Restriction{
 		NotBefore: 1599939600,
 		ExpiresAt: 1599948600,
@@ -791,12 +1364,6 @@ func TestRestriction_Hash(t *testing.T) {
 			UsagesAT: utils.NewInt64(11),
 		},
 	}
-
-	j, err := json.Marshal(r)
-	if err != nil {
-		t.Error(err)
-	}
-	fmt.Printf("%s\n", j)
 
 	hash, err := r.hash()
 	if err != nil {
@@ -811,38 +1378,69 @@ func TestRestriction_Hash(t *testing.T) {
 func TestRestriction_VerifyTimeBased(t *testing.T) {
 	now := unixtime.Now()
 	cases := []struct {
-		r   Restriction
-		exp bool
+		name string
+		r    Restriction
+		exp  bool
 	}{
 		{
-			r:   Restriction{NotBefore: 0, ExpiresAt: 0},
+			name: "Both 0",
+			r: Restriction{
+				NotBefore: 0,
+				ExpiresAt: 0,
+			},
 			exp: true,
 		},
 		{
-			r:   Restriction{NotBefore: now - 10, ExpiresAt: 0},
+			name: "valid nbf",
+			r: Restriction{
+				NotBefore: now - 10,
+				ExpiresAt: 0,
+			},
 			exp: true,
 		},
 		{
-			r:   Restriction{NotBefore: 0, ExpiresAt: now + 10},
+			name: "valid exp",
+			r: Restriction{
+				NotBefore: 0,
+				ExpiresAt: now + 10,
+			},
 			exp: true,
 		},
 		{
-			r:   Restriction{NotBefore: now + 10, ExpiresAt: 0},
+			name: "invalid nbf",
+			r: Restriction{
+				NotBefore: now + 10,
+				ExpiresAt: 0,
+			},
 			exp: false,
 		},
 		{
-			r:   Restriction{NotBefore: 0, ExpiresAt: now - 10},
+			name: "invalid exp",
+			r: Restriction{
+				NotBefore: 0,
+				ExpiresAt: now - 10,
+			},
 			exp: false,
 		},
 		{
-			r:   Restriction{NotBefore: now + 10, ExpiresAt: now - 10},
+			name: "invalid nbf and exp",
+			r: Restriction{
+				NotBefore: now + 10,
+				ExpiresAt: now - 10,
+			},
 			exp: false,
 		},
 	}
 	for _, c := range cases {
-		valid := c.r.verifyTimeBased()
-		if valid != c.exp {
-			t.Errorf("For '%+v' expected time based attributes to verify as '%v' but got '%v'", c.r, c.exp, valid)
-		}
+		t.Run(
+			c.name, func(t *testing.T) {
+				valid := c.r.verifyTimeBased(log.StandardLogger())
+				if valid != c.exp {
+					t.Errorf(
+						"For '%+v' expected time based attributes to verify as '%v' but got '%v'", c.r, c.exp, valid,
+					)
+				}
+			},
+		)
 	}
 }

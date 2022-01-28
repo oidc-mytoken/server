@@ -42,7 +42,7 @@ function noLandscape(prefix) {
 }
 
 function escapeSelector(s){
-    return s.replace( /(:|\.|\[|]|\/)/g, "\\$1" );
+    return $.escapeSelector(s)
 }
 
 function doNext(...next) {

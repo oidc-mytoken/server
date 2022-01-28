@@ -2,6 +2,7 @@ package cookies
 
 import (
 	"github.com/gofiber/fiber/v2"
+
 	"github.com/oidc-mytoken/server/internal/config"
 )
 
@@ -12,8 +13,8 @@ const (
 )
 
 // MytokenCookie creates a fiber.Cookie for the passed mytoken
-func MytokenCookie(mytoken string) fiber.Cookie {
-	return fiber.Cookie{
+func MytokenCookie(mytoken string) *fiber.Cookie {
+	return &fiber.Cookie{
 		Name:     mytokenCookieName,
 		Value:    mytoken,
 		Path:     "/api",
@@ -25,8 +26,8 @@ func MytokenCookie(mytoken string) fiber.Cookie {
 }
 
 // TransferCodeCookie creates a fiber.Cookie for the passed transfer code
-func TransferCodeCookie(transferCode string, expiresIn int) fiber.Cookie {
-	return fiber.Cookie{
+func TransferCodeCookie(transferCode string, expiresIn int) *fiber.Cookie {
+	return &fiber.Cookie{
 		Name:     transferCodeCookieName,
 		Value:    transferCode,
 		Path:     "/api",

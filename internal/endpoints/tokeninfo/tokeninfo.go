@@ -12,29 +12,31 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/utils/logger"
 	model2 "github.com/oidc-mytoken/server/shared/model"
 )
 
 // HandleTokenInfo handles requests to the tokeninfo endpoint
 func HandleTokenInfo(ctx *fiber.Ctx) error {
+	rlog := logger.GetRequestLogger(ctx)
 	var req pkg.TokenInfoRequest
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	mt, errRes := auth.RequireValidMytoken(nil, &req.Mytoken, ctx)
+	mt, errRes := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
 	clientMetadata := ctxUtils.ClientMetaData(ctx)
 	switch req.Action {
 	case model2.TokeninfoActionIntrospect:
-		return handleTokenInfoIntrospect(req, mt, clientMetadata).Send(ctx)
+		return HandleTokenInfoIntrospect(rlog, mt, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionEventHistory:
-		return handleTokenInfoHistory(req, mt, clientMetadata).Send(ctx)
+		return HandleTokenInfoHistory(rlog, req, mt, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionSubtokenTree:
-		return handleTokenInfoTree(req, mt, clientMetadata).Send(ctx)
+		return HandleTokenInfoTree(rlog, req, mt, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionListMytokens:
-		return handleTokenInfoList(req, mt, clientMetadata).Send(ctx)
+		return HandleTokenInfoList(rlog, req, mt, clientMetadata).Send(ctx)
 	default:
 		return model.Response{
 			Status:   fiber.StatusBadRequest,
@@ -46,8 +48,7 @@ func HandleTokenInfo(ctx *fiber.Ctx) error {
 func makeTokenInfoResponse(rsp interface{}, tokenUpdate *response.MytokenResponse) model.Response {
 	var cake []*fiber.Cookie
 	if tokenUpdate != nil {
-		cookie := cookies.MytokenCookie(tokenUpdate.Mytoken)
-		cake = []*fiber.Cookie{&cookie}
+		cake = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
 	}
 	return model.Response{
 		Status:   fiber.StatusOK,

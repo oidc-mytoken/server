@@ -9,7 +9,7 @@ import (
 
 	"github.com/Songmu/prompter"
 	log "github.com/sirupsen/logrus"
-	"github.com/zachmann/cli/v2"
+	"github.com/urfave/cli/v2"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/jws"
@@ -28,7 +28,7 @@ type _rootDBCredentials struct {
 
 var rootDBCredentials _rootDBCredentials
 
-func (cred _rootDBCredentials) ToDBConf() config.DBConf {
+func (cred _rootDBCredentials) toDBConf() config.DBConf {
 	return config.DBConf{
 		Hosts:             config.Get().DB.Hosts,
 		User:              cred.User,
@@ -57,31 +57,58 @@ var dbFlags = []cli.Flag{
 		Placeholder: "PASSWORD",
 	},
 	&cli.StringFlag{
-		Name:        "password-file",
-		Aliases:     []string{"pw-file"},
-		Usage:       "Read the password for connecting to the database from this file",
-		EnvVars:     []string{"DB_PASSWORD_FILE", "DB_PW_FILE"},
+		Name:    "password-file",
+		Aliases: []string{"pw-file"},
+		Usage:   "Read the password for connecting to the database from this file",
+		EnvVars: []string{
+			"DB_PASSWORD_FILE",
+			"DB_PW_FILE",
+		},
 		Destination: &rootDBCredentials.PasswordFile,
 		TakesFile:   true,
 		Placeholder: "FILE",
 	},
 }
 
+var sigKeyFile string
+
 var app = &cli.App{
 	Name:     "mytoken-setup",
 	Usage:    "Command line client for easily setting up a mytoken server",
 	Version:  version.VERSION(),
 	Compiled: time.Time{},
-	Authors: []*cli.Author{{
-		Name:  "Gabriel Zachmann",
-		Email: "gabriel.zachmann@kit.edu",
-	}},
+	Authors: []*cli.Author{
+		{
+			Name:  "Gabriel Zachmann",
+			Email: "gabriel.zachmann@kit.edu",
+		},
+	},
 	Copyright:              "Karlsruhe Institute of Technology 2020-2021",
 	UseShortOptionHandling: true,
 	Commands: cli.Commands{
 		&cli.Command{
-			Name:        "signing-key",
-			Aliases:     []string{"key"},
+			Name:    "signing-key",
+			Aliases: []string{"key"},
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name: "key-file",
+					Aliases: []string{
+						"file",
+						"f",
+						"out",
+						"o",
+					},
+					Usage: "Write the signing key to this file, " +
+						"instead of the one configured in the config file",
+					EnvVars: []string{
+						"KEY_FILE",
+						"SIGNING_KEY",
+					},
+					Destination: &sigKeyFile,
+					TakesFile:   true,
+					Placeholder: "FILE",
+				},
+			},
 			Usage:       "Generates a new signing key",
 			Description: "Generates a new signing key according to the properties specified in the config file and stores it.",
 			Action:      createSigningKey,
@@ -149,18 +176,20 @@ func createSigningKey(_ *cli.Context) error {
 		return err
 	}
 	str := jws.ExportPrivateKeyAsPemStr(sk)
-	filepath := config.Get().Signing.KeyFile
-	if fileutil.FileExists(filepath) {
-		log.WithField("filepath", filepath).Debug("File already exists")
-		if !prompter.YesNo(fmt.Sprintf("File '%s' already exists. Do you  want to overwrite it?", filepath), false) {
+	if sigKeyFile == "" {
+		sigKeyFile = config.Get().Signing.KeyFile
+	}
+	if fileutil.FileExists(sigKeyFile) {
+		log.WithField("filepath", sigKeyFile).Debug("File already exists")
+		if !prompter.YesNo(fmt.Sprintf("File '%s' already exists. Do you  want to overwrite it?", sigKeyFile), false) {
 			os.Exit(1)
 		}
 	}
-	if err = ioutil.WriteFile(filepath, []byte(str), 0600); err != nil {
+	if err = ioutil.WriteFile(sigKeyFile, []byte(str), 0600); err != nil {
 		return err
 	}
-	log.WithField("filepath", filepath).Debug("Wrote key to file")
-	fmt.Printf("Wrote key to file '%s'.\n", filepath)
+	log.WithField("filepath", sigKeyFile).Debug("Wrote key to file")
+	fmt.Printf("Wrote key to file '%s'.\n", sigKeyFile)
 	return nil
 }
 
@@ -211,7 +240,7 @@ func createDB(_ *cli.Context) error {
 		return err
 	}
 	cmds += dbCmds
-	return dbcl.RunDBCommands(cmds, rootDBCredentials.ToDBConf(), true)
+	return dbcl.RunDBCommands(cmds, rootDBCredentials.toDBConf(), true)
 }
 
 func createUser(_ *cli.Context) error {
@@ -224,5 +253,5 @@ func createUser(_ *cli.Context) error {
 		return err
 	}
 	cmds += userCmds
-	return dbcl.RunDBCommands(cmds, rootDBCredentials.ToDBConf(), true)
+	return dbcl.RunDBCommands(cmds, rootDBCredentials.toDBConf(), true)
 }

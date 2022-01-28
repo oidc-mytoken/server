@@ -32,12 +32,14 @@ func HMACBasedHash(data []byte) string {
 }
 
 // SHA3_256Str hashes the passed data with SHA3 256
+//goland:noinspection GoSnakeCaseUsage
 func SHA3_256Str(data []byte) string {
 	hash := sha3.Sum256(data)
 	return base64.StdEncoding.EncodeToString(hash[:])
 }
 
 // SHA3_512Str hashes the passed data with SHA3 512
+//goland:noinspection GoSnakeCaseUsage
 func SHA3_512Str(data []byte) string {
 	hash := sha3.Sum512(data)
 	return base64.StdEncoding.EncodeToString(hash[:])

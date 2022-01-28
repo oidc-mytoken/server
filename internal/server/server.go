@@ -20,7 +20,9 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/consent"
 	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
 	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/server/apiPath"
 	"github.com/oidc-mytoken/server/internal/server/routes"
+	"github.com/oidc-mytoken/server/internal/server/ssh"
 )
 
 var server *fiber.App
@@ -67,20 +69,28 @@ func Init() {
 	server = fiber.New(serverConfig)
 	addMiddlewares(server)
 	addRoutes(server)
-	server.Use(func(ctx *fiber.Ctx) error {
-		if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" {
-			ctx.Status(fiber.StatusNotFound)
-			return ctx.Render("sites/404", map[string]interface{}{
-				"empty-navbar": true,
-			}, "layouts/main")
-		}
-		return model.Response{
-			Status: fiber.StatusNotFound,
-			Response: api.Error{
-				Error: "not_found",
-			},
-		}.Send(ctx)
-	})
+	server.Use(
+		func(ctx *fiber.Ctx) error {
+			path := ctx.Path()
+			if !strings.HasPrefix(path, apiPath.Prefix) && ctx.Accepts(
+				fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8,
+			) != "" {
+				ctx.Status(fiber.StatusNotFound)
+				return ctx.Render(
+					"sites/404", map[string]interface{}{
+						"empty-navbar": true,
+					}, "layouts/main",
+				)
+			}
+			return model.Response{
+				Status: fiber.StatusNotFound,
+				Response: api.Error{
+					Error:            "not_found",
+					ErrorDescription: path,
+				},
+			}.Send(ctx)
+		},
+	)
 }
 
 func addRoutes(s fiber.Router) {
@@ -94,6 +104,8 @@ func addRoutes(s fiber.Router) {
 	s.Get("/native", handleNativeCallback)
 	s.Get("/native/abort", handleNativeConsentAbortCallback)
 	s.Get(routes.GetGeneralPaths().Privacy, handlePrivacy)
+	s.Get("/settings", handleSettings)
+	s.Get("/settings/grants/ssh", handleSSH)
 	addAPIRoutes(s)
 }
 
@@ -103,24 +115,28 @@ func addWebRoutes(s fiber.Router) {
 }
 
 func start(s *fiber.App) {
+	if config.Get().Features.SSH.Enabled {
+		go ssh.Serve()
+	}
 	if !config.Get().Server.TLS.Enabled {
-		log.Fatal(s.Listen(fmt.Sprintf(":%d", config.Get().Server.Port)))
+		log.WithError(s.Listen(fmt.Sprintf(":%d", config.Get().Server.Port))).Fatal()
 	}
 	// TLS enabled
 	if config.Get().Server.TLS.RedirectHTTP {
 		httpServer := fiber.New(serverConfig)
 		httpServer.All(
 			"*", func(ctx *fiber.Ctx) error {
+				//goland:noinspection HttpUrlsUsage
 				return ctx.Redirect(
 					strings.Replace(ctx.Request().URI().String(), "http://", "https://", 1),
 					fiber.StatusPermanentRedirect,
 				)
 			},
 		)
-		go httpServer.Listen(":80")
+		go log.WithError(httpServer.Listen(":80")).Fatal()
 	}
 	time.Sleep(time.Millisecond) // This is just for a more pretty output with the tls header printed after the http one
-	log.Fatal(s.ListenTLS(":443", config.Get().Server.TLS.Cert, config.Get().Server.TLS.Key))
+	log.WithError(s.ListenTLS(":443", config.Get().Server.TLS.Cert, config.Get().Server.TLS.Key)).Fatal()
 }
 
 // Start starts the server

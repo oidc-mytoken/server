@@ -3,6 +3,7 @@ package tree
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
 
@@ -17,7 +18,6 @@ type MytokenEntry struct {
 	api.MytokenEntry `json:",inline"`
 	ID               mtid.MTID         `json:"-"`
 	ParentID         mtid.MTID         `db:"parent_id" json:"-"`
-	RootID           mtid.MTID         `db:"root_id" json:"-"`
 	Name             db.NullString     `json:"name,omitempty"`
 	CreatedAt        unixtime.UnixTime `db:"created" json:"created"`
 }
@@ -30,74 +30,38 @@ type MytokenEntryTree struct {
 
 // Root checks if this MytokenEntry is a root token
 func (ste *MytokenEntry) Root() bool {
-	if ste.ID.Hash() == ste.RootID.Hash() {
-		return true
-	}
-	return !ste.RootID.HashValid()
-}
-
-// getUserID returns the user id linked to a mytoken
-func getUserID(tx *sqlx.Tx, tokenID mtid.MTID) (uid int64, err error) {
-	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Get(&uid, `SELECT user_id FROM MTokens WHERE id=? ORDER BY name`, tokenID))
-	})
-	return
+	return !ste.ParentID.HashValid()
 }
 
 // AllTokens returns information about all mytokens for the user linked to the passed mytoken
-func AllTokens(tx *sqlx.Tx, tokenID mtid.MTID) (trees []MytokenEntryTree, err error) {
-	err = db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		uid, e := getUserID(tx, tokenID)
-		if e != nil {
-			return e
-		}
-		trees, err = allTokensForUser(tx, uid)
-		return err
-	})
-	return
-}
-
-// allTokensForUser returns information about all mytoken for the passed user
-func allTokensForUser(tx *sqlx.Tx, uid int64) ([]MytokenEntryTree, error) {
+func AllTokens(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) ([]MytokenEntryTree, error) {
 	var tokens []MytokenEntry
-	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Select(&tokens,
-			`SELECT id, parent_id, root_id, name, created, ip_created AS ip FROM MTokens WHERE user_id=?`,
-			uid))
-	}); err != nil {
+	if err := db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Select(&tokens, `CALL MTokens_GetAllForSameUser(?)`, tokenID))
+		},
+	); err != nil {
 		return nil, err
 	}
 	return tokensToTrees(tokens), nil
 }
 
-func subtokens(tx *sqlx.Tx, rootID mtid.MTID) ([]MytokenEntry, error) {
-	var tokens []MytokenEntry
-	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		return errors.WithStack(tx.Select(&tokens,
-			`SELECT id, parent_id, root_id, name, created, ip_created AS ip FROM MTokens WHERE root_id=?`,
-			rootID))
-	})
-	return tokens, err
-}
-
 // TokenSubTree returns information about all subtokens for the passed mytoken
-func TokenSubTree(tx *sqlx.Tx, tokenID mtid.MTID) (MytokenEntryTree, error) {
+func TokenSubTree(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) (MytokenEntryTree, error) {
 	var tokens []MytokenEntry
-	var root MytokenEntry
-	if err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		var err error
-		if err = tx.Get(&root,
-			`SELECT id, parent_id, root_id, name, created, ip_created AS ip FROM MTokens WHERE id=?`,
-			tokenID); err != nil {
-			return errors.WithStack(err)
-		}
-		if root.Root() {
-			root.RootID = root.ID
-		}
-		tokens, err = subtokens(tx, root.RootID)
-		return err
-	}); err != nil {
+	if err := db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Select(&tokens, `CALL MTokens_GetSubtokens(?)`, tokenID))
+		},
+	); err != nil {
 		return MytokenEntryTree{}, err
+	}
+	var root MytokenEntry
+	for _, t := range tokens {
+		if t.ID.Hash() == tokenID.Hash() {
+			root = t
+			break
+		}
 	}
 	tree, _ := tokensToTree(root, tokens)
 	return tree, nil

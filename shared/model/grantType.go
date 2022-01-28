@@ -5,7 +5,7 @@ import (
 
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
-	yaml "gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v3"
 )
 
 // GrantType is an enum like type for grant types
@@ -19,9 +19,8 @@ const ( // assert that these are in the same order as api.AllGrantTypes
 	GrantTypeMytoken GrantType = iota
 	GrantTypeOIDCFlow
 	GrantTypePollingCode
-	GrantTypeAccessToken
-	GrantTypePrivateKeyJWT
 	GrantTypeTransferCode
+	GrantTypeSSH
 	maxGrantType
 )
 

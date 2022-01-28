@@ -18,27 +18,33 @@ import (
 )
 
 // RequireGrantType checks that the passed model.GrantType are the same, and returns an error model.Response if not
-func RequireGrantType(want, got model2.GrantType) *model.Response {
+func RequireGrantType(rlog log.Ext1FieldLogger, want, got model2.GrantType) *model.Response {
 	if got != want {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: api.ErrorUnsupportedGrantType,
 		}
 	}
-	log.Trace("Checked grant type")
+	rlog.Trace("Checked grant type")
 	return nil
 }
 
 // RequireMytoken checks the passed universalmytoken.UniversalMytoken and if needed other request parameters like
 // authorization header and cookie value for a mytoken string. The mytoken string is parsed and if not valid an error
 // model.Response is returned.
-func RequireMytoken(reqToken *universalmytoken.UniversalMytoken, ctx *fiber.Ctx) (*mytoken.Mytoken, *model.Response) {
+func RequireMytoken(rlog log.Ext1FieldLogger, reqToken *universalmytoken.UniversalMytoken, ctx *fiber.Ctx) (
+	*mytoken.Mytoken, *model.Response,
+) {
 	if reqToken.JWT == "" {
-		t := ctxUtils.GetMytoken(ctx)
+		t, found := ctxUtils.GetMytoken(ctx)
 		if t == nil {
+			errDesc := "no mytoken found in request"
+			if found {
+				errDesc = "token not valid"
+			}
 			return nil, &model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: model2.InvalidTokenError("no mytoken found in request"),
+				Response: model2.InvalidTokenError(errDesc),
 			}
 		}
 		*reqToken = *t
@@ -51,16 +57,16 @@ func RequireMytoken(reqToken *universalmytoken.UniversalMytoken, ctx *fiber.Ctx)
 			Response: model2.InvalidTokenError(errorfmt.Error(err)),
 		}
 	}
-	log.Trace("Parsed mytoken")
+	rlog.Trace("Parsed mytoken")
 	return mt, nil
 }
 
 // RequireMytokenNotRevoked checks that the passed mytoken.Mytoken was not revoked, if it was an error model.Response is
 // returned.
-func RequireMytokenNotRevoked(tx *sqlx.Tx, mt *mytoken.Mytoken) *model.Response {
-	revoked, dbErr := dbhelper.CheckTokenRevoked(tx, mt.ID, mt.SeqNo, mt.Rotation)
+func RequireMytokenNotRevoked(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mt *mytoken.Mytoken) *model.Response {
+	revoked, dbErr := dbhelper.CheckTokenRevoked(rlog, tx, mt.ID, mt.SeqNo, mt.Rotation)
 	if dbErr != nil {
-		log.Errorf("%s", errorfmt.Full(dbErr))
+		rlog.Errorf("%s", errorfmt.Full(dbErr))
 		return model.ErrorToInternalServerErrorResponse(dbErr)
 	}
 	if revoked {
@@ -69,27 +75,33 @@ func RequireMytokenNotRevoked(tx *sqlx.Tx, mt *mytoken.Mytoken) *model.Response 
 			Response: model2.InvalidTokenError(""),
 		}
 	}
-	log.Trace("Checked mytoken not revoked")
+	rlog.Trace("Checked mytoken not revoked")
 	return nil
 }
 
 // RequireValidMytoken checks the passed universalmytoken.UniversalMytoken and if needed other request parameters like
 // authorization header and cookie value for a mytoken string. The mytoken string is parsed and if not valid an error
 // model.Response is returned. RequireValidMytoken also asserts that the mytoken.Mytoken was not revoked.
-func RequireValidMytoken(tx *sqlx.Tx, reqToken *universalmytoken.UniversalMytoken, ctx *fiber.Ctx) (*mytoken.Mytoken, *model.Response) {
-	mt, errRes := RequireMytoken(reqToken, ctx)
+func RequireValidMytoken(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, reqToken *universalmytoken.UniversalMytoken, ctx *fiber.Ctx,
+) (
+	*mytoken.Mytoken, *model.Response,
+) {
+	mt, errRes := RequireMytoken(rlog, reqToken, ctx)
 	if errRes != nil {
 		return nil, errRes
 	}
-	return mt, RequireMytokenNotRevoked(tx, mt)
+	return mt, RequireMytokenNotRevoked(rlog, tx, mt)
 }
 
 // RequireMatchingIssuer checks that the OIDC issuer from a mytoken is the same as the issuer string in a request (if
 // given). RequireMatchingIssuer also checks that the issuer is valid for this mytoken instance.
-func RequireMatchingIssuer(mtOIDCIssuer string, requestIssuer *string) (*config.ProviderConf, *model.Response) {
+func RequireMatchingIssuer(rlog log.Ext1FieldLogger, mtOIDCIssuer string, requestIssuer *string) (
+	*config.ProviderConf, *model.Response,
+) {
 	if *requestIssuer == "" {
 		*requestIssuer = mtOIDCIssuer
-		log.Trace("Checked issuer (was not given)")
+		rlog.Trace("Checked issuer (was not given)")
 	}
 	if *requestIssuer != mtOIDCIssuer {
 		return nil, &model.Response{
@@ -104,24 +116,26 @@ func RequireMatchingIssuer(mtOIDCIssuer string, requestIssuer *string) (*config.
 			Response: api.ErrorUnknownIssuer,
 		}
 	}
-	log.Trace("Checked issuer")
+	rlog.Trace("Checked issuer")
 	return provider, nil
 }
 
 // RequireCapability checks that the passed mytoken.Mytoken has the required api.Capability and returns an error
 // model.Response if not
-func RequireCapability(capability api.Capability, mt *mytoken.Mytoken) *model.Response {
+func RequireCapability(rlog log.Ext1FieldLogger, capability api.Capability, mt *mytoken.Mytoken) *model.Response {
 	if !mt.Capabilities.Has(capability) {
 		return &model.Response{
 			Status:   fiber.StatusForbidden,
 			Response: api.ErrorInsufficientCapabilities,
 		}
 	}
-	log.Trace("Checked capability")
+	rlog.Trace("Checked capability")
 	return nil
 }
 
-func requireUseableRestriction(tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string, at bool) (*restrictions.Restriction, *model.Response) {
+func requireUseableRestriction(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string, at bool,
+) (*restrictions.Restriction, *model.Response) {
 	if len(mt.Restrictions) == 0 {
 		return nil, nil
 	}
@@ -130,36 +144,48 @@ func requireUseableRestriction(tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scop
 		getUseableRestrictions = mt.Restrictions.GetValidForAT
 	}
 	// WithScopes and WithAudience don't tighten the restrictions if nil is passed
-	useableRestrictions := getUseableRestrictions(tx, ip, mt.ID).WithScopes(scopes).WithAudiences(auds)
+	useableRestrictions := getUseableRestrictions(rlog, tx, ip, mt.ID).WithScopes(rlog, scopes).WithAudiences(
+		rlog, auds,
+	)
 	if len(useableRestrictions) == 0 {
 		return nil, &model.Response{
 			Status:   fiber.StatusForbidden,
 			Response: api.ErrorUsageRestricted,
 		}
 	}
-	log.Trace("Checked mytoken restrictions")
+	rlog.Trace("Checked mytoken restrictions")
 	return &useableRestrictions[0], nil
 }
 
 // RequireUsableRestriction checks that the mytoken.Mytoken's restrictions allow the usage
-func RequireUsableRestriction(tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string, capability api.Capability) (*restrictions.Restriction, *model.Response) {
-	return requireUseableRestriction(tx, mt, ip, scopes, auds, capability == api.CapabilityAT)
+func RequireUsableRestriction(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string,
+	capability api.Capability,
+) (*restrictions.Restriction, *model.Response) {
+	return requireUseableRestriction(rlog, tx, mt, ip, scopes, auds, capability == api.CapabilityAT)
 }
 
 // RequireUsableRestrictionAT checks that the mytoken.Mytoken's restrictions allow the AT usage
-func RequireUsableRestrictionAT(tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string) (*restrictions.Restriction, *model.Response) {
-	return requireUseableRestriction(tx, mt, ip, scopes, auds, true)
+func RequireUsableRestrictionAT(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string,
+) (*restrictions.Restriction, *model.Response) {
+	return requireUseableRestriction(rlog, tx, mt, ip, scopes, auds, true)
 }
 
 // RequireUsableRestrictionOther checks that the mytoken.Mytoken's restrictions allow the non-AT usage
-func RequireUsableRestrictionOther(tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string) (*restrictions.Restriction, *model.Response) {
-	return requireUseableRestriction(tx, mt, ip, scopes, auds, false)
+func RequireUsableRestrictionOther(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string,
+) (*restrictions.Restriction, *model.Response) {
+	return requireUseableRestriction(rlog, tx, mt, ip, scopes, auds, false)
 }
 
 // CheckCapabilityAndRestriction checks the mytoken.Mytoken's capability and restrictions
-func CheckCapabilityAndRestriction(tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string, capability api.Capability) (*restrictions.Restriction, *model.Response) {
-	if errRes := RequireCapability(capability, mt); errRes != nil {
+func CheckCapabilityAndRestriction(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string,
+	capability api.Capability,
+) (*restrictions.Restriction, *model.Response) {
+	if errRes := RequireCapability(rlog, capability, mt); errRes != nil {
 		return nil, errRes
 	}
-	return RequireUsableRestriction(tx, mt, ip, scopes, auds, capability)
+	return RequireUsableRestriction(rlog, tx, mt, ip, scopes, auds, capability)
 }

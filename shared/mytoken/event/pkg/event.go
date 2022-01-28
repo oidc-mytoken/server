@@ -50,7 +50,10 @@ func FromNumber(number int, comment string) *Event {
 	if number < 0 {
 		return nil
 	}
-	return &Event{Type: number, Comment: comment}
+	return &Event{
+		Type:    number,
+		Comment: comment,
+	}
 }
 
 func eventStringToInt(str string) int {
@@ -72,41 +75,35 @@ var AllEvents = [...]string{
 	"tokeninfo_history",
 	"tokeninfo_tree",
 	"tokeninfo_list_mytokens",
-	"mng_enabled_AT_grant",
-	"mng_disabled_AT_grant",
-	"mng_enabled_JWT_grant",
-	"mng_disabled_JWT_grant",
-	"mng_linked_grant",
-	"mng_unlinked_grant",
-	"mng_enabled_tracing",
-	"mng_disabled_tracing",
 	"inherited_RT",
 	"transfer_code_created",
 	"transfer_code_used",
 	"token_rotated",
+	"settings_grant_enabled",
+	"settings_grant_disabled",
+	"settings_grants_listed",
+	"ssh_keys_listed",
+	"ssh_key_added",
 }
 
 // Events for Mytokens
 const (
-	MTEventUnknown = iota
-	MTEventCreated
-	MTEventATCreated
-	MTEventMTCreated
-	MTEventTokenInfoIntrospect
-	MTEventTokenInfoHistory
-	MTEventTokenInfoTree
-	MTEventTokenInfoListMTs
-	MTEventMngGrantATEnabled
-	MTEventMngGrantATDisabled
-	MTEventMngGrantJWTEnabled
-	MTEventMngGrantJWTDisabled
-	MTEventMngGrantLinked
-	MTEventMngGrantUnlinked
-	MTEventMngTracingEnabled
-	MTEventMngTracingDisabled
-	MTEventInheritedRT
-	MTEventTransferCodeCreated
-	MTEventTransferCodeUsed
-	MTEventTokenRotated
+	UnknownEvent = iota
+	MTCreated
+	ATCreated
+	SubtokenCreated
+	TokenInfoIntrospect
+	TokenInfoHistory
+	TokenInfoTree
+	TokenInfoListMTs
+	InheritedRT
+	TransferCodeCreated
+	TransferCodeUsed
+	MTRotated
+	GrantEnabled
+	GrantDisabled
+	GrantsListed
+	SSHKeyListed
+	SSHKeyAdded
 	maxEvent
 )

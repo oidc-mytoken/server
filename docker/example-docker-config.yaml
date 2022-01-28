@@ -28,7 +28,7 @@ server:
   proxy_header: "X-FORWARDED-FOR"
 
 # The database file for ip geo location. Will be installed by setup to this location.
-geo_ip_db_file: "/root/mytoken/IP2LOCATION-LITE-DB1.IPV6.BIN"
+geo_ip_db_file: "/mytoken/IP2LOCATION-LITE-DB1.IPV6.BIN"
 
 # Configuration of the mytoken API
 api:
@@ -48,6 +48,8 @@ database:
   db: "mytoken"
   # The interval (in seconds) in which mytoken tries to reconnect to db nodes that are down
   try_reconnect_interval: 60
+  # Enable / Disable cleanup of expired db entries once a day
+  # schedule_cleanup: true
 
 # Configuration for token signing
 signing:
@@ -63,13 +65,13 @@ logging:
   # The web server access logs
   access:
     # The directory where the log file should be placed
-    dir: "/root/mytoken/logs"
+    dir: "/mytoken/logs"
     # Indicates if mytoken should log additionally to stderr
     stderr: true
   # The mytoken internal logs
   internal:
     # The directory where the log file should be placed
-    dir: "/root/mytoken/logs"
+    dir: "/mytoken/logs"
     # Indicates if mytoken should log additionally to stderr
     stderr: true
     # The minimal log level that should be logged
@@ -136,17 +138,20 @@ features:
   token_rotation:
     enabled: true
 
-  # Support for the access_token grant, i.e. a user can use an AT to obtain an ST.
-  access_token_grant:
-    enabled: true
-
-  # Support for the private_key_jwt grant, i.e. a user can use an signed jwt to obtain an ST.
-  signed_jwt_grant:
-    enabled: true
-
   # Provides a web interface for in browser usage
   web_interface:
     enabled: true
+
+  ssh:
+    enabled: true
+    # If true the haproxy proxy protocl (https://www.haproxy.org/download/2.3/doc/proxy-protocol.txt) is used to
+    # receive client information, i.e. the client's ip from the proxy; the proxy must support this
+    use_proxy_protocol: true
+    # The ssh private key files of the server
+    keys:
+      - /run/secrets/ssh_host_ecdsa_key
+      - /run/secrets/ssh_host_ed25519_key
+      - /run/secrets/ssh_host_rsa_key
 
 # The list of supported providers
 providers:

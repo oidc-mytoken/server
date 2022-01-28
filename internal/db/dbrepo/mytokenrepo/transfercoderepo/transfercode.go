@@ -24,6 +24,7 @@ type transferCodeAttributes struct {
 	NewMT        db.BitBool
 	ResponseType model.ResponseType
 	MaxTokenLen  *int
+	SSHKeyHash   db.NullString
 }
 
 // NewTransferCode creates a new TransferCode for the passed jwt
@@ -61,32 +62,37 @@ func CreatePollingCode(pollingCode string, responseType model.ResponseType, maxT
 }
 
 // Store stores the TransferCode in the database
-func (tc TransferCode) Store(tx *sqlx.Tx) error {
-	log.Debug("Storing transfer code")
-	return db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if err := tc.proxyToken.Store(tx); err != nil {
-			return err
-		}
-		_, err := tx.Exec(
-			`INSERT INTO TransferCodesAttributes (id, expires_in,  revoke_MT, response_type, max_token_len)
-                      VALUES(?,?,?,?,?)`,
-			tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewMT,
-			tc.Attributes.ResponseType, tc.Attributes.MaxTokenLen)
-		return errors.WithStack(err)
-	})
+func (tc TransferCode) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
+	rlog.Debug("Storing transfer code")
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			if err := tc.proxyToken.Store(rlog, tx); err != nil {
+				return err
+			}
+			_, err := tx.Exec(
+				`CALL TransferCodeAttributes_Insert(?,?,?,?,?)`,
+				tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewMT,
+				tc.Attributes.ResponseType, tc.Attributes.MaxTokenLen,
+			)
+			return errors.WithStack(err)
+		},
+	)
 }
 
-// GetRevokeJWT returns a bool indicating if the linked jwt should also be revoked when this TransferCode is revoked or not
-func (tc TransferCode) GetRevokeJWT(tx *sqlx.Tx) (bool, error) {
+// GetRevokeJWT returns a bool indicating if the linked jwt should also be revoked when this TransferCode is revoked or
+// not
+func (tc TransferCode) GetRevokeJWT(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (bool, error) {
 	var revokeMT db.BitBool
-	err := db.RunWithinTransaction(tx, func(tx *sqlx.Tx) error {
-		if err := tx.Get(&revokeMT, `SELECT revoke_MT FROM TransferCodesAttributes WHERE id=?`, tc.id); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil
+	err := db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			if err := tx.Get(&revokeMT, `CALL TransferCodeAttributes_GetRevokeJWT(?)`, tc.id); err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					return nil
+				}
+				return errors.WithStack(err)
 			}
-			return errors.WithStack(err)
-		}
-		return nil
-	})
+			return nil
+		},
+	)
 	return bool(revokeMT), err
 }

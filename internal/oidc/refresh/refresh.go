@@ -1,25 +1,32 @@
 package refresh
 
 import (
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/oidc-mytoken/server/internal/config"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/cryptstore"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcReqRes"
 	"github.com/oidc-mytoken/server/shared/httpClient"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/pkg/errors"
 )
 
 // UpdateChangedRT is a function that should update a refresh token, it takes the old value as well as the new one
-type UpdateChangedRT func(tokenID mtid.MTID, newRT, mytoken string) error
+type UpdateChangedRT func(rlog log.Ext1FieldLogger, tokenID mtid.MTID, newRT, mytoken string) error
 
 // Refresh uses an refresh token to obtain a new access token; if the refresh token changes, this is ignored
-func Refresh(provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes, audiences string) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
-	return RefreshFlowAndUpdate(provider, tokenID, mytoken, rt, scopes, audiences, nil)
+func Refresh(
+	rlog log.Ext1FieldLogger, provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes, audiences string,
+) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
+	return RefreshFlowAndUpdate(rlog, provider, tokenID, mytoken, rt, scopes, audiences, nil)
 }
 
 // RefreshFlowAndUpdate uses an refresh token to obtain a new access token; if the refresh token changes, the
 // UpdateChangedRT function is used to update the refresh token
-func RefreshFlowAndUpdate(provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes, audiences string, updateFnc UpdateChangedRT) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
+func RefreshFlowAndUpdate(
+	rlog log.Ext1FieldLogger, provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes, audiences string,
+	updateFnc UpdateChangedRT,
+) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
 	req := oidcReqRes.NewRefreshRequest(rt, provider)
 	req.Scopes = scopes
 	req.Audiences = audiences
@@ -41,7 +48,7 @@ func RefreshFlowAndUpdate(provider *config.ProviderConf, tokenID mtid.MTID, myto
 		return nil, nil, errors.New("could not unmarshal oidc response")
 	}
 	if res.RefreshToken != "" && res.RefreshToken != rt && updateFnc != nil {
-		if err = updateFnc(tokenID, res.RefreshToken, mytoken); err != nil {
+		if err = updateFnc(rlog, tokenID, res.RefreshToken, mytoken); err != nil {
 			return res, nil, err
 		}
 	}
@@ -50,10 +57,12 @@ func RefreshFlowAndUpdate(provider *config.ProviderConf, tokenID mtid.MTID, myto
 
 // RefreshFlowAndUpdateDB uses an refresh token to obtain a new access token; if the refresh token changes, it is
 // updated in the database
-func RefreshFlowAndUpdateDB(provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes, audiences string) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
-	return RefreshFlowAndUpdate(provider, tokenID, mytoken, rt, scopes, audiences, updateChangedRTInDB)
+func RefreshFlowAndUpdateDB(
+	rlog log.Ext1FieldLogger, provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes, audiences string,
+) (*oidcReqRes.OIDCTokenResponse, *oidcReqRes.OIDCErrorResponse, error) {
+	return RefreshFlowAndUpdate(rlog, provider, tokenID, mytoken, rt, scopes, audiences, updateChangedRTInDB)
 }
 
-func updateChangedRTInDB(tokenID mtid.MTID, newRT, mytoken string) error {
-	return refreshtokenrepo.UpdateRefreshToken(nil, tokenID, newRT, mytoken)
+func updateChangedRTInDB(rlog log.Ext1FieldLogger, tokenID mtid.MTID, newRT, mytoken string) error {
+	return cryptstore.UpdateRefreshToken(rlog, nil, tokenID, newRT, mytoken)
 }

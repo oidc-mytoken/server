@@ -1,9 +1,11 @@
+# noinspection SqlResolveForFile
+
 #  Tables
 TRUNCATE TABLE AuthInfo;
 ALTER TABLE AuthInfo
-    ADD COLUMN IF NOT EXISTS rotation json NULL;
+    ADD COLUMN IF NOT EXISTS rotation JSON NULL;
 ALTER TABLE AuthInfo
-    ADD COLUMN IF NOT EXISTS response_type varchar(128) NOT NULL;
+    ADD COLUMN IF NOT EXISTS response_type VARCHAR(128) NOT NULL;
 ALTER TABLE AuthInfo
     ADD COLUMN IF NOT EXISTS max_token_len INT DEFAULT NULL NULL;
 ALTER TABLE AuthInfo

@@ -19,5 +19,27 @@
     position: absolute;
     bottom: 0;
     width: 100%;
-    height: 2.5rem;            /* Footer height */
+    height: 2.5rem; /* Footer height */
+}
+
+.code {
+    font-family: monospace;
+    color: white;
+    background-color: #2e3740;
+    border: 1px;
+    padding: 10px;
+}
+
+ul.list-group.list-group-striped li:nth-of-type(odd) {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+ul.list-group.list-group-striped li:nth-of-type(even) {
+    background: rgba(255, 255, 255, 0.0);
+}
+
+ul.list-group li.list-group-item {
+    border-top: 1px solid rgba(0, 0, 0, .15);
+    border-left: 1px solid rgba(0, 0, 0, .15);
+    border-right: 1px solid rgba(0, 0, 0, .15);
 }

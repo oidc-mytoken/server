@@ -5,11 +5,15 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints/revocation"
+	"github.com/oidc-mytoken/server/internal/endpoints/settings"
+	"github.com/oidc-mytoken/server/internal/endpoints/settings/grants"
+	"github.com/oidc-mytoken/server/internal/endpoints/settings/grants/ssh"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/access"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/routes"
+	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 func addAPIRoutes(s fiber.Router) {
@@ -30,5 +34,16 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 	}
 	if config.Get().Features.TokenInfo.Enabled {
 		s.Post(apiPaths.TokenInfoEndpoint, tokeninfo.HandleTokenInfo)
+	}
+	s.Get(apiPaths.UserSettingEndpoint, settings.HandleSettings)
+	grantPath := utils.CombineURLPath(apiPaths.UserSettingEndpoint, "grants")
+	s.Get(grantPath, grants.HandleListGrants)
+	s.Post(grantPath, grants.HandleEnableGrant)
+	s.Delete(grantPath, grants.HandleDisableGrant)
+	if config.Get().Features.SSH.Enabled {
+		sshGrantPath := utils.CombineURLPath(grantPath, "ssh")
+		s.Get(sshGrantPath, ssh.HandleGetSSHInfo)
+		s.Post(sshGrantPath, ssh.HandlePost)
+		s.Delete(sshGrantPath, ssh.HandleDeleteSSHKey)
 	}
 }

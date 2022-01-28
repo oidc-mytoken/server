@@ -139,7 +139,7 @@ function initAT(...next) {
     }
     let $table = $('#at-scopeTableBody');
     for (const scope of scopes) {
-        _addScopeValueToGUI(scope, $table);
+        _addScopeValueToGUI(scope, $table, "at");
     }
     doNext(...next);
 }

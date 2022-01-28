@@ -44,10 +44,12 @@ func (s *State) Hash() string {
 }
 
 // PollingCode returns the polling code for this State
-func (s *State) PollingCode() string {
+func (s *State) PollingCode(rlog log.Ext1FieldLogger) string {
 	if s.pollingCode == "" {
 		s.pollingCode = hashUtils.HMACBasedHash([]byte(s.state))[:config.Get().Features.Polling.Len]
-		log.WithField("state", s.state).WithField("polling_code", s.pollingCode).Debug("Created polling_code for state")
+		rlog.WithField("state", s.state).WithField(
+			"polling_code", s.pollingCode,
+		).Debug("Created polling_code for state")
 	}
 	return s.pollingCode
 }

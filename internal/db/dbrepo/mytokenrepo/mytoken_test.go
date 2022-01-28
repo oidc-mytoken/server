@@ -6,29 +6,45 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
 
-func testRoot(t *testing.T, a MytokenEntry, expected bool) {
-	root := a.Root()
-	if root != expected {
-		if expected {
-			t.Errorf("Actually '%+v' is a root entry", a)
-		} else {
-			t.Errorf("Actually '%+v' is not a root entry", a)
-		}
+func TestMytokenEntry_Root(t *testing.T) {
+	parentRoot := mtid.New()
+	tests := []struct {
+		name     string
+		mt       MytokenEntry
+		expected bool
+	}{
+		{
+			name:     "Empty",
+			mt:       MytokenEntry{},
+			expected: true,
+		},
+		{
+			name: "HasParentAsRoot",
+			mt: MytokenEntry{
+				ParentID: parentRoot,
+			},
+			expected: false,
+		},
+		{
+			name: "HasParentAndRoot",
+			mt: MytokenEntry{
+				ParentID: mtid.New(),
+			},
+			expected: false,
+		},
 	}
-}
-
-func TestSuperTokenEntry_RootEmpty(t *testing.T) {
-	a := MytokenEntry{}
-	testRoot(t, a, true)
-}
-func TestSuperTokenEntry_RootHasParentAsRoot(t *testing.T) {
-	id := mtid.New()
-	a := MytokenEntry{ParentID: id, RootID: id}
-	testRoot(t, a, false)
-}
-func TestSuperTokenEntry_RootHasRoot(t *testing.T) {
-	pid := mtid.New()
-	rid := mtid.New()
-	a := MytokenEntry{ParentID: pid, RootID: rid}
-	testRoot(t, a, false)
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				root := test.mt.Root()
+				if root != test.expected {
+					if test.expected {
+						t.Errorf("Actually '%+v' is a root entry", test.mt)
+					} else {
+						t.Errorf("Actually '%+v' is not a root entry", test.mt)
+					}
+				}
+			},
+		)
+	}
 }

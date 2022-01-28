@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
 	"math/rand"
@@ -99,22 +100,39 @@ func IPsAreSubSet(ipsA, ipsB []string) bool {
 	return true
 }
 
+func parseIP(ip string) (net.IP, *net.IPNet) {
+	ipA, ipNet, err := net.ParseCIDR(ip)
+	if err != nil {
+		ipA = net.ParseIP(ip)
+	}
+	if ipNet != nil && !ipA.Equal(ipNet.IP) {
+		ipNet = nil
+	}
+	return ipA, ipNet
+}
+
 // IPIsIn checks if a ip is in a slice of ips, it will also check ip subnets
 func IPIsIn(ip string, ips []string) bool {
 	if len(ips) == 0 {
 		return false
 	}
-	ipA := net.ParseIP(ip)
+	ipA, ipNetA := parseIP(ip)
 	for _, ipp := range ips {
-		if strings.Contains(ipp, "/") {
-			_, ipNetB, _ := net.ParseCIDR(ipp)
-			if ipNetB != nil && ipNetB.Contains(ipA) {
+		ipB, ipNetB := parseIP(ipp)
+		if ipNetA == nil && ipNetB == nil {
+			if ipA.Equal(ipB) {
 				return true
 			}
-		} else if ip == ipp {
-			return true
+		} else if ipNetA == nil && ipNetB != nil {
+			if ipNetB.Contains(ipA) {
+				return true
+			}
+		} else if ipNetA != nil && ipNetB != nil {
+			if ipNetB.Contains(ipA) && bytes.Compare(ipNetA.Mask, ipNetB.Mask) >= 0 {
+				return true
+			}
 		}
-
+		// check for ipNetA != nil && ipNetB == nil not needed -> won't work
 	}
 	return false
 }
@@ -210,6 +228,8 @@ func SplitIgnoreEmpty(s, del string) (ret []string) {
 	return
 }
 
+// RSplitN splits a string s at the delimiter del into n pieces. Unlike strings.SplitN RSplitN splits the string
+// starting from the right side
 func RSplitN(s, del string, n int) []string {
 	if n == 0 {
 		return nil

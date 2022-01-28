@@ -11,7 +11,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/accesstokenrepo"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/cryptstore"
 	request "github.com/oidc-mytoken/server/internal/endpoints/token/access/pkg"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
@@ -20,6 +20,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+	"github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/shared/model"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
@@ -32,56 +33,73 @@ import (
 
 // HandleAccessTokenEndpoint handles request on the access token endpoint
 func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
-	log.Debug("Handle access token request")
+	rlog := logger.GetRequestLogger(ctx)
+	rlog.Debug("Handle access token request")
 	req := request.NewAccessTokenRequest()
 	if err := ctx.BodyParser(&req); err != nil {
 		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	log.Trace("Parsed access token request")
+	rlog.Trace("Parsed access token request")
 	if req.Mytoken.JWT == "" {
 		req.Mytoken = req.RefreshToken
 	}
 
-	if errRes := auth.RequireGrantType(model.GrantTypeMytoken, req.GrantType); errRes != nil {
+	if errRes := auth.RequireGrantType(rlog, model.GrantTypeMytoken, req.GrantType); errRes != nil {
 		return errRes.Send(ctx)
 	}
-	mt, errRes := auth.RequireValidMytoken(nil, &req.Mytoken, ctx)
+	mt, errRes := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(nil, mt, ctx.IP(),
+	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
+		rlog, nil, mt, ctx.IP(),
 		utils.SplitIgnoreEmpty(req.Scope, " "),
 		utils.SplitIgnoreEmpty(req.Audience, " "),
-		api.CapabilityAT)
+		api.CapabilityAT,
+	)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
-	provider, errRes := auth.RequireMatchingIssuer(mt.OIDCIssuer, &req.Issuer)
+	provider, errRes := auth.RequireMatchingIssuer(rlog, mt.OIDCIssuer, &req.Issuer)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
 
-	return handleAccessTokenRefresh(mt, req, *ctxUtils.ClientMetaData(ctx), provider, usedRestriction).Send(ctx)
+	return HandleAccessTokenRefresh(rlog, mt, req, *ctxUtils.ClientMetaData(ctx), provider, usedRestriction).Send(ctx)
 }
 
-func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData api.ClientMetaData, provider *config.ProviderConf, usedRestriction *restrictions.Restriction) *serverModel.Response {
-	scopes := strings.Join(provider.Scopes, " ") // default if no restrictions apply
-	auds := ""                                   // default if no restrictions apply
+func parseScopesAndAudienceToUse(
+	reqScope, reqAud string, usedRestriction *restrictions.Restriction,
+	providerScopes []string,
+) (
+	string,
+	string,
+) {
+	scopes := strings.Join(providerScopes, " ") // default if no restrictions apply
+	auds := ""                                  // default if no restrictions apply
 	if usedRestriction != nil {
-		if req.Scope != "" {
-			scopes = req.Scope
+		if reqScope != "" {
+			scopes = reqScope
 		} else if usedRestriction.Scope != "" {
 			scopes = usedRestriction.Scope
 		}
-		if req.Audience != "" {
-			auds = req.Audience
+		if reqAud != "" {
+			auds = reqAud
 		} else if len(usedRestriction.Audiences) > 0 {
 			auds = strings.Join(usedRestriction.Audiences, " ")
 		}
 	}
-	rt, rtFound, dbErr := refreshtokenrepo.GetRefreshToken(nil, mt.ID, req.Mytoken.JWT)
+	return scopes, auds
+}
+
+// HandleAccessTokenRefresh handles an access token request
+func HandleAccessTokenRefresh(
+	rlog log.Ext1FieldLogger, mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData api.ClientMetaData,
+	provider *config.ProviderConf, usedRestriction *restrictions.Restriction,
+) *serverModel.Response {
+	rt, rtFound, dbErr := cryptstore.GetRefreshToken(rlog, nil, mt.ID, req.Mytoken.JWT)
 	if dbErr != nil {
-		log.Errorf("%s", errorfmt.Full(dbErr))
+		rlog.Errorf("%s", errorfmt.Full(dbErr))
 		return serverModel.ErrorToInternalServerErrorResponse(dbErr)
 	}
 	if !rtFound {
@@ -91,9 +109,10 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 		}
 	}
 
-	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds)
+	scopes, auds := parseScopesAndAudienceToUse(req.Scope, req.Audience, usedRestriction, provider.Scopes)
+	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(rlog, provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}
 	if oidcErrRes != nil {
@@ -102,11 +121,12 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 			Response: model.OIDCError(oidcErrRes.Error, oidcErrRes.ErrorDescription),
 		}
 	}
+
 	retScopes := oidcRes.Scopes
 	if retScopes == "" {
 		retScopes = scopes
 	}
-	retAudiences, _ := jwtutils.GetAudiencesFromJWT(oidcRes.AccessToken)
+	retAudiences, _ := jwtutils.GetAudiencesFromJWT(rlog, oidcRes.AccessToken)
 	at := accesstokenrepo.AccessToken{
 		Token:     oidcRes.AccessToken,
 		IP:        networkData.IP,
@@ -115,27 +135,33 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 		Scopes:    utils.SplitIgnoreEmpty(retScopes, " "),
 		Audiences: retAudiences,
 	}
+
 	var tokenUpdate *response.MytokenResponse
-	if err = db.Transact(func(tx *sqlx.Tx) error {
-		if err = at.Store(tx); err != nil {
-			return err
-		}
-		if err = eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.MTEventATCreated, "Used grant_type mytoken"),
-			MTID:  mt.ID,
-		}, networkData); err != nil {
-			return err
-		}
-		if usedRestriction != nil {
-			if err = usedRestriction.UsedAT(tx, mt.ID); err != nil {
+	if err = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			if err = at.Store(rlog, tx); err != nil {
 				return err
 			}
-		}
-		tokenUpdate, err = rotation.RotateMytokenAfterATForResponse(
-			tx, req.Mytoken.JWT, mt, networkData, req.Mytoken.OriginalTokenType)
-		return err
-	}); err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+			if err = eventService.LogEvent(
+				rlog, tx, eventService.MTEvent{
+					Event: event.FromNumber(event.ATCreated, "Used grant_type mytoken"),
+					MTID:  mt.ID,
+				}, networkData,
+			); err != nil {
+				return err
+			}
+			if usedRestriction != nil {
+				if err = usedRestriction.UsedAT(rlog, tx, mt.ID); err != nil {
+					return err
+				}
+			}
+			tokenUpdate, err = rotation.RotateMytokenAfterATForResponse(
+				rlog, tx, req.Mytoken.JWT, mt, networkData, req.Mytoken.OriginalTokenType,
+			)
+			return err
+		},
+	); err != nil {
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}
 
@@ -151,8 +177,7 @@ func handleAccessTokenRefresh(mt *mytoken.Mytoken, req request.AccessTokenReques
 	var cake []*fiber.Cookie
 	if tokenUpdate != nil {
 		rsp.TokenUpdate = tokenUpdate
-		cookie := cookies.MytokenCookie(tokenUpdate.Mytoken)
-		cake = []*fiber.Cookie{&cookie}
+		cake = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
 	}
 	return &serverModel.Response{
 		Status:   fiber.StatusOK,

@@ -3,13 +3,17 @@ services:
   mytoken:
     hostname: 'mytoken_{{.Task.Slot}}'
     image: oidcmytoken/mytoken-server
-    working_dir: /root/mytoken
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=0
     volumes:
       - ${MYTOKEN_CONFIG_FILE}:/etc/mytoken/config.yaml
-      - ${MYTOKEN_GEOIPDB}:/root/mytoken/IP2LOCATION-LITE-DB1.IPV6.BIN
-      - ${MYTOKEN_LOGS_DIR}:/root/mytoken/logs
+      - ${MYTOKEN_GEOIPDB}:/mytoken/IP2LOCATION-LITE-DB1.IPV6.BIN
+      - ${MYTOKEN_LOGS_DIR}:/mytoken/logs
     secrets:
       - signing_key
+      - ssh_host_ecdsa_key
+      - ssh_host_ed25519_key
+      - ssh_host_rsa_key
       - db_password
     networks:
       - frontend
@@ -23,14 +27,15 @@ services:
       #        max_replicas_per_node: 1
       restart_policy:
         condition: any
-        delay: 120s
+        delay: 30s
         window: 60s
       rollback_config:
         parallelism: 1
-        delay: 120s
+        delay: 30s
       update_config:
         parallelism: 1
-        delay: 180s
+        delay: 60s
+        monitor: 30s
         failure_action: rollback
 
   db-bootstrap:
@@ -43,6 +48,8 @@ services:
     env_file:
       - db.env
     environment:
+      - MARIADB_GALERA_CLUSTER_BOOTSTRAP=yes
+      - MARIADB_GALERA_CLUSTER_ADDRESS=gcomm://
       - MARIADB_PASSWORD_FILE=/run/secrets/db_password
       - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
       - MARIADB_GALERA_MARIABACKUP_PASSWORD_FILE=/run/secrets/db_backup_password
@@ -117,7 +124,7 @@ services:
       - DB_PASSWORD_FILE=/run/secrets/db_root_password
       - DB_DATABASE=mytoken
       - DB_NODES=db_1,db_2,db_3
-      - WAIT_FOR_NODES=db_1:3306,db_2:3306,db_3:3306
+      - WAIT_FOR_NODES=db_1:3306 # migrate only uses the first node for the migration, so we must wait for that one
       - MYTOKEN_NODES=mytoken_1,mytoken_2,mytoken_3
     secrets:
       - db_root_password
@@ -138,6 +145,12 @@ services:
       - target: 443
         published: 443
         mode: host
+      - target: 2222
+        published: 2222
+        mode: host
+      - target: 8888
+        published: 8888
+        mode: host
     sysctls:
       - net.ipv4.ip_unprivileged_port_start=0
     volumes:
@@ -147,6 +160,20 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+
+#  debug:
+#    deploy:
+#      mode: replicated
+#      replicas: 1
+#      restart_policy:
+#        condition: on-failure
+#    image: debian:stable
+#    networks:
+#      backend: null
+#      frontend: null
+#    entrypoint: /bin/bash
+#    stdin_open: true # docker run -i
+#    tty: true        # docker run -t
 
 
 networks:
@@ -166,3 +193,9 @@ secrets:
     file: ${SECRET_DB_BACKUP_PASSWORD_FILE}
   db_replication_password:
     file: ${SECRET_DB_REPLICATION_PASSWORD_FILE}
+  ssh_host_ecdsa_key:
+    file: ${SECRET_SSH_HOST_ECDSA_KEY}
+  ssh_host_ed25519_key:
+    file: ${SECRET_SSH_HOST_ED25519_KEY}
+  ssh_host_rsa_key:
+    file: ${SECRET_SSH_HOST_RSA_KEY}

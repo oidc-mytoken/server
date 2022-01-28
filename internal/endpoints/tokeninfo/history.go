@@ -22,40 +22,53 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 )
 
-func doTokenInfoHistory(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData, usedRestriction *restrictions.Restriction) (history eventrepo.EventHistory, tokenUpdate *response.MytokenResponse, err error) {
-	err = db.Transact(func(tx *sqlx.Tx) error {
-		history, err = eventrepo.GetEventHistory(tx, mt.ID)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return err
-		}
-		if usedRestriction == nil {
-			return nil
-		}
-		if err = usedRestriction.UsedOther(tx, mt.ID); err != nil {
-			return err
-		}
-		tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(
-			tx, req.Mytoken.JWT, mt, *clientMetadata, req.Mytoken.OriginalTokenType)
-		if err != nil {
-			return err
-		}
-		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.MTEventTokenInfoHistory, ""),
-			MTID:  mt.ID,
-		}, *clientMetadata)
-	})
+func doTokenInfoHistory(
+	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+	usedRestriction *restrictions.Restriction,
+) (history eventrepo.EventHistory, tokenUpdate *response.MytokenResponse, err error) {
+	err = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			history, err = eventrepo.GetEventHistory(rlog, tx, mt.ID)
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
+				return err
+			}
+			if usedRestriction == nil {
+				return nil
+			}
+			if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
+				return err
+			}
+			tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(
+				rlog, tx, req.Mytoken.JWT, mt, *clientMetadata, req.Mytoken.OriginalTokenType,
+			)
+			if err != nil {
+				return err
+			}
+			return eventService.LogEvent(
+				rlog, tx, eventService.MTEvent{
+					Event: event.FromNumber(event.TokenInfoHistory, ""),
+					MTID:  mt.ID,
+				}, *clientMetadata,
+			)
+		},
+	)
 	return
 }
 
-func handleTokenInfoHistory(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
+// HandleTokenInfoHistory handles a tokeninfo history request
+func HandleTokenInfoHistory(
+	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+) model.Response {
 	// If we call this function it means the token is valid.
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(nil, mt, clientMetadata.IP, nil, nil, api.CapabilityTokeninfoHistory)
+	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
+		rlog, nil, mt, clientMetadata.IP, nil, nil, api.CapabilityTokeninfoHistory,
+	)
 	if errRes != nil {
 		return *errRes
 	}
-	history, tokenUpdate, err := doTokenInfoHistory(req, mt, clientMetadata, usedRestriction)
+	history, tokenUpdate, err := doTokenInfoHistory(rlog, req, mt, clientMetadata, usedRestriction)
 	if err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return *model.ErrorToInternalServerErrorResponse(err)
 	}
 	rsp := pkg.NewTokeninfoHistoryResponse(history, tokenUpdate)

@@ -2,20 +2,28 @@ package logger
 
 import (
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/writer"
 
 	"github.com/oidc-mytoken/server/internal/config"
 )
 
 func mustGetFile(path string) io.Writer {
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	file, err := getFile(path)
 	if err != nil {
 		panic(err)
 	}
 	return file
+}
+
+func getFile(path string) (io.Writer, error) {
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	return f, errors.WithStack(err)
 }
 
 var accessLogger *exchangeableWriter
@@ -76,19 +84,36 @@ func parseLogLevel() log.Level {
 
 // Init initializes the logger
 func Init() {
-	log.SetLevel(parseLogLevel())
-	if log.IsLevelEnabled(log.DebugLevel) {
-		log.SetReportCaller(true)
-	}
+	log.SetLevel(log.TraceLevel) // This is not the log level for logs, this just asserts that hooks with all levels can
+	// be triggered
+
+	log.SetFormatter(
+		&log.TextFormatter{
+			DisableColors: true,
+			ForceQuote:    true,
+			FullTimestamp: true,
+		},
+	)
 	SetOutput()
 }
 
 // SetOutput sets the logging output
 func SetOutput() {
-	log.SetFormatter(&log.TextFormatter{
-		DisableColors: true,
-		ForceQuote:    true,
-		FullTimestamp: true,
-	})
-	log.SetOutput(mustGetLogWriter(config.Get().Logging.Internal, "mytoken.log"))
+	logLevel := parseLogLevel()
+	log.SetReportCaller(log.DebugLevel <= logLevel)
+	log.StandardLogger().Hooks = make(log.LevelHooks)
+	log.AddHook(
+		&writer.Hook{
+			Writer:    mustGetLogWriter(config.Get().Logging.Internal.LoggerConf, "mytoken.log"),
+			LogLevels: minLogLevelToLevels(logLevel),
+		},
+	)
+	log.SetOutput(ioutil.Discard)
+}
+
+func minLogLevelToLevels(minLevel log.Level) (levels []log.Level) {
+	for l := log.PanicLevel; l <= minLevel; l++ {
+		levels = append(levels, l)
+	}
+	return
 }

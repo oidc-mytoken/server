@@ -70,9 +70,11 @@ func (c *Cluster) AddNodes() {
 // AddNode adds the passed host a a db node to the cluster
 func (c *Cluster) AddNode(host string) error {
 	log.WithField("host", host).Debug("Adding node to db cluster")
-	return c.addNode(&node{
-		host: host,
-	})
+	return c.addNode(
+		&node{
+			host: host,
+		},
+	)
 }
 
 func (c *Cluster) addNode(n *node) error {
@@ -96,12 +98,12 @@ func (c *Cluster) startReconnector() {
 		for {
 			select {
 			case <-c.stop:
-				log.Debug("Stopping reconnector")
+				log.Debug("Stopping re-connector")
 				return
 			default:
 				log.Debug("Run checkNodesDown")
 				if c.checkNodesDown() {
-					log.Debug("Stopping reconnector")
+					log.Debug("Stopping re-connector")
 					return
 				}
 				conf := c.conf
@@ -158,36 +160,36 @@ func connectDSN(dsn string) (*sqlx.DB, error) {
 }
 
 // Transact does a database transaction for the passed function
-func (c *Cluster) Transact(fn func(*sqlx.Tx) error) error {
+func (c *Cluster) Transact(rlog log.Ext1FieldLogger, fn func(*sqlx.Tx) error) error {
 	for {
-		n := c.next()
+		n := c.next(rlog)
 		if n == nil {
 			return errors.New("no db node available")
 		}
-		closed, err := n.transact(fn)
+		closed, err := n.transact(rlog, fn)
 		if !closed {
 			return err
 		}
-		log.Errorf("%s", errorfmt.Full(err))
+		rlog.Errorf("%s", errorfmt.Full(err))
 		n.active = false
 	}
 }
 
-func (n *node) transact(fn func(*sqlx.Tx) error) (bool, error) {
-	err := n.trans(fn)
+func (n *node) transact(rlog log.Ext1FieldLogger, fn func(*sqlx.Tx) error) (bool, error) {
+	err := n.trans(rlog, fn)
 	if err != nil {
 		e := errorfmt.Error(err)
 		switch {
 		case e == "sql: database is closed",
 			strings.HasPrefix(e, "dial tcp"),
 			strings.HasSuffix(e, "closing bad idle connection: EOF"):
-			log.WithField("host", n.host).Error("Node is down")
+			rlog.WithField("host", n.host).Error("Node is down")
 			return true, err
 		}
 	}
 	return false, err
 }
-func (n *node) trans(fn func(*sqlx.Tx) error) error {
+func (n *node) trans(rlog log.Ext1FieldLogger, fn func(*sqlx.Tx) error) error {
 	tx, err := n.db.Beginx()
 	if err != nil {
 		return errors.WithStack(err)
@@ -195,36 +197,36 @@ func (n *node) trans(fn func(*sqlx.Tx) error) error {
 	err = fn(tx)
 	if err != nil {
 		if e := tx.Rollback(); e != nil {
-			log.Errorf("%s", errorfmt.Full(e))
+			rlog.Errorf("%s", errorfmt.Full(e))
 		}
 		return err
 	}
 	return errors.WithStack(tx.Commit())
 }
 
-func (c *Cluster) next() *node {
-	log.Trace("Selecting a node")
+func (c *Cluster) next(rlog log.Ext1FieldLogger) *node {
+	rlog.Trace("Selecting a node")
 	select {
 	case n := <-c.active:
 		if n.active {
 			c.active <- n
-			log.WithField("host", n.host).Trace("Selected active node")
+			rlog.WithField("host", n.host).Trace("Selected active node")
 			return n
 		}
-		log.WithField("host", n.host).Trace("Found inactive node")
+		rlog.WithField("host", n.host).Trace("Found inactive node")
 		go c.addNode(n) // try to add node again, if it does not work, will add to down nodes
-		return c.next()
+		return c.next(rlog)
 	default:
-		log.Debug("No active nodes")
+		rlog.Debug("No active nodes")
 		return nil
 	}
 }
 
 // RunWithinTransaction runs the passed function using the passed transaction; if nil is passed as tx a new transaction
 // is created. This is basically a wrapper function, that works with a possible nil-tx
-func (c *Cluster) RunWithinTransaction(tx *sqlx.Tx, fn func(*sqlx.Tx) error) error {
+func (c *Cluster) RunWithinTransaction(rlog log.Ext1FieldLogger, tx *sqlx.Tx, fn func(*sqlx.Tx) error) error {
 	if tx == nil {
-		return c.Transact(fn)
+		return c.Transact(rlog, fn)
 	} else {
 		return fn(tx)
 	}

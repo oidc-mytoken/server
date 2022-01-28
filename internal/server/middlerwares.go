@@ -13,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/gofiber/helmet/v2"
 	log "github.com/sirupsen/logrus"
 
@@ -43,20 +44,25 @@ func init() {
 
 func addMiddlewares(s fiber.Router) {
 	addRecoverMiddleware(s)
-	addFaviconMiddleware(s)
+	addRequestIDMiddleware(s)
 	addLoggerMiddleware(s)
 	addLimiterMiddleware(s)
+	addFaviconMiddleware(s)
 	addHelmetMiddleware(s)
 	addStaticFiles(s)
 	addCompressMiddleware(s)
 }
 
 func addLoggerMiddleware(s fiber.Router) {
-	s.Use(logger.New(logger.Config{
-		Format:     "${time} ${ip} ${ua} ${latency} - ${status} ${method} ${path}\n",
-		TimeFormat: "2006-01-02 15:04:05",
-		Output:     loggerUtils.MustGetAccessLogger(),
-	}))
+	s.Use(
+		logger.New(
+			logger.Config{
+				Format:     "${time} ${ip} ${ua} ${latency} - ${status} ${method} ${path} ${locals:requestid}\n",
+				TimeFormat: "2006-01-02 15:04:05",
+				Output:     loggerUtils.MustGetAccessLogger(),
+			},
+		),
+	)
 }
 
 func addLimiterMiddleware(s fiber.Router) {
@@ -64,13 +70,17 @@ func addLimiterMiddleware(s fiber.Router) {
 	if !limiterConf.Enabled {
 		return
 	}
-	s.Use(limiter.New(limiter.Config{
-		Next: func(c *fiber.Ctx) bool {
-			return utils.IPIsIn(c.IP(), limiterConf.AlwaysAllow)
-		},
-		Max:        limiterConf.Max,
-		Expiration: time.Duration(limiterConf.Window) * time.Second,
-	}))
+	s.Use(
+		limiter.New(
+			limiter.Config{
+				Next: func(c *fiber.Ctx) bool {
+					return utils.IPIsIn(c.IP(), limiterConf.AlwaysAllow)
+				},
+				Max:        limiterConf.Max,
+				Expiration: time.Duration(limiterConf.Window) * time.Second,
+			},
+		),
+	)
 }
 
 func addCompressMiddleware(s fiber.Router) {
@@ -78,17 +88,25 @@ func addCompressMiddleware(s fiber.Router) {
 }
 
 func addStaticFiles(s fiber.Router) {
-	s.Use("/static", filesystem.New(filesystem.Config{
-		Root:   http.FS(staticFS),
-		MaxAge: 3600,
-	}))
+	s.Use(
+		"/static", filesystem.New(
+			filesystem.Config{
+				Root:   http.FS(staticFS),
+				MaxAge: 3600,
+			},
+		),
+	)
 }
 
 func addFaviconMiddleware(s fiber.Router) {
-	s.Use(favicon.New(favicon.Config{
-		File:       "favicon.ico",
-		FileSystem: http.FS(faviconFS),
-	}))
+	s.Use(
+		favicon.New(
+			favicon.Config{
+				File:       "favicon.ico",
+				FileSystem: http.FS(faviconFS),
+			},
+		),
+	)
 }
 
 func addRecoverMiddleware(s fiber.Router) {
@@ -97,4 +115,8 @@ func addRecoverMiddleware(s fiber.Router) {
 
 func addHelmetMiddleware(s fiber.Router) {
 	s.Use(helmet.New())
+}
+
+func addRequestIDMiddleware(s fiber.Router) {
+	s.Use(requestid.New())
 }

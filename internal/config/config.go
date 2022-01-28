@@ -2,11 +2,13 @@ package config
 
 import (
 	"io/ioutil"
+	"net/url"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v3"
 
 	model2 "github.com/oidc-mytoken/server/internal/model"
@@ -51,10 +53,16 @@ var defaultConfig = Config{
 			Dir:    "/var/log/mytoken",
 			StdErr: false,
 		},
-		Internal: LoggerConf{
-			Dir:    "/var/log/mytoken",
-			StdErr: false,
-			Level:  "error",
+		Internal: internalLoggerConf{
+			LoggerConf: LoggerConf{
+				Dir:    "/var/log/mytoken",
+				StdErr: false,
+				Level:  "error",
+			},
+			Smart: smartLoggerConf{
+				Enabled: true,
+				Dir:     "", // if empty equal to normal logging dir
+			},
 		},
 	},
 	ServiceDocumentation: "https://docs-sdm.scc.kit.edu/mytoken/",
@@ -74,9 +82,7 @@ var defaultConfig = Config{
 			PollingCodeExpiresAfter: 300,
 			PollingInterval:         5,
 		},
-		TokenRotation:    onlyEnable{true},
-		AccessTokenGrant: onlyEnable{true},
-		SignedJWTGrant:   onlyEnable{true},
+		TokenRotation: onlyEnable{true},
 		TokenInfo: tokeninfoConfig{
 			Introspect: onlyEnable{true},
 			History:    onlyEnable{true},
@@ -84,6 +90,9 @@ var defaultConfig = Config{
 			List:       onlyEnable{true},
 		},
 		WebInterface: onlyEnable{true},
+		SSH: sshConf{
+			Enabled: false,
+		},
 	},
 	ProviderByIssuer: make(map[string]*ProviderConf),
 	API: apiConf{
@@ -94,6 +103,7 @@ var defaultConfig = Config{
 // Config holds the server configuration
 type Config struct {
 	IssuerURL            string                   `yaml:"issuer"`
+	Host                 string                   // Extracted from the IssuerURL
 	Server               serverConf               `yaml:"server"`
 	GeoIPDBFile          string                   `yaml:"geo_ip_db_file"`
 	API                  apiConf                  `yaml:"api"`
@@ -118,11 +128,17 @@ type featuresConf struct {
 	TransferCodes           onlyEnable             `yaml:"transfer_codes"`
 	Polling                 pollingConf            `yaml:"polling_codes"`
 	TokenRotation           onlyEnable             `yaml:"token_rotation"`
-	AccessTokenGrant        onlyEnable             `yaml:"access_token_grant"`
-	SignedJWTGrant          onlyEnable             `yaml:"signed_jwt_grant"`
 	TokenInfo               tokeninfoConfig        `yaml:"tokeninfo"`
 	WebInterface            onlyEnable             `yaml:"web_interface"`
 	DisabledRestrictionKeys model2.RestrictionKeys `yaml:"unsupported_restrictions"`
+	SSH                     sshConf                `yaml:"ssh"`
+}
+
+type sshConf struct {
+	Enabled          bool         `yaml:"enabled"`
+	UseProxyProtocol bool         `yaml:"use_proxy_protocol"`
+	KeyFiles         []string     `yaml:"keys"`
+	PrivateKeys      []ssh.Signer `yaml:"-"`
 }
 
 type tokeninfoConfig struct {
@@ -143,8 +159,13 @@ type onlyEnable struct {
 }
 
 type loggingConf struct {
-	Access   LoggerConf `yaml:"access"`
-	Internal LoggerConf `yaml:"internal"`
+	Access   LoggerConf         `yaml:"access"`
+	Internal internalLoggerConf `yaml:"internal"`
+}
+
+type internalLoggerConf struct {
+	LoggerConf `yaml:",inline"`
+	Smart      smartLoggerConf `yaml:"smart"`
 }
 
 // LoggerConf holds configuration related to logging
@@ -152,6 +173,36 @@ type LoggerConf struct {
 	Dir    string `yaml:"dir"`
 	StdErr bool   `yaml:"stderr"`
 	Level  string `yaml:"level"`
+}
+
+type smartLoggerConf struct {
+	Enabled bool   `yaml:"enabled"`
+	Dir     string `yaml:"dir"`
+}
+
+func checkLoggingDirExists(dir string) error {
+	if dir != "" && !fileutil.FileExists(dir) {
+		return errors.Errorf("logging directory '%s' does not exist", dir)
+	}
+	return nil
+}
+
+func (log *loggingConf) validate() error {
+	if err := checkLoggingDirExists(log.Access.Dir); err != nil {
+		return err
+	}
+	if err := checkLoggingDirExists(log.Internal.Dir); err != nil {
+		return err
+	}
+	if log.Internal.Smart.Enabled {
+		if log.Internal.Smart.Dir == "" {
+			log.Internal.Smart.Dir = log.Internal.Dir
+		}
+		if err := checkLoggingDirExists(log.Internal.Smart.Dir); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type pollingConf struct {
@@ -163,12 +214,13 @@ type pollingConf struct {
 
 // DBConf is type for holding configuration for a db
 type DBConf struct {
-	Hosts             []string `yaml:"hosts"`
-	User              string   `yaml:"user"`
-	Password          string   `yaml:"password"`
-	PasswordFile      string   `yaml:"password_file"`
-	DB                string   `yaml:"db"`
-	ReconnectInterval int64    `yaml:"try_reconnect_interval"`
+	Hosts                  []string `yaml:"hosts"`
+	User                   string   `yaml:"user"`
+	Password               string   `yaml:"password"`
+	PasswordFile           string   `yaml:"password_file"`
+	DB                     string   `yaml:"db"`
+	ReconnectInterval      int64    `yaml:"try_reconnect_interval"`
+	EnableScheduledCleanup bool     `yaml:"schedule_cleanup"`
 }
 
 type serverConf struct {
@@ -267,11 +319,17 @@ func validate() error {
 		return errors.New("config not set")
 	}
 	if conf.IssuerURL == "" {
-		return errors.New("invalid config:issuer_url not set")
+		return errors.New("invalid config: issuer_url not set")
 	}
+	//goland:noinspection HttpUrlsUsage
 	if strings.HasPrefix(conf.IssuerURL, "http://") {
 		conf.Server.Secure = false
 	}
+	u, err := url.Parse(conf.IssuerURL)
+	if err != nil {
+		return errors.Wrap(err, "invalid config: issuer_url not valid")
+	}
+	conf.Host = u.Hostname()
 	if conf.Server.TLS.Enabled {
 		if conf.Server.TLS.Key != "" && conf.Server.TLS.Cert != "" {
 			conf.Server.Port = 443
@@ -279,7 +337,10 @@ func validate() error {
 			conf.Server.TLS.Enabled = false
 		}
 	}
-	if err := conf.ServiceOperator.validate(); err != nil {
+	if err = conf.Logging.validate(); err != nil {
+		return err
+	}
+	if err = conf.ServiceOperator.validate(); err != nil {
 		return err
 	}
 	if len(conf.Providers) <= 0 {
@@ -289,11 +350,13 @@ func validate() error {
 		if p.Issuer == "" {
 			return errors.Errorf("invalid config: provider.issuer not set (Index %d)", i)
 		}
-		var err error
-		p.Endpoints, err = oauth2x.NewConfig(context.Get(), p.Issuer).Endpoints()
+		oc, err := oauth2x.NewConfig(context.Get(), p.Issuer)
 		if err != nil {
 			return errors.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
 		}
+		// Endpoints only returns an error if it does discovery but this was already done in NewConfig, so we can ignore
+		// the error value
+		p.Endpoints, _ = oc.Endpoints()
 		p.Provider, err = oidc.NewProvider(context.Get(), p.Issuer)
 		if err != nil {
 			return errors.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
@@ -315,18 +378,31 @@ func validate() error {
 		}
 	}
 	if conf.IssuerURL == "" {
-		return errors.New("invalid config: issuerurl not set")
+		return errors.New("invalid config: issuer_url not set")
 	}
 	if conf.Signing.KeyFile == "" {
-		return errors.New("invalid config: signingkeyfile not set")
+		return errors.New("invalid config: signing keyfile not set")
 	}
 	if conf.Signing.Alg == "" {
-		return errors.New("invalid config: tokensigningalg not set")
+		return errors.New("invalid config: token signing alg not set")
 	}
 	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(&conf.Features.EnabledOIDCFlows)
-	// if model.OIDCFlowIsInSlice(model.OIDCFlowDevice, conf.Features.EnabledOIDCFlows) && !conf.Features.Polling.Enabled {
-	// 	return errors.New("oidc flow device flow requires polling_codes to be enabled")
-	// }
+	if conf.Features.SSH.Enabled {
+		if len(conf.Features.SSH.KeyFiles) == 0 {
+			return errors.New("invalid config: ssh feature enabled, but no ssh private key set")
+		}
+		for _, pkf := range conf.Features.SSH.KeyFiles {
+			pemBytes, err := ioutil.ReadFile(pkf)
+			if err != nil {
+				return errors.Wrap(err, "reading ssh private key")
+			}
+			signer, err := ssh.ParsePrivateKey(pemBytes)
+			if err != nil {
+				return errors.Wrap(err, "parsing ssh private key")
+			}
+			conf.Features.SSH.PrivateKeys = append(conf.Features.SSH.PrivateKeys, signer)
+		}
+	}
 	if !conf.Features.TokenInfo.Introspect.Enabled && conf.Features.WebInterface.Enabled {
 		return errors.New("web interface requires tokeninfo.introspect to be enabled")
 	}

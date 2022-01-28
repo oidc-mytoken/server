@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -27,6 +28,22 @@ func ConnectConfig(conf config.DBConf) {
 		db.Close()
 	}
 	db = cluster.NewFromConfig(conf)
+	if err := db.Transact(
+		log.StandardLogger(), func(tx *sqlx.Tx) error {
+			var err error
+			if conf.EnableScheduledCleanup {
+				_, err = tx.Exec(`CALL cleanup_schedule_enable()`)
+				log.Debug("Enabled scheduled db cleanup")
+			} else {
+				_, err = tx.Exec(`CALL cleanup_schedule_disable()`)
+				log.Debug("Disabled scheduled db cleanup")
+			}
+			return err
+		},
+	); err != nil {
+		log.WithError(err).Error()
+	}
+
 }
 
 // NullString extends the sql.NullString
@@ -63,6 +80,17 @@ func NewNullString(s string) NullString {
 	}
 }
 
+// NewNullTime creates a new sql.NullTime from the given time.Time
+func NewNullTime(t time.Time) sql.NullTime {
+	if t.Equal(time.Time{}) {
+		return sql.NullTime{}
+	}
+	return sql.NullTime{
+		Time:  t,
+		Valid: true,
+	}
+}
+
 // BitBool is an implementation of a bool for the MySQL type BIT(1).
 // This type allows you to avoid wasting an entire byte for MySQL's boolean type TINYINT.
 type BitBool bool
@@ -93,12 +121,23 @@ func (b *BitBool) Scan(src interface{}) error {
 }
 
 // Transact does a database transaction for the passed function
-func Transact(fn func(*sqlx.Tx) error) error {
-	return db.Transact(fn)
+func Transact(rlog log.Ext1FieldLogger, fn func(*sqlx.Tx) error) error {
+	return db.Transact(rlog, fn)
 }
 
 // RunWithinTransaction runs the passed function using the passed transaction; if nil is passed as tx a new transaction
 // is created. This is basically a wrapper function, that works with a possible nil-tx
-func RunWithinTransaction(tx *sqlx.Tx, fn func(*sqlx.Tx) error) error {
-	return db.RunWithinTransaction(tx, fn)
+func RunWithinTransaction(rlog log.Ext1FieldLogger, tx *sqlx.Tx, fn func(*sqlx.Tx) error) error {
+	return db.RunWithinTransaction(rlog, tx, fn)
+}
+
+// ParseError parses the passed error for a sql.ErrNoRows
+func ParseError(err error) (bool, error) {
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		err = nil
+	}
+	return false, err
 }

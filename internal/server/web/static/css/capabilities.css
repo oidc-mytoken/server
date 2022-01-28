@@ -1,0 +1,20 @@
+li.list-group-item li.list-group-item.capability {
+    margin-right: -0.75rem;
+    margin-left: 1rem;
+}
+
+li.list-group-item.capability {
+    padding: 0.375rem 0.75rem;
+}
+
+li.list-group-item.capability li.list-group-item.subtoken-capability {
+    margin-right: 0;
+}
+
+li.list-group-item.subtoken-capability li.list-group-item.subtoken-capability {
+    margin-right: -0.75rem;
+}
+
+li.list-group-item.capability h5, h6 {
+    margin-bottom: 0;
+}

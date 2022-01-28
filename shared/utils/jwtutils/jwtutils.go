@@ -12,25 +12,42 @@ type ResultSet []struct {
 }
 
 // GetFromJWT returns the values for the requested keys from the JWT
-func GetFromJWT(token string, key ...string) (values ResultSet) {
+func GetFromJWT(rlog log.Ext1FieldLogger, token string, key ...string) (values ResultSet) {
 	if atJWT, _ := jwt.Parse(token, nil); atJWT != nil {
-		log.Trace("Parsed token")
+		rlog.Trace("Parsed token")
 		if claims, ok := atJWT.Claims.(jwt.MapClaims); ok {
 			for _, k := range key {
 				v, set := claims[k]
-				values = append(values, struct {
-					Value interface{}
-					Set   bool
-				}{Value: v, Set: set})
+				values = append(
+					values, struct {
+						Value interface{}
+						Set   bool
+					}{
+						Value: v,
+						Set:   set,
+					},
+				)
 			}
 		}
 	}
 	return values
 }
 
+// GetValueFromJWT returns the value for the given key
+func GetValueFromJWT(rlog log.Ext1FieldLogger, token, key string) interface{} {
+	res := GetFromJWT(rlog, token, key)
+	if len(res) != 1 {
+		return nil
+	}
+	if !res[0].Set {
+		return nil
+	}
+	return res[0].Value
+}
+
 // GetStringFromJWT returns a string value for the given key
-func GetStringFromJWT(token, key string) (string, bool) {
-	res := GetFromJWT(token, key)
+func GetStringFromJWT(rlog log.Ext1FieldLogger, token, key string) (string, bool) {
+	res := GetFromJWT(rlog, token, key)
 	if len(res) != 1 {
 		return "", false
 	}
@@ -42,9 +59,9 @@ func GetStringFromJWT(token, key string) (string, bool) {
 }
 
 // GetAudiencesFromJWT parses the passed jwt token and returns the aud claim as a slice of strings
-func GetAudiencesFromJWT(token string) ([]string, bool) {
-	log.Trace("Getting auds from token")
-	res := GetFromJWT(token, "aud")
+func GetAudiencesFromJWT(rlog log.Ext1FieldLogger, token string) ([]string, bool) {
+	rlog.Trace("Getting auds from token")
+	res := GetFromJWT(rlog, token, "aud")
 	if len(res) != 1 {
 		return nil, false
 	}

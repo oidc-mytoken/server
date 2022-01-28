@@ -7,27 +7,28 @@ $('#login-form').on('submit', function(e){
     let data = $(this).serializeObject()
     data['restrictions'] = [
         {
-            "exp": Math.floor(Date.now() / 1000) + 3600*24*7, // TODO configurable
+            "exp": Math.floor(Date.now() / 1000) + 3600 * 24 * 7, // TODO configurable
             "ip": ["this"],
             "usages_AT": 1,
-            "usages_other": 50,
+            "usages_other": 100,
         }
     ]
     data['capabilities'] = [
         "create_mytoken",
-        "tokeninfo_introspect",
-        "tokeninfo_history",
-        "tokeninfo_tree"
+        "tokeninfo",
     ]
     data['subtoken_capabilities'] = [
         "AT",
-        // "settings",
-        "list_mytokens"
+        "settings",
+        "list_mytokens",
+        "tokeninfo:introspect"
     ]
     data['rotation'] = {
         "on_other": true,
-        "lifetime": 3600*24,
+        "lifetime": 3600 * 24,
     }
+    data['redirect_type'] = 'web';
+    data['redirect_url'] = '/home';
     data['name'] = "mytoken-web";
     storageSet("oidc_issuer", data["oidc_issuer"], true);
     data = JSON.stringify(data);
@@ -35,7 +36,7 @@ $('#login-form').on('submit', function(e){
         type: "POST",
         url: storageGet("mytoken_endpoint"),
         data: data,
-        success: function(res){
+        success: function (res) {
             window.location.href = res['authorization_url'];
         },
         dataType: "json",

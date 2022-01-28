@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/shared/model"
@@ -24,12 +25,12 @@ func (t *UniversalMytoken) UnmarshalJSON(data []byte) (err error) {
 	if err = errors.WithStack(json.Unmarshal(data, &token)); err != nil {
 		return
 	}
-	*t, err = Parse(token)
+	*t, err = Parse(log.StandardLogger(), token)
 	return errors.WithStack(err)
 }
 
 // Parse parses a mytoken string (that can be a long or short mytoken) into an UniversalMytoken holding the JWT
-func Parse(token string) (UniversalMytoken, error) {
+func Parse(rlog log.Ext1FieldLogger, token string) (UniversalMytoken, error) {
 	if token == "" {
 		return UniversalMytoken{}, errors.New("token not valid")
 	}
@@ -41,7 +42,7 @@ func Parse(token string) (UniversalMytoken, error) {
 		}, nil
 	}
 	shortToken := transfercoderepo.ParseShortToken(token)
-	jwt, valid, dbErr := shortToken.JWT(nil)
+	jwt, valid, dbErr := shortToken.JWT(rlog, nil)
 	var validErr error
 	if !valid {
 		validErr = errors.New("token not valid")

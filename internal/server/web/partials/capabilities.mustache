@@ -1,49 +1,6 @@
 <h4 class="text-center">Capabilities</h4>
-<table class="table table-striped col bg-my_grey">
-    <tbody>
+<ul class="list-group bg-my_grey list-group-striped">
     {{#capabilities}}
-        <tr>
-            <td class="text-center pr-1 py-2">
-                <div class="custom-control custom-switch">
-                    <input type="checkbox" class="custom-control-input capability-check" value="{{Name}}" id="cp-{{Name}}">
-                    <label class="custom-control-label" for="cp-{{Name}}"><span class="sr-only"></span></label>
-                </div>
-            </td>
-            <td class="pl-1 py-2">
-                <div class="d-flex justify-content-between">
-                    <h5>{{Name}}</h5>
-                    <i class="fas fa-exclamation-circle {{ColorClass}}" data-toggle="tooltip" data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
-                </div>
-                <small>{{Description}}</small>
-
-                {{#IsCreateMT}}
-                    <div id="subtokenCapabilities" class="mt-2 bt-n2">
-                            <p style="font-size: 1.0rem;">The mytoken you are going to create, can create mytokens with the following capabilities:</p>
-                            <table class="table table-sm table-striped align-middle table-secondary mb-0">
-                                <tbody>
-                                {{#subtoken-capabilities}}
-                                    <tr>
-                                        <td class="text-center td-checkbox">
-                                            <div class="custom-control custom-switch">
-                                                <input type="checkbox" class="custom-control-input subtoken-capability-check" value="{{Name}}" id="scp-{{Name}}" disabled>
-                                                <label class="custom-control-label" for="scp-{{Name}}"><span class="sr-only"></span></label>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex justify-content-between">
-                                                <h6>{{Name}}</h6>
-                                                <i class="fas fa-exclamation-circle {{ColorClass}}" data-toggle="tooltip" data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
-                                            </div>
-                                            <small>{{Description}}</small>
-                                        </td>
-                                    </tr>
-                                {{/subtoken-capabilities}}
-                                </tbody>
-                            </table>
-                    </div>
-                {{/IsCreateMT}}
-            </td>
-        </tr>
+        {{> capabilities-part}}
     {{/capabilities}}
-    </tbody>
-</table>
+</ul>

@@ -17,25 +17,34 @@ import (
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
-func handleTokenInfoIntrospect(req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData) model.Response {
+// HandleTokenInfoIntrospect handles token introspection
+func HandleTokenInfoIntrospect(
+	rlog log.Ext1FieldLogger,
+	mt *mytoken.Mytoken,
+	clientMetadata *api.ClientMetaData,
+) model.Response {
 	// If we call this function it means the token is valid.
-	if errRes := auth.RequireCapability(api.CapabilityTokeninfoIntrospect, mt); errRes != nil {
+	if errRes := auth.RequireCapability(rlog, api.CapabilityTokeninfoIntrospect, mt); errRes != nil {
 		return *errRes
 	}
 
 	var usedToken mytoken.UsedMytoken
-	if err := db.RunWithinTransaction(nil, func(tx *sqlx.Tx) error {
-		tmp, err := mt.ToUsedMytoken(tx)
-		if err != nil {
-			return err
-		}
-		usedToken = *tmp
-		return eventService.LogEvent(tx, eventService.MTEvent{
-			Event: event.FromNumber(event.MTEventTokenInfoIntrospect, ""),
-			MTID:  mt.ID,
-		}, *clientMetadata)
-	}); err != nil {
-		log.Errorf("%s", errorfmt.Full(err))
+	if err := db.RunWithinTransaction(
+		rlog, nil, func(tx *sqlx.Tx) error {
+			tmp, err := mt.ToUsedMytoken(rlog, tx)
+			if err != nil {
+				return err
+			}
+			usedToken = *tmp
+			return eventService.LogEvent(
+				rlog, tx, eventService.MTEvent{
+					Event: event.FromNumber(event.TokenInfoIntrospect, ""),
+					MTID:  mt.ID,
+				}, *clientMetadata,
+			)
+		},
+	); err != nil {
+		rlog.Errorf("%s", errorfmt.Full(err))
 		return *model.ErrorToInternalServerErrorResponse(err)
 	}
 	return model.Response{

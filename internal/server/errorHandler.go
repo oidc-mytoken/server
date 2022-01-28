@@ -6,15 +6,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 	fiberUtils "github.com/gofiber/fiber/v2/utils"
 	"github.com/oidc-mytoken/api/v0"
+
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
-	log "github.com/sirupsen/logrus"
+	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
 
 func handleError(ctx *fiber.Ctx, err error) error {
-	// Statuscode defaults to 500
+	// Status code defaults to 500
 	code := fiber.StatusInternalServerError
 	msg := errorfmt.Error(err)
+	log := logger.GetRequestLogger(ctx)
 	log.Errorf("%s", errorfmt.Full(err))
 
 	if e, ok := err.(*fiber.Error); ok {
@@ -48,6 +50,7 @@ func handleErrorHTML(ctx *fiber.Ctx, code int, msg string) error {
 		return handleErrorJSON(ctx, code, msg)
 	}
 	if err != nil {
+		log := logger.GetRequestLogger(ctx)
 		log.WithError(err).Error()
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}

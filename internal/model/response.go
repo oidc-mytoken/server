@@ -3,9 +3,10 @@ package model
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/valyala/fasthttp"
+
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/shared/model"
-	"github.com/valyala/fasthttp"
 )
 
 // Response models a http server response
@@ -46,4 +47,7 @@ func ErrorToBadRequestErrorResponse(err error) *Response {
 }
 
 // ResponseNYI is the server response when something is not yet implemented
-var ResponseNYI = Response{Status: fiber.StatusNotImplemented, Response: api.ErrorNYI}
+var ResponseNYI = Response{
+	Status:   fiber.StatusNotImplemented,
+	Response: api.ErrorNYI,
+}

@@ -20,8 +20,8 @@ type Commands struct {
 // VersionCommands is type holding the Commands that are related to a mytoken version
 type VersionCommands map[string]Commands
 
-// MigrationCommands holds the VersionCommands for mytoken. These commands are used to migrate the database between mytoken
-// versions.
+// MigrationCommands holds the VersionCommands for mytoken. These commands are used to migrate the database between
+// mytoken versions.
 var MigrationCommands = VersionCommands{}
 
 // Versions holds all versions for which migration commands are available
@@ -32,14 +32,16 @@ var migrationScripts embed.FS
 
 func init() {
 	Versions = []string{}
-	if err := fs.WalkDir(fs.FS(migrationScripts), ".", func(path string, d fs.DirEntry, err error) error {
-		if d.IsDir() {
+	if err := fs.WalkDir(
+		fs.FS(migrationScripts), ".", func(path string, d fs.DirEntry, err error) error {
+			if d.IsDir() {
+				return nil
+			}
+			name := d.Name()
+			Versions = append(Versions, utils.RSplitN(name, ".", 3)[0])
 			return nil
-		}
-		name := d.Name()
-		Versions = append(Versions, utils.RSplitN(name, ".", 3)[0])
-		return nil
-	}); err != nil {
+		},
+	); err != nil {
 		log.WithError(err).Fatal()
 	}
 	semver.Sort(Versions)

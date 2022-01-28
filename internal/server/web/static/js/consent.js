@@ -1,5 +1,4 @@
 $(function (){
-    $('.capability-check').click();
     $('#tokenName').val(tokenName);
     if (!rot_null) {
         rotationAT.prop("checked", rot_onAT);
@@ -9,6 +8,14 @@ $(function (){
         rotationAutoRevoke.prop("checked", rot_autoRevoke);
         rotationAutoRevoke.prop("disabled", !rot_onAT && !rot_onOther);
     }
+    checkedCapabilities.forEach(function (value) {
+        console.log('#sub-cp-' + escapeSelector(value));
+        $('#cp-' + escapeSelector(value)).prop("checked", true)
+    })
+    checkedSubtokenCapabilities.forEach(function (value) {
+        console.log('#sub-cp-' + escapeSelector(value));
+        $('#sub-cp-' + escapeSelector(value)).prop("checked", true)
+    })
     chainFunctions(
         discovery,
         initRestrGUI,
@@ -19,12 +26,8 @@ function approve() {
     let data = {
         "oidc_iss": issuer,
         "restrictions": restrictions,
-        "capabilities": $('.capability-check:checked').map(function(_, el) {
-            return $(el).val();
-        }).get(),
-        "subtoken_capabilities": $('.subtoken-capability-check:checked').map(function(_, el) {
-            return $(el).val();
-        }).get(),
+        "capabilities": getCheckedCapabilities(),
+        "subtoken_capabilities": getCheckedSubtokenCapabilities(),
         "name": $('#tokenName').val(),
         "rotation": getRotationFromForm()
     };
