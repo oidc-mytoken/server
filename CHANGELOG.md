@@ -17,10 +17,34 @@
 ### Features
 
 - Smart Logging: Only log up to a certain log level on default, but on error log everything
+- Added User Settings endpoint
+- Added possibility for user grants: grants that are not enabled on default, but can be enabled / disabled by a user
+  and (might) require additional setup
+- Added `ssh` user grant:
+  - Can be enabled / disabled at the grants endpoint
+  - SSH keys can be added, removed, listed at ssh grant endpoint
+  - Added ssh keys can be used to obtain ATs, MTs, and other information (e.g. tokeninfo) through the ssh protocol at
+    port `2222`
+- Extended capabilities:
+  - Some capabilities now have a "path" and "sub"-capabilities, e.g. (`tokeninfo` includes `tokeninfo:introspect`
+    and more).
+  - Some capabilities have a read only version, e.g. `read@settings`
+  - Some capabilities have been renamed, e.g. (`tokeninfo_introspect` -> `tokeninfo:introspect`)
+
+### API
+
+- Changed default redirect type in auth code grant to `native`
+
+### Mytoken
+
+- Added `auth_time` to mytoken
 
 ### Enhancements
 
 - Added request ids to response header and logging
+- Refactored database; now using stored procedures which should ease database migration
+- Moved automatic cleanup of expired database entries to the database
+- Support symlinks when reading files
 
 ### Security Fixes
 
@@ -30,6 +54,16 @@
 ### Bugfixes
 
 - Fixed a bug where restrictions did not behave correctly when multiple subnets were used
+- Fixed response type on oidc errors on redirect in the authorization code flow
+- Fixed `404` on api paths returning `html` instead of `json`
+
+### Dependencies
+
+- Updated various dependencies to the newest version
+
+### Other
+
+- Dropped the `mytoken-dbgc` tool, now moved to the database
 
 ## mytoken 0.3.3
 
