@@ -34,9 +34,6 @@ jobs:
     - name: Build Server Setup
       run: go build -v github.com/oidc-mytoken/server/cmd/mytoken-server/mytoken-setup
       
-    - name: Build Server DB-GC
-      run: go build -v github.com/oidc-mytoken/server/cmd/mytoken-server/mytoken-dbGarbageCollector
-      
     - name: Build Server
       run: go build -v github.com/oidc-mytoken/server/cmd/mytoken-server
 
