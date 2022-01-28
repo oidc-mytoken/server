@@ -28,7 +28,7 @@ server:
   proxy_header: "X-FORWARDED-FOR"
 
 # The database file for ip geo location. Will be installed by setup to this location.
-geo_ip_db_file: "/root/mytoken/IP2LOCATION-LITE-DB1.IPV6.BIN"
+geo_ip_db_file: "/mytoken/IP2LOCATION-LITE-DB1.IPV6.BIN"
 
 # Configuration of the mytoken API
 api:
@@ -65,13 +65,13 @@ logging:
   # The web server access logs
   access:
     # The directory where the log file should be placed
-    dir: "/root/mytoken/logs"
+    dir: "/mytoken/logs"
     # Indicates if mytoken should log additionally to stderr
     stderr: true
   # The mytoken internal logs
   internal:
     # The directory where the log file should be placed
-    dir: "/root/mytoken/logs"
+    dir: "/mytoken/logs"
     # Indicates if mytoken should log additionally to stderr
     stderr: true
     # The minimal log level that should be logged

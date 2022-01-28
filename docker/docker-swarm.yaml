@@ -3,11 +3,12 @@ services:
   mytoken:
     hostname: 'mytoken_{{.Task.Slot}}'
     image: oidcmytoken/mytoken-server
-    working_dir: /root/mytoken
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=0
     volumes:
       - ${MYTOKEN_CONFIG_FILE}:/etc/mytoken/config.yaml
-      - ${MYTOKEN_GEOIPDB}:/root/mytoken/IP2LOCATION-LITE-DB1.IPV6.BIN
-      - ${MYTOKEN_LOGS_DIR}:/root/mytoken/logs
+      - ${MYTOKEN_GEOIPDB}:/mytoken/IP2LOCATION-LITE-DB1.IPV6.BIN
+      - ${MYTOKEN_LOGS_DIR}:/mytoken/logs
     secrets:
       - signing_key
       - ssh_host_ecdsa_key
@@ -26,14 +27,15 @@ services:
       #        max_replicas_per_node: 1
       restart_policy:
         condition: any
-        delay: 120s
+        delay: 30s
         window: 60s
       rollback_config:
         parallelism: 1
-        delay: 120s
+        delay: 30s
       update_config:
         parallelism: 1
-        delay: 180s
+        delay: 60s
+        monitor: 30s
         failure_action: rollback
 
   db-bootstrap:

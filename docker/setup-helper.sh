@@ -11,10 +11,10 @@ mkdir -p $DIR/db/b1 $DIR/db/1 $DIR/db/2 $DIR/db/3
 sudo chown -R 1001:1001 $DIR/db
 
 # Install geo-location-db
-docker run --rm -v$CONFIG:/etc/mytoken/config.yaml -v$DIR:/root/mytoken/ oidcmytoken/mytoken-setup install geoip-db
+docker run --rm -v$CONFIG:/etc/mytoken/config.yaml -v$DIR:/mytoken/ oidcmytoken/mytoken-setup install geoip-db
 
 # Create signing key for mytokens
-docker run --rm -v$CONFIG:/etc/mytoken/config.yaml -v$DIR:/root/mytoken/ oidcmytoken/mytoken-setup signing-key
+docker run --rm -v$CONFIG:/etc/mytoken/config.yaml -v$DIR:/mytoken/ oidcmytoken/mytoken-setup signing-key -f /mytoken/mytoken.signing_key
 
 # Create a self-signed certificate for https
 # The key and crt must be in a single .pem file

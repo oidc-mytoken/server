@@ -6,5 +6,6 @@ RUN apt-get update && \
     apt-get autoremove -y && \
     apt-get clean -y && \
     rm -rf /var/lib/apt/lists/*
+USER 1000:1000
 ENTRYPOINT ["/opt/mytoken/scripts/run.sh"]
 CMD ["mytoken-migratedb"]
