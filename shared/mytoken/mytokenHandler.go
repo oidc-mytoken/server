@@ -112,6 +112,42 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 
 }
 
+// HandleMytokenFromMytokenReqChecks handles the necessary req checks for a pkg.MytokenFromMytokenRequest
+func HandleMytokenFromMytokenReqChecks(
+	rlog log.Ext1FieldLogger, req *response.MytokenFromMytokenRequest, ip string,
+	ctx *fiber.Ctx,
+) (*restrictions.Restriction, *mytoken.Mytoken, *model.Response) {
+	if len(req.Capabilities) == 0 {
+		return nil, nil, &model.Response{
+			Status: fiber.StatusBadRequest,
+			Response: api.Error{
+				Error:            api.ErrorStrInvalidRequest,
+				ErrorDescription: "capabilities cannot be empty",
+			},
+		}
+	}
+	req.Restrictions.ReplaceThisIp(ip)
+	req.Restrictions.ClearUnsupportedKeys()
+	rlog.Trace("Parsed mytoken request")
+
+	// GrantType already checked
+
+	mt, errRes := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
+	if errRes != nil {
+		return nil, nil, errRes
+	}
+	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
+		rlog, nil, mt, ip, nil, nil, api.CapabilityCreateMT,
+	)
+	if errRes != nil {
+		return nil, nil, errRes
+	}
+	if _, errRes = auth.RequireMatchingIssuer(rlog, mt.OIDCIssuer, &req.Issuer); errRes != nil {
+		return nil, nil, errRes
+	}
+	return usedRestriction, mt, nil
+}
+
 // HandleMytokenFromMytoken handles requests to create a Mytoken from an existing Mytoken
 func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
@@ -120,32 +156,8 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	if err := errors.WithStack(json.Unmarshal(ctx.Body(), &req)); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
-	if len(req.Capabilities) == 0 {
-		return &model.Response{
-			Status: fiber.StatusBadRequest,
-			Response: api.Error{
-				Error:            api.ErrorStrInvalidRequest,
-				ErrorDescription: "capabilities cannot be empty",
-			},
-		}
-	}
-	req.Restrictions.ReplaceThisIp(ctx.IP())
-	req.Restrictions.ClearUnsupportedKeys()
-	rlog.Trace("Parsed mytoken request")
-
-	// GrantType already checked
-
-	mt, errRes := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
+	usedRestriction, mt, errRes := HandleMytokenFromMytokenReqChecks(rlog, req, ctx.IP(), ctx)
 	if errRes != nil {
-		return errRes
-	}
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
-		rlog, nil, mt, ctx.IP(), nil, nil, api.CapabilityCreateMT,
-	)
-	if errRes != nil {
-		return errRes
-	}
-	if _, errRes = auth.RequireMatchingIssuer(rlog, mt.OIDCIssuer, &req.Issuer); errRes != nil {
 		return errRes
 	}
 	return HandleMytokenFromMytokenReq(rlog, mt, req, ctxUtils.ClientMetaData(ctx), usedRestriction)
