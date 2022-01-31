@@ -48,6 +48,13 @@ CREATE TABLE IF NOT EXISTS `CryptPayloadTypes`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
+INSERT IGNORE INTO CryptPayloadTypes (payload_type)
+    VALUES ('RT');
+INSERT IGNORE INTO CryptPayloadTypes (payload_type)
+    VALUES ('AT');
+INSERT IGNORE INTO CryptPayloadTypes (payload_type)
+    VALUES ('MT');
+
 RENAME TABLE IF EXISTS RefreshTokens TO CryptStore;
 ALTER TABLE CryptStore
     CHANGE rt crypt TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;
@@ -62,7 +69,7 @@ ALTER TABLE CryptStore
     MODIFY COLUMN payload_type INT UNSIGNED NOT NULL;
 
 INSERT INTO CryptStore (crypt, payload_type, created, updated)
-SELECT *
+SELECT crypt, payload_type, created, updated
     FROM (SELECT at.token AS crypt, at.created, at.created AS updated FROM AccessTokens at) jwts
              JOIN (SELECT cpt.id AS payload_type FROM CryptPayloadTypes cpt WHERE cpt.payload_type = 'AT') p;
 ALTER TABLE AccessTokens
@@ -83,8 +90,13 @@ DELETE
     FROM ProxyTokens
     WHERE jwt = '';
 INSERT INTO CryptStore (crypt, payload_type, created, updated)
-SELECT *
+SELECT crypt, payload_type, created, updated
     FROM (SELECT pt.jwt AS crypt, pt.created, pt.created AS updated FROM TransferCodes pt) jwts
+             JOIN (SELECT cpt.id AS payload_type FROM CryptPayloadTypes cpt WHERE cpt.payload_type = 'MT') p;
+INSERT INTO CryptStore (crypt, payload_type, created, updated)
+SELECT jwt AS crypt, payload_type, created, created AS updated
+    FROM (SELECT pt.jwt, pt.MT_id FROM ProxyTokens pt WHERE pt.jwt NOT IN (SELECT tc.jwt FROM TransferCodes tc)) jwts
+             JOIN (SELECT mt.id, mt.created FROM MTokens mt) m ON jwts.MT_id = m.id
              JOIN (SELECT cpt.id AS payload_type FROM CryptPayloadTypes cpt WHERE cpt.payload_type = 'MT') p;
 ALTER TABLE ProxyTokens
     ADD COLUMN IF NOT EXISTS jwt_crypt BIGINT UNSIGNED NULL;
@@ -700,13 +712,6 @@ CREATE EVENT IF NOT EXISTS cleanup_schedule ON SCHEDULE EVERY 1 DAY STARTS (TIME
 # Predefined Values
 INSERT IGNORE INTO Grants (grant_type)
     VALUES ('ssh');
-
-INSERT IGNORE INTO CryptPayloadTypes (payload_type)
-    VALUES ('RT');
-INSERT IGNORE INTO CryptPayloadTypes (payload_type)
-    VALUES ('AT');
-INSERT IGNORE INTO CryptPayloadTypes (payload_type)
-    VALUES ('MT');
 
 INSERT IGNORE INTO Events (event)
     VALUES ('settings_grant_enabled');
