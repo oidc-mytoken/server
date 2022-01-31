@@ -119,6 +119,7 @@ func start(s *fiber.App) {
 		go ssh.Serve()
 	}
 	if !config.Get().Server.TLS.Enabled {
+		log.WithField("port", config.Get().Server.Port).Info("TLS is disabled starting http server")
 		log.WithError(s.Listen(fmt.Sprintf(":%d", config.Get().Server.Port))).Fatal()
 	}
 	// TLS enabled
@@ -133,9 +134,13 @@ func start(s *fiber.App) {
 				)
 			},
 		)
-		go log.WithError(httpServer.Listen(":80")).Fatal()
+		log.Info("TLS and http redirect enabled, starting redirect server on port 80")
+		go func() {
+			log.WithError(httpServer.Listen(":80")).Fatal()
+		}()
 	}
 	time.Sleep(time.Millisecond) // This is just for a more pretty output with the tls header printed after the http one
+	log.Info("TLS enabled, starting https server on port 443")
 	log.WithError(s.ListenTLS(":443", config.Get().Server.TLS.Cert, config.Get().Server.TLS.Key)).Fatal()
 }
 
