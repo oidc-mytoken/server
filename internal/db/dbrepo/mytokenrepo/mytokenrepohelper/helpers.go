@@ -141,7 +141,7 @@ func GetTokenUsagesAT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID, res
 	var usageCount int64
 	if err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			return errors.WithStack(tx.Get(&usageCount, `CALL TokenUsages_GetAT(?,?)`, restrictionHash, myID))
+			return errors.WithStack(tx.Get(&usageCount, `CALL TokenUsages_GetAT(?,?)`, myID, restrictionHash))
 		},
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -163,7 +163,7 @@ func GetTokenUsagesOther(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID, 
 	var usageCount int64
 	if err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			return errors.WithStack(tx.Get(&usageCount, `CALL TokenUsages_GetOther(?,?)`, restrictionHash, myID))
+			return errors.WithStack(tx.Get(&usageCount, `CALL TokenUsages_GetOther(?,?)`, myID, restrictionHash))
 		},
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
