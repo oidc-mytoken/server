@@ -266,11 +266,10 @@ github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742/go.mod h1:bx2lN
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
-github.com/oidc-mytoken/api v0.3.1-0.20211220153443-bf41385a02b3/go.mod h1:RMeAl6ICLnemFQU4g57IHCP8m9WZg8PjXNVkodMiNi8=
-github.com/oidc-mytoken/api v0.3.1-0.20220126162415-1144aa9a8465 h1:/WphZw9dlTInqnLJgfrMn3WpgVmiO3ktYqPOlLWwGDA=
-github.com/oidc-mytoken/api v0.3.1-0.20220126162415-1144aa9a8465/go.mod h1:RMeAl6ICLnemFQU4g57IHCP8m9WZg8PjXNVkodMiNi8=
-github.com/oidc-mytoken/lib v0.2.2-0.20211223095212-32c942773b34 h1:aZTABz2Z4nARZ3P+1pxM+q5FYlHVHsMduPILSNwhc50=
-github.com/oidc-mytoken/lib v0.2.2-0.20211223095212-32c942773b34/go.mod h1:Z0vvLgDuV5t3fLlJGzx+Qn15IWbz1WTgkm4xfSaWPEM=
+github.com/oidc-mytoken/api v0.4.0 h1:uSlMSyi+ElScDehxMQlqW7Z5FjM7IDyTBA9a29Fs+eg=
+github.com/oidc-mytoken/api v0.4.0/go.mod h1:RMeAl6ICLnemFQU4g57IHCP8m9WZg8PjXNVkodMiNi8=
+github.com/oidc-mytoken/lib v0.3.0 h1:l+Axfu9lbSBDvfvckz5HiVOrIgNLF2L0BpQBcK5CCjg=
+github.com/oidc-mytoken/lib v0.3.0/go.mod h1:FoHZNziEldCD5l3SXgD+DMc5Y3XN2iI/kp18xvJOPeA=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pelletier/go-toml v1.9.3/go.mod h1:u1nR/EPcESfeI/szUZKdtJ0xRNbUoANCkoOuaOx1Y+c=
 github.com/pires/go-proxyproto v0.6.1 h1:EBupykFmo22SDjv4fQVQd2J9NOoLPmyZA/15ldOGkPw=
