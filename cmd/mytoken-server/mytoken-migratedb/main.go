@@ -36,7 +36,7 @@ var app = &cli.App{
 			Email: "gabriel.zachmann@kit.edu",
 		},
 	},
-	Copyright:              "Karlsruhe Institute of Technology 2020-2021",
+	Copyright:              "Karlsruhe Institute of Technology 2020-2022",
 	UseShortOptionHandling: true,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
