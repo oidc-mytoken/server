@@ -10,8 +10,6 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-  #      - windows
-  #      - darwin
   - id: setup
     main: ./cmd/mytoken-server/mytoken-setup
     binary: mytoken-setup
@@ -27,15 +25,20 @@ builds:
     goos:
       - linux
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: i386
-      amd64: x86_64
+   -
+     replacements:
+       darwin: macOS
+       386: 32-bit
+       amd64: 64-bit
+     format_overrides:
+       - goos: windows
+         format: zip
 nfpms:
   - id: server-pkg
     package_name: mytoken-server
+    replacements:
+      386: i386
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}"
     builds:
       - server
     homepage: https://mytoken-doc.data.kit.edu/server/intro
@@ -43,7 +46,6 @@ nfpms:
     description: Mytoken is a central web service with the goal to easily obtain OpenID Connect access tokens across devices.
     license: MIT
     formats:
-#      - apk
       - deb
       - rpm
     release: 1
@@ -57,8 +59,16 @@ nfpms:
         type: config
       - src: config/mytoken.service
         dst: /etc/systemd/system/mytoken.service
+    overrides:
+      rpm:
+        replacements:
+          amd64: x86_64
+        file_name_template: "{{ .PackageName }}-{{ .Version }}.{{ .Arch }}"
   - id: setup-pkg
     package_name: mytoken-server-setup
+    replacements:
+      386: i386
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}"
     builds:
       - setup
     homepage: https://mytoken-doc.data.kit.edu/server/intro
@@ -71,20 +81,35 @@ nfpms:
     release: 1
     section: misc
     bindir: /usr/bin
+    overrides:
+      rpm:
+        replacements:
+          amd64: x86_64
+        file_name_template: "{{ .PackageName }}-{{ .Version }}.{{ .Arch }}"
   - id: migratedb-pkg
     package_name: mytoken-server-migratedb
+    replacements:
+      386: i386
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}"
     builds:
       - migratedb
     homepage: https://mytoken-doc.data.kit.edu/server/intro
     maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
     description: A tool for migrating the database between versions
     license: MIT
+    dependencies:
+      - mariadb-client
     formats:
       - deb
       - rpm
     release: 1
     section: misc
     bindir: /usr/bin
+    overrides:
+      rpm:
+        replacements:
+          amd64: x86_64
+        file_name_template: "{{ .PackageName }}-{{ .Version }}.{{ .Arch }}"
 dockers:
   - goos: linux
     goarch: amd64
@@ -95,7 +120,7 @@ dockers:
       - "oidcmytoken/mytoken-server:{{ .Tag }}"
       - "oidcmytoken/mytoken-server:v{{ .Major }}"
       - "oidcmytoken/mytoken-server:v{{ .Major }}.{{ .Minor }}"
-    skip_push: true
+#    skip_push: true
     dockerfile: cmd/mytoken-server/Dockerfile
     build_flag_templates:
       - "--pull"
@@ -112,7 +137,7 @@ dockers:
       - "oidcmytoken/mytoken-setup:{{ .Tag }}"
       - "oidcmytoken/mytoken-setup:v{{ .Major }}"
       - "oidcmytoken/mytoken-setup:v{{ .Major }}.{{ .Minor }}"
-    skip_push: true
+#    skip_push: true
     dockerfile: cmd/mytoken-server/mytoken-setup/Dockerfile
     build_flag_templates:
       - "--pull"
@@ -129,7 +154,7 @@ dockers:
       - "oidcmytoken/mytoken-migratedb:{{ .Tag }}"
       - "oidcmytoken/mytoken-migratedb:v{{ .Major }}"
       - "oidcmytoken/mytoken-migratedb:v{{ .Major }}.{{ .Minor }}"
-    skip_push: true
+#    skip_push: true
     dockerfile: cmd/mytoken-server/mytoken-migratedb/Dockerfile
     build_flag_templates:
       - "--pull"
