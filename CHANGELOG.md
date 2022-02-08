@@ -12,6 +12,32 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.4.1
+
+### API
+
+- Changed tokeninfo subtokens action name
+- Added the `tokeninfo` capability to the default capabilities of a mytoken
+
+### Enhancements
+
+- The `tokeninfo` capability is now checked by default when creating a mytoken
+- Improved the output in the ssh protocol on bad requests
+
+### Bugfixes
+
+- Fixed tooltip text in webinterface on the book icon of read-only capabilities
+- Fixed a bug where in the webinterface when creating a new mytoken the instructions to go to the consent screen, where
+  still visible after the mytoken was obtained
+- Fixed a bug where the consent screen stopped working after a timeout without displaying any error message
+- Fixed a bug where 404 and other status codes where logged as errors
+
+### Dependencies
+
+- Bumped github.com/gofiber/fiber/v2 from 2.25.0 to 2.26.0
+- Bumped github.com/gofiber/template from 1.6.21 to 1.6.22
+- Bumped github.com/gofiber/helmet/v2 from 2.2.5 to 2.2.6
+
 ## mytoken 0.4.0
 
 ### Features
