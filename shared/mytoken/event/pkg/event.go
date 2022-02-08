@@ -73,7 +73,7 @@ var AllEvents = [...]string{
 	"MT_created",
 	"tokeninfo_introspect",
 	"tokeninfo_history",
-	"tokeninfo_tree",
+	"tokeninfo_subtokens",
 	"tokeninfo_list_mytokens",
 	"inherited_RT",
 	"transfer_code_created",
@@ -94,7 +94,7 @@ const (
 	SubtokenCreated
 	TokenInfoIntrospect
 	TokenInfoHistory
-	TokenInfoTree
+	TokenInfoSubtokens
 	TokenInfoListMTs
 	InheritedRT
 	TransferCodeCreated

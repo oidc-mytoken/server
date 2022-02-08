@@ -5,16 +5,16 @@ import (
 	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 )
 
-// TokeninfoTreeResponse is type for responses to tokeninfo tree requests
-type TokeninfoTreeResponse struct {
+// TokeninfoSubtokensResponse is type for responses to tokeninfo tree requests
+type TokeninfoSubtokensResponse struct {
 	// on update check api.TokeninfoTreeResponse
 	Tokens      tree.MytokenEntryTree `json:"mytokens"`
 	TokenUpdate *my.MytokenResponse   `json:"token_update,omitempty"`
 }
 
-// NewTokeninfoTreeResponse creates a new TokeninfoTreeResponse
-func NewTokeninfoTreeResponse(t tree.MytokenEntryTree, update *my.MytokenResponse) TokeninfoTreeResponse {
-	return TokeninfoTreeResponse{
+// NewTokeninfoSubtokensResponse creates a new TokeninfoSubtokensResponse
+func NewTokeninfoSubtokensResponse(t tree.MytokenEntryTree, update *my.MytokenResponse) TokeninfoSubtokensResponse {
+	return TokeninfoSubtokensResponse{
 		Tokens:      t,
 		TokenUpdate: update,
 	}

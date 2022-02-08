@@ -67,7 +67,7 @@ func handleSubtokens(s ssh.Session) error {
 	if errRes != nil {
 		return writeErrRes(s, errRes)
 	}
-	res := tokeninfo.HandleTokenInfoTree(rlog, pkg.TokenInfoRequest{}, mt, &clientMetaData)
+	res := tokeninfo.HandleTokenInfoSubtokens(rlog, pkg.TokenInfoRequest{}, mt, &clientMetaData)
 	if res.Status >= 400 {
 		return writeErrRes(s, &res)
 	}

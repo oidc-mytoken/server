@@ -22,7 +22,7 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 )
 
-func doTokenInfoTree(
+func doTokenInfoSubtokens(
 	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
 	usedRestriction *restrictions.Restriction,
 ) (tokenTree tree.MytokenEntryTree, tokenUpdate *response.MytokenResponse, err error) {
@@ -46,7 +46,7 @@ func doTokenInfoTree(
 			}
 			return eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{
-					Event: event.FromNumber(event.TokenInfoTree, ""),
+					Event: event.FromNumber(event.TokenInfoSubtokens, ""),
 					MTID:  mt.ID,
 				}, *clientMetadata,
 			)
@@ -55,8 +55,8 @@ func doTokenInfoTree(
 	return
 }
 
-// HandleTokenInfoTree handles a tokeninfo list subtokens request
-func HandleTokenInfoTree(
+// HandleTokenInfoSubtokens handles a tokeninfo list subtokens request
+func HandleTokenInfoSubtokens(
 	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
 ) model.Response {
 	// If we call this function it means the token is valid.
@@ -66,11 +66,11 @@ func HandleTokenInfoTree(
 	if errRes != nil {
 		return *errRes
 	}
-	tokenTree, tokenUpdate, err := doTokenInfoTree(rlog, req, mt, clientMetadata, usedRestriction)
+	tokenTree, tokenUpdate, err := doTokenInfoSubtokens(rlog, req, mt, clientMetadata, usedRestriction)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
 		return *model.ErrorToInternalServerErrorResponse(err)
 	}
-	rsp := pkg.NewTokeninfoTreeResponse(tokenTree, tokenUpdate)
+	rsp := pkg.NewTokeninfoSubtokensResponse(tokenTree, tokenUpdate)
 	return makeTokenInfoResponse(rsp, tokenUpdate)
 }

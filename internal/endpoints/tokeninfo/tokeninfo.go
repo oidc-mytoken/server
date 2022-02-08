@@ -34,7 +34,7 @@ func HandleTokenInfo(ctx *fiber.Ctx) error {
 	case model2.TokeninfoActionEventHistory:
 		return HandleTokenInfoHistory(rlog, req, mt, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionSubtokenTree:
-		return HandleTokenInfoTree(rlog, req, mt, clientMetadata).Send(ctx)
+		return HandleTokenInfoSubtokens(rlog, req, mt, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionListMytokens:
 		return HandleTokenInfoList(rlog, req, mt, clientMetadata).Send(ctx)
 	default:
