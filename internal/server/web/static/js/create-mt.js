@@ -11,6 +11,7 @@ const mtCopyButton = $('#mt-result-copy');
 const authURL = $('#authorization-url');
 const maxTokenLenDiv = $('#max_token_len_div');
 const tokenTypeBadge = $('#token-badge');
+const $mtInstructions = $('#mt-instructions');
 
 
 $(function () {
@@ -67,6 +68,7 @@ function sendCreateMTReq() {
             let interval = res['polling_code_interval'];
             authURL.attr("href", url);
             authURL.text(url);
+            $mtInstructions.showB();
             polling(code, interval)
         },
         error: function (errRes) {
@@ -166,6 +168,7 @@ function polling(code, interval) {
                         tokenTypeBadge.text("JWT");
                 }
                 mtShowSuccess(token);
+                $mtInstructions.hideB();
                 window.clearInterval(intervalID);
             },
             error: function(errRes) {
