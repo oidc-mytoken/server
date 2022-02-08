@@ -16,7 +16,7 @@ const $mtInstructions = $('#mt-instructions');
 
 $(function () {
     $('#cp-AT').prop('checked', true)
-    $('#cp-tokeninfo_introspect').prop('checked', true)
+    $('#cp-tokeninfo').prop('checked', true)
 })
 
 

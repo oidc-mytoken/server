@@ -17,6 +17,11 @@ import (
 	"github.com/oidc-mytoken/server/shared/mytoken"
 )
 
+var defaultCapabilities = api.Capabilities{
+	api.CapabilityAT,
+	api.CapabilityTokeninfo,
+}
+
 // HandleMytokenEndpoint handles requests on the mytoken endpoint
 func HandleMytokenEndpoint(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
@@ -59,7 +64,7 @@ func handleOIDCFlow(ctx *fiber.Ctx) error {
 		}.Send(ctx)
 	}
 	if len(req.Capabilities) == 0 {
-		req.Capabilities = api.Capabilities{api.CapabilityAT}
+		req.Capabilities = defaultCapabilities
 	}
 	switch req.OIDCFlow {
 	case model.OIDCFlowAuthorizationCode:
