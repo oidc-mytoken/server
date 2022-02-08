@@ -9,11 +9,9 @@ $(function (){
         rotationAutoRevoke.prop("disabled", !rot_onAT && !rot_onOther);
     }
     checkedCapabilities.forEach(function (value) {
-        console.log('#sub-cp-' + escapeSelector(value));
         $('#cp-' + escapeSelector(value)).prop("checked", true)
     })
     checkedSubtokenCapabilities.forEach(function (value) {
-        console.log('#sub-cp-' + escapeSelector(value));
         $('#sub-cp-' + escapeSelector(value)).prop("checked", true)
     })
     chainFunctions(
@@ -36,11 +34,17 @@ function approve() {
         type: "POST",
         url: window.location.href,
         data: data,
-        success: function (res){
+        headers: {
+            Accept: "application/json"
+        },
+        success: function (res) {
             window.location.href = res['authorization_url'];
         },
-        error: function(errRes){
+        error: function (errRes) {
             let errMsg = getErrorMessage(errRes);
+            if (errRes.status === 404) {
+                errMsg = "Expired. Please start the flow again.";
+            }
             $('#error-modal-msg').text(errMsg);
             $('#error-modal').modal();
         },
