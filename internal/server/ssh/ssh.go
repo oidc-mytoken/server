@@ -3,6 +3,7 @@ package ssh
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/gliderlabs/ssh"
@@ -24,7 +25,15 @@ func decodeData(data, dataType string) ([]byte, error) {
 		d, err := base64.StdEncoding.DecodeString(data)
 		return d, errors.WithStack(err)
 	default:
-		return nil, errors.New("unknown mimetype")
+		return nil, errors.New(
+			fmt.Sprintf(
+				"unknown mimetype; supported mimetypes are: %q",
+				[]string{
+					api.SSHMimetypeJson,
+					api.SSHMimetypeJsonBase64,
+				},
+			),
+		)
 	}
 }
 
@@ -62,7 +71,7 @@ func _handleSSHSession(s ssh.Session) (err error) {
 	reqData := s.Command()
 	noReqDataElements := len(reqData)
 	if noReqDataElements != 1 && noReqDataElements != 3 {
-		return errors.New("Invalid Request")
+		return errors.New(fmt.Sprintf("Invalid Request\n%s", helpError))
 	}
 	reqType := reqData[0]
 	var req []byte = nil
@@ -87,6 +96,11 @@ func _handleSSHSession(s ssh.Session) (err error) {
 	case api.SSHRequestTokenInfoListMytokens:
 		return handleListMytokens(s)
 	default:
-		return errors.New("unknown request")
+		return errors.New(fmt.Sprintf("Unknown request\n%s", helpError))
 	}
 }
+
+const helpError = `Syntax for a request is:
+	$ ssh <host_info> <action> [<mime_type> <data>]
+See https://mytoken-docs.data.kit.edu/start/ssh/#using-the-ssh-grant for more information.
+`
