@@ -21,7 +21,7 @@ func handleError(ctx *fiber.Ctx, err error) error {
 
 	if e, ok := err.(*fiber.Error); ok {
 		code = e.Code
-		msg = e.Message
+		msg = e.Error()
 	}
 
 	if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" {
