@@ -16,12 +16,14 @@ func handleError(ctx *fiber.Ctx, err error) error {
 	// Status code defaults to 500
 	code := fiber.StatusInternalServerError
 	msg := errorfmt.Error(err)
-	log := logger.GetRequestLogger(ctx)
-	log.Errorf("%s", errorfmt.Full(err))
+	rlog := logger.GetRequestLogger(ctx)
 
 	if e, ok := err.(*fiber.Error); ok {
 		code = e.Code
 		msg = e.Error()
+	}
+	if code >= 500 {
+		rlog.Errorf("%s", errorfmt.Full(err))
 	}
 
 	if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" {
