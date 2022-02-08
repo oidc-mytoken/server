@@ -139,7 +139,7 @@ function getTreeTokenInfo(e) {
     e.preventDefault();
     let msg = $('#tree-msg');
     let copy = $('#tree-copy');
-    _tokeninfo('subtoken_tree',
+    _tokeninfo('subtokens',
         function (res) {
             msg.html(tokenlistToHTML([res['mytokens']]));
             msg.removeClass('text-danger');
