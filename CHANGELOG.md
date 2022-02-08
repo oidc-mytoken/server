@@ -12,6 +12,12 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.4.2
+
+### Bugfixes
+
+- Fixed a bug where the webinterface was not updated to use the renamed tokeninfo subtokens action
+
 ## mytoken 0.4.1
 
 ### API
