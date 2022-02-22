@@ -17,7 +17,7 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/klauspost/compress v1.14.2 // indirect
-	github.com/lestrrat-go/jwx v1.2.18
+	github.com/lestrrat-go/jwx v1.2.19
 	github.com/oidc-mytoken/api v0.5.1
 	github.com/oidc-mytoken/lib v0.3.3
 	github.com/pires/go-proxyproto v0.6.1
