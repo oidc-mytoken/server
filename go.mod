@@ -17,7 +17,7 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/klauspost/compress v1.14.2 // indirect
-	github.com/lestrrat-go/jwx v1.2.18
+	github.com/lestrrat-go/jwx v1.2.22
 	github.com/oidc-mytoken/api v0.5.1
 	github.com/oidc-mytoken/lib v0.3.3
 	github.com/pires/go-proxyproto v0.6.1
@@ -26,7 +26,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
 	github.com/valyala/fasthttp v1.33.0
-	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
+	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	golang.org/x/mod v0.5.1
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
