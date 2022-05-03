@@ -12,6 +12,18 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.4.3
+
+### Dependencies
+
+- Bumped github.com/jmoiron/sqlx from 1.3.4 to 1.3.5
+- Bumped github.com/lestrrat-go/jwx from 1.2.18 to 1.2.23
+- Bumped github.com/gofiber/template from 1.6.22 to 1.6.27
+- Bumped github.com/gofiber/helmet/v2 from 2.2.6 to 2.2.12
+- Bumped github.com/pires/go-proxyproto from 0.6.1 to 0.6.2
+- Bumped github.com/gofiber/fiber/v2 from 2.26.0 to 2.32.0
+- Bumped github.com/valyala/fasthttp from 1.33.0 to 1.36.0
+
 ## mytoken 0.4.2
 
 ### Bugfixes
