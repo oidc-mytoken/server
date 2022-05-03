@@ -51,12 +51,16 @@ func Append(path, content string, doNotCreateIfDoesNotExist ...bool) error {
 	return err
 }
 
-// MustReadFile reads a given config file and returns the content. If an error
-// occurs mytoken terminates.
-func MustReadFile(filename string) []byte {
+// ReadFile reads a given file and returns the content.
+func ReadFile(filename string) ([]byte, error) {
 	filename = evalSymlink(filename)
-	log.WithField("filepath", filename).Trace("Found file. Reading config file ...")
-	file, err := os.ReadFile(filename)
+	log.WithField("filepath", filename).Trace("Reading file...")
+	return os.ReadFile(filename)
+}
+
+// MustReadFile reads a given file and returns the content. If an error occurs mytoken terminates.
+func MustReadFile(filename string) []byte {
+	file, err := ReadFile(filename)
 	if err != nil {
 		log.WithError(err).Fatal("Error reading config file")
 	}
