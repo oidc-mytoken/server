@@ -10,7 +10,7 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gofiber/fiber/v2 v2.32.0
-	github.com/gofiber/helmet/v2 v2.2.6
+	github.com/gofiber/helmet/v2 v2.2.12
 	github.com/gofiber/template v1.6.22
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/ip2location/ip2location-go v8.3.0+incompatible
