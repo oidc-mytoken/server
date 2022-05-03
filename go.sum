@@ -154,8 +154,8 @@ github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5x
 github.com/gofiber/fiber/v2 v2.26.0/go.mod h1:7efVWcBOZi1PyMWznnbitjnARPA7nYZxmQXJVod0bo0=
 github.com/gofiber/fiber/v2 v2.32.0 h1:lpgcGEq1UENv27uVuOaufAhU8wUKnX8yb9L7559Neec=
 github.com/gofiber/fiber/v2 v2.32.0/go.mod h1:CMy5ZLiXkn6qwthrl03YMyW1NLfj0rhxz2LKl4t7ZTY=
-github.com/gofiber/helmet/v2 v2.2.6 h1:kuu9Yda29TsV0vWr9/k9GQxc1DZmh1a5rMcc5fm8asc=
-github.com/gofiber/helmet/v2 v2.2.6/go.mod h1:6jR8w5UZy+UAMxI4X4xVvZ7i29DdS5wjrpaUVs/idBI=
+github.com/gofiber/helmet/v2 v2.2.12 h1:j+SEFSZVJa58pFILhE+tKSoqts792Dvppg9z3ifVtwk=
+github.com/gofiber/helmet/v2 v2.2.12/go.mod h1:k2aCpFKx7XAiBYnNQEiBvIAG5sxNM2ykCL5C+1VeBlY=
 github.com/gofiber/template v1.6.22 h1:RkW1VOFRP7up81VBzlPj83/kkXMCNU/V5stad52H6a8=
 github.com/gofiber/template v1.6.22/go.mod h1:LY8IfqYluTd+FoFj8mY6QfDTbB0j5Ipb4Z7ve8qagwU=
 github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
