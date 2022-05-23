@@ -282,9 +282,11 @@ func (mt *Mytoken) ToJWT() (string, error) {
 		return mt.jwt, nil
 	}
 	var err error
-	mt.jwt, err = jwt.NewWithClaims(
+	jwt := jwt.NewWithClaims(
 		jwt.GetSigningMethod(config.Get().Signing.Alg), mt,
-	).SignedString(jws.GetPrivateKey())
+	)
+	jwt.Header["typ"] = "MT+JWT"
+	mt.jwt, err = jwt.SignedString(jws.GetPrivateKey())
 	return mt.jwt, errors.WithStack(err)
 }
 

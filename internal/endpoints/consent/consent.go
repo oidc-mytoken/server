@@ -160,11 +160,11 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 		}.Send(ctx)
 	}
 	pkceChallenge, _ := pkceCode.Challenge()
-	authURL := authcode.GetAuthorizationURL(rlog, provider, oState.State(), pkceChallenge, req.Restrictions)
+	authURI := authcode.GetAuthorizationURL(rlog, provider, oState.State(), pkceChallenge, req.Restrictions)
 	return model.Response{
 		Status: httpStatus.StatusOKForward,
 		Response: map[string]string{
-			"authorization_url": authURL,
+			"authorization_uri": authURI,
 		},
 	}.Send(ctx)
 }

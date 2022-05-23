@@ -209,7 +209,7 @@ func handleAddSSHSettingsCallback(
 		Restrictions: req.Restrictions,
 		ResponseType: model.ResponseTypeToken,
 	}
-	mytokenReq.SetRedirectType(api.RedirectTypeNative)
+	mytokenReq.SetRedirectType(api.ClientTypeNative)
 	res := authcode.StartAuthCodeFlow(ctx, mytokenReq)
 	if res.Status >= 400 {
 		return nil, res

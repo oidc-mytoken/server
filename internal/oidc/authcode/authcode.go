@@ -38,13 +38,13 @@ import (
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
-var redirectURL string
+var redirectURI string
 var consentEndpoint string
 
 // Init initializes the authcode component
 func Init() {
 	generalPaths := routes.GetGeneralPaths()
-	redirectURL = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.OIDCRedirectEndpoint)
+	redirectURI = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.OIDCRedirectEndpoint)
 	consentEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.ConsentEndpoint)
 }
 
@@ -62,7 +62,7 @@ func GetAuthorizationURL(
 		ClientID:     provider.ClientID,
 		ClientSecret: provider.ClientSecret,
 		Endpoint:     provider.Endpoints.OAuth2(),
-		RedirectURL:  redirectURL,
+		RedirectURL:  redirectURI,
 		Scopes:       scopes,
 	}
 	additionalParams := []oauth2.AuthCodeOption{
@@ -121,7 +121,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.
 		},
 	}
 	res := api.AuthCodeFlowResponse{
-		AuthorizationURL: utils.CombineURLPath(consentEndpoint, consentCode.String()),
+		ConsentURI: utils.CombineURLPath(consentEndpoint, consentCode.String()),
 	}
 	if req.Native() && config.Get().Features.Polling.Enabled {
 		poll := authFlowInfo.State.PollingCode(rlog)
@@ -169,7 +169,7 @@ func CodeExchange(
 		ClientID:     provider.ClientID,
 		ClientSecret: provider.ClientSecret,
 		Endpoint:     provider.Endpoints.OAuth2(),
-		RedirectURL:  redirectURL,
+		RedirectURL:  redirectURI,
 	}
 	token, err := oauth2Config.Exchange(
 		context.Get(), code, oauth2.SetAuthURLParam("code_verifier", authInfo.CodeVerifier),
@@ -267,7 +267,7 @@ func CodeExchange(
 	}
 	return &model.Response{
 		Status:   fiber.StatusSeeOther,
-		Response: ternary.IfNotEmptyOr(authInfo.RedirectURL, "/home"),
+		Response: ternary.IfNotEmptyOr(authInfo.RedirectURI, "/home"),
 		Cookies:  []*fiber.Cookie{cookie},
 	}
 }

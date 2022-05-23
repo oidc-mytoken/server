@@ -63,9 +63,9 @@ function sendCreateMTReq() {
         url: storageGet('mytoken_endpoint'),
         data: data,
         success: function (res){
-            let url = res['authorization_url'];
+            let url = res['consent_uri'];
             let code = res['polling_code'];
-            let interval = res['polling_code_interval'];
+            let interval = res['interval'];
             authURL.attr("href", url);
             authURL.text(url);
             $mtInstructions.showB();

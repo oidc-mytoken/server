@@ -27,8 +27,8 @@ $('#login-form').on('submit', function(e){
         "on_other": true,
         "lifetime": 3600 * 24,
     }
-    data['redirect_type'] = 'web';
-    data['redirect_url'] = '/home';
+    data['client_type'] = 'web';
+    data['redirect_uri'] = '/home';
     data['name'] = "mytoken-web";
     storageSet("oidc_issuer", data["oidc_issuer"], true);
     data = JSON.stringify(data);
@@ -37,7 +37,7 @@ $('#login-form').on('submit', function(e){
         url: storageGet("mytoken_endpoint"),
         data: data,
         success: function (res) {
-            window.location.href = res['authorization_url'];
+            window.location.href = res['consent_uri'];
         },
         dataType: "json",
         contentType : "application/json"

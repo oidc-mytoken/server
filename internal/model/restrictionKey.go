@@ -8,106 +8,106 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// RestrictionKey is an enum like type for restriction keys
-type RestrictionKey int
+// RestrictionClaim is an enum like type for restriction keys
+type RestrictionClaim int
 
-// RestrictionKeys is a slice of RestrictionKey
-type RestrictionKeys []RestrictionKey
+// RestrictionClaims is a slice of RestrictionClaim
+type RestrictionClaims []RestrictionClaim
 
-// AllRestrictionKeyStrings holds all defined RestrictionKey strings
-var AllRestrictionKeyStrings = api.AllRestrictionKeys
+// AllRestrictionClaimStrings holds all defined RestrictionClaim strings
+var AllRestrictionClaimStrings = api.AllRestrictionClaims
 
-// AllRestrictionKeys holds all defined RestrictionKeys
-var AllRestrictionKeys RestrictionKeys
+// AllRestrictionClaims holds all defined RestrictionClaims
+var AllRestrictionClaims RestrictionClaims
 
 func init() {
-	for i := 0; i < int(maxRestrictionKey); i++ {
-		AllRestrictionKeys = append(AllRestrictionKeys, RestrictionKey(i))
+	for i := 0; i < int(maxRestrictionClaim); i++ {
+		AllRestrictionClaims = append(AllRestrictionClaims, RestrictionClaim(i))
 	}
 }
 
-// RestrictionKeys
+// RestrictionClaims
 const ( // assert that these are in the same order as api.AllRestrictionKeys
-	RestrictionKeyNotBefore RestrictionKey = iota
-	RestrictionKeyExpiresAt
-	RestrictionKeyScope
-	RestrictionKeyAudiences
-	RestrictionKeyIPs
-	RestrictionKeyGeoIPAllow
-	RestrictionKeyGeoIPDisallow
-	RestrictionKeyUsagesAT
-	RestrictionKeyUsagesOther
-	maxRestrictionKey
+	RestrictionClaimNotBefore RestrictionClaim = iota
+	RestrictionClaimExpiresAt
+	RestrictionClaimScope
+	RestrictionClaimAudiences
+	RestrictionClaimIPs
+	RestrictionClaimGeoIPAllow
+	RestrictionClaimGeoIPDisallow
+	RestrictionClaimUsagesAT
+	RestrictionClaimUsagesOther
+	maxRestrictionClaim
 )
 
-// NewRestrictionKey creates a new RestrictionKey from the grant type string
-func NewRestrictionKey(s string) RestrictionKey {
-	for i, f := range AllRestrictionKeyStrings {
+// NewRestrictionClaim creates a new RestrictionClaim from the grant type string
+func NewRestrictionClaim(s string) RestrictionClaim {
+	for i, f := range AllRestrictionClaimStrings {
 		if f == s {
-			return RestrictionKey(i)
+			return RestrictionClaim(i)
 		}
 	}
 	return -1
 }
 
-func (rk *RestrictionKey) String() string {
-	if *rk < 0 || int(*rk) >= len(AllRestrictionKeys) {
+func (rc *RestrictionClaim) String() string {
+	if *rc < 0 || int(*rc) >= len(AllRestrictionClaims) {
 		return ""
 	}
-	return AllRestrictionKeyStrings[*rk]
+	return AllRestrictionClaimStrings[*rc]
 }
 
-// Valid checks that RestrictionKey is a defined grant type
-func (rk *RestrictionKey) Valid() bool {
-	return *rk < maxRestrictionKey && *rk >= 0
+// Valid checks that RestrictionClaim is a defined grant type
+func (rc *RestrictionClaim) Valid() bool {
+	return *rc < maxRestrictionClaim && *rc >= 0
 }
 
-const valueNotValidFmt = "value '%s' not valid for RestrictionKey"
+const valueNotValidFmt = "value '%s' not valid for RestrictionClaim"
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface
-func (rk *RestrictionKey) UnmarshalYAML(value *yaml.Node) error {
+func (rc *RestrictionClaim) UnmarshalYAML(value *yaml.Node) error {
 	s := value.Value
 	if s == "" {
 		return errors.New("empty value in unmarshal grant type")
 	}
-	*rk = NewRestrictionKey(s)
-	if !rk.Valid() {
+	*rc = NewRestrictionClaim(s)
+	if !rc.Valid() {
 		return errors.Errorf(valueNotValidFmt, s)
 	}
 	return nil
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface
-func (rk *RestrictionKey) UnmarshalJSON(data []byte) error {
+func (rc *RestrictionClaim) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
 		return errors.WithStack(err)
 	}
-	*rk = NewRestrictionKey(s)
-	if !rk.Valid() {
+	*rc = NewRestrictionClaim(s)
+	if !rc.Valid() {
 		return errors.Errorf(valueNotValidFmt, s)
 	}
 	return nil
 }
 
 // UnmarshalText implements the encoding.TextUnmarshaler interface
-func (rk *RestrictionKey) UnmarshalText(data []byte) error {
+func (rc *RestrictionClaim) UnmarshalText(data []byte) error {
 	s := string(data)
-	*rk = NewRestrictionKey(s)
-	if !rk.Valid() {
+	*rc = NewRestrictionClaim(s)
+	if !rc.Valid() {
 		return errors.Errorf(valueNotValidFmt, s)
 	}
 	return nil
 }
 
 // MarshalJSON implements the json.Marshaler interface
-func (rk RestrictionKey) MarshalJSON() ([]byte, error) {
-	data, err := json.Marshal(rk.String())
+func (rc RestrictionClaim) MarshalJSON() ([]byte, error) {
+	data, err := json.Marshal(rc.String())
 	return data, errors.WithStack(err)
 }
 
-// Has checks if a a RestrictionKey is in a RestrictionKeys
-func (rks RestrictionKeys) Has(rk RestrictionKey) bool {
+// Has checks if a a RestrictionClaim is in a RestrictionClaims
+func (rks RestrictionClaims) Has(rk RestrictionClaim) bool {
 	for _, k := range rks {
 		if k == rk {
 			return true
@@ -116,8 +116,8 @@ func (rks RestrictionKeys) Has(rk RestrictionKey) bool {
 	return false
 }
 
-// Disable subtracts the passed RestrictionKeys from this RestrictionKeys and returns the left RestrictionKeys
-func (rks RestrictionKeys) Disable(disable RestrictionKeys) (left RestrictionKeys) {
+// Disable subtracts the passed RestrictionClaims from this RestrictionClaims and returns the left RestrictionClaims
+func (rks RestrictionClaims) Disable(disable RestrictionClaims) (left RestrictionClaims) {
 	for _, r := range rks {
 		if !disable.Has(r) {
 			left = append(left, r)

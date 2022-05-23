@@ -28,9 +28,9 @@ import (
 // Restrictions is a slice of Restriction
 type Restrictions []Restriction
 
-var eRKs model.RestrictionKeys
+var eRKs model.RestrictionClaims
 
-func disabledRestrictionKeys() model.RestrictionKeys {
+func disabledRestrictionKeys() model.RestrictionClaims {
 	if eRKs == nil {
 		eRKs = config.Get().Features.DisabledRestrictionKeys
 	}
@@ -47,31 +47,31 @@ type Restriction struct {
 // ClearUnsupportedKeys sets default values for the keys that are not supported by this instance
 func (r *Restrictions) ClearUnsupportedKeys() {
 	for i, rr := range *r {
-		if disabledRestrictionKeys().Has(model.RestrictionKeyNotBefore) {
+		if disabledRestrictionKeys().Has(model.RestrictionClaimNotBefore) {
 			rr.NotBefore = 0
 		}
-		if disabledRestrictionKeys().Has(model.RestrictionKeyExpiresAt) {
+		if disabledRestrictionKeys().Has(model.RestrictionClaimExpiresAt) {
 			rr.ExpiresAt = 0
 		}
-		if disabledRestrictionKeys().Has(model.RestrictionKeyScope) {
+		if disabledRestrictionKeys().Has(model.RestrictionClaimScope) {
 			rr.Scope = ""
 		}
-		if disabledRestrictionKeys().Has(model.RestrictionKeyAudiences) {
+		if disabledRestrictionKeys().Has(model.RestrictionClaimAudiences) {
 			rr.Audiences = nil
 		}
-		if disabledRestrictionKeys().Has(model.RestrictionKeyIPs) {
+		if disabledRestrictionKeys().Has(model.RestrictionClaimIPs) {
 			rr.IPs = nil
 		}
-		if disabledRestrictionKeys().Has(model.RestrictionKeyGeoIPAllow) {
+		if disabledRestrictionKeys().Has(model.RestrictionClaimGeoIPAllow) {
 			rr.GeoIPAllow = nil
 		}
-		if disabledRestrictionKeys().Has(model.RestrictionKeyGeoIPDisallow) {
+		if disabledRestrictionKeys().Has(model.RestrictionClaimGeoIPDisallow) {
 			rr.GeoIPDisallow = nil
 		}
-		if disabledRestrictionKeys().Has(model.RestrictionKeyUsagesAT) {
+		if disabledRestrictionKeys().Has(model.RestrictionClaimUsagesAT) {
 			rr.UsagesAT = nil
 		}
-		if disabledRestrictionKeys().Has(model.RestrictionKeyUsagesOther) {
+		if disabledRestrictionKeys().Has(model.RestrictionClaimUsagesOther) {
 			rr.UsagesOther = nil
 		}
 		(*r)[i] = rr
@@ -88,13 +88,13 @@ func (r *Restriction) hash() ([]byte, error) {
 }
 
 func (r *Restriction) verifyNbf(now unixtime.UnixTime) bool {
-	if disabledRestrictionKeys().Has(model.RestrictionKeyNotBefore) {
+	if disabledRestrictionKeys().Has(model.RestrictionClaimNotBefore) {
 		return true
 	}
 	return now >= r.NotBefore
 }
 func (r *Restriction) verifyExp(now unixtime.UnixTime) bool {
-	if disabledRestrictionKeys().Has(model.RestrictionKeyExpiresAt) {
+	if disabledRestrictionKeys().Has(model.RestrictionClaimExpiresAt) {
 		return true
 	}
 	return r.ExpiresAt == 0 ||
@@ -109,7 +109,7 @@ func (r *Restriction) verifyIPBased(rlog log.Ext1FieldLogger, ip string) bool {
 	return r.verifyIPs(rlog, ip) && r.verifyGeoIP(rlog, ip)
 }
 func (r *Restriction) verifyIPs(rlog log.Ext1FieldLogger, ip string) bool {
-	if disabledRestrictionKeys().Has(model.RestrictionKeyIPs) {
+	if disabledRestrictionKeys().Has(model.RestrictionClaimIPs) {
 		return true
 	}
 	rlog.Trace("Verifying ips")
@@ -121,7 +121,7 @@ func (r *Restriction) verifyGeoIP(rlog log.Ext1FieldLogger, ip string) bool {
 	return r.verifyGeoIPDisallow(rlog, ip) && r.verifyGeoIPAllow(rlog, ip)
 }
 func (r *Restriction) verifyGeoIPAllow(rlog log.Ext1FieldLogger, ip string) bool {
-	if disabledRestrictionKeys().Has(model.RestrictionKeyGeoIPAllow) {
+	if disabledRestrictionKeys().Has(model.RestrictionClaimGeoIPAllow) {
 		return true
 	}
 	rlog.Trace("Verifying ip geo location allow list")
@@ -132,7 +132,7 @@ func (r *Restriction) verifyGeoIPAllow(rlog log.Ext1FieldLogger, ip string) bool
 	return utils.StringInSlice(geoip.CountryCode(ip), allow)
 }
 func (r *Restriction) verifyGeoIPDisallow(rlog log.Ext1FieldLogger, ip string) bool {
-	if disabledRestrictionKeys().Has(model.RestrictionKeyGeoIPDisallow) {
+	if disabledRestrictionKeys().Has(model.RestrictionClaimGeoIPDisallow) {
 		return true
 	}
 	rlog.Trace("Verifying ip geo location disallow list")
@@ -150,7 +150,7 @@ func (r *Restriction) getATUsageCounts(rlog log.Ext1FieldLogger, tx *sqlx.Tx, my
 	return mytokenrepohelper.GetTokenUsagesAT(rlog, tx, myID, string(hash))
 }
 func (r *Restriction) verifyATUsageCounts(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID) bool {
-	if disabledRestrictionKeys().Has(model.RestrictionKeyUsagesAT) {
+	if disabledRestrictionKeys().Has(model.RestrictionClaimUsagesAT) {
 		return true
 	}
 	rlog.Trace("Verifying AT usage count")
@@ -188,7 +188,7 @@ func (r *Restriction) getOtherUsageCounts(rlog log.Ext1FieldLogger, tx *sqlx.Tx,
 	return mytokenrepohelper.GetTokenUsagesOther(rlog, tx, myID, string(hash))
 }
 func (r *Restriction) verifyOtherUsageCounts(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID) bool {
-	if disabledRestrictionKeys().Has(model.RestrictionKeyUsagesOther) {
+	if disabledRestrictionKeys().Has(model.RestrictionClaimUsagesOther) {
 		return true
 	}
 	rlog.Trace("Verifying other usage count")

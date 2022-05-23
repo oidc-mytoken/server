@@ -38,7 +38,7 @@ function approve() {
             Accept: "application/json"
         },
         success: function (res) {
-            window.location.href = res['authorization_url'];
+            window.location.href = res['authorization_uri'];
         },
         error: function (errRes) {
             let errMsg = getErrorMessage(errRes);

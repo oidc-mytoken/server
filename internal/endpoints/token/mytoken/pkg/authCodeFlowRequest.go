@@ -11,13 +11,13 @@ import (
 // AuthCodeFlowRequest holds a authorization code flow request
 type AuthCodeFlowRequest struct {
 	OIDCFlowRequest
-	RedirectType string `json:"redirect_type"`
-	RedirectURL  string `json:"redirect_url"`
+	ClientType  string `json:"client_type"`
+	RedirectURI string `json:"redirect_uri"`
 }
 
 // Native checks if the request is native
 func (r *AuthCodeFlowRequest) Native() bool {
-	return r.RedirectType != api.RedirectTypeWeb
+	return r.ClientType != api.ClientTypeWeb
 }
 
 // UnmarshalJSON implements the json unmarshaler interface
@@ -32,8 +32,8 @@ func (r *AuthCodeFlowRequest) UnmarshalJSON(data []byte) error {
 
 // MarshalJSON implements the json marshaler interface
 func (r *AuthCodeFlowRequest) MarshalJSON() ([]byte, error) {
-	r.redirectType = r.RedirectType
-	r.redirectURL = r.RedirectURL
+	r.clientType = r.ClientType
+	r.redirectURI = r.RedirectURI
 	data, err := json.Marshal(r.OIDCFlow)
 	return data, errors.WithStack(err)
 }

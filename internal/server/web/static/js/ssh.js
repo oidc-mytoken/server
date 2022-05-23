@@ -149,9 +149,9 @@ function addSSHKey() {
             contentType: "application/json",
             url: storageGet('usersettings_endpoint') + "/grants/ssh",
             success: function (res) {
-                let url = res['authorization_url'];
+                let url = res['consent_uri'];
                 let code = res['polling_code'];
-                let interval = res['polling_code_interval'];
+                let interval = res['interval'];
                 $authURL.attr("href", url);
                 $authURL.text(url);
                 polling(code, interval)

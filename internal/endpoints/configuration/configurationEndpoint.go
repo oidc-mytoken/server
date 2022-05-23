@@ -74,7 +74,7 @@ func basicConfiguration() *pkg.MytokenConfiguration {
 		TokenEndpoint: utils.CombineURLPath(
 			config.Get().IssuerURL, apiPaths.AccessTokenEndpoint,
 		),
-		SupportedRestrictionKeys: model.AllRestrictionKeys.Disable(config.Get().Features.DisabledRestrictionKeys),
+		RestrictionClaimsSupported: model.AllRestrictionClaims.Disable(config.Get().Features.DisabledRestrictionKeys),
 	}
 }
 

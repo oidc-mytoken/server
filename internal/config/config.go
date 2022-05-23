@@ -122,16 +122,16 @@ type apiConf struct {
 }
 
 type featuresConf struct {
-	EnabledOIDCFlows        []model.OIDCFlow       `yaml:"enabled_oidc_flows"`
-	TokenRevocation         onlyEnable             `yaml:"token_revocation"`
-	ShortTokens             shortTokenConfig       `yaml:"short_tokens"`
-	TransferCodes           onlyEnable             `yaml:"transfer_codes"`
-	Polling                 pollingConf            `yaml:"polling_codes"`
-	TokenRotation           onlyEnable             `yaml:"token_rotation"`
-	TokenInfo               tokeninfoConfig        `yaml:"tokeninfo"`
-	WebInterface            onlyEnable             `yaml:"web_interface"`
-	DisabledRestrictionKeys model2.RestrictionKeys `yaml:"unsupported_restrictions"`
-	SSH                     sshConf                `yaml:"ssh"`
+	EnabledOIDCFlows        []model.OIDCFlow         `yaml:"enabled_oidc_flows"`
+	TokenRevocation         onlyEnable               `yaml:"token_revocation"`
+	ShortTokens             shortTokenConfig         `yaml:"short_tokens"`
+	TransferCodes           onlyEnable               `yaml:"transfer_codes"`
+	Polling                 pollingConf              `yaml:"polling_codes"`
+	TokenRotation           onlyEnable               `yaml:"token_rotation"`
+	TokenInfo               tokeninfoConfig          `yaml:"tokeninfo"`
+	WebInterface            onlyEnable               `yaml:"web_interface"`
+	DisabledRestrictionKeys model2.RestrictionClaims `yaml:"unsupported_restrictions"`
+	SSH                     sshConf                  `yaml:"ssh"`
 }
 
 type sshConf struct {
