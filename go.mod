@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/Songmu/prompter v0.5.0
-	github.com/coreos/go-oidc/v3 v3.1.0
+	github.com/coreos/go-oidc/v3 v3.2.0
 	github.com/fatih/structs v1.1.0
 	github.com/gliderlabs/ssh v0.3.3
 	github.com/go-resty/resty/v2 v2.7.0
