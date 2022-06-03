@@ -19,6 +19,13 @@ type UniversalMytoken struct {
 	OriginalTokenType model.ResponseType
 }
 
+// UnmarshalText implements the encoding.TextUnmarshaler interface
+func (t *UniversalMytoken) UnmarshalText(data []byte) (err error) {
+	s := string(data)
+	*t, err = Parse(log.StandardLogger(), s)
+	return errors.WithStack(err)
+}
+
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (t *UniversalMytoken) UnmarshalJSON(data []byte) (err error) {
 	var token string

@@ -14,6 +14,10 @@
 
 ## mytoken 0.4.3
 
+### Bugfixes
+
+- Fixed a bug where mytokens could not be used with x-www-form-urlencoding
+
 ### Dependencies
 
 - Bumped github.com/jmoiron/sqlx from 1.3.4 to 1.3.5
