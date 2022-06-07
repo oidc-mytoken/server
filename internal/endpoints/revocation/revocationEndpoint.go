@@ -1,7 +1,6 @@
 package revocation
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -28,7 +27,7 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle revocation request")
 	req := api.RevocationRequest{}
-	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
+	if err := ctx.BodyParser(&req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	rlog.Trace("Parsed mytoken request")

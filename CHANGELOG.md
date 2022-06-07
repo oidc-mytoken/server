@@ -17,6 +17,7 @@
 ### Bugfixes
 
 - Fixed a bug where mytokens could not be used with x-www-form-urlencoding
+- Fixed a bug where `x-www-form-urlencoding` was not accepted on token revocation endpoint
 
 ### Dependencies
 
