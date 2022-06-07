@@ -3,7 +3,7 @@ module github.com/oidc-mytoken/server
 go 1.16
 
 require (
-	github.com/Songmu/prompter v0.5.0
+	github.com/Songmu/prompter v0.5.1
 	github.com/coreos/go-oidc/v3 v3.2.0
 	github.com/fatih/structs v1.1.0
 	github.com/gliderlabs/ssh v0.3.4
@@ -28,7 +28,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
 	golang.org/x/mod v0.5.1
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
+	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
 
