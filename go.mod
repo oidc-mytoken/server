@@ -9,7 +9,7 @@ require (
 	github.com/gliderlabs/ssh v0.3.4
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-sql-driver/mysql v1.6.0
-	github.com/gofiber/fiber/v2 v2.34.0
+	github.com/gofiber/fiber/v2 v2.35.0
 	github.com/gofiber/helmet/v2 v2.2.13
 	github.com/gofiber/template v1.6.28
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -24,7 +24,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
-	github.com/valyala/fasthttp v1.37.0
+	github.com/valyala/fasthttp v1.38.0
 	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
 	golang.org/x/mod v0.5.1
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
