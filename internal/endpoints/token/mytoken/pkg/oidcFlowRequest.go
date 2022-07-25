@@ -105,7 +105,7 @@ func (r *OIDCFlowRequest) Scan(src interface{}) error {
 }
 
 // Value implements the driver.Valuer interface
-func (r OIDCFlowRequest) Value() (driver.Value, error) {
+func (r OIDCFlowRequest) Value() (driver.Value, error) { // skipcq: CRT-P0003
 	v, err := json.Marshal(r)
 	return v, errors.WithStack(err)
 }

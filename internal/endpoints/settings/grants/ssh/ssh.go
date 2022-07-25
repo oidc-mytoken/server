@@ -150,13 +150,13 @@ func handleAddSSHKey(ctx *fiber.Ctx) error {
 	return settings.HandleSettingsHelper(
 		ctx, &req.Mytoken, api.CapabilitySSHGrant, event.FromNumber(event.SSHKeyAdded, ""), fiber.StatusOK,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
-			return handleAddSSHSettingsCallback(rlog, ctx, req, sshKeyFP, tx, mt)
+			return handleAddSSHSettingsCallback(rlog, ctx, &req, sshKeyFP, tx, mt)
 		}, false,
 	)
 }
 
 func handleAddSSHSettingsCallback(
-	rlog log.Ext1FieldLogger, ctx *fiber.Ctx, req request.SSHKeyAddRequest,
+	rlog log.Ext1FieldLogger, ctx *fiber.Ctx, req *request.SSHKeyAddRequest,
 	sshKeyFP string,
 	tx *sqlx.Tx,
 	mt *mytoken.Mytoken,
