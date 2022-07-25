@@ -1,8 +1,8 @@
 package config
 
 import (
-	"io/ioutil"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 
@@ -284,7 +284,7 @@ func (conf *DBConf) GetPassword() string {
 	if conf.PasswordFile == "" {
 		return ""
 	}
-	content, err := ioutil.ReadFile(conf.PasswordFile)
+	content, err := os.ReadFile(conf.PasswordFile)
 	if err != nil {
 		log.WithError(err).Error()
 		return ""
@@ -402,7 +402,7 @@ func validate() error {
 			return errors.New("invalid config: ssh feature enabled, but no ssh private key set")
 		}
 		for _, pkf := range conf.Features.SSH.KeyFiles {
-			pemBytes, err := ioutil.ReadFile(pkf)
+			pemBytes, err := os.ReadFile(pkf)
 			if err != nil {
 				return errors.Wrap(err, "reading ssh private key")
 			}
