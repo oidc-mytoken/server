@@ -154,7 +154,7 @@ func requireUseableRestriction(
 		}
 	}
 	rlog.Trace("Checked mytoken restrictions")
-	return &useableRestrictions[0], nil
+	return useableRestrictions[0], nil
 }
 
 // RequireUsableRestriction checks that the mytoken.Mytoken's restrictions allow the usage

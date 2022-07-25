@@ -20,7 +20,7 @@ func checkRestrictions(t *testing.T, exp, a Restrictions, okExp, ok bool) {
 	}
 	for i, ee := range exp {
 		aa := a[i]
-		if !(ee.isTighterThan(&aa) && aa.isTighterThan(&ee)) {
+		if !(ee.isTighterThan(aa) && aa.isTighterThan(ee)) {
 			t.Errorf("Expected '%+v', but got '%+v'", exp, a)
 			return
 		}

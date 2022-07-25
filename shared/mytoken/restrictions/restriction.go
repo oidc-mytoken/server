@@ -26,7 +26,7 @@ import (
 )
 
 // Restrictions is a slice of Restriction
-type Restrictions []Restriction
+type Restrictions []*Restriction
 
 var eRKs model.RestrictionClaims
 
@@ -46,7 +46,7 @@ type Restriction struct {
 
 // ClearUnsupportedKeys sets default values for the keys that are not supported by this instance
 func (r *Restrictions) ClearUnsupportedKeys() {
-	for i, rr := range *r {
+	for _, rr := range *r {
 		if disabledRestrictionKeys().Has(model.RestrictionClaimNotBefore) {
 			rr.NotBefore = 0
 		}
@@ -74,7 +74,7 @@ func (r *Restrictions) ClearUnsupportedKeys() {
 		if disabledRestrictionKeys().Has(model.RestrictionClaimUsagesOther) {
 			rr.UsagesOther = nil
 		}
-		(*r)[i] = rr
+		// (*r)[i] = rr
 	}
 }
 
@@ -321,16 +321,6 @@ func (r Restrictions) WithAudiences(rlog log.Ext1FieldLogger, audiences []string
 	return
 }
 
-// TokenUsages is a slice of TokenUsage
-type TokenUsages []TokenUsage
-
-// TokenUsage holds the information about the usages of an my token
-type TokenUsage struct {
-	MTID            string `db:"MT_id"`
-	UsagesOtherUsed uint   `db:"usages_other"`
-	UsagesATUsed    uint   `db:"usages_AT"`
-}
-
 // Scan implements the sql.Scanner interface.
 func (r *Restrictions) Scan(src interface{}) error {
 	if src == nil {
@@ -429,14 +419,14 @@ func (r *Restrictions) EnforceMaxLifetime(issuer string) (changed bool) {
 	}
 	exp := unixtime.InSeconds(maxLifetime)
 	if len(*r) == 0 {
-		*r = append(*r, Restriction{ExpiresAt: exp})
+		*r = append(*r, &Restriction{ExpiresAt: exp})
 		changed = true
 		return
 	}
-	for i, rr := range *r {
+	for _, rr := range *r {
 		if rr.ExpiresAt == 0 || rr.ExpiresAt > exp {
 			rr.ExpiresAt = exp
-			(*r)[i] = rr
+			// (*r)[i] = rr
 			changed = true
 		}
 	}
@@ -459,7 +449,7 @@ func Tighten(rlog log.Ext1FieldLogger, old, wanted Restrictions) (res Restrictio
 	for _, a := range wanted {
 		thisOk := false
 		for i, o := range base {
-			if a.isTighterThan(&o) {
+			if a.isTighterThan(o) {
 				thisOk = true
 				res = append(res, a)
 				if o.UsagesOther != nil && a.UsagesOther != nil {
