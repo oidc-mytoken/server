@@ -65,7 +65,7 @@ var defaultConfig = Config{
 			},
 		},
 	},
-	ServiceDocumentation: "https://docs-sdm.scc.kit.edu/mytoken/",
+	ServiceDocumentation: "https://mytoken-docs.data.kit.edu/",
 	Features: featuresConf{
 		EnabledOIDCFlows: []model.OIDCFlow{
 			model.OIDCFlowAuthorizationCode,
