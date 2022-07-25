@@ -3,6 +3,7 @@ package config
 import (
 	"io/ioutil"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -102,19 +103,21 @@ var defaultConfig = Config{
 
 // Config holds the server configuration
 type Config struct {
-	IssuerURL            string                   `yaml:"issuer"`
-	Host                 string                   // Extracted from the IssuerURL
-	Server               serverConf               `yaml:"server"`
-	GeoIPDBFile          string                   `yaml:"geo_ip_db_file"`
-	API                  apiConf                  `yaml:"api"`
-	DB                   DBConf                   `yaml:"database"`
-	Signing              signingConf              `yaml:"signing"`
-	Logging              loggingConf              `yaml:"logging"`
-	ServiceDocumentation string                   `yaml:"service_documentation"`
-	Features             featuresConf             `yaml:"features"`
-	Providers            []*ProviderConf          `yaml:"providers"`
-	ProviderByIssuer     map[string]*ProviderConf `yaml:"-"`
-	ServiceOperator      ServiceOperatorConf      `yaml:"service_operator"`
+	IssuerURL             string                   `yaml:"issuer"`
+	Host                  string                   // Extracted from the IssuerURL
+	Server                serverConf               `yaml:"server"`
+	GeoIPDBFile           string                   `yaml:"geo_ip_db_file"`
+	API                   apiConf                  `yaml:"api"`
+	DB                    DBConf                   `yaml:"database"`
+	Signing               signingConf              `yaml:"signing"`
+	Logging               loggingConf              `yaml:"logging"`
+	ServiceDocumentation  string                   `yaml:"service_documentation"`
+	Features              featuresConf             `yaml:"features"`
+	TrustedRedirectURIs   []string                 `yaml:"trusted_redirect_uris"`
+	TrustedRedirectsRegex []*regexp.Regexp         `yaml:"-"`
+	Providers             []*ProviderConf          `yaml:"providers"`
+	ProviderByIssuer      map[string]*ProviderConf `yaml:"-"`
+	ServiceOperator       ServiceOperatorConf      `yaml:"service_operator"`
 }
 
 type apiConf struct {
@@ -342,6 +345,13 @@ func validate() error {
 	}
 	if err = conf.ServiceOperator.validate(); err != nil {
 		return err
+	}
+	for _, r := range conf.TrustedRedirectURIs {
+		reg, err := regexp.Compile(r)
+		if err != nil {
+			return errors.Errorf("invalid config: invalid regex in truested_redirect_uris: '%s'", r)
+		}
+		conf.TrustedRedirectsRegex = append(conf.TrustedRedirectsRegex, reg)
 	}
 	if len(conf.Providers) <= 0 {
 		return errors.New("invalid config: providers must have at least one entry")

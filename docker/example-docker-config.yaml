@@ -80,6 +80,12 @@ logging:
 # URL with documentation about the service
 service_documentation: "https://mytoken-docs.data.kit.edu/"
 
+# A list of trusted redirect uris. If the client type is web and redirect_uri matches on of the following regexes the
+# consent screen will be skipped. Do this only for applications with well-known redirect-uris and high trust. But it
+# makes sense to add your own web interface.
+trusted_redirect_uris:
+#- "^(https:\\/\\/mytoken\\.example\\.com)?\\/"
+
 # Configuration and enabling/disabling for different features
 features:
   # The supported oidc flows
@@ -88,7 +94,7 @@ features:
 
   # Specify restriction keys to disable support for them; on default all restriction keys are supported.
   unsupported_restrictions:
-#    - nbf
+  #    - nbf
 #    - exp
 #    - scope
 #    - audience

@@ -14,7 +14,6 @@ import (
 	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/internal/oidc/pkce"
 	"github.com/oidc-mytoken/server/internal/server/httpStatus"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
@@ -106,6 +105,59 @@ func handleConsentDecline(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInf
 	}.Send(ctx)
 }
 
+// HandleConsentAccept handles the acceptance of a consent code
+func HandleConsentAccept(
+	rlog log.Ext1FieldLogger, req *pkg.ConsentPostRequest,
+	oState *state.State,
+) *model.Response {
+	for _, c := range req.Capabilities {
+		if !api.AllCapabilities.Has(c) {
+			return &model.Response{
+				Status:   fiber.StatusBadRequest,
+				Response: model2.BadRequestError(fmt.Sprintf("unknown capability '%s'", c)),
+			}
+		}
+	}
+	for _, c := range req.SubtokenCapabilities {
+		if !api.AllCapabilities.Has(c) {
+			return &model.Response{
+				Status:   fiber.StatusBadRequest,
+				Response: model2.BadRequestError(fmt.Sprintf("unknown subtoken_capability '%s'", c)),
+			}
+		}
+	}
+	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
+	if !ok {
+		return &model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: api.ErrorUnknownIssuer,
+		}
+	}
+	var authURI string
+	var err error
+	if err = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			if err = authcodeinforepo.UpdateTokenInfoByState(
+				rlog, tx, oState, req.Restrictions, req.Capabilities, req.SubtokenCapabilities, req.Rotation,
+				req.TokenName,
+			); err != nil {
+				return err
+			}
+			authURI, err = authcode.GetAuthorizationURL(rlog, tx, provider, oState, req.Restrictions)
+			return err
+		},
+	); err != nil {
+		rlog.Errorf("%s", errorfmt.Full(err))
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	return &model.Response{
+		Status: httpStatus.StatusOKForward,
+		Response: map[string]string{
+			"authorization_uri": authURI,
+		},
+	}
+}
+
 // HandleConsentPost handles consent confirmation requests
 func HandleConsentPost(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
@@ -121,50 +173,5 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 	if err = json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	for _, c := range req.Capabilities {
-		if !api.AllCapabilities.Has(c) {
-			return model.Response{
-				Status:   fiber.StatusBadRequest,
-				Response: model2.BadRequestError(fmt.Sprintf("unknown capability '%s'", c)),
-			}.Send(ctx)
-		}
-	}
-	for _, c := range req.SubtokenCapabilities {
-		if !api.AllCapabilities.Has(c) {
-			return model.Response{
-				Status:   fiber.StatusBadRequest,
-				Response: model2.BadRequestError(fmt.Sprintf("unknown subtoken_capability '%s'", c)),
-			}.Send(ctx)
-		}
-	}
-	pkceCode := pkce.NewS256PKCE(utils.RandASCIIString(44))
-	if err = db.Transact(
-		rlog, func(tx *sqlx.Tx) error {
-			if err = authcodeinforepo.UpdateTokenInfoByState(
-				rlog, tx, oState, req.Restrictions, req.Capabilities, req.SubtokenCapabilities, req.Rotation,
-				req.TokenName,
-			); err != nil {
-				return err
-			}
-			return authcodeinforepo.SetCodeVerifier(rlog, tx, oState, pkceCode.Verifier())
-		},
-	); err != nil {
-		rlog.Errorf("%s", errorfmt.Full(err))
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
-	}
-	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
-	if !ok {
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: api.ErrorUnknownIssuer,
-		}.Send(ctx)
-	}
-	pkceChallenge, _ := pkceCode.Challenge()
-	authURI := authcode.GetAuthorizationURL(rlog, provider, oState.State(), pkceChallenge, req.Restrictions)
-	return model.Response{
-		Status: httpStatus.StatusOKForward,
-		Response: map[string]string{
-			"authorization_uri": authURI,
-		},
-	}.Send(ctx)
+	return HandleConsentAccept(rlog, &req, oState).Send(ctx)
 }

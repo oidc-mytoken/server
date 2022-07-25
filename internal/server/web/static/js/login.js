@@ -37,7 +37,17 @@ $('#login-form').on('submit', function(e){
         url: storageGet("mytoken_endpoint"),
         data: data,
         success: function (res) {
-            window.location.href = res['consent_uri'];
+            let consent_uri = res['consent_uri'];
+            let auth_uri = res['authorization_uri'];
+            let uri;
+            if (consent_uri !== undefined) {
+                uri = consent_uri;
+            } else if (auth_uri !== undefined) {
+                uri = auth_uri;
+            } else {
+                console.error("Unexpected response: ", res);
+            }
+            window.location.href = uri;
         },
         dataType: "json",
         contentType : "application/json"
