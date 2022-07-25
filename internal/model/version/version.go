@@ -7,9 +7,9 @@ import (
 // Version segments
 const (
 	MAJOR = 0
-	MINOR = 4
-	FIX   = 4
-	DEV   = false
+	MINOR = 5
+	FIX   = 0
+	DEV   = true
 )
 
 var version = fmt.Sprintf("%d.%d.%d", MAJOR, MINOR, FIX)
