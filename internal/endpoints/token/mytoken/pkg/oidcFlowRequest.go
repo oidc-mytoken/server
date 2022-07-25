@@ -47,7 +47,7 @@ func (r *OIDCFlowRequest) SetRedirectURI(uri string) {
 }
 
 // MarshalJSON implements the json.Marshaler interface
-func (r OIDCFlowRequest) MarshalJSON() ([]byte, error) {
+func (r OIDCFlowRequest) MarshalJSON() ([]byte, error) { // skipcq: CRT-P0003
 	type ofr OIDCFlowRequest
 	o := struct {
 		ofr
@@ -87,7 +87,7 @@ func (r *OIDCFlowRequest) UnmarshalJSON(data []byte) error {
 }
 
 // ToAuthCodeFlowRequest creates a AuthCodeFlowRequest from the OIDCFlowRequest
-func (r OIDCFlowRequest) ToAuthCodeFlowRequest() AuthCodeFlowRequest {
+func (r OIDCFlowRequest) ToAuthCodeFlowRequest() AuthCodeFlowRequest { // skipcq: CRT-P0003
 	return AuthCodeFlowRequest{
 		OIDCFlowRequest: r,
 		ClientType:      r.clientType,

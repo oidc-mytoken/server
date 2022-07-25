@@ -68,7 +68,7 @@ func handleOIDCFlow(ctx *fiber.Ctx) error {
 	}
 	switch req.OIDCFlow {
 	case model.OIDCFlowAuthorizationCode:
-		return authcode.StartAuthCodeFlow(ctx, *req).Send(ctx)
+		return authcode.StartAuthCodeFlow(ctx, req).Send(ctx)
 	// case model.OIDCFlowDevice:
 	// 	return serverModel.ResponseNYI.Send(ctx)
 	default:

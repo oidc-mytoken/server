@@ -459,7 +459,7 @@ func Tighten(rlog log.Ext1FieldLogger, old, wanted Restrictions) (res Restrictio
 	for _, a := range wanted {
 		thisOk := false
 		for i, o := range base {
-			if a.isTighterThan(o) {
+			if a.isTighterThan(&o) {
 				thisOk = true
 				res = append(res, a)
 				if o.UsagesOther != nil && a.UsagesOther != nil {
@@ -499,7 +499,7 @@ func (r *Restrictions) removeIndex(i int) { // skipcq SCC-U1000
 	*r = (*r)[:len(*r)-1]      // Truncate slice.
 }
 
-func (r *Restriction) isTighterThan(b Restriction) bool {
+func (r *Restriction) isTighterThan(b *Restriction) bool {
 	if r.NotBefore < b.NotBefore {
 		return false
 	}

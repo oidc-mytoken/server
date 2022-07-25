@@ -91,7 +91,7 @@ func GetAuthorizationURL(
 }
 
 // StartAuthCodeFlow starts an authorization code flow
-func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq response.OIDCFlowRequest) *model.Response {
+func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq *response.OIDCFlowRequest) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle authcode")
 	req := oidcReq.ToAuthCodeFlowRequest()

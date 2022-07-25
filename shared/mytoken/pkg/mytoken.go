@@ -60,7 +60,7 @@ func (mt *Mytoken) ToUniversalMytoken() universalmytoken.UniversalMytoken {
 }
 
 // Rotate returns a Mytoken and returns the new *Mytoken
-func (mt Mytoken) Rotate() *Mytoken {
+func (mt Mytoken) Rotate() *Mytoken { // skipcq: CRT-P0003
 	rotated := mt
 	rotated.SeqNo++
 	if rotated.Rotation.Lifetime > 0 {

@@ -20,7 +20,7 @@ func checkRestrictions(t *testing.T, exp, a Restrictions, okExp, ok bool) {
 	}
 	for i, ee := range exp {
 		aa := a[i]
-		if !(ee.isTighterThan(aa) && aa.isTighterThan(ee)) {
+		if !(ee.isTighterThan(&aa) && aa.isTighterThan(&ee)) {
 			t.Errorf("Expected '%+v', but got '%+v'", exp, a)
 			return
 		}
@@ -1236,7 +1236,7 @@ func TestRestriction_isTighterThan(t *testing.T) {
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
-				tighter := test.a.isTighterThan(test.b)
+				tighter := test.a.isTighterThan(&test.b)
 				if tighter != test.expected {
 					if test.expected {
 						t.Errorf("Actually '%+v' is tighter than '%+v'", test.a, test.b)
