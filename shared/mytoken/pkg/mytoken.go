@@ -51,10 +51,10 @@ type Mytoken struct {
 
 // ToUniversalMytoken returns a universalmytoken.UniversalMytoken for this Mytoken
 func (mt *Mytoken) ToUniversalMytoken() universalmytoken.UniversalMytoken {
-	jwt, _ := mt.ToJWT()
+	j, _ := mt.ToJWT()
 	return universalmytoken.UniversalMytoken{
-		JWT:               jwt,
-		OriginalToken:     jwt,
+		JWT:               j,
+		OriginalToken:     j,
 		OriginalTokenType: model.ResponseTypeToken,
 	}
 }
@@ -282,11 +282,11 @@ func (mt *Mytoken) ToJWT() (string, error) {
 		return mt.jwt, nil
 	}
 	var err error
-	jwt := jwt.NewWithClaims(
+	j := jwt.NewWithClaims(
 		jwt.GetSigningMethod(config.Get().Signing.Alg), mt,
 	)
-	jwt.Header["typ"] = "MT+JWT"
-	mt.jwt, err = jwt.SignedString(jws.GetPrivateKey())
+	j.Header["typ"] = "MT+JWT"
+	mt.jwt, err = j.SignedString(jws.GetPrivateKey())
 	return mt.jwt, errors.WithStack(err)
 }
 
