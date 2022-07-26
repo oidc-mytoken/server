@@ -9,6 +9,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/versionrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
@@ -33,6 +34,7 @@ func main() {
 	httpClient.Init(config.Get().IssuerURL)
 	geoip.Init()
 	settings.InitSettings()
+	cookies.Init()
 
 	server.Start()
 }

@@ -7,7 +7,7 @@ $('#login-form').on('submit', function(e){
     let data = $(this).serializeObject()
     data['restrictions'] = [
         {
-            "exp": Math.floor(Date.now() / 1000) + 3600 * 24 * 7, // TODO configurable
+            "exp": Math.floor(Date.now() / 1000) + cookieLifetime,
             "ip": ["this"],
             "usages_AT": 1,
             "usages_other": 100,

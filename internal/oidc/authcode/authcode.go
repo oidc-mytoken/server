@@ -101,7 +101,7 @@ func GetAuthorizationURL(
 }
 
 func trustedRedirectURI(redirectUri string) bool {
-	for _, r := range config.Get().TrustedRedirectsRegex {
+	for _, r := range config.Get().Features.OIDCFlows.AuthCode.Web.TrustedRedirectsRegex {
 		if r.MatchString(redirectUri) {
 			return true
 		}

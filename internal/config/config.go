@@ -17,7 +17,6 @@ import (
 
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
 	"github.com/oidc-mytoken/server/shared/context"
-	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
@@ -68,8 +67,12 @@ var defaultConfig = Config{
 	},
 	ServiceDocumentation: "https://mytoken-docs.data.kit.edu/",
 	Features: featuresConf{
-		EnabledOIDCFlows: []model.OIDCFlow{
-			model.OIDCFlowAuthorizationCode,
+		OIDCFlows: oidcFlowsConf{
+			AuthCode: authcodeConf{
+				Web: authcodeWebClientsConf{
+					CookieLifetime: 3600 * 24 * 7,
+				},
+			},
 		},
 		TokenRevocation: onlyEnable{true},
 		ShortTokens: shortTokenConfig{
@@ -103,21 +106,19 @@ var defaultConfig = Config{
 
 // Config holds the server configuration
 type Config struct {
-	IssuerURL             string                   `yaml:"issuer"`
-	Host                  string                   // Extracted from the IssuerURL
-	Server                serverConf               `yaml:"server"`
-	GeoIPDBFile           string                   `yaml:"geo_ip_db_file"`
-	API                   apiConf                  `yaml:"api"`
-	DB                    DBConf                   `yaml:"database"`
-	Signing               signingConf              `yaml:"signing"`
-	Logging               loggingConf              `yaml:"logging"`
-	ServiceDocumentation  string                   `yaml:"service_documentation"`
-	Features              featuresConf             `yaml:"features"`
-	TrustedRedirectURIs   []string                 `yaml:"trusted_redirect_uris"`
-	TrustedRedirectsRegex []*regexp.Regexp         `yaml:"-"`
-	Providers             []*ProviderConf          `yaml:"providers"`
-	ProviderByIssuer      map[string]*ProviderConf `yaml:"-"`
-	ServiceOperator       ServiceOperatorConf      `yaml:"service_operator"`
+	IssuerURL            string                   `yaml:"issuer"`
+	Host                 string                   // Extracted from the IssuerURL
+	Server               serverConf               `yaml:"server"`
+	GeoIPDBFile          string                   `yaml:"geo_ip_db_file"`
+	API                  apiConf                  `yaml:"api"`
+	DB                   DBConf                   `yaml:"database"`
+	Signing              signingConf              `yaml:"signing"`
+	Logging              loggingConf              `yaml:"logging"`
+	ServiceDocumentation string                   `yaml:"service_documentation"`
+	Features             featuresConf             `yaml:"features"`
+	Providers            []*ProviderConf          `yaml:"providers"`
+	ProviderByIssuer     map[string]*ProviderConf `yaml:"-"`
+	ServiceOperator      ServiceOperatorConf      `yaml:"service_operator"`
 }
 
 type apiConf struct {
@@ -125,7 +126,7 @@ type apiConf struct {
 }
 
 type featuresConf struct {
-	EnabledOIDCFlows        []model.OIDCFlow         `yaml:"enabled_oidc_flows"`
+	OIDCFlows               oidcFlowsConf            `yaml:"oidc_flows"`
 	TokenRevocation         onlyEnable               `yaml:"token_revocation"`
 	ShortTokens             shortTokenConfig         `yaml:"short_tokens"`
 	TransferCodes           onlyEnable               `yaml:"transfer_codes"`
@@ -135,6 +136,41 @@ type featuresConf struct {
 	WebInterface            onlyEnable               `yaml:"web_interface"`
 	DisabledRestrictionKeys model2.RestrictionClaims `yaml:"unsupported_restrictions"`
 	SSH                     sshConf                  `yaml:"ssh"`
+}
+
+func (c *featuresConf) validate() error {
+	return c.OIDCFlows.validate()
+}
+
+type oidcFlowsConf struct {
+	AuthCode authcodeConf `yaml:"authorization_code"`
+}
+
+type authcodeConf struct {
+	Web authcodeWebClientsConf `yaml:"web"`
+}
+
+type authcodeWebClientsConf struct {
+	TrustedRedirectURIs   []string         `yaml:"trusted_redirect_uris"`
+	TrustedRedirectsRegex []*regexp.Regexp `yaml:"-"`
+	CookieLifetime        int              `yaml:"cookie_lifetime"`
+}
+
+func (c *oidcFlowsConf) validate() error {
+	return c.AuthCode.validate()
+}
+func (c *authcodeConf) validate() error {
+	return c.Web.validate()
+}
+func (c *authcodeWebClientsConf) validate() error {
+	for _, r := range c.TrustedRedirectURIs {
+		reg, err := regexp.Compile(r)
+		if err != nil {
+			return errors.Errorf("invalid config: invalid regex in truested_redirect_uris: '%s'", r)
+		}
+		c.TrustedRedirectsRegex = append(c.TrustedRedirectsRegex, reg)
+	}
+	return nil
 }
 
 type sshConf struct {
@@ -346,12 +382,8 @@ func validate() error {
 	if err = conf.ServiceOperator.validate(); err != nil {
 		return err
 	}
-	for _, r := range conf.TrustedRedirectURIs {
-		reg, err := regexp.Compile(r)
-		if err != nil {
-			return errors.Errorf("invalid config: invalid regex in truested_redirect_uris: '%s'", r)
-		}
-		conf.TrustedRedirectsRegex = append(conf.TrustedRedirectsRegex, reg)
+	if err = conf.Features.validate(); err != nil {
+		return err
 	}
 	if len(conf.Providers) <= 0 {
 		return errors.New("invalid config: providers must have at least one entry")
@@ -396,7 +428,6 @@ func validate() error {
 	if conf.Signing.Alg == "" {
 		return errors.New("invalid config: token signing alg not set")
 	}
-	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(&conf.Features.EnabledOIDCFlows)
 	if conf.Features.SSH.Enabled {
 		if len(conf.Features.SSH.KeyFiles) == 0 {
 			return errors.New("invalid config: ssh feature enabled, but no ssh private key set")

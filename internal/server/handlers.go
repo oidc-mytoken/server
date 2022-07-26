@@ -5,11 +5,13 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	consent "github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
 )
 
 func handleIndex(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
-		loggedIn: false,
+		loggedIn:          false,
+		"cookie-lifetime": cookies.CookieLifetime,
 	}
 	providers := []map[string]string{}
 	for _, p := range config.Get().Providers {
