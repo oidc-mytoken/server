@@ -1,10 +1,18 @@
 <div class="pb-3 row">
     <h4 class="col">Restrictions</h4>
-    <input class="col" id="restr-editor-mode" type="checkbox" checked data-size="sm" data-toggle="toggle"
-           data-onstyle="success" data-offstyle="info" data-on="Easy Editor" data-off="JSON Editor">
+    <div>
+    <span id="restr-editor-wrap" class="{{#collapse}} d-none{{/collapse}}">
+        <input id="restr-editor-mode" type="checkbox" checked data-size="sm" data-toggle="toggle"
+               data-onstyle="success" data-offstyle="info" data-on="Easy Editor" data-off="JSON Editor"></span>
+        {{#collapse}}
+            <button class="btn btn-info my-expand ml-2" type="button" data-toggle="collapse" data-target="#restr-body"
+                    aria-expanded="false" aria-controls="restr-body" id="restr-expand">Expand
+            </button>
+        {{/collapse}}
+    </div>
 </div>
 
-<div class="d-flex justify-content-between">
+<div class="d-flex justify-content-between mb-3" id="restr-summary">
     <i id="r-icon-time" class="fas fa-clock fa-2x" data-toggle="tooltip" data-placement="bottom" title=""
        data-original-title=""></i>
     <i id="r-icon-ip" class="fas fa-network-wired fa-2x" data-toggle="tooltip" data-placement="bottom" title=""
@@ -17,12 +25,17 @@
        data-original-title=""></i>
 </div>
 
-{{>restrictions-gui-editor}}
 
-<div id="restr-json-editor" class="justify-content-center d-none">
-    <textarea class="mt-5 form-control" id="restrictionsArea" autocomplete="off" cols=50 rows=20
-              onkeyup="updateRestrFromJSONEditor()"></textarea>
+<div id="restr-body" class="{{#collapse}}collapse{{/collapse}}">
+    {{>restrictions-gui-editor}}
+
+    <div id="restr-json-editor" class="justify-content-center d-none">
+        <small class="mt-4">Write restrictions as JSON</small>
+        <textarea class="form-control" id="restrictionsArea" autocomplete="off" cols=50 rows=20
+                  onkeyup="updateRestrFromJSONEditor()"></textarea>
+    </div>
 </div>
+
 <script>
     if (typeof restrictions === 'undefined') {
         {{#restrictions}}

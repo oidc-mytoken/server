@@ -1,6 +1,40 @@
-<h4 class="text-center">Capabilities</h4>
-<ul class="list-group bg-my_grey list-group-striped">
-    {{#capabilities}}
-        {{> capabilities-part}}
-    {{/capabilities}}
-</ul>
+<div class="pb-3 row">
+    <h4 class="col">Capabilities</h4>
+    {{#collapse}}
+        <button class="btn btn-info my-expand" type="button" data-toggle="collapse" data-target="#cap-body"
+                aria-expanded="false" aria-controls="cap-body" id="cap-expand">Expand
+        </button>
+    {{/collapse}}
+</div>
+
+<div id="cap-summary" class="d-flex justify-content-between pb-2">
+    <h4>
+        <span class="badge badge-success badge-pill" id="cap-summary-count-green" data-toggle="tooltip"
+              data-placement="bottom" title=""
+              data-original-title=""></span>
+        <span class="badge badge-warning badge-pill" id="cap-summary-count-yellow" data-toggle="tooltip"
+              data-placement="bottom" title=""
+              data-original-title=""></span>
+        <span class="badge badge-danger badge-pill" id="cap-summary-count-red" data-toggle="tooltip"
+              data-placement="bottom" title=""
+              data-original-title=""></span>
+    </h4>
+    <h4>
+        <i class="fab fa-openid" data-toggle="tooltip" data-placement="bottom" title=""
+           data-original-title="" id="cap-summary-AT"></i>
+        <i class="fas fa-key" data-toggle="tooltip" data-placement="bottom" title=""
+           data-original-title="" id="cap-summary-MT"></i>
+        <i class="fas fa-info-circle" data-toggle="tooltip" data-placement="bottom" title=""
+           data-original-title="" id="cap-summary-info"></i>
+        <i class="fas fa-cog" data-toggle="tooltip" data-placement="bottom" title=""
+           data-original-title="" id="cap-summary-settings"></i>
+    </h4>
+</div>
+
+<div id="cap-body" class="{{#collapse}}collapse{{/collapse}}">
+    <ul class="list-group bg-my_grey list-group-striped">
+        {{#capabilities}}
+            {{> capabilities-part}}
+        {{/capabilities}}
+    </ul>
+</div>

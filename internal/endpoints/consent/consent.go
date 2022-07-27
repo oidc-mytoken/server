@@ -36,6 +36,7 @@ func handleConsent(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut) e
 		"consent":               true,
 		"empty-navbar":          true,
 		"restr-gui":             true,
+		"collapse":              true,
 		"restrictions":          pkg.WebRestrictions{Restrictions: authInfo.Restrictions},
 		"capabilities":          pkg.AllWebCapabilities(),
 		"subtoken-capabilities": pkg.AllWebCapabilities(),
@@ -44,11 +45,12 @@ func handleConsent(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut) e
 		"supported_scopes":      strings.Join(config.Get().ProviderByIssuer[authInfo.Issuer].Scopes, " "),
 		"token-name":            authInfo.Name,
 		"rotation":              authInfo.Rotation,
+		"application":           authInfo.ApplicationName,
 	}
 	if c.Has(api.CapabilityCreateMT) {
 		binding["checked-subtoken-capabilities"] = authInfo.SubtokenCapabilities.Strings()
 	}
-	return ctx.Render("sites/consent", binding, "layouts/main-no-container")
+	return ctx.Render("sites/consent", binding, "layouts/main")
 }
 
 func getAuthInfoFromConsentCodeStr(rlog log.Ext1FieldLogger, code string) (

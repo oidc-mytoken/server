@@ -1,11 +1,24 @@
-<div>
-    <h4>Token Rotation</h4>
+<div class="row">
+    <h4 class="col">Token Rotation <span id="rot-summary" class="ml-2">
+        <i class="fas fa-sync" id="rot-icon" data-toggle="tooltip" data-placement="bottom" title=""
+           data-original-title=""></i>
+    </span></h4>
+    {{#collapse}}
+        <button class="btn btn-info my-expand" type="button" data-toggle="collapse" data-target="#rot-body"
+                aria-expanded="false" aria-controls="rot-body" id="rot-expand">Expand
+        </button>
+    {{/collapse}}
+</div>
+
+
+<div id="rot-body" class="{{#collapse}}collapse{{/collapse}}">
     <div class="form-group">
         <div class="custom-control custom-switch">
             <input type="checkbox" class="custom-control-input" aria-describedby="rotationATHelp" id="rotationAT">
             <label class="custom-control-label" for="rotationAT">On Access Token requests</label>
         </div>
-        <small id="rotationATHelp" class="form-text text-muted">If the mytoken is used to request an Access Token, a new mytoken will be returned.</small>
+        <small id="rotationATHelp" class="form-text text-muted">If the mytoken is used to request an Access Token, a new
+            mytoken will be returned.</small>
     </div>
 
     <div class="form-group">
@@ -13,7 +26,8 @@
             <input type="checkbox" class="custom-control-input" aria-describedby="rotationOtherHelp" id="rotationOther">
             <label class="custom-control-label" for="rotationOther">On other requests</label>
         </div>
-        <small id="rotationOtherHelp" class="form-text text-muted">If the mytoken is used for other requests than requesting an Access Token, a new mytoken will be returned.</small>
+        <small id="rotationOtherHelp" class="form-text text-muted">If the mytoken is used for other requests than
+            requesting an Access Token, a new mytoken will be returned.</small>
     </div>
 
     <div class="form-group">

@@ -22,6 +22,15 @@ $.fn.hideB= function() {
     this.addClass('d-none');
 }
 
+$('.my-expand').on('click', function () {
+    const expand = "Expand";
+    const collapse = "Collapse";
+    if ($(this).text() === expand) {
+        $(this).text(collapse);
+    } else {
+        $(this).text(expand);
+    }
+});
 
 function getErrorMessage(e) {
     let errRes = e.responseJSON

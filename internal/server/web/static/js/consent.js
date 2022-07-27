@@ -8,6 +8,7 @@ $(function (){
         rotationAutoRevoke.prop("checked", rot_autoRevoke);
         rotationAutoRevoke.prop("disabled", !rot_onAT && !rot_onOther);
     }
+    updateRotationIcon();
     checkedCapabilities.forEach(function (value) {
         $('#cp-' + escapeSelector(value)).prop("checked", true)
     })
@@ -62,7 +63,7 @@ function cancel() {
         },
         error: function(errRes){
             let errMsg = getErrorMessage(errRes);
-            console.log(errMsg);
+            console.error(errMsg);
             window.location.href = errRes.responseJSON['url'];
         },
         dataType: "json",

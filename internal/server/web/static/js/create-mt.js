@@ -45,7 +45,8 @@ function sendCreateMTReq() {
         "redirect_type": "native",
         "restrictions": restrictions,
         "capabilities": getCheckedCapabilities(),
-        "subtoken_capabilities": getCheckedSubtokenCapabilities()
+        "subtoken_capabilities": getCheckedSubtokenCapabilities(),
+        "application_name": "mytoken webinterface"
     };
     let token_type = $('#select-token-type').val();
     if (token_type==="auto") {

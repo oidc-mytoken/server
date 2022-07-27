@@ -156,3 +156,7 @@ $(function (){
         }
     });
 })
+
+$('#restr-expand').on('click', function () {
+    $('#restr-editor-wrap').toggleClass('d-none');
+});
