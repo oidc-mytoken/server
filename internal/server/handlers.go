@@ -69,14 +69,16 @@ func handleSSH(ctx *fiber.Ctx) error {
 
 func handleNativeCallback(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
-		emptyNavbar: true,
+		emptyNavbar:   true,
+		"application": ctx.Query("application"),
 	}
 	return ctx.Render("sites/native", binding, layoutMain)
 }
 
 func handleNativeConsentAbortCallback(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
-		emptyNavbar: true,
+		emptyNavbar:   true,
+		"application": ctx.Query("application"),
 	}
 	return ctx.Render("sites/native.abort", binding, layoutMain)
 }

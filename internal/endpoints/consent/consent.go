@@ -83,6 +83,9 @@ func handleConsentDecline(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInf
 	url := "/"
 	if authInfo.PollingCode {
 		url = "/native/abort"
+		if authInfo.ApplicationName != "" {
+			url = fmt.Sprintf("%s?application=%s", url, authInfo.ApplicationName)
+		}
 	}
 	if err := authcodeinforepo.DeleteAuthFlowInfoByState(rlog, nil, oState); err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))

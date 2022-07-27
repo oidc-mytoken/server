@@ -2,6 +2,7 @@ package authcode
 
 import (
 	"database/sql"
+	"fmt"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -294,9 +295,13 @@ func CodeExchange(
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if authInfo.PollingCode {
+		url := "/native"
+		if authInfo.ApplicationName != "" {
+			url = fmt.Sprintf("%s?application=%s", url, authInfo.ApplicationName)
+		}
 		return &model.Response{
 			Status:   fiber.StatusSeeOther,
-			Response: "/native",
+			Response: url,
 		}
 	}
 	res, err := ste.Token.ToTokenResponse(rlog, authInfo.ResponseType, authInfo.MaxTokenLen, networkData, "")
