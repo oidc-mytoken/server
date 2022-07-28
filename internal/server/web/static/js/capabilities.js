@@ -37,26 +37,10 @@ function checkThisCapability() {
 
 function _checkThisCapability(prefix) {
     let activated = $(this).prop('checked');
-    let classActive = '.' + prefix + '-active';
-    let classInactive = '.' + prefix + '-inactive';
     let classCheck = '.' + prefix + '-check'
-    if (activated) {
-        let allSubCPInactive = $(this).closest('li.list-group-item').find(classInactive);
-        let allSubCPActive = $(this).closest('li.list-group-item').find(classActive);
-        allSubCPInactive.hideB();
-        allSubCPActive.showB();
-    } else {
-        let $checkedParents = $(this).parents('li.list-group-item').children('div').children('div').children(classCheck + ':checked');
-        if ($checkedParents.length === 0) {
-            let $span = $(this).siblings('span');
-            $span.find(classActive).hideB();
-            $span.find(classInactive).showB();
-        }
-        let $allSubCPChecks = $(this).closest('li.list-group-item').find('ul.list-group li.list-group-item' +
-            ' ' + classCheck);
-        $allSubCPChecks.each(function () {
-            _checkThisCapability.call(this, prefix);
-        })
+    $(this).closest('li.list-group-item').find(classCheck).prop('checked', activated);
+    if (!activated) {
+        $(this).parents('li.list-group-item').children('div').children('div').children(classCheck).prop('checked', false);
     }
 }
 
@@ -81,9 +65,50 @@ function getCheckedSubtokenCapabilities() {
 }
 
 function _getCheckedCapabilities($checks) {
-    return $checks.filter(':checked').map(function (_, el) {
+    let caps = $checks.filter(':checked').map(function (_, el) {
         return $(el).val();
     }).get();
+    caps = caps.filter(filterCaps);
+    return caps;
+}
+
+function filterCaps(c, i, caps) {
+    for (let j = 0; j < caps.length; j++) {
+        if (i === j) {
+            continue;
+        }
+        let cc = caps[j];
+        if (isChildCapability(c, cc)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function isChildCapability(a, b) {
+    const rPrefix = "read@";
+    let aReadOnly = a.startsWith(rPrefix);
+    let bReadOnly = b.startsWith(rPrefix);
+    if (aReadOnly) {
+        a = a.substring(rPrefix.length);
+    }
+    if (bReadOnly) {
+        b = b.substring(rPrefix.length);
+    }
+    let aParts = a.split(':');
+    let bParts = b.split(':');
+    if (bReadOnly && !aReadOnly) {
+        return false;
+    }
+    if (bParts.length > aParts.length) {
+        return false;
+    }
+    for (let i = 0; i < bParts.length; i++) {
+        if (aParts[i] !== bParts[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function getCheckedCapabilitesAndSubtokencapabilities() {
@@ -104,36 +129,47 @@ function searchAllChecked(str) {
 }
 
 function updateCapSummary() {
-    let howManyGreenCaps = 0;
-    let howManyYellowCaps = 0;
-    let howManyRedCaps = 0;
     let at = $capabilityAT.prop("checked") || $('#sub-cp-AT').prop("checked");
     let mt = $capabilityCreateMytoken.prop("checked");
     let info = searchAllChecked("tokeninfo");
     let settings = searchAllChecked("settings");
 
-    for (const c of $.merge($capabilityChecks, $subtokenCapabilityChecks)) {
+    let all = [];
+    $.merge(all, $capabilityChecks);
+    if ($capabilityCreateMytoken.prop('checked')) {
+        $.merge(all, $subtokenCapabilityChecks);
+    }
+    let counter = {
+        'green': {},
+        'yellow': {},
+        'red': {}
+    }
+    for (const c of all) {
         if (!c.checked) {
             continue;
         }
-        let $icon = $(c).closest('li.list-group-item').find('i.fa-exclamation-circle');
+        let name = $(c).val();
+        let $icon = $($(c).closest('li.list-group-item').find('i.fa-exclamation-circle')[0]);
         if ($icon.hasClass('text-success')) {
-            howManyGreenCaps++;
+            counter['green'][name] = 1;
         }
         if ($icon.hasClass('text-warning')) {
-            howManyYellowCaps++;
+            counter['yellow'][name] = 1;
         }
         if ($icon.hasClass('text-danger')) {
-            howManyRedCaps++;
+            counter['red'][name] = 1;
         }
     }
+    let greens = Object.keys(counter['green']).length;
+    let yellows = Object.keys(counter['yellow']).length;
+    let reds = Object.keys(counter['red']).length;
 
-    $capSummaryHowManyGreen.text(howManyGreenCaps);
-    $capSummaryHowManyYellow.text(howManyYellowCaps);
-    $capSummaryHowManyRed.text(howManyRedCaps);
-    $capSummaryHowManyGreen.attr('data-original-title', `This mytoken has ${howManyGreenCaps} normal capabilities.`);
-    $capSummaryHowManyYellow.attr('data-original-title', `This mytoken has ${howManyYellowCaps} powerful capabilities.`);
-    $capSummaryHowManyRed.attr('data-original-title', `This mytoken has ${howManyRedCaps} very powerful capabilities.`);
+    $capSummaryHowManyGreen.text(greens);
+    $capSummaryHowManyYellow.text(yellows);
+    $capSummaryHowManyRed.text(reds);
+    $capSummaryHowManyGreen.attr('data-original-title', `This mytoken has ${greens} normal capabilities.`);
+    $capSummaryHowManyYellow.attr('data-original-title', `This mytoken has ${yellows} powerful capabilities.`);
+    $capSummaryHowManyRed.attr('data-original-title', `This mytoken has ${reds} very powerful capabilities.`);
 
     $capSummaryAT.removeClass("text-success");
     $capSummaryMT.removeClass("text-success");
