@@ -8,6 +8,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
+	"github.com/oidc-mytoken/server/shared/model"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
@@ -25,7 +26,7 @@ func handleIntrospect(s ssh.Session) error {
 	if errRes != nil {
 		return writeErrRes(s, errRes)
 	}
-	res := tokeninfo.HandleTokenInfoIntrospect(rlog, mt, &clientMetaData)
+	res := tokeninfo.HandleTokenInfoIntrospect(rlog, mt, model.ResponseTypeToken, &clientMetaData)
 	if res.Status >= 400 {
 		return writeErrRes(s, &res)
 	}
