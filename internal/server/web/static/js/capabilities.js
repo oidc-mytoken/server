@@ -9,6 +9,9 @@ const $capSummarySettings = $('#cap-summary-settings');
 const $capSummaryHowManyGreen = $('#cap-summary-count-green');
 const $capSummaryHowManyYellow = $('#cap-summary-count-yellow');
 const $capSummaryHowManyRed = $('#cap-summary-count-red');
+const $capRWModes = $('.rw-cap-mode');
+
+const rPrefix = "read@";
 
 $capabilityChecks.click(function () {
     checkThisCapability.call(this);
@@ -51,22 +54,28 @@ $(document).ready(function () {
         $('#subtokenCapabilities').hideB();
     }
     updateCapSummary();
+    $capRWModes.trigger('update-change');
 })
 
 function getCheckedCapabilities() {
-    return _getCheckedCapabilities($capabilityChecks);
+    return _getCheckedCapabilities($capabilityChecks, 'cp');
 }
 
 function getCheckedSubtokenCapabilities() {
     if (!$capabilityCreateMytoken.prop("checked")) {
         return [];
     }
-    return _getCheckedCapabilities($subtokenCapabilityChecks);
+    return _getCheckedCapabilities($subtokenCapabilityChecks, 'sub-cp');
 }
 
-function _getCheckedCapabilities($checks) {
+function _getCheckedCapabilities($checks, idPrefix) {
     let caps = $checks.filter(':checked').map(function (_, el) {
-        return $(el).val();
+        let v = $(el).val();
+        let $rw = $('#' + escapeSelector(idPrefix + '-' + rPrefix + v + '-mode'));
+        if ($rw.length && !$rw.prop('checked')) {
+            v = rPrefix + v;
+        }
+        return v;
     }).get();
     caps = caps.filter(filterCaps);
     return caps;
@@ -86,7 +95,6 @@ function filterCaps(c, i, caps) {
 }
 
 function isChildCapability(a, b) {
-    const rPrefix = "read@";
     let aReadOnly = a.startsWith(rPrefix);
     let bReadOnly = b.startsWith(rPrefix);
     if (aReadOnly) {
@@ -149,7 +157,7 @@ function updateCapSummary() {
             continue;
         }
         let name = $(c).val();
-        let $icon = $($(c).closest('li.list-group-item').find('i.fa-exclamation-circle')[0]);
+        let $icon = $($(c).closest('li.list-group-item').find('i.fa-exclamation-circle').not('.d-none')[0]);
         if ($icon.hasClass('text-success')) {
             counter['green'][name] = 1;
         }
@@ -200,3 +208,30 @@ function updateCapSummary() {
         $capSummarySettings.attr('data-original-title', "This mytoken cannot be used to change settings.");
     }
 }
+
+$capRWModes.on('update-change', function () {
+    let write = $(this).prop('checked');
+    if (write) {
+        $(this).closest('span').attr('data-original-title', `Allows full access. Click to only allow read access.`);
+        $(this).closest('div.flex-fill').find('.rw-cap-read').hideB();
+        $(this).closest('div.flex-fill').find('.rw-cap-write').showB();
+    } else {
+        $(this).closest('span').attr('data-original-title', `Allows only read access. Click to allow full access.`);
+        $(this).closest('div.flex-fill').find('.rw-cap-write').hideB();
+        $(this).closest('div.flex-fill').find('.rw-cap-read').showB();
+    }
+});
+
+$capRWModes.change(function () {
+    let write = $(this).prop('checked');
+    $(this).trigger('update-change');
+    let $modes = $(this).closest('li.list-group-item').find('.rw-cap-mode');
+    $modes.bootstrapToggle(write ? 'on' : 'off', true);
+    $modes.trigger('update-change');
+    if (!write) {
+        let $p = $(this).parents('li.list-group-item').children('div').find('.rw-cap-mode');
+        $p.bootstrapToggle('off', true);
+        $p.trigger('update-change');
+    }
+    updateCapSummary();
+});

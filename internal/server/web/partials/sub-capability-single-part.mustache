@@ -6,20 +6,27 @@
         <div class="d-flex justify-content-between">
             <h6>
                 {{Name}}
-                <span class="pl-1" style="font-size: 1rem;">
-                {{^IsReadOnly}}
-                    <i class="fas fa-pencil-alt" data-toggle="tooltip" data-placement="top" title=""
-                       data-original-title="Allows full access."></i>
-                {{/IsReadOnly}}
-                    {{#IsReadOnly}}
-                        <i class="fas fa-book-open" data-toggle="tooltip" data-placement="top" title=""
-                           data-original-title="Allows only read access. Click to allow full access."></i>
-                    {{/IsReadOnly}}
+                <span class="pl-1" style="font-size: 1rem;" data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="">
+                    {{#ReadOnlyCapability}}
+                        <input id="sub-cp-{{Name}}-mode" class="rw-cap-mode" type="checkbox" checked data-size="sm"
+                               data-toggle="toggle"
+                               data-onstyle="light" data-offstyle="light" data-style="round"
+                               data-on='<i class="fas fa-pencil-alt"></i>'
+                               data-off='<i class="fas fa-book-open"></i>'>
+                    {{/ReadOnlyCapability}}
                 </span>
             </h6>
-            <i class="fas fa-exclamation-circle {{ColorClass}}" data-toggle="tooltip"
+            <i class="fas fa-exclamation-circle {{ColorClass}} rw-cap-write" data-toggle="tooltip"
                data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
+            {{#ReadOnlyCapability}}
+                <i class="fas fa-exclamation-circle {{ColorClass}} rw-cap-read d-none" data-toggle="tooltip"
+                   data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
+            {{/ReadOnlyCapability}}
         </div>
-        <small>{{Description}}</small>
+        <small class="rw-cap-write">{{Description}}</small>
+        {{#ReadOnlyCapability}}
+            <small class="rw-cap-read d-none">{{Description}}</small>
+        {{/ReadOnlyCapability}}
     </div>
 </div>

@@ -182,26 +182,22 @@ function polling(code, interval) {
                         return;
                     case "access_denied":
                         message = "You denied the authorization request.";
-                        window.clearInterval(intervalID);
                         break;
                     case "expired_token":
                         message = "Code expired. You might want to restart the flow.";
-                        window.clearInterval(intervalID);
                         break;
                     case "invalid_grant":
                     case "invalid_token":
                         message = "Code already used.";
-                        window.clearInterval(intervalID);
                         break;
                     case "undefined":
                         message = "No response from server";
-                        window.clearInterval(intervalID);
                         break;
                     default:
                         message = getErrorMessage(errRes);
-                        window.clearInterval(intervalID);
                         break;
                 }
+                window.clearInterval(intervalID);
                 mtShowError(message)
             }
         });

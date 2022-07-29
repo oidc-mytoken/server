@@ -43,3 +43,11 @@ ul.list-group li.list-group-item {
     border-left: 1px solid rgba(0, 0, 0, .15);
     border-right: 1px solid rgba(0, 0, 0, .15);
 }
+
+.toggle, .toggle-on, .toggle-off {
+    border-radius: 0.3rem;
+}
+
+.toggle.round, .toggle-on.round, .toggle-off.round {
+    border-radius: 20rem;
+}

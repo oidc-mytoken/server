@@ -10,10 +10,20 @@ $(function (){
     }
     updateRotationIcon();
     checkedCapabilities.forEach(function (value) {
-        $('#cp-' + escapeSelector(value)).prop("checked", true)
+        let rCap = value.startsWith(rPrefix);
+        if (rCap) {
+            value = value.substring(rPrefix.length);
+        }
+        $('#cp-' + escapeSelector(value)).prop("checked", true);
+        $('#cp-' + escapeSelector(rPrefix + value) + '-mode').bootstrapToggle(rCap ? 'off' : 'on');
     })
     checkedSubtokenCapabilities.forEach(function (value) {
-        $('#sub-cp-' + escapeSelector(value)).prop("checked", true)
+        let rCap = value.startsWith(rPrefix);
+        if (rCap) {
+            value = value.substring(rPrefix.length);
+        }
+        $('#sub-cp-' + escapeSelector(value)).prop("checked", true);
+        $('#sub-cp-' + escapeSelector(rPrefix + value) + '-mode').bootstrapToggle(rCap ? 'off' : 'on');
     })
     chainFunctions(
         discovery,

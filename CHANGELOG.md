@@ -18,6 +18,14 @@
 
 - Trusted web applications can skip the consent screen
 
+### Enhancements
+
+- Reworked and improved several parts of the web interface:
+  - Consent Screen: On default a more compressed view is shown, where sections can be expanded if needed.
+  - Capabilities:
+    - Simplified the checking of capabilities
+    - Read/Write capabilities are now not split but can be toggled
+ 
 ### Dependencies
 
 - Bump github.com/valyala/fasthttp from 1.37.0 to 1.38.0
