@@ -29,14 +29,6 @@ clipboard.on('success', function (e) {
     el.attr('data-original-title', originalText);
 });
 
-$(function () {
-    chainFunctions(
-        checkIfLoggedIn,
-        initRestrGUI,
-        initSSH,
-    );
-})
-
 $('#addModal').on('hidden.bs.modal', function () {
     window.clearInterval(intervalID);
     $sshResult.hideB();
@@ -44,23 +36,20 @@ $('#addModal').on('hidden.bs.modal', function () {
     initSSH();
 })
 
-function enableSSH() {
-    sendGrantRequest('ssh', true, function () {
-        $sshGrantStatusEnabled.showB();
-        $sshGrantStatusDisabled.hideB();
-        $addSSHKeyBtn.prop('disabled', false);
-    });
-}
+enableGrantCallbacks['ssh'] = function enableSSHCallback() {
+    $sshGrantStatusEnabled.showB();
+    $sshGrantStatusDisabled.hideB();
+    $addSSHKeyBtn.prop('disabled', false);
+};
 
-function disableSSH() {
-    sendGrantRequest('ssh', false, function () {
-        $sshGrantStatusEnabled.hideB();
-        $sshGrantStatusDisabled.showB();
-        $addSSHKeyBtn.prop('disabled', true);
-    });
-}
+disableGrantCallbacks['ssh'] = function disableSSHCallback() {
+    $sshGrantStatusEnabled.hideB();
+    $sshGrantStatusDisabled.showB();
+    $addSSHKeyBtn.prop('disabled', true);
+};
 
-function initSSH() {
+function initSSH(...next) {
+    initRestrGUI();
     clearSSHKeyTable();
     useSettingsToken(function (token) {
         $.ajax({
@@ -83,6 +72,7 @@ function initSSH() {
                         addSSHKeyToTable(key);
                     })
                 }
+                doNext(...next);
             },
             error: function (errRes) {
                 $errorModalMsg.text(getErrorMessage(errRes));

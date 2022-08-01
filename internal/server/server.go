@@ -105,7 +105,6 @@ func addRoutes(s fiber.Router) {
 	s.Get("/native/abort", handleNativeConsentAbortCallback)
 	s.Get(routes.GetGeneralPaths().Privacy, handlePrivacy)
 	s.Get("/settings", handleSettings)
-	s.Get("/settings/grants/ssh", handleSSH)
 	addAPIRoutes(s)
 }
 

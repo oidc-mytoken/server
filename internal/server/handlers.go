@@ -1,7 +1,10 @@
 package server
 
 import (
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
+	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	consent "github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
@@ -36,35 +39,48 @@ func handleHome(ctx *fiber.Ctx) error {
 }
 
 func handleSettings(ctx *fiber.Ctx) error {
-	binding := map[string]interface{}{
-		loggedIn:   true,
-		"settings": true,
-		"grants": []struct {
-			DisplayName string
-			Name        string
-			Description string
-			Link        string
-		}{
-			{
-				DisplayName: "SSH",
-				Name:        "ssh",
-				Description: "The SSH grant type allows you to link an ssh key and use ssh authentication for various actions.",
-				Link:        "/settings/grants/ssh",
+	type bindData struct {
+		DisplayName string
+		Name        string
+		Description string
+		Link        string
+		EmbedBody   string
+		partialName string
+		bindingData map[string]interface{}
+	}
+	grants := []*bindData{
+		{
+			DisplayName: "SSH",
+			Name:        "ssh",
+			Description: "The SSH grant type allows you to link an ssh key and use ssh authentication for various actions.",
+			Link:        "/settings/grants/ssh",
+			partialName: "sites/settings-ssh",
+			bindingData: map[string]interface{}{
+				"restr-gui":             true,
+				"restrictions":          consent.WebRestrictions{},
+				"capabilities":          consent.AllWebCapabilities(),
+				"subtoken-capabilities": consent.AllWebCapabilities(),
 			},
 		},
 	}
-	return ctx.Render("sites/settings", binding, layoutMain)
-}
-func handleSSH(ctx *fiber.Ctx) error {
+	for _, g := range grants {
+		embed := strings.Builder{}
+		if err := errors.WithStack(serverConfig.Views.Render(&embed, g.partialName, g.bindingData)); err != nil {
+			return err
+		}
+		g.EmbedBody = embed.String()
+	}
 	binding := map[string]interface{}{
-		"settings-ssh":          true,
+		"grants":                grants,
 		loggedIn:                true,
+		"settings":              true,
+		"settings-ssh":          true,
 		"restr-gui":             true,
 		"restrictions":          consent.WebRestrictions{},
 		"capabilities":          consent.AllWebCapabilities(),
 		"subtoken-capabilities": consent.AllWebCapabilities(),
 	}
-	return ctx.Render("sites/ssh", binding, layoutMain)
+	return ctx.Render("sites/settings", binding, layoutMain)
 }
 
 func handleNativeCallback(ctx *fiber.Ctx) error {

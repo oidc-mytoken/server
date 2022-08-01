@@ -51,3 +51,16 @@ ul.list-group li.list-group-item {
 .toggle.round, .toggle-on.round, .toggle-off.round {
     border-radius: 20rem;
 }
+
+hr {
+    border-top-color: rgba(223, 105, 26, 0.3);
+}
+
+.smaller-lead {
+    font-weight: 300;
+    font-size: 1.1rem;
+}
+
+.no-top-border {
+    border-top: none !important;
+}

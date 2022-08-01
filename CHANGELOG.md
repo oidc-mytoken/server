@@ -25,6 +25,11 @@
   - Capabilities:
     - Simplified the checking of capabilities
     - Read/Write capabilities are now not split but can be toggled
+  - Settings:
+    - Grant Types:
+      - Include pages of different grant types in this view.
+      - Grant Types can be expanded (collapsed on default).
+      - Link to grant type page that was not clear enough is no longer needed.
  
 ### Dependencies
 
