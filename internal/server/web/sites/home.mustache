@@ -12,18 +12,24 @@
 </div>
 
 
-
 <div class="card">
     <div class="card-header">
         <ul class="nav nav-tabs card-header-tabs">
             <li class="nav-item">
-                <a class="nav-link active" id="at-tab" data-toggle="tab" href="#at" role="tab" aria-controls="at" aria-selected="true">Access Token</a>
+                <a class="nav-link active" id="at-tab" data-toggle="tab" href="#at" role="tab" aria-controls="at"
+                   aria-selected="true">Access Token</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="info-tab" data-toggle="tab" href="#info" role="tab" aria-controls="info" aria-selected="false">Tokeninfo</a>
+                <a class="nav-link" id="mt-tab" data-toggle="tab" href="#mt" role="tab" aria-controls="mt"
+                   aria-selected="false">Create Mytoken</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="mt-tab" data-toggle="tab" href="#mt" role="tab" aria-controls="mt" aria-selected="false">Mytoken</a>
+                <a class="nav-link" id="info-tab" data-toggle="tab" href="#info" role="tab" aria-controls="info"
+                   aria-selected="false">Tokeninfo</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="list-mts-tab" data-toggle="tab" href="#list-mts" role="tab"
+                   aria-controls="list-mts" aria-selected="false">My Mytokens</a>
             </li>
         </ul>
     </div>
@@ -31,13 +37,16 @@
         <div class="tab-pane show active" id="at" role="tabpanel" aria-labelledby="at-tab">
             {{> create-at}}
         </div>
+        <div class="tab-pane bg-secondary break-out" id="mt" role="tabpanel" aria-labelledby="mt-tab">
+            <div class="bg-secondary ">
+                {{> create-mt}}
+            </div>
+        </div>
         <div class="tab-pane" id="info" role="tabpanel" aria-labelledby="info-tab">
             {{> tokeninfo}}
         </div>
-        <div class="tab-pane bg-secondary break-out" id="mt" role="tabpanel" aria-labelledby="mt-tab">
-                <div class="bg-secondary ">
-                {{> create-mt}}
-                </div>
+        <div class="tab-pane" id="list-mts" role="tabpanel" aria-labelledby="list-mts-tab">
+            {{> list-mts}}
         </div>
     </div>
 </div>
