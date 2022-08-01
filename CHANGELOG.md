@@ -30,7 +30,11 @@
       - Include pages of different grant types in this view.
       - Grant Types can be expanded (collapsed on default).
       - Link to grant type page that was not clear enough is no longer needed.
- 
+
+### Bugfixes
+
+- Fixed a bug in the mytoken webinterface where token introspection did not work on the settings page
+
 ### Dependencies
 
 - Bump github.com/valyala/fasthttp from 1.37.0 to 1.38.0

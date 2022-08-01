@@ -13,7 +13,7 @@ function useSettingsToken(callback) {
                 {
                     "name": "mytoken-web MT for settings",
                     "grant_type": "mytoken",
-                    "capabilities": ["tokeninfo_introspect", "settings"],
+                    "capabilities": ["tokeninfo:introspect", "settings"],
                     "restrictions": [
                         {
                             "exp": Math.floor(Date.now() / 1000) + 300,
