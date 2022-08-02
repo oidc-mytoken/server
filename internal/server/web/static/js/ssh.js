@@ -19,16 +19,6 @@ const $hostConfigDiv = $('#sshHostConfigDiv');
 const $sshFollowInstructions = $('#follow-instructions');
 const $noSSHKeyEntry = $('#noSSHKeyEntry')
 
-
-let clipboard = new ClipboardJS('.btn-copy');
-clipboard.on('success', function (e) {
-    e.clearSelection();
-    let el = $(e.trigger);
-    let originalText = el.attr('data-original-title');
-    el.attr('data-original-title', 'Copied!').tooltip('show');
-    el.attr('data-original-title', originalText);
-});
-
 $('#addModal').on('hidden.bs.modal', function () {
     window.clearInterval(intervalID);
     $sshResult.hideB();

@@ -1,3 +1,4 @@
+const $tokenInput = $('#tokeninfo-token');
 
 function _tokeninfo(action, successFnc, errorFnc, token=undefined) {
     let data = {
@@ -18,11 +19,10 @@ function _tokeninfo(action, successFnc, errorFnc, token=undefined) {
     });
 }
 
-
-function getSessionTokenInfo(e) {
+function getTokenInfo(e) {
     e.preventDefault();
-    let msg = $('#session-token-info-msg');
-    let copy = $('#session-copy');
+    let msg = $('#tokeninfo-token-content');
+    let copy = $('#info-copy');
     _tokeninfo('introspect',
         function (res) {
             let token = res['token'];
@@ -40,7 +40,7 @@ function getSessionTokenInfo(e) {
             msg.text(getErrorMessage(errRes));
             msg.addClass('text-danger');
             copy.removeClass('d-none');
-        })
+        }, $tokenInput.val())
     return false;
 }
 
@@ -53,7 +53,7 @@ function historyToHTML(events) {
     let tableEntries = [];
     events.forEach(function (event) {
         let comment = event['comment'] || '';
-        let time = new Date(event['time']*1000).toLocaleString();
+        let time = formatTime(event['time']);
         let agentIcons = userAgentToHTMLIcons(event['user_agent']);
         let entry = '<tr>' +
             '<td>'+event['event']+'</td>' +
@@ -86,7 +86,7 @@ function _tokenTreeToHTML(tree, depth) {
     if (depth > 0) {
         name = arrowI.repeat(depth-1) + lastArrowI + name
     }
-    let time = new Date(token['created']*1000).toLocaleString();
+    let time = formatTime(token['created']);
     let tableEntries = ['<tr>' +
         '<td>'+name+'</td>' +
         '<td>'+time+'</td>' +
@@ -131,7 +131,7 @@ function getHistoryTokenInfo(e) {
             msg.text(getErrorMessage(errRes));
             msg.addClass('text-danger');
             copy.removeClass('d-none');
-        })
+        }, $tokenInput.val())
     return false;
 }
 
@@ -149,7 +149,7 @@ function getTreeTokenInfo(e) {
             msg.text(getErrorMessage(errRes));
             msg.addClass('text-danger');
             copy.removeClass('d-none');
-        })
+        }, $tokenInput.val())
     return false;
 }
 
@@ -182,11 +182,12 @@ function getListTokenInfo(e) {
     return false;
 }
 
-$('#session-info-tab').on('shown.bs.tab', getSessionTokenInfo)
-$('#session-reload').on('click', getSessionTokenInfo)
+$('#info-tab').on('shown.bs.tab', getTokenInfo)
+$('#info-reload').on('click', getTokenInfo)
 $('#history-tab').on('shown.bs.tab', getHistoryTokenInfo)
 $('#history-reload').on('click', getHistoryTokenInfo)
 $('#tree-tab').on('shown.bs.tab', getTreeTokenInfo)
 $('#tree-reload').on('click', getTreeTokenInfo)
+
 $('#list-mts-tab').on('shown.bs.tab', getListTokenInfo)
 $('#list-reload').on('click', getListTokenInfo)

@@ -97,3 +97,7 @@ function extractMaxScopesFromToken(token) {
     }
     return scopes.filter(onlyUnique).join(" ")
 }
+
+function formatTime(t) {
+    return new Date(t*1000).toLocaleString()
+}

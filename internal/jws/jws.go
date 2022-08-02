@@ -139,5 +139,8 @@ func LoadKey() {
 	if err = key.Set(jwk.KeyUsageKey, string(jwk.ForSignature)); err != nil {
 		panic(err)
 	}
+	if err = key.Set(jwk.AlgorithmKey, config.Get().Signing.Alg); err != nil {
+		panic(err)
+	}
 	jwks.Add(key)
 }

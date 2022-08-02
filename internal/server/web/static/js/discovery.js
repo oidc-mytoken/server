@@ -5,7 +5,8 @@ const configElements = [
     "usersettings_endpoint",
     "revocation_endpoint",
     "tokeninfo_endpoint",
-    "providers_supported"
+    "providers_supported",
+    "jwks_uri"
 ]
 
 function discovery(...next) {

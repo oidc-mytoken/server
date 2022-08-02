@@ -1,58 +1,109 @@
 
-<div class="card border-primary">
-    <div class="card-header">
+<div id="tokeninfo-head">
+    <div id="tokeninfo-token-status" class="mb-2">
+        <h4>
+            <span class="badge badge-pill bg-my_green_dark" id="tokeninfo-token-name" data-toggle="tooltip"
+                  data-placement="top" title="Name of this mytoken"></span>
+
+            <span class="ml-2 badge badge-pill bg-my_blue_dark tokeninfo-token-type d-none"
+                  id="tokeninfo-token-type-short">Short Token</span>
+            <span class="ml-2 badge badge-pill badge-success tokeninfo-token-type d-none"
+                  id="tokeninfo-token-type-JWT-valid"
+                data-toggle="tooltip" data-placement="top" title="Signature valid">JWT</span>
+            <span class="ml-2 badge badge-pill badge-danger tokeninfo-token-type d-none"
+                  id="tokeninfo-token-type-JWT-invalid"
+                data-toggle="tooltip" data-placement="top" title="Signature invalid">JWT</span>
+
+            <span class="ml-2 badge badge-pill badge-success" id="tokeninfo-token-valid"
+                  data-toggle="tooltip" data-placement="top" title="Mytoken is valid and can be used">
+                <i class="fas fa-check"></i>
+            </span>
+            <span class="ml-2 badge badge-pill badge-danger d-none" id="tokeninfo-token-invalid"
+                  data-toggle="tooltip" data-placement="top" title="Mytoken is invalid and cannot be used">
+                <i class="fas fa-times"></i>
+            </span>
+
+            <span class="ml-2 badge badge-pill badge-light" id="tokeninfo-token-mytoken-iss"
+                  data-toggle="tooltip" data-placement="top" title="Mytoken is issued by this instance"></span>
+
+            <span class="ml-2 badge badge-pill badge-primary" id="tokeninfo-token-oidc-iss"
+                  data-toggle="tooltip" data-placement="top" title="Mytoken is linked to this OpenID Provider"></span>
+
+            <span class="ml-2 badge badge-pill badge-light" id="tokeninfo-token-iat"
+                  data-toggle="tooltip" data-placement="top" title="Mytoken was issued at this time">
+                <i class="fas fa-clock mr-1"></i><span id="tokeninfo-token-iat-date"></span></span>
+
+            <span class="ml-2 badge badge-pill badge-warning" id="tokeninfo-token-exp"
+                  data-toggle="tooltip" data-placement="top" title="Mytoken expires at this time">
+                <i class="fas fa-stopwatch mr-2"></i><span id="tokeninfo-token-exp-date"></span></span>
+        </h4>
+    </div>
+
+    <div class="input-group">
+        <input type="text" class="form-control" placeholder="Mytoken" id="tokeninfo-token" autofocus
+               style="padding-right: 40px;">
+        <button class="btn copier text-secondary" id="tokeninfo-token-copy" data-toggle="tooltip"
+                data-placement="bottom"
+                title="Copy to clipboard" data-clipboard-target="#tokeninfo-token"
+                style="position: relative; left: -40px;">
+            <i class="far fa-copy"></i>
+        </button>
+        <button type="button" class="btn btn-light ml-n4" id="create-tc">Create Transfercode</button>
+    </div>
+</div>
+
+    <div class="card-header mt-3">
         <ul class="nav nav-tabs card-header-tabs">
             <li class="nav-item">
-                <a class="nav-link active" id="session-info-tab" data-toggle="tab" href="#session" role="tab"
-                   aria-controls="session" aria-selected="true">Session Token Info</a>
+                <a class="nav-link active" id="info-tab" data-toggle="tab" href="#token-info" role="tab"
+                   aria-controls="token-info" aria-selected="true">Info</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="history-tab" data-toggle="tab" href="#history" role="tab"
-                   aria-controls="history" aria-selected="false">Session Token History</a>
+                <a class="nav-link" id="history-tab" data-toggle="tab" href="#token-history" role="tab"
+                   aria-controls="token-history" aria-selected="false">History</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="tree-tab" data-toggle="tab" href="#tree" role="tab" aria-controls="tree"
-                   aria-selected="false">Session Token Subtokens</a>
+                <a class="nav-link" id="tree-tab" data-toggle="tab" href="#token-tree" role="tab"
+                   aria-controls="token-tree" aria-selected="false">Subtokens</a>
             </li>
         </ul>
     </div>
 
     <div class="card-body tab-content">
-        <div class="tab-pane show active" id="session" role="tabpanel" aria-labelledby="session-info-tab">
-            <h4>Information About the Session's Mytoken</h4>
-            <button class="btn btn-reload" id="session-reload" data-toggle="tooltip" data-placement="bottom"
+        <div class="tab-pane show active" id="token-info" role="tabpanel" aria-labelledby="info-tab">
+            <h4>Information About a Mytoken</h4>
+            <button class="btn btn-reload" id="info-reload" data-toggle="tooltip" data-placement="bottom"
                     title="Reload data">
                 <i class="fas fa-sync"></i>
             </button>
-            <button class="btn btn-copy d-none" id="session-copy" data-toggle="tooltip" data-placement="bottom"
-                    title="Copy to clipboard" data-clipboard-target="#session-token-info-msg">
+            <button class="btn btn-copy copier d-none" id="info-copy" data-toggle="tooltip" data-placement="bottom"
+                    title="Copy to clipboard" data-clipboard-target="#tokeninfo-token-content">
                 <i class="far fa-copy"></i>
             </button>
-            <pre class="card-text" id="session-token-info-msg"></pre>
+            <pre class="card-text" id="tokeninfo-token-content"></pre>
         </div>
-        <div class="tab-pane" id="history" role="tabpanel" aria-labelledby="history-tab">
-            <h4>Event History for Session's Mytoken</h4>
+        <div class="tab-pane" id="token-history" role="tabpanel" aria-labelledby="history-tab">
+            <h4>Event History for this Mytoken</h4>
             <button class="btn btn-reload" id="history-reload" data-toggle="tooltip" data-placement="bottom"
                     title="Reload data">
                 <i class="fas fa-sync"></i>
             </button>
-            <button class="btn btn-copy d-none" id="history-copy" data-toggle="tooltip" data-placement="bottom"
+            <button class="btn btn-copy copier d-none" id="history-copy" data-toggle="tooltip" data-placement="bottom"
                     title="Copy to clipboard" data-clipboard-target="#history-msg">
                 <i class="far fa-copy"></i>
             </button>
             <p class="card-text" id="history-msg"></p>
         </div>
-        <div class="tab-pane" id="tree" role="tabpanel" aria-labelledby="tree-tab">
-            <h4>Subtokens for Session's Mytoken</h4>
+        <div class="tab-pane" id="token-tree" role="tabpanel" aria-labelledby="tree-tab">
+            <h4>Subtokens for this Mytoken</h4>
             <button class="btn btn-reload" id="tree-reload" data-toggle="tooltip" data-placement="bottom"
                     title="Reload data">
                 <i class="fas fa-sync"></i>
             </button>
-            <button class="btn btn-copy d-none" id="tree-copy" data-toggle="tooltip" data-placement="bottom"
+            <button class="btn btn-copy copier d-none" id="tree-copy" data-toggle="tooltip" data-placement="bottom"
                     title="Copy to clipboard" data-clipboard-target="#tree-msg">
                 <i class="far fa-copy"></i>
             </button>
             <p class="card-text" id="tree-msg"></p>
         </div>
     </div>
-</div>
