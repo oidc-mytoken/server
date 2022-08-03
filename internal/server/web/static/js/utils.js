@@ -1,8 +1,7 @@
-
-$.fn.serializeObject = function() {
+$.fn.serializeObject = function () {
     let o = {};
     let a = this.serializeArray();
-    $.each(a, function() {
+    $.each(a, function () {
         if (o[this.name]) {
             if (!o[this.name].push) {
                 o[this.name] = [o[this.name]];
@@ -15,10 +14,10 @@ $.fn.serializeObject = function() {
     return o;
 };
 
-$.fn.showB= function() {
+$.fn.showB = function () {
     this.removeClass('d-none');
 }
-$.fn.hideB= function() {
+$.fn.hideB = function () {
     this.addClass('d-none');
 }
 
@@ -40,17 +39,17 @@ function getErrorMessage(e) {
         err += ": " + desc;
     }
     let status = e.statusText
-    return status + ": "+ err
+    return status + ": " + err
 }
 
 function noLandscape(prefix) {
-    let landscaped = $('.'+prefix+'-landscape');
+    let landscaped = $('.' + prefix + '-landscape');
     landscaped.removeClass('col');
     landscaped.removeClass('row');
     landscaped.removeClass('form-row');
 }
 
-function escapeSelector(s){
+function escapeSelector(s) {
     return $.escapeSelector(s)
 }
 
@@ -83,21 +82,21 @@ function onlyUnique(value, index, self) {
 }
 
 function extractMaxScopesFromToken(token) {
-   let restr = token['restrictions'];
+    let restr = token['restrictions'];
     if (!restr) {
-       return "";
-   }
-   let scopes = [];
+        return "";
+    }
+    let scopes = [];
     for (const r of restr) {
-       let s = r['scope'];
-       if (!s || s==="") { // if any restriction allows all scopes, return ""
-           return "";
-       }
-       scopes.push(...s.split(' '));
+        let s = r['scope'];
+        if (!s || s === "") { // if any restriction allows all scopes, return ""
+            return "";
+        }
+        scopes.push(...s.split(' '));
     }
     return scopes.filter(onlyUnique).join(" ")
 }
 
 function formatTime(t) {
-    return new Date(t*1000).toLocaleString()
+    return new Date(t * 1000).toLocaleString()
 }

@@ -1,4 +1,3 @@
-
 const configElements = [
     "access_token_endpoint",
     "mytoken_endpoint",
@@ -17,8 +16,8 @@ function discovery(...next) {
     $.ajax({
         type: "Get",
         url: "/.well-known/mytoken-configuration",
-        success: function(res){
-            configElements.forEach(function (el){
+        success: function (res) {
+            configElements.forEach(function (el) {
                 storageSet(el, res[el]);
             })
             storageSet('discovery', Date.now())

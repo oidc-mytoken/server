@@ -1,4 +1,3 @@
-
 const $editorMode = $('#restr-editor-mode');
 
 function updateRestrIcons() {
@@ -24,14 +23,14 @@ function updateRestrIcons() {
             (ipB !== undefined && ipB.length > 0)) {
             howManyClausesRestrictIP++;
         }
-        if (r['usages_other']!==undefined || r['usages_AT']!==undefined) {
+        if (r['usages_other'] !== undefined || r['usages_AT'] !== undefined) {
             howManyClausesRestrictUsages++;
         }
         let exp = r['exp'];
-        if (exp===undefined || exp===0) {
+        if (exp === undefined || exp === 0) {
             doesNotExpire = true
-        } else if (exp>expires) {
-            expires=exp;
+        } else if (exp > expires) {
+            expires = exp;
         }
     })
     if (doesNotExpire) {
@@ -42,64 +41,64 @@ function updateRestrIcons() {
     let iconScope = $('#r-icon-scope');
     let iconAud = $('#r-icon-aud');
     let iconUsages = $('#r-icon-usages');
-    if (howManyClausesRestrictIP===restrictions.length && restrictions.length > 0) {
-        iconIP.addClass( 'text-success');
-        iconIP.removeClass( 'text-warning');
-        iconIP.removeClass( 'text-danger');
+    if (howManyClausesRestrictIP === restrictions.length && restrictions.length > 0) {
+        iconIP.addClass('text-success');
+        iconIP.removeClass('text-warning');
+        iconIP.removeClass('text-danger');
         iconIP.attr('data-original-title', "The IPs from which this token can be used are restricted.");
     } else {
-        iconIP.addClass( 'text-warning');
-        iconIP.removeClass( 'text-success');
-        iconIP.removeClass( 'text-danger');
+        iconIP.addClass('text-warning');
+        iconIP.removeClass('text-success');
+        iconIP.removeClass('text-danger');
         iconIP.attr('data-original-title', "This token can be used from any IP.");
     }
-    if (howManyClausesRestrictScope===restrictions.length && restrictions.length > 0) {
-        iconScope.addClass( 'text-success');
-        iconScope.removeClass( 'text-warning');
-        iconScope.removeClass( 'text-danger');
+    if (howManyClausesRestrictScope === restrictions.length && restrictions.length > 0) {
+        iconScope.addClass('text-success');
+        iconScope.removeClass('text-warning');
+        iconScope.removeClass('text-danger');
         iconScope.attr('data-original-title', "This token has restrictions for scopes.");
     } else {
-        iconScope.addClass( 'text-warning');
-        iconScope.removeClass( 'text-success');
-        iconScope.removeClass( 'text-danger');
+        iconScope.addClass('text-warning');
+        iconScope.removeClass('text-success');
+        iconScope.removeClass('text-danger');
         iconScope.attr('data-original-title', "This token can use all configured scopes.");
     }
-    if (howManyClausesRestrictAud===restrictions.length && restrictions.length > 0) {
-        iconAud.addClass( 'text-success');
-        iconAud.removeClass( 'text-warning');
-        iconAud.removeClass( 'text-danger');
+    if (howManyClausesRestrictAud === restrictions.length && restrictions.length > 0) {
+        iconAud.addClass('text-success');
+        iconAud.removeClass('text-warning');
+        iconAud.removeClass('text-danger');
         iconAud.attr('data-original-title', "This token can only obtain access tokens with restricted audiences.");
     } else {
-        iconAud.addClass( 'text-warning');
-        iconAud.removeClass( 'text-success');
-        iconAud.removeClass( 'text-danger');
+        iconAud.addClass('text-warning');
+        iconAud.removeClass('text-success');
+        iconAud.removeClass('text-danger');
         iconAud.attr('data-original-title', "This token can obtain access tokens with any audiences.");
     }
-    if (howManyClausesRestrictUsages===restrictions.length && restrictions.length > 0) {
-        iconUsages.addClass( 'text-success');
-        iconUsages.removeClass( 'text-warning');
-        iconUsages.removeClass( 'text-danger');
+    if (howManyClausesRestrictUsages === restrictions.length && restrictions.length > 0) {
+        iconUsages.addClass('text-success');
+        iconUsages.removeClass('text-warning');
+        iconUsages.removeClass('text-danger');
         iconUsages.attr('data-original-title', "This token can only be used a limited number of times.");
     } else {
-        iconUsages.addClass( 'text-warning');
-        iconUsages.removeClass( 'text-success');
-        iconUsages.removeClass( 'text-danger');
+        iconUsages.addClass('text-warning');
+        iconUsages.removeClass('text-success');
+        iconUsages.removeClass('text-danger');
         iconUsages.attr('data-original-title', "This token can be used an infinite number of times.");
     }
-    if (expires===0) {
-        iconTime.addClass( 'text-danger');
-        iconTime.removeClass( 'text-success');
-        iconTime.removeClass( 'text-warning');
+    if (expires === 0) {
+        iconTime.addClass('text-danger');
+        iconTime.removeClass('text-success');
+        iconTime.removeClass('text-warning');
         iconTime.attr('data-original-title', "This token does not expire!");
-    } else if ((expires - Date.now()/1000)> 3*24*3600) {
-        iconTime.addClass( 'text-warning');
-        iconTime.removeClass( 'text-success');
-        iconTime.removeClass( 'text-danger');
+    } else if ((expires - Date.now() / 1000) > 3 * 24 * 3600) {
+        iconTime.addClass('text-warning');
+        iconTime.removeClass('text-success');
+        iconTime.removeClass('text-danger');
         iconTime.attr('data-original-title', "This token is long-lived.");
     } else {
-        iconTime.addClass( 'text-success');
-        iconTime.removeClass( 'text-warning');
-        iconTime.removeClass( 'text-danger');
+        iconTime.addClass('text-success');
+        iconTime.removeClass('text-warning');
+        iconTime.removeClass('text-danger');
         iconTime.attr('data-original-title', "This token expires within 3 days.");
     }
 }
@@ -140,9 +139,9 @@ function updateRestrFromJSONEditor() {
 updateRestrIcons();
 newJSONEditor('restrictionsArea');
 
-$(function (){
+$(function () {
     $editorMode.prop("checked", true);
-    $editorMode.on('change', function (){
+    $editorMode.on('change', function () {
         let htmlEdit = $('#restr-easy-editor');
         let jsonEdit = $('#restr-json-editor');
         if ($(this).prop("checked")) { // easy editor

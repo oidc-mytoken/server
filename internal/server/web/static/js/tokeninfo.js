@@ -1,10 +1,10 @@
 const $tokenInput = $('#tokeninfo-token');
 
-function _tokeninfo(action, successFnc, errorFnc, token=undefined) {
+function _tokeninfo(action, successFnc, errorFnc, token = undefined) {
     let data = {
-        'action':action
+        'action': action
     };
-    if (token!==undefined) {
+    if (token !== undefined) {
         data['mytoken'] = token;
     }
     data = JSON.stringify(data);
@@ -15,7 +15,7 @@ function _tokeninfo(action, successFnc, errorFnc, token=undefined) {
         success: successFnc,
         error: errorFnc,
         dataType: "json",
-        contentType : "application/json"
+        contentType: "application/json"
     });
 }
 
@@ -46,7 +46,7 @@ function getTokenInfo(e) {
 
 function userAgentToHTMLIcons(userAgent) {
     let icons = FaUserAgent.faUserAgent(userAgent);
-    return '<span class="user-agent" data-toggle="tooltip" data-placement="bottom" title="'+userAgent+'">'+icons.browser.html + '</i>' + icons.os.html + '</i>' + icons.platform.html+ '</i></span>';
+    return '<span class="user-agent" data-toggle="tooltip" data-placement="bottom" title="' + userAgent + '">' + icons.browser.html + '</i>' + icons.os.html + '</i>' + icons.platform.html + '</i></span>';
 }
 
 function historyToHTML(events) {
@@ -56,11 +56,11 @@ function historyToHTML(events) {
         let time = formatTime(event['time']);
         let agentIcons = userAgentToHTMLIcons(event['user_agent']);
         let entry = '<tr>' +
-            '<td>'+event['event']+'</td>' +
-            '<td>'+comment+'</td>' +
-            '<td>'+time+'</td>' +
-            '<td>'+event['ip']+'</td>' +
-            '<td>'+agentIcons+'</td>' +
+            '<td>' + event['event'] + '</td>' +
+            '<td>' + comment + '</td>' +
+            '<td>' + time + '</td>' +
+            '<td>' + event['ip'] + '</td>' +
+            '<td>' + agentIcons + '</td>' +
             '</tr>';
         tableEntries.push(entry);
     });
@@ -84,18 +84,18 @@ function _tokenTreeToHTML(tree, depth) {
     let token = tree['token'];
     let name = token['name'] || '';
     if (depth > 0) {
-        name = arrowI.repeat(depth-1) + lastArrowI + name
+        name = arrowI.repeat(depth - 1) + lastArrowI + name
     }
     let time = formatTime(token['created']);
     let tableEntries = ['<tr>' +
-        '<td>'+name+'</td>' +
-        '<td>'+time+'</td>' +
-        '<td>'+token['ip']+'</td>' +
-        '</tr>'];
+    '<td>' + name + '</td>' +
+    '<td>' + time + '</td>' +
+    '<td>' + token['ip'] + '</td>' +
+    '</tr>'];
     let children = tree['children'];
     if (children !== undefined) {
         children.forEach(function (child) {
-            tableEntries = tableEntries.concat(_tokenTreeToHTML(child, depth+1));
+            tableEntries = tableEntries.concat(_tokenTreeToHTML(child, depth + 1));
         })
     }
     return tableEntries
@@ -106,7 +106,7 @@ function tokenlistToHTML(tokenTrees) {
     tokenTrees.forEach(function (tokenTree) {
         tableEntries = tableEntries.concat(_tokenTreeToHTML(tokenTree, 0));
     });
-   return '<table class="table table-hover table-grey">' +
+    return '<table class="table table-hover table-grey">' +
         '<thead><tr>' +
         '<th>Token Name</th>' +
         '<th>Created</th>' +

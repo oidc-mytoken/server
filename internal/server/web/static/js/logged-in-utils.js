@@ -1,4 +1,3 @@
-
 let clipboard = new ClipboardJS('.copier');
 clipboard.on('success', function (e) {
     e.clearSelection();

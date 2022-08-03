@@ -1,4 +1,3 @@
-
 const mtResult = $('#mt-result');
 const mtResultColor = $('#mt-result-color');
 const mtConfig = $('#mt-config');
@@ -20,16 +19,14 @@ $(function () {
 })
 
 
-
-
-$('#next-mt').on('click', function(){
+$('#next-mt').on('click', function () {
     window.clearInterval(intervalID);
     mtResult.hideB();
     mtConfig.showB();
 })
 
-$('#select-token-type').on('change', function (){
-    if ($(this).val()==="auto") {
+$('#select-token-type').on('change', function () {
+    if ($(this).val() === "auto") {
         maxTokenLenDiv.showB();
     } else {
         maxTokenLenDiv.hideB();
@@ -49,7 +46,7 @@ function sendCreateMTReq() {
         "application_name": "mytoken webinterface"
     };
     let token_type = $('#select-token-type').val();
-    if (token_type==="auto") {
+    if (token_type === "auto") {
         data['max_token_len'] = Number($('#max_token_len').val());
     } else {
         data['response_type'] = token_type;
@@ -63,7 +60,7 @@ function sendCreateMTReq() {
         type: "POST",
         url: storageGet('mytoken_endpoint'),
         data: data,
-        success: function (res){
+        success: function (res) {
             let url = res['consent_uri'];
             let code = res['polling_code'];
             let interval = res['interval'];
@@ -116,6 +113,7 @@ function mtShowPending() {
     mtResultColor.removeClass('alert-success');
     mtResultColor.removeClass('alert-danger');
 }
+
 function mtShowSuccess(msg) {
     mtPendingHeading.hideB();
     mtPendingSpinner.hideB();
@@ -127,6 +125,7 @@ function mtShowSuccess(msg) {
     mtResultColor.removeClass('alert-warning');
     mtResultColor.removeClass('alert-danger');
 }
+
 function mtShowError(msg) {
     mtPendingHeading.hideB();
     mtPendingSpinner.hideB();
@@ -142,18 +141,18 @@ function mtShowError(msg) {
 let intervalID;
 
 function polling(code, interval) {
-    interval = interval ? interval*1000 : 5000;
+    interval = interval ? interval * 1000 : 5000;
     let data = {
         "grant_type": "polling_code",
         "polling_code": code,
     }
     data = JSON.stringify(data);
-   intervalID = window.setInterval(function (){
+    intervalID = window.setInterval(function () {
         $.ajax({
             type: "POST",
             url: storageGet("mytoken_endpoint"),
             data: data,
-            success: function(res) {
+            success: function (res) {
                 let token_type = res['mytoken_type'];
                 let token = res['mytoken'];
                 switch (token_type) {
@@ -172,7 +171,7 @@ function polling(code, interval) {
                 $mtInstructions.hideB();
                 window.clearInterval(intervalID);
             },
-            error: function(errRes) {
+            error: function (errRes) {
                 let error = errRes.responseJSON['error'];
                 let message;
                 switch (error) {

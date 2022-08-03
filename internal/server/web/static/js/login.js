@@ -1,8 +1,8 @@
-$(function (){
+$(function () {
     checkIfLoggedIn();
 })
 
-$('#login-form').on('submit', function(e){
+$('#login-form').on('submit', function (e) {
     e.preventDefault();
     let data = $(this).serializeObject()
     data['restrictions'] = [
@@ -50,7 +50,7 @@ $('#login-form').on('submit', function(e){
             window.location.href = uri;
         },
         dataType: "json",
-        contentType : "application/json"
+        contentType: "application/json"
     });
     return false;
 });

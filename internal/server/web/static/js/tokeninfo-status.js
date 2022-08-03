@@ -21,15 +21,15 @@ async function update_tokeninfo() {
     let tokeninfoEndpoint = storageGet('tokeninfo_endpoint');
     let jwksUri = storageGet('jwks_uri');
     try {
-        payload =  jose.decodeJwt(token);
+        payload = jose.decodeJwt(token);
         let mytokenIss = payload['iss'];
         if (!mytokenIss.startsWith(window.location.href)) {
-     await       $.ajax({
+            await $.ajax({
                 type: "Get",
                 url: "/.well-known/mytoken-configuration",
-                success: function(res){
-                   tokeninfoEndpoint = res['tokeninfo_endpoint'];
-                   jwksUri = res['jwks_uri'];
+                success: function (res) {
+                    tokeninfoEndpoint = res['tokeninfo_endpoint'];
+                    jwksUri = res['jwks_uri'];
                 },
                 error: function (errRes) {
                     $errorModalMsg.text(getErrorMessage(errRes));
@@ -39,17 +39,17 @@ async function update_tokeninfo() {
         }
         $tokeninfoTypeBadges.hideB();
 
-        let jwks = await $.ajax({url: jwksUri, type:"GET"});
+        let jwks = await $.ajax({url: jwksUri, type: "GET"});
         try {
             const pubKey = await jose.importJWK(jwks['keys'][0]);
             await jose.jwtVerify(token, pubKey);
             $tokeninfoBadgeTypeJWTValid.showB();
         } catch (e) {
-           if (e instanceof jose.errors.JWSSignatureVerificationFailed) {
-               $tokeninfoBadgeTypeJWTInvalid.showB();
-           } else {
-               throw e;
-           }
+            if (e instanceof jose.errors.JWSSignatureVerificationFailed) {
+                $tokeninfoBadgeTypeJWTInvalid.showB();
+            } else {
+                throw e;
+            }
         }
 
     } catch (e) {
@@ -90,25 +90,25 @@ async function update_tokeninfo() {
                 }
             }
         });
-    } catch(e) {
+    } catch (e) {
         console.log(e);
     }
 
     let oidcIss = payload['oidc_iss'];
     let mytokenIss = payload['iss'];
     let name = payload['name'];
-    $tokeninfoBadgeOIDCIss.text(oidcIss!==undefined?oidcIss:"");
-    $tokeninfoBadgeMytokenIss.text(mytokenIss!==undefined?mytokenIss:"");
-    $tokeninfoBadgeName.text(name!==undefined?name:"");
+    $tokeninfoBadgeOIDCIss.text(oidcIss !== undefined ? oidcIss : "");
+    $tokeninfoBadgeMytokenIss.text(mytokenIss !== undefined ? mytokenIss : "");
+    $tokeninfoBadgeName.text(name !== undefined ? name : "");
     let exp = payload['exp'];
-    if (exp===undefined) {
+    if (exp === undefined) {
         $tokeninfoBadgeExp.hideB();
     } else {
         $tokeninfoBadgeExpDate.text(formatTime(exp));
         $tokeninfoBadgeExp.showB();
     }
     let iat = payload['iat'];
-    if (iat===undefined) {
+    if (iat === undefined) {
         $tokeninfoBadgeIat.hideB();
     } else {
         $tokeninfoBadgeIatDate.text(formatTime(iat));
@@ -118,6 +118,6 @@ async function update_tokeninfo() {
 
 $tokenInput.on('change', update_tokeninfo);
 
-$(function (){
+$(function () {
     update_tokeninfo();
 });

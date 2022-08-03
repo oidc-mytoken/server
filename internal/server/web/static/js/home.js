@@ -1,4 +1,4 @@
-$(function (){
+$(function () {
     chainFunctions(
         checkIfLoggedIn,
         initAT,
@@ -10,9 +10,9 @@ $(function (){
     if (url.match('#')) {
         let hash = url.split('#')[1];
         if (['token-info', 'token-history', 'token-tree'].includes(hash)) {
-            $('.nav-tabs a[href="#info"]').tab('show') ;
+            $('.nav-tabs a[href="#info"]').tab('show');
         }
-        $('.nav-tabs a[href="#'+hash+'"]').tab('show') ;
+        $('.nav-tabs a[href="#' + hash + '"]').tab('show');
     }
 })
 
@@ -31,17 +31,17 @@ $('.nav-tabs a').on('shown.bs.tab', function (e) {
 })
 
 
-function getMT(okCallback, errCallback, capability="AT") {
+function getMT(okCallback, errCallback, capability = "AT") {
     let data = {
-        "name":"mytoken-web MT for "+capability,
+        "name": "mytoken-web MT for " + capability,
         "grant_type": "mytoken",
         "capabilities": [capability],
         "restrictions": [
             {
-                "exp":  Math.floor(Date.now() / 1000) + 60,
+                "exp": Math.floor(Date.now() / 1000) + 60,
                 "ip": ["this"],
-                "usages_AT": capability==="AT" ? 1 : 0,
-                "usages_other": capability==="AT" ? 0 : 1
+                "usages_AT": capability === "AT" ? 1 : 0,
+                "usages_other": capability === "AT" ? 0 : 1
             }
         ]
     };

@@ -100,22 +100,22 @@ function initRestrGUI(...next) {
 
 function getSupportedScopesFromStorage() {
     const providers = storageGet("providers_supported");
-    const iss = typeof(issuer)!=='undefined' ? issuer : storageGet("oidc_issuer");
-    return  providers.find(x => x.issuer === iss).scopes_supported;
+    const iss = typeof (issuer) !== 'undefined' ? issuer : storageGet("oidc_issuer");
+    return providers.find(x => x.issuer === iss).scopes_supported;
 }
 
 
-$('.btn-add-list-item').on("click", function (){
+$('.btn-add-list-item').on("click", function () {
     let input = $(this).parents('tr').find('input,select');
     let v = input.val();
-    if (v==="") {
+    if (v === "") {
         return;
     }
     let tableBody = $(this).parents('table').find('.list-table')
     _addListItem(v, tableBody);
 })
 
-$('.add-list-input').on('keyup', function(e){
+$('.add-list-input').on('keyup', function (e) {
     if (e.keyCode === 13) { // Enter
         e.preventDefault();
         $(this).parents('tr').find('.btn-add-list-item').click();
@@ -123,13 +123,14 @@ $('.add-list-input').on('keyup', function(e){
 })
 
 function GUIGetActiveClause() {
-    return Number($('.active-restr-clause').text())-1;
+    return Number($('.active-restr-clause').text()) - 1;
 }
 
 function GUISetRestr(key, value) {
-    restrictions[GUIGetActiveClause()][key]=value
+    restrictions[GUIGetActiveClause()][key] = value
     updateRestrIcons();
 }
+
 function GUIDelRestr(key) {
     delete restrictions[GUIGetActiveClause()][key]
     updateRestrIcons();
@@ -159,7 +160,7 @@ function _guiToRestr_Table(id, restrKey) {
     }
     let parseCountry = restrKey.startsWith("geoip");
     let values = [];
-    items.each(function (){
+    items.each(function () {
         let v = $(this).text();
         if (parseCountry) {
             v = countries[v].code
@@ -244,7 +245,7 @@ function restrClauseToGUI() {
 
     let tmp = restr.scope;
     $('.scope-checkbox:checked').click();
-    if (tmp){
+    if (tmp) {
         restr.scope = tmp;
     }
 
@@ -253,8 +254,8 @@ function restrClauseToGUI() {
     let nbf = restr.nbf;
     let exp = restr.exp;
 
-    $('#nbf').datetimepicker('date', nbf?nbf.toString():null);
-    $('#exp').datetimepicker('date', exp?exp.toString():null);
+    $('#nbf').datetimepicker('date', nbf ? nbf.toString() : null);
+    $('#exp').datetimepicker('date', exp ? exp.toString() : null);
 
     if (restr.scope) {
         for (const s of restr.scope.split(' ')) {
@@ -283,7 +284,7 @@ function restrClauseToGUI() {
 }
 
 function newRestrClauseBtn(index) {
-    let btn = `<button type="button" id="restr-clause-`+index+`" class="btn btn-info restr-btn">`+index+`</button>`;
+    let btn = `<button type="button" id="restr-clause-` + index + `" class="btn btn-info restr-btn">` + index + `</button>`;
     $restrClauses.append(btn);
     $('#restr-clause-' + index).on('click', function () {
         let i = Number($(this).text()) - 1;
@@ -294,8 +295,8 @@ function newRestrClauseBtn(index) {
 
 function drawRestrictionClauseBtns() {
     $restrClauses.find('button.restr-btn').remove();
-    for (let i=0; i<restrictions.length; i++) {
-        let index = i+1;
+    for (let i = 0; i < restrictions.length; i++) {
+        let index = i + 1;
         newRestrClauseBtn(index);
     }
 }
@@ -307,31 +308,31 @@ function RestrToGUI() {
 }
 
 function GUIMarkActiveClause(index) {
-    let guiIndex = index+1;
+    let guiIndex = index + 1;
     $('.active-restr-clause').removeClass('active-restr-clause active');
-    $('#restr-clause-'+guiIndex).addClass('active-restr-clause active');
+    $('#restr-clause-' + guiIndex).addClass('active-restr-clause active');
 }
 
-$('#new-restr-clause').on('click', function (){
+$('#new-restr-clause').on('click', function () {
     restrictions.push({});
     let guiIndex = restrictions.length;
     newRestrClauseBtn(guiIndex);
-    $('#restr-clause-'+guiIndex).click();
+    $('#restr-clause-' + guiIndex).click();
     updateRestrIcons();
 })
 
-$('#del-restr-clause').on('click', function (){
+$('#del-restr-clause').on('click', function () {
     let index = GUIGetActiveClause();
     restrictions.splice(index, 1);
     updateRestrIcons();
     drawRestrictionClauseBtns();
-    let newGuiIndex = index===0 ? 1 : index; // Activate the previous clause or the first one if no we deleted the first one
-    $('#restr-clause-'+newGuiIndex).click();
+    let newGuiIndex = index === 0 ? 1 : index; // Activate the previous clause or the first one if no we deleted the first one
+    $('#restr-clause-' + newGuiIndex).click();
 })
 
-$('#select-ip-based-restr').on('change', function (){
+$('#select-ip-based-restr').on('change', function () {
     $('#restr-ip').hideB();
     $('#restr-geoip_allow').hideB();
     $('#restr-geoip_disallow').hideB();
-    $('#restr-'+$(this).val()).showB();
+    $('#restr-' + $(this).val()).showB();
 })

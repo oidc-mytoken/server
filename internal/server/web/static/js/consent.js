@@ -1,4 +1,4 @@
-$(function (){
+$(function () {
     $('#tokenName').val(tokenName);
     if (!rot_null) {
         rotationAT.prop("checked", rot_onAT);
@@ -60,7 +60,7 @@ function approve() {
             $('#error-modal').modal();
         },
         dataType: "json",
-        contentType : "application/json"
+        contentType: "application/json"
     });
 }
 
@@ -68,15 +68,15 @@ function cancel() {
     $.ajax({
         type: "POST",
         url: window.location.href,
-        success: function (data){
+        success: function (data) {
             window.location.href = data['url'];
         },
-        error: function(errRes){
+        error: function (errRes) {
             let errMsg = getErrorMessage(errRes);
             console.error(errMsg);
             window.location.href = errRes.responseJSON['url'];
         },
         dataType: "json",
-        contentType : "application/json"
+        contentType: "application/json"
     });
 }

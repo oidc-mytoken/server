@@ -738,5 +738,5 @@ const countries = {
 
 let countriesByCode = {};
 for (const c in countries) {
-    countriesByCode[countries[c].code]=c;
+    countriesByCode[countries[c].code] = c;
 }
