@@ -96,7 +96,7 @@ func Init() {
 func addRoutes(s fiber.Router) {
 	addWebRoutes(s)
 	s.Get(routes.GetGeneralPaths().ConfigurationEndpoint, configuration.HandleConfiguration)
-	s.Get("/.well-known/openid-configuration", configuration.HandleConfiguration)
+	s.Get(routes.WellknownOpenIDConfiguration, configuration.HandleConfiguration)
 	s.Get(routes.GetGeneralPaths().JWKSEndpoint, endpoints.HandleJWKS)
 	s.Get(routes.GetGeneralPaths().OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
 	s.Get("/c/:consent_code", consent.HandleConsent)

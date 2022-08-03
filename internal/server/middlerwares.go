@@ -4,10 +4,12 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
@@ -18,6 +20,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/server/apiPath"
+	"github.com/oidc-mytoken/server/internal/server/routes"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
@@ -47,6 +51,7 @@ func addMiddlewares(s fiber.Router) {
 	addRequestIDMiddleware(s)
 	addLoggerMiddleware(s)
 	addLimiterMiddleware(s)
+	addCorsMiddleware(s)
 	addFaviconMiddleware(s)
 	addHelmetMiddleware(s)
 	addStaticFiles(s)
@@ -119,4 +124,34 @@ func addHelmetMiddleware(s fiber.Router) {
 
 func addRequestIDMiddleware(s fiber.Router) {
 	s.Use(requestid.New())
+}
+
+func addCorsMiddleware(s fiber.Router) {
+	allowedPaths := []string{
+		routes.WellknownMytokenConfiguration,
+		routes.WellknownOpenIDConfiguration,
+	}
+	allowedPrefixes := []string{
+		apiPath.Prefix,
+	}
+	s.Use(
+		cors.New(
+			cors.Config{
+				Next: func(c *fiber.Ctx) bool {
+					p := c.Path()
+					for _, pre := range allowedPrefixes {
+						if strings.HasPrefix(p, pre) {
+							return false
+						}
+					}
+					for _, pre := range allowedPaths {
+						if p == pre {
+							return false
+						}
+					}
+					return true
+				},
+			},
+		),
+	)
 }
