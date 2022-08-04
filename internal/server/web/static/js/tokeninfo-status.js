@@ -16,48 +16,42 @@ const $tokeninfoBadgeExpDate = $('#tokeninfo-token-exp-date');
 const $tokeninfoTypeBadges = $('.tokeninfo-token-type');
 
 async function update_tokeninfo() {
-    let token = $tokenInput.val();
+    let token = storagePop('tokeninfo_token', true);
+    if (token === "") {
+        token = $tokenInput.val();
+    }
     let payload = {};
     let tokeninfoEndpoint = storageGet('tokeninfo_endpoint');
     let jwksUri = storageGet('jwks_uri');
     try {
         payload = jose.decodeJwt(token);
         let mytokenIss = payload['iss'];
+        $tokeninfoTypeBadges.hideB();
+        $tokeninfoBadgeTypeJWTInvalid.showB();
         if (!mytokenIss.startsWith(window.location.href)) {
-            await $.ajax({
-                type: "Get",
-                url: "/.well-known/mytoken-configuration",
-                success: function (res) {
-                    tokeninfoEndpoint = res['tokeninfo_endpoint'];
-                    jwksUri = res['jwks_uri'];
-                },
-                error: function (errRes) {
-                    $errorModalMsg.text(getErrorMessage(errRes));
-                    $errorModal.modal();
-                }
+            await fetch(mytokenIss + "/.well-known/mytoken-configuration").then(function (res) {
+                return res.json();
+            }).then(function (data) {
+                tokeninfoEndpoint = data['tokeninfo_endpoint'];
+                jwksUri = data['jwks_uri'];
+            }).catch(function (e) {
+                console.error(e);
             });
         }
-        $tokeninfoTypeBadges.hideB();
 
         let jwks = await $.ajax({url: jwksUri, type: "GET"});
-        try {
-            const pubKey = await jose.importJWK(jwks['keys'][0]);
-            await jose.jwtVerify(token, pubKey);
-            $tokeninfoBadgeTypeJWTValid.showB();
-        } catch (e) {
-            if (e instanceof jose.errors.JWSSignatureVerificationFailed) {
-                $tokeninfoBadgeTypeJWTInvalid.showB();
-            } else {
-                throw e;
-            }
-        }
-
+        const pubKey = await jose.importJWK(jwks['keys'][0]);
+        await jose.jwtVerify(token, pubKey);
+        $tokeninfoBadgeTypeJWTInvalid.hideB();
+        $tokeninfoBadgeTypeJWTValid.showB();
     } catch (e) {
-        if (e instanceof jose.errors.JWTInvalid) {
-            $tokeninfoTypeBadges.hideB();
-            $tokeninfoBadgeTypeShort.showB();
-        } else {
-            throw e;
+        if (!(e instanceof jose.errors.JWSSignatureVerificationFailed)) {
+            if (e instanceof jose.errors.JWTInvalid) {
+                $tokeninfoTypeBadges.hideB();
+                $tokeninfoBadgeTypeShort.showB();
+            } else {
+                console.error(e);
+            }
         }
     }
     try {
