@@ -17,6 +17,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/server/httpStatus"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
+	"github.com/oidc-mytoken/server/internal/utils/templating"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo"
@@ -36,7 +37,7 @@ func handleConsent(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut) e
 		"consent":               true,
 		"empty-navbar":          true,
 		"restr-gui":             true,
-		"collapse":              true,
+		"collapse":              templating.Collapsable{All: true},
 		"restrictions":          pkg.WebRestrictions{Restrictions: authInfo.Restrictions},
 		"capabilities":          pkg.AllWebCapabilities(),
 		"subtoken-capabilities": pkg.AllWebCapabilities(),

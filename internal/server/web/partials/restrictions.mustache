@@ -1,15 +1,15 @@
 <div class="pb-3 row">
     <h4 class="col">Restrictions</h4>
     <div>
-    <span id="restr-editor-wrap" class="{{#collapse}} d-none{{/collapse}}">
+    <span id="restr-editor-wrap" class="{{#collapse.Restrictions}} d-none{{/collapse.Restrictions}}">
         <input id="restr-editor-mode" type="checkbox" checked data-size="sm" data-toggle="toggle"
                data-style="restr-editor"
                data-onstyle="success" data-offstyle="info" data-on="Easy Editor" data-off="JSON Editor"></span>
-        {{#collapse}}
+        {{#collapse.Restrictions}}
             <button class="btn btn-info my-expand ml-2" type="button" data-toggle="collapse" data-target="#restr-body"
                     aria-expanded="false" aria-controls="restr-body" id="restr-expand">Expand
             </button>
-        {{/collapse}}
+        {{/collapse.Restrictions}}
     </div>
 </div>
 
@@ -27,7 +27,7 @@
 </div>
 
 
-<div id="restr-body" class="{{#collapse}}collapse{{/collapse}}">
+<div id="restr-body" class="{{#collapse.Restrictions}}collapse{{/collapse.Restrictions}}">
     {{>restrictions-gui-editor}}
 
     <div id="restr-json-editor" class="justify-content-center d-none">

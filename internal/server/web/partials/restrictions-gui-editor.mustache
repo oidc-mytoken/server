@@ -36,22 +36,28 @@
             <table id="scope-table" class="table table-sm table-striped bg-my_grey" aria-describedby="scope-table_help">
                 <tbody id="scopeTableBody"></tbody>
             </table>
-            <small id="scope-table_help" class="form-text text-muted">Access Tokens obtained with this mytoken can only have these scope values.</small>
+            <small id="scope-table_help" class="form-text text-muted">Access Tokens obtained with this mytoken can only
+                have these scope values.</small>
         </div>
 
         <div class="form-group restr-audience">
             <label for="audience-table">Audiences</label>
-            <table id="audience-table" class="table table-sm table-striped bg-my_grey" aria-describedby="audience-table_help">
+            <table id="audience-table" class="table table-sm table-striped bg-my_grey"
+                   aria-describedby="audience-table_help">
                 <thead>
                 <tr>
-                    <th><input id="audienceInput" type="text" class="form-control add-list-input" value="" placeholder="https://..."></th>
-                    <th class="align-middle"><button class="btn btn-small btn-add-list-item"><i class="fas fa-plus"></i></button></th>
+                    <th><input id="audienceInput" type="text" class="form-control add-list-input" value=""
+                               placeholder="https://..."></th>
+                    <th class="align-middle">
+                        <button class="btn btn-small btn-add-list-item"><i class="fas fa-plus"></i></button>
+                    </th>
                 </tr>
                 </thead>
                 <tbody class="list-table restr" id="audienceTableBody">
                 </tbody>
             </table>
-            <small id="audience-table_help" class="form-text text-muted">Access Tokens obtained with this mytoken can only be used at these audiences.</small>
+            <small id="audience-table_help" class="form-text text-muted">Access Tokens obtained with this mytoken can
+                only be used at these audiences.</small>
         </div>
 
         <div>
@@ -66,51 +72,67 @@
             <div class="ml-3">
                 <div id="restr-ip" class="form-group restr d-none">
                     <label for="ip-table">Allowed request IPs</label>
-                    <table id="ip-table" class="table table-sm table-striped bg-my_grey" aria-describedby="ip-table_help">
+                    <table id="ip-table" class="table table-sm table-striped bg-my_grey"
+                           aria-describedby="ip-table_help">
                         <thead>
                         <tr>
-                            <th><input id="ipInput" type="text" class="form-control add-list-input" value="" placeholder="IP"></th>
-                            <th class="align-middle"><button class="btn btn-small btn-add-list-item"><i class="fas fa-plus"></i></button></th>
+                            <th><input id="ipInput" type="text" class="form-control add-list-input" value=""
+                                       placeholder="IP"></th>
+                            <th class="align-middle">
+                                <button class="btn btn-small btn-add-list-item"><i class="fas fa-plus"></i></button>
+                            </th>
                         </tr>
                         </thead>
                         <tbody class="list-table restr" id="ipTableBody">
                         </tbody>
                     </table>
-                    <small id="ip-table_help" class="form-text text-muted">The mytoken can only be used from these IP addresses or subnets.</small>
+                    <small id="ip-table_help" class="form-text text-muted">The mytoken can only be used from these IP
+                        addresses or subnets.</small>
                 </div>
 
                 <div id="restr-geoip_allow" class="form-group restr">
                     <label for="geoip-allow-table">Allowed request countries</label>
-                    <table id="geoip-allow-table" class="table table-sm table-striped bg-my_grey" aria-describedby="geoip-allow-table_help">
+                    <table id="geoip-allow-table" class="table table-sm table-striped bg-my_grey"
+                           aria-describedby="geoip-allow-table_help">
                         <thead>
                         <tr>
                             <th>
-                                <select id="geoip-allowInput" class="select custom-select country-select add-list-input" data-live-search="true"></select>
+                                <select id="geoip-allowInput" class="select custom-select country-select add-list-input"
+                                        data-live-search="true"></select>
                             </th>
-                            <th class="align-middle"><button class="btn btn-small btn-add-list-item"><i class="fas fa-plus"></i></button></th>
+                            <th class="align-middle">
+                                <button class="btn btn-small btn-add-list-item"><i class="fas fa-plus"></i></button>
+                            </th>
                         </tr>
                         </thead>
                         <tbody class="list-table restr" id="geoip_allowTableBody">
                         </tbody>
                     </table>
-                    <small id="geoip-allow-table_help" class="form-text text-muted">The mytoken can only be used from these countries.</small>
+                    <small id="geoip-allow-table_help" class="form-text text-muted">The mytoken can only be used from
+                        these countries.</small>
                 </div>
 
                 <div id="restr-geoip_disallow" class="form-group restr d-none">
                     <label for="geoip-disallow-table">Forbidden request countries</label>
-                    <table id="geoip-disallow-table" class="table table-sm table-striped bg-my_grey" aria-describedby="geoip-disallow-table_help">
+                    <table id="geoip-disallow-table" class="table table-sm table-striped bg-my_grey"
+                           aria-describedby="geoip-disallow-table_help">
                         <thead>
                         <tr>
                             <th>
-                                <select id="geoip-disallowInput" class="select custom-select country-select add-list-input" data-live-search="true"></select>
+                                <select id="geoip-disallowInput"
+                                        class="select custom-select country-select add-list-input"
+                                        data-live-search="true"></select>
                             </th>
-                            <th class="align-middle"><button class="btn btn-small btn-add-list-item"><i class="fas fa-plus"></i></button></th>
+                            <th class="align-middle">
+                                <button class="btn btn-small btn-add-list-item"><i class="fas fa-plus"></i></button>
+                            </th>
                         </tr>
                         </thead>
                         <tbody class="list-table restr" id="geoip_disallowTableBody">
                         </tbody>
                     </table>
-                    <small id="geoip-disallow-table_help" class="form-text text-muted">The mytoken cannot be used from these countries.</small>
+                    <small id="geoip-disallow-table_help" class="form-text text-muted">The mytoken cannot be used from
+                        these countries.</small>
                 </div>
             </div>
         </div>
@@ -119,13 +141,15 @@
             <div class="form-group restr-usages_AT col">
                 <label for="usages_AT">Usages AT</label>
                 <input type="number" class="form-control" id="usages_AT" aria-describedby="usages_AT_help" min=0>
-                <small id="usages_AT_help" class="form-text text-muted">The mytoken can only be used this often to request access tokens.</small>
+                <small id="usages_AT_help" class="form-text text-muted">The mytoken can only be used this often to
+                    request access tokens.</small>
             </div>
 
             <div class="form-group restr-usages_other col">
                 <label for="usages_other">Usages Other</label>
                 <input type="number" class="form-control" id="usages_other" aria-describedby="usages_other_help" min=0>
-                <small id="usages_other_help" class="form-text text-muted">The mytoken can only be used this often for requests other than requesting access tokens.</small>
+                <small id="usages_other_help" class="form-text text-muted">The mytoken can only be used this often for
+                    requests other than requesting access tokens.</small>
             </div>
         </div>
     </div>

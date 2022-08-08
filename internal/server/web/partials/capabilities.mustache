@@ -1,37 +1,37 @@
 <div class="pb-3 row">
     <h4 class="col">Capabilities</h4>
-    {{#collapse}}
-        <button class="btn btn-info my-expand" type="button" data-toggle="collapse" data-target="#cap-body"
-                aria-expanded="false" aria-controls="cap-body" id="cap-expand">Expand
+    {{#collapse.Capabilities}}
+        <button class="btn btn-info my-expand" type="button" data-toggle="collapse" data-target="#{{prefix}}cap-body"
+                aria-expanded="false" aria-controls="{{prefix}}cap-body" id="{{prefix}}cap-expand">Expand
         </button>
-    {{/collapse}}
+    {{/collapse.Capabilities}}
 </div>
 
-<div id="cap-summary" class="d-flex justify-content-between pb-2">
+<div id="{{prefix}}cap-summary" class="d-flex justify-content-between pb-2">
     <h4>
-        <span class="badge badge-success badge-pill" id="cap-summary-count-green" data-toggle="tooltip"
+        <span class="badge badge-success badge-pill" id="{{prefix}}cap-summary-count-green" data-toggle="tooltip"
               data-placement="bottom" title=""
               data-original-title=""></span>
-        <span class="badge badge-warning badge-pill" id="cap-summary-count-yellow" data-toggle="tooltip"
+        <span class="badge badge-warning badge-pill" id="{{prefix}}cap-summary-count-yellow" data-toggle="tooltip"
               data-placement="bottom" title=""
               data-original-title=""></span>
-        <span class="badge badge-danger badge-pill" id="cap-summary-count-red" data-toggle="tooltip"
+        <span class="badge badge-danger badge-pill" id="{{prefix}}cap-summary-count-red" data-toggle="tooltip"
               data-placement="bottom" title=""
               data-original-title=""></span>
     </h4>
     <h4>
         <i class="fab fa-openid" data-toggle="tooltip" data-placement="bottom" title=""
-           data-original-title="" id="cap-summary-AT"></i>
+           data-original-title="" id="{{prefix}}cap-summary-AT"></i>
         <i class="fas fa-key" data-toggle="tooltip" data-placement="bottom" title=""
-           data-original-title="" id="cap-summary-MT"></i>
+           data-original-title="" id="{{prefix}}cap-summary-MT"></i>
         <i class="fas fa-info-circle" data-toggle="tooltip" data-placement="bottom" title=""
-           data-original-title="" id="cap-summary-info"></i>
+           data-original-title="" id="{{prefix}}cap-summary-info"></i>
         <i class="fas fa-cog" data-toggle="tooltip" data-placement="bottom" title=""
-           data-original-title="" id="cap-summary-settings"></i>
+           data-original-title="" id="{{prefix}}cap-summary-settings"></i>
     </h4>
 </div>
 
-<div id="cap-body" class="{{#collapse}}collapse{{/collapse}}">
+<div id="{{prefix}}cap-body" class="{{#collapse.Capabilities}}collapse{{/collapse.Capabilities}}">
     <ul class="list-group bg-my_grey list-group-striped">
         {{#capabilities}}
             {{> capabilities-part}}

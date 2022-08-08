@@ -1,33 +1,78 @@
-const $capabilityChecks = $('.capability-check');
-const $subtokenCapabilityChecks = $('.subtoken-capability-check');
-const $capabilityCreateMytoken = $('#cp-create_mytoken');
-const $capabilityAT = $('#cp-AT');
-const $capSummaryAT = $('#cap-summary-AT');
-const $capSummaryMT = $('#cap-summary-MT');
-const $capSummaryInfo = $('#cap-summary-info');
-const $capSummarySettings = $('#cap-summary-settings');
-const $capSummaryHowManyGreen = $('#cap-summary-count-green');
-const $capSummaryHowManyYellow = $('#cap-summary-count-yellow');
-const $capSummaryHowManyRed = $('#cap-summary-count-red');
-const $capRWModes = $('.rw-cap-mode');
+const $createMTCaps = $('.capability-check[value=create_mytoken]');
+const $allCapRWModes = $('.rw-cap-mode');
+
+function capabilityChecks(prefix = "") {
+    return $('.capability-check[instance-prefix="' + prefix + '"]');
+}
+
+function subtokenCapabilityChecks(prefix = "") {
+    return $('.subtoken-capability-check[instance-prefix="' + prefix + '"]');
+}
+
+function capRWModes(prefix = "") {
+    return $allCapRWModes.filter('[instance-prefix="' + prefix + '"]');
+}
+
+function capabilityCreateMytoken(prefix = "") {
+    return $('#' + prefix + 'cp-create_mytoken');
+}
+
+function capabilityAT(prefix = "") {
+    return $('#' + prefix + 'cp-AT');
+}
+
+function capSummaryAT(prefix = "") {
+    return $('#' + prefix + 'cap-summary-AT');
+}
+
+function capSummaryMT(prefix = "") {
+    return $('#' + prefix + 'cap-summary-MT');
+}
+
+function capSummaryInfo(prefix = "") {
+    return $('#' + prefix + 'cap-summary-info');
+}
+
+function capSummarySettings(prefix = "") {
+    return $('#' + prefix + 'cap-summary-settings');
+}
+
+function capSummaryHowManyGreen(prefix = "") {
+    return $('#' + prefix + 'cap-summary-count-green');
+}
+
+function capSummaryHowManyYellow(prefix = "") {
+    return $('#' + prefix + 'cap-summary-count-yellow');
+}
+
+function capSummaryHowManyRed(prefix = "") {
+    return $('#' + prefix + 'cap-summary-count-red');
+}
+
+function subtokenCapabilities(prefix = "") {
+    return $('#' + prefix + 'subtokenCapabilities');
+}
+
 
 const rPrefix = "read@";
 
-$capabilityChecks.click(function () {
+$('.capability-check').click(function () {
     checkThisCapability.call(this);
-    updateCapSummary();
+    updateCapSummary(this.getAttribute('instance-prefix'));
 })
-$subtokenCapabilityChecks.click(function () {
+$('.subtoken-capability-check').click(function () {
     checkThisSubCapability.call(this);
-    updateCapSummary();
+    updateCapSummary(this.getAttribute('instance-prefix'));
 })
 
 
-$capabilityCreateMytoken.on("click", function () {
+$createMTCaps.on("click", function () {
     let enabled = $(this).prop("checked");
-    let $capabilityCheck = $('.subtoken-capability-check');
+    let prefix = extractPrefix("cp-create_mytoken", this.id);
+    let $subtokenCapabilities = subtokenCapabilities(prefix);
+    $subtokenCapabilities.toggleClass('d-none');
+    let $capabilityCheck = $subtokenCapabilities.find('.subtoken-capability-check');
     $capabilityCheck.prop("disabled", !enabled);
-    $('#subtokenCapabilities').toggleClass('d-none');
 });
 
 function checkThisSubCapability() {
@@ -38,40 +83,42 @@ function checkThisCapability() {
     _checkThisCapability.call(this, "capability");
 }
 
-function _checkThisCapability(prefix) {
+function _checkThisCapability(type_prefix) {
     let activated = $(this).prop('checked');
-    let classCheck = '.' + prefix + '-check'
+    let classCheck = '.' + type_prefix + '-check'
     $(this).closest('li.list-group-item').find(classCheck).prop('checked', activated);
     if (!activated) {
         $(this).parents('li.list-group-item').children('div').children('div').children(classCheck).prop('checked', false);
     }
 }
 
-$(document).ready(function () {
-    $capabilityChecks.each(checkThisCapability);
-    $subtokenCapabilityChecks.each(checkThisSubCapability);
-    if (!$capabilityCreateMytoken.prop("checked")) {
-        $('#subtokenCapabilities').hideB();
+function initCapabilities(prefix) {
+    capabilityChecks(prefix).each(checkThisCapability);
+    subtokenCapabilityChecks(prefix).each(checkThisSubCapability);
+    if (!capabilityCreateMytoken(prefix).prop("checked")) {
+        subtokenCapabilities(prefix).hideB();
+    } else {
+        subtokenCapabilities(prefix).showB();
     }
-    updateCapSummary();
-    $capRWModes.trigger('update-change');
-})
-
-function getCheckedCapabilities() {
-    return _getCheckedCapabilities($capabilityChecks, 'cp');
+    updateCapSummary(prefix);
+    capRWModes(prefix).trigger('update-change');
 }
 
-function getCheckedSubtokenCapabilities() {
-    if (!$capabilityCreateMytoken.prop("checked")) {
+function getCheckedCapabilities(prefix = "") {
+    return _getCheckedCapabilities(capabilityChecks(prefix), 'cp', prefix);
+}
+
+function getCheckedSubtokenCapabilities(prefix = "") {
+    if (!capabilityCreateMytoken(prefix).prop("checked")) {
         return [];
     }
-    return _getCheckedCapabilities($subtokenCapabilityChecks, 'sub-cp');
+    return _getCheckedCapabilities(subtokenCapabilityChecks(prefix), 'sub-cp', prefix);
 }
 
-function _getCheckedCapabilities($checks, idPrefix) {
+function _getCheckedCapabilities($checks, idPrefix, preprefix = "") {
     let caps = $checks.filter(':checked').map(function (_, el) {
         let v = $(el).val();
-        let $rw = $('#' + escapeSelector(idPrefix + '-' + rPrefix + v + '-mode'));
+        let $rw = $('#' + escapeSelector(preprefix + idPrefix + '-' + rPrefix + v + '-mode'));
         if ($rw.length && !$rw.prop('checked')) {
             v = rPrefix + v;
         }
@@ -119,13 +166,13 @@ function isChildCapability(a, b) {
     return true;
 }
 
-function getCheckedCapabilitesAndSubtokencapabilities() {
-    return getCheckedCapabilities().concat(getCheckedSubtokenCapabilities());
+function getCheckedCapabilitesAndSubtokencapabilities(prefix = "") {
+    return getCheckedCapabilities(prefix).concat(getCheckedSubtokenCapabilities(prefix));
 }
 
-function searchAllChecked(str) {
+function searchAllChecked(str, prefix = "") {
     let read = "read@" + str
-    for (const c of getCheckedCapabilitesAndSubtokencapabilities()) {
+    for (const c of getCheckedCapabilitesAndSubtokencapabilities(prefix)) {
         if (c === str || c === read) {
             return true;
         }
@@ -136,16 +183,16 @@ function searchAllChecked(str) {
     return false;
 }
 
-function updateCapSummary() {
-    let at = $capabilityAT.prop("checked") || $('#sub-cp-AT').prop("checked");
-    let mt = $capabilityCreateMytoken.prop("checked");
-    let info = searchAllChecked("tokeninfo");
-    let settings = searchAllChecked("settings");
+function updateCapSummary(prefix = "") {
+    let at = capabilityAT(prefix).prop("checked") || $('#sub-cp-AT').prop("checked");
+    let mt = capabilityCreateMytoken(prefix).prop("checked");
+    let info = searchAllChecked("tokeninfo", prefix);
+    let settings = searchAllChecked("settings", prefix);
 
     let all = [];
-    $.merge(all, $capabilityChecks);
-    if ($capabilityCreateMytoken.prop('checked')) {
-        $.merge(all, $subtokenCapabilityChecks);
+    $.merge(all, capabilityChecks(prefix));
+    if (capabilityCreateMytoken(prefix).prop('checked')) {
+        $.merge(all, subtokenCapabilityChecks(prefix));
     }
     let counter = {
         'green': {},
@@ -172,44 +219,44 @@ function updateCapSummary() {
     let yellows = Object.keys(counter['yellow']).length;
     let reds = Object.keys(counter['red']).length;
 
-    $capSummaryHowManyGreen.text(greens);
-    $capSummaryHowManyYellow.text(yellows);
-    $capSummaryHowManyRed.text(reds);
-    $capSummaryHowManyGreen.attr('data-original-title', `This mytoken has ${greens} normal capabilities.`);
-    $capSummaryHowManyYellow.attr('data-original-title', `This mytoken has ${yellows} powerful capabilities.`);
-    $capSummaryHowManyRed.attr('data-original-title', `This mytoken has ${reds} very powerful capabilities.`);
+    capSummaryHowManyGreen(prefix).text(greens);
+    capSummaryHowManyYellow(prefix).text(yellows);
+    capSummaryHowManyRed(prefix).text(reds);
+    capSummaryHowManyGreen(prefix).attr('data-original-title', `This mytoken has ${greens} normal capabilities.`);
+    capSummaryHowManyYellow(prefix).attr('data-original-title', `This mytoken has ${yellows} powerful capabilities.`);
+    capSummaryHowManyRed(prefix).attr('data-original-title', `This mytoken has ${reds} very powerful capabilities.`);
 
-    $capSummaryAT.removeClass("text-success");
-    $capSummaryMT.removeClass("text-success");
-    $capSummaryInfo.removeClass("text-success");
-    $capSummarySettings.removeClass("text-success");
+    capSummaryAT(prefix).removeClass("text-success");
+    capSummaryMT(prefix).removeClass("text-success");
+    capSummaryInfo(prefix).removeClass("text-success");
+    capSummarySettings(prefix).removeClass("text-success");
     if (at) {
-        $capSummaryAT.addClass("text-success");
-        $capSummaryAT.attr('data-original-title', "This mytoken can be used to obtain OIDC Access Tokens.");
+        capSummaryAT(prefix).addClass("text-success");
+        capSummaryAT(prefix).attr('data-original-title', "This mytoken can be used to obtain OIDC Access Tokens.");
     } else {
-        $capSummaryAT.attr('data-original-title', "This mytoken cannot be used to obtain OIDC Access Tokens.");
+        capSummaryAT(prefix).attr('data-original-title', "This mytoken cannot be used to obtain OIDC Access Tokens.");
     }
     if (mt) {
-        $capSummaryMT.addClass("text-success");
-        $capSummaryMT.attr('data-original-title', "This mytoken can be used to create sub-mytokens.");
+        capSummaryMT(prefix).addClass("text-success");
+        capSummaryMT(prefix).attr('data-original-title', "This mytoken can be used to create sub-mytokens.");
     } else {
-        $capSummaryMT.attr('data-original-title', "This mytoken cannot be used to create sub-mytokens.");
+        capSummaryMT(prefix).attr('data-original-title', "This mytoken cannot be used to create sub-mytokens.");
     }
     if (info) {
-        $capSummaryInfo.addClass("text-success");
-        $capSummaryInfo.attr('data-original-title', "This mytoken can be used to obtain tokeninfo about itself.");
+        capSummaryInfo(prefix).addClass("text-success");
+        capSummaryInfo(prefix).attr('data-original-title', "This mytoken can be used to obtain tokeninfo about itself.");
     } else {
-        $capSummaryInfo.attr('data-original-title', "This mytoken cannot be used to obtain tokeninfo about itself.");
+        capSummaryInfo(prefix).attr('data-original-title', "This mytoken cannot be used to obtain tokeninfo about itself.");
     }
     if (settings) {
-        $capSummarySettings.addClass("text-success");
-        $capSummarySettings.attr('data-original-title', "This mytoken can be used to change settings.");
+        capSummarySettings(prefix).addClass("text-success");
+        capSummarySettings(prefix).attr('data-original-title', "This mytoken can be used to change settings.");
     } else {
-        $capSummarySettings.attr('data-original-title', "This mytoken cannot be used to change settings.");
+        capSummarySettings(prefix).attr('data-original-title', "This mytoken cannot be used to change settings.");
     }
 }
 
-$capRWModes.on('update-change', function () {
+$allCapRWModes.on('update-change', function () {
     let write = $(this).prop('checked');
     if (write) {
         $(this).closest('span').attr('data-original-title', `Allows full access. Click to only allow read access.`);
@@ -222,7 +269,7 @@ $capRWModes.on('update-change', function () {
     }
 });
 
-$capRWModes.change(function () {
+$allCapRWModes.change(function () {
     let write = $(this).prop('checked');
     $(this).trigger('update-change');
     let $modes = $(this).closest('li.list-group-item').find('.rw-cap-mode');
@@ -233,5 +280,18 @@ $capRWModes.change(function () {
         $p.bootstrapToggle('off', true);
         $p.trigger('update-change');
     }
-    updateCapSummary();
+    updateCapSummary(this.getAttribute("instance-prefix"));
 });
+
+function checkCapability(cap, typePrefix, prefix = "") {
+    let rCap = cap.startsWith(rPrefix);
+    if (rCap) {
+        cap = cap.substring(rPrefix.length);
+    }
+    $('#' + prefix + typePrefix + '-' + escapeSelector(cap)).prop("checked", true);
+    let $mode = $('#' + prefix + typePrefix + '-' + escapeSelector(rPrefix + cap) + '-mode');
+    let disabled = $mode.prop('disabled');
+    $mode.prop('disabled', false);
+    $mode.bootstrapToggle(rCap ? 'off' : 'on');
+    $mode.prop('disabled', disabled);
+}

@@ -1,6 +1,7 @@
 <div class="d-flex justify-content-between">
     <div class="mr-2">
-        <input class="capability-check mr-1" id="cp-{{Name}}" type="checkbox" value="{{Name}}">
+        <input class="capability-check mr-1" id="{{prefix}}cp-{{Name}}"
+               type="checkbox" value="{{Name}}" instance-prefix="{{prefix}}" {{#read-only}}disabled{{/read-only}}>
     </div>
     <div class="flex-fill">
         <div class="d-flex justify-content-between">
@@ -9,7 +10,10 @@
                 <span class="pl-1" style="font-size: 1rem;" data-toggle="tooltip" data-placement="top" title=""
                       data-original-title="">
                     {{#ReadOnlyCapability}}
-                        <input id="cp-{{Name}}-mode" class="rw-cap-mode" type="checkbox" checked data-size="sm"
+                        <input id="{{prefix}}cp-{{Name}}-mode" class="rw-cap-mode" type="checkbox" checked
+                               {{#read-only}}disabled{{/read-only}}
+                               data-size="sm"
+                               instance-prefix="{{prefix}}"
                                data-toggle="toggle"
                                data-onstyle="dark" data-offstyle="dark" data-style="round"
                                data-on='<i class="fas fa-pencil-alt"></i>'

@@ -1,61 +1,62 @@
-
-<div id="tokeninfo-head">
-    <div id="tokeninfo-token-status" class="mb-2">
-        <h4>
+{{#tokeninfo}}
+    <div id="tokeninfo-head">
+        <div id="tokeninfo-token-status" class="mb-2">
+            <h4>
             <span class="badge badge-pill bg-my_green_dark" id="tokeninfo-token-name" data-toggle="tooltip"
                   data-placement="top" title="Name of this mytoken"></span>
 
-            <span class="ml-2 badge badge-pill bg-my_blue_dark tokeninfo-token-type d-none"
-                  id="tokeninfo-token-type-short">Short Token</span>
-            <span class="ml-2 badge badge-pill badge-success tokeninfo-token-type d-none"
-                  id="tokeninfo-token-type-JWT-valid"
-                data-toggle="tooltip" data-placement="top" title="Signature valid">JWT</span>
-            <span class="ml-2 badge badge-pill badge-danger tokeninfo-token-type d-none"
-                  id="tokeninfo-token-type-JWT-invalid"
-                data-toggle="tooltip" data-placement="top" title="Signature invalid">JWT</span>
+                <span class="ml-2 badge badge-pill bg-my_blue_dark tokeninfo-token-type d-none"
+                      id="tokeninfo-token-type-short">Short Token</span>
+                <span class="ml-2 badge badge-pill badge-success tokeninfo-token-type d-none"
+                      id="tokeninfo-token-type-JWT-valid"
+                      data-toggle="tooltip" data-placement="top" title="Signature valid">JWT</span>
+                <span class="ml-2 badge badge-pill badge-danger tokeninfo-token-type d-none"
+                      id="tokeninfo-token-type-JWT-invalid"
+                      data-toggle="tooltip" data-placement="top" title="Signature invalid">JWT</span>
 
-            <span class="ml-2 badge badge-pill badge-success" id="tokeninfo-token-valid"
-                  data-toggle="tooltip" data-placement="top" title="Mytoken is valid and can be used">
+                <span class="ml-2 badge badge-pill badge-success" id="tokeninfo-token-valid"
+                      data-toggle="tooltip" data-placement="top" title="Mytoken is valid and can be used">
                 <i class="fas fa-check"></i>
             </span>
-            <span class="ml-2 badge badge-pill badge-danger d-none" id="tokeninfo-token-invalid"
-                  data-toggle="tooltip" data-placement="top" title="Mytoken is invalid and cannot be used">
+                <span class="ml-2 badge badge-pill badge-danger d-none" id="tokeninfo-token-invalid"
+                      data-toggle="tooltip" data-placement="top" title="Mytoken is invalid and cannot be used">
                 <i class="fas fa-times"></i>
             </span>
 
-            <span class="ml-2 badge badge-pill badge-light" id="tokeninfo-token-mytoken-iss"
-                  data-toggle="tooltip" data-placement="top" title="Mytoken is issued by this instance"></span>
+                <span class="ml-2 badge badge-pill badge-light" id="tokeninfo-token-mytoken-iss"
+                      data-toggle="tooltip" data-placement="top" title="Mytoken is issued by this instance"></span>
 
-            <span class="ml-2 badge badge-pill badge-primary" id="tokeninfo-token-oidc-iss"
-                  data-toggle="tooltip" data-placement="top" title="Mytoken is linked to this OpenID Provider"></span>
+                <span class="ml-2 badge badge-pill badge-primary" id="tokeninfo-token-oidc-iss"
+                      data-toggle="tooltip" data-placement="top"
+                      title="Mytoken is linked to this OpenID Provider"></span>
 
-            <span class="ml-2 badge badge-pill badge-light" id="tokeninfo-token-iat"
-                  data-toggle="tooltip" data-placement="top" title="Mytoken was issued at this time">
+                <span class="ml-2 badge badge-pill badge-light" id="tokeninfo-token-iat"
+                      data-toggle="tooltip" data-placement="top" title="Mytoken was issued at this time">
                 <i class="fas fa-clock mr-1"></i><span id="tokeninfo-token-iat-date"></span></span>
 
-            <span class="ml-2 badge badge-pill badge-warning" id="tokeninfo-token-exp"
-                  data-toggle="tooltip" data-placement="top" title="Mytoken expires at this time">
+                <span class="ml-2 badge badge-pill badge-warning" id="tokeninfo-token-exp"
+                      data-toggle="tooltip" data-placement="top" title="Mytoken expires at this time">
                 <i class="fas fa-stopwatch mr-2"></i><span id="tokeninfo-token-exp-date"></span></span>
-        </h4>
-    </div>
+            </h4>
+        </div>
 
-    <div class="input-group">
-        <input type="text" class="form-control" placeholder="Mytoken" id="tokeninfo-token" autofocus
-               style="padding-right: 40px;">
-        <button class="btn copier text-secondary" id="tokeninfo-token-copy" data-toggle="tooltip"
-                data-placement="bottom"
-                title="Copy to clipboard" data-clipboard-target="#tokeninfo-token"
-                style="position: relative; left: -40px;">
-            <i class="far fa-copy"></i>
-        </button>
-        <button type="button" class="btn btn-light ml-n4" id="create-tc">Create Transfercode</button>
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Mytoken" id="tokeninfo-token" autofocus
+                   style="padding-right: 40px;">
+            <button class="btn copier text-secondary" id="tokeninfo-token-copy" data-toggle="tooltip"
+                    data-placement="bottom"
+                    title="Copy to clipboard" data-clipboard-target="#tokeninfo-token"
+                    style="position: relative; left: -40px;">
+                <i class="far fa-copy"></i>
+            </button>
+            <button type="button" class="btn btn-light ml-n4" id="create-tc">Create Transfercode</button>
+        </div>
     </div>
-</div>
 
     <div class="card-header mt-3">
         <ul class="nav nav-tabs card-header-tabs">
             <li class="nav-item">
-                <a class="nav-link active" id="info-tab" data-toggle="tab" href="#token-info" role="tab"
+                <a class="nav-link active" id="introspect-tab" data-toggle="tab" href="#token-info" role="tab"
                    aria-controls="token-info" aria-selected="true">Info</a>
             </li>
             <li class="nav-item">
@@ -70,18 +71,51 @@
     </div>
 
     <div class="card-body tab-content">
-        <div class="tab-pane show active" id="token-info" role="tabpanel" aria-labelledby="info-tab">
+        <div class="tab-pane show active" id="token-info" role="tabpanel" aria-labelledby="introspect-tab">
             <h4>Information About a Mytoken</h4>
             <button class="btn btn-reload" id="info-reload" data-toggle="tooltip" data-placement="bottom"
                     title="Reload data">
                 <i class="fas fa-sync"></i>
             </button>
-            <button class="btn btn-copy copier d-none" id="info-copy" data-toggle="tooltip" data-placement="bottom"
-                    title="Copy to clipboard" data-clipboard-target="#tokeninfo-token-content">
-                <i class="far fa-copy"></i>
-            </button>
-            <pre class="card-text" id="tokeninfo-token-content"></pre>
+
+            <div class="row">
+                <div class="col">
+                    <div class="alert border">
+                        {{>capabilities}}
+                    </div>
+
+                    <div class="alert border">
+                        <h4>Token Introspection</h4>
+
+                        <button class="btn btn-info my-expand" type="button" data-toggle="collapse"
+                                data-target="#tokeninfo-content-body"
+                                aria-expanded="false" aria-controls="tokeninfo-content-body">Expand
+                        </button>
+
+                        <div id="tokeninfo-content-body" class="collapse mt-4">
+                            <button class="btn btn-copy copier" id="info-copy" data-toggle="tooltip"
+                                    data-placement="bottom"
+                                    title="Copy to clipboard" data-clipboard-target="#tokeninfo-token-content">
+                                <i class="far fa-copy"></i>
+                            </button>
+                            <pre class="card-text" id="tokeninfo-token-content"></pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="alert border">
+                        {{>restrictions}}
+                    </div>
+                    <div class="alert border">
+                        {{>rotation}}
+                    </div>
+
+                </div>
+            </div>
+
+
         </div>
+
         <div class="tab-pane" id="token-history" role="tabpanel" aria-labelledby="history-tab">
             <h4>Event History for this Mytoken</h4>
             <button class="btn btn-reload" id="history-reload" data-toggle="tooltip" data-placement="bottom"
@@ -94,6 +128,7 @@
             </button>
             <p class="card-text" id="history-msg"></p>
         </div>
+
         <div class="tab-pane" id="token-tree" role="tabpanel" aria-labelledby="tree-tab">
             <h4>Subtokens for this Mytoken</h4>
             <button class="btn btn-reload" id="tree-reload" data-toggle="tooltip" data-placement="bottom"
@@ -107,3 +142,4 @@
             <p class="card-text" id="tree-msg"></p>
         </div>
     </div>
+{{/tokeninfo}}

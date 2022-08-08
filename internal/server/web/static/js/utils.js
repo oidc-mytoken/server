@@ -100,3 +100,7 @@ function extractMaxScopesFromToken(token) {
 function formatTime(t) {
     return new Date(t * 1000).toLocaleString()
 }
+
+function extractPrefix(normalID, prefixedID) {
+    return prefixedID.substring(0, prefixedID.indexOf(normalID))
+}

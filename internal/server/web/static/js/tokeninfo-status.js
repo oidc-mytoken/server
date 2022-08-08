@@ -21,6 +21,18 @@ async function update_tokeninfo() {
         token = $tokenInput.val();
     }
     let payload = {};
+    if (token === "") {
+        $tokeninfoTypeBadges.hideB();
+        $tokeninfoBadgeInvalid.hideB();
+        $tokeninfoBadgeValid.hideB();
+        $tokeninfoBadgeOIDCIss.text("");
+        $tokeninfoBadgeMytokenIss.text("");
+        $tokeninfoBadgeName.text("");
+        $tokeninfoBadgeExp.hideB();
+        $tokeninfoBadgeIat.hideB();
+        fillTokenInfo(payload);
+        return;
+    }
     let tokeninfoEndpoint = storageGet('tokeninfo_endpoint');
     let jwksUri = storageGet('jwks_uri');
     try {
@@ -108,10 +120,9 @@ async function update_tokeninfo() {
         $tokeninfoBadgeIatDate.text(formatTime(iat));
         $tokeninfoBadgeIat.showB();
     }
+    fillTokenInfo(payload);
 }
 
 $tokenInput.on('change', update_tokeninfo);
-
-$(function () {
-    update_tokeninfo();
-});
+$('#info-reload').on('click', update_tokeninfo)
+$('#info-tab').on('shown.bs.tab', update_tokeninfo)

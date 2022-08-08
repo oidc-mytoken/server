@@ -9,6 +9,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	consent "github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
+	"github.com/oidc-mytoken/server/internal/utils/templating"
 )
 
 func handleIndex(ctx *fiber.Ctx) error {
@@ -34,6 +35,16 @@ func handleHome(ctx *fiber.Ctx) error {
 		"home":                  true,
 		"capabilities":          consent.AllWebCapabilities(),
 		"subtoken-capabilities": consent.AllWebCapabilities(),
+		"tokeninfo": map[string]interface{}{
+			"collapse": templating.Collapsable{
+				CollapseRestr: true,
+			},
+			"prefix":    "tokeninfo-",
+			"read-only": true,
+		},
+		"create-mt": map[string]interface{}{
+			"prefix": "createMT-",
+		},
 	}
 	return ctx.Render("sites/home", binding, layoutMain)
 }

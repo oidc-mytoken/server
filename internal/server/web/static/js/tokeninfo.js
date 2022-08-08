@@ -19,29 +19,56 @@ function _tokeninfo(action, successFnc, errorFnc, token = undefined) {
     });
 }
 
-function getTokenInfo(e) {
-    e.preventDefault();
+function fillTokenInfo(tokenPayload) {
+    // introspection
     let msg = $('#tokeninfo-token-content');
     let copy = $('#info-copy');
-    _tokeninfo('introspect',
-        function (res) {
-            let token = res['token'];
-            let iss = token['oidc_iss'];
-            if (iss) {
-                storageSet('oidc_issuer', iss, true);
-            }
-            let scopes = extractMaxScopesFromToken(token);
-            storageSet('token_scopes', scopes, true);
-            msg.text(JSON.stringify(res, null, 4));
-            msg.removeClass('text-danger');
-            copy.removeClass('d-none');
-        },
-        function (errRes) {
-            msg.text(getErrorMessage(errRes));
-            msg.addClass('text-danger');
-            copy.removeClass('d-none');
-        }, $tokenInput.val())
-    return false;
+    if (tokenPayload === undefined || $.isEmptyObject(tokenPayload)) {
+        msg.text("We do not have any information about this token's content.");
+        msg.addClass('text-danger');
+        copy.addClass('d-none');
+
+        capabilityChecks(tokeninfoPrefix).prop("checked", false);
+        subtokenCapabilityChecks(tokeninfoPrefix).prop("checked", false);
+        capabilityChecks(tokeninfoPrefix).closest('.capability').hideB();
+        subtokenCapabilityChecks(tokeninfoPrefix).closest('.capability').hideB();
+        updateCapSummary(tokeninfoPrefix);
+
+        rotationAT(tokeninfoPrefix).prop('checked', false);
+        rotationOther(tokeninfoPrefix).prop('checked', false);
+        rotationLifetime(tokeninfoPrefix).val(0);
+        rotationAutoRevoke(tokeninfoPrefix).prop('checked', false);
+        updateRotationIcon(tokeninfoPrefix);
+        return;
+    }
+    msg.text(JSON.stringify(tokenPayload, null, 4));
+    msg.removeClass('text-danger');
+    copy.removeClass('d-none');
+
+    // capabilities
+    capabilityChecks(tokeninfoPrefix).prop("checked", false);
+    subtokenCapabilityChecks(tokeninfoPrefix).prop("checked", false);
+    for (let c of tokenPayload['capabilities']) {
+        checkCapability(c, 'cp', tokeninfoPrefix);
+    }
+    if (tokenPayload['subtoken_capabilities'] !== undefined) {
+        for (let c of tokenPayload['subtoken_capabilities']) {
+            checkCapability(c, 'sub-cp', tokeninfoPrefix);
+        }
+    }
+    initCapabilities(tokeninfoPrefix);
+    capabilityChecks(tokeninfoPrefix).not(":checked").closest('.capability').hideB();
+    subtokenCapabilityChecks(tokeninfoPrefix).not(":checked").closest('.capability').hideB();
+    capabilityChecks(tokeninfoPrefix).filter(":checked").closest('.capability').showB();
+    subtokenCapabilityChecks(tokeninfoPrefix).filter(":checked").closest('.capability').showB();
+
+    // rotation
+    let rot = tokenPayload['rotation'];
+    rotationAT(tokeninfoPrefix).prop('checked', rot['on_AT'] || false);
+    rotationOther(tokeninfoPrefix).prop('checked', rot['on_other'] || false);
+    rotationLifetime(tokeninfoPrefix).val(rot['lifetime'] || 0);
+    rotationAutoRevoke(tokeninfoPrefix).prop('checked', rot['auto_revoke'] || false);
+    updateRotationIcon(tokeninfoPrefix);
 }
 
 function userAgentToHTMLIcons(userAgent) {
@@ -182,8 +209,6 @@ function getListTokenInfo(e) {
     return false;
 }
 
-$('#info-tab').on('shown.bs.tab', getTokenInfo)
-$('#info-reload').on('click', getTokenInfo)
 $('#history-tab').on('shown.bs.tab', getHistoryTokenInfo)
 $('#history-reload').on('click', getHistoryTokenInfo)
 $('#tree-tab').on('shown.bs.tab', getTreeTokenInfo)
@@ -191,3 +216,10 @@ $('#tree-reload').on('click', getTreeTokenInfo)
 
 $('#list-mts-tab').on('shown.bs.tab', getListTokenInfo)
 $('#list-reload').on('click', getListTokenInfo)
+
+const tokeninfoPrefix = "tokeninfo-";
+
+$(function () {
+    initCapabilities(tokeninfoPrefix);
+    updateRotationIcon(tokeninfoPrefix);
+})

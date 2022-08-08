@@ -12,10 +12,13 @@ const maxTokenLenDiv = $('#max_token_len_div');
 const tokenTypeBadge = $('#token-badge');
 const $mtInstructions = $('#mt-instructions');
 
+const mtPrefix = "createMT-";
 
 $(function () {
-    $('#cp-AT').prop('checked', true)
-    $('#cp-tokeninfo').prop('checked', true)
+    capabilityAT(mtPrefix).prop('checked', true);
+    $('#' + mtPrefix + 'cp-tokeninfo').prop('checked', true);
+    initCapabilities(mtPrefix);
+    updateRotationIcon(mtPrefix);
 })
 
 
@@ -41,8 +44,8 @@ function sendCreateMTReq() {
         "oidc_flow": "authorization_code",
         "redirect_type": "native",
         "restrictions": restrictions,
-        "capabilities": getCheckedCapabilities(),
-        "subtoken_capabilities": getCheckedSubtokenCapabilities(),
+        "capabilities": getCheckedCapabilities(mtPrefix),
+        "subtoken_capabilities": getCheckedSubtokenCapabilities(mtPrefix),
         "application_name": "mytoken webinterface"
     };
     let token_type = $('#select-token-type').val();
@@ -51,7 +54,7 @@ function sendCreateMTReq() {
     } else {
         data['response_type'] = token_type;
     }
-    let rot = getRotationFromForm();
+    let rot = getRotationFromForm(mtPrefix);
     if (rot) {
         data["rotation"] = rot;
     }

@@ -1,30 +1,21 @@
 $(function () {
     $('#tokenName').val(tokenName);
     if (!rot_null) {
-        rotationAT.prop("checked", rot_onAT);
-        rotationOther.prop("checked", rot_onOther);
-        rotationLifetime.val(rot_lifetime);
-        rotationLifetime.prop("disabled", !rot_onAT && !rot_onOther);
-        rotationAutoRevoke.prop("checked", rot_autoRevoke);
-        rotationAutoRevoke.prop("disabled", !rot_onAT && !rot_onOther);
+        rotationAT().prop("checked", rot_onAT);
+        rotationOther().prop("checked", rot_onOther);
+        rotationLifetime().val(rot_lifetime);
+        rotationLifetime().prop("disabled", !rot_onAT && !rot_onOther);
+        rotationAutoRevoke().prop("checked", rot_autoRevoke);
+        rotationAutoRevoke().prop("disabled", !rot_onAT && !rot_onOther);
     }
     updateRotationIcon();
     checkedCapabilities.forEach(function (value) {
-        let rCap = value.startsWith(rPrefix);
-        if (rCap) {
-            value = value.substring(rPrefix.length);
-        }
-        $('#cp-' + escapeSelector(value)).prop("checked", true);
-        $('#cp-' + escapeSelector(rPrefix + value) + '-mode').bootstrapToggle(rCap ? 'off' : 'on');
+        checkCapability(value, 'cp');
     })
     checkedSubtokenCapabilities.forEach(function (value) {
-        let rCap = value.startsWith(rPrefix);
-        if (rCap) {
-            value = value.substring(rPrefix.length);
-        }
-        $('#sub-cp-' + escapeSelector(value)).prop("checked", true);
-        $('#sub-cp-' + escapeSelector(rPrefix + value) + '-mode').bootstrapToggle(rCap ? 'off' : 'on');
+        checkCapability(value, 'sub-cp');
     })
+    initCapabilities();
     chainFunctions(
         discovery,
         initRestrGUI,
