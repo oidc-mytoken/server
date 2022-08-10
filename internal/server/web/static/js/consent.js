@@ -18,14 +18,16 @@ $(function () {
     initCapabilities();
     chainFunctions(
         discovery,
-        initRestrGUI,
+        function (...next) {
+            initRestr("", ...next);
+        },
     );
 })
 
 function approve() {
     let data = {
         "oidc_iss": issuer,
-        "restrictions": restrictions,
+        "restrictions": getRestrictionsData(),
         "capabilities": getCheckedCapabilities(),
         "subtoken_capabilities": getCheckedSubtokenCapabilities(),
         "name": $('#tokenName').val(),

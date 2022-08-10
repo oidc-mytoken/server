@@ -104,3 +104,9 @@ function formatTime(t) {
 function extractPrefix(normalID, prefixedID) {
     return prefixedID.substring(0, prefixedID.indexOf(normalID))
 }
+
+function prefixId(id, prefix = "") {
+    return '#' + prefix + escapeSelector(id);
+}
+
+

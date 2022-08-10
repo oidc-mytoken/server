@@ -34,6 +34,8 @@
 ### Bugfixes
 
 - Fixed a bug in the mytoken webinterface where token introspection did not work on the settings page
+- Fixed a bug in the mytoken webinterface restriction editor, where audiences would always be set to zero when switching
+  from the JSON editor to the GUI editor
 
 ### Dependencies
 

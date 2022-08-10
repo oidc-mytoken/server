@@ -2,7 +2,8 @@ $(function () {
     chainFunctions(
         checkIfLoggedIn,
         initAT,
-        initRestrGUI,
+        initCreateMT,
+        initTokeninfo,
     );
     // https://stackoverflow.com/a/17552459
     // Javascript to enable link to tab

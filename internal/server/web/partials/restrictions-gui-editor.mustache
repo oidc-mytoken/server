@@ -1,15 +1,22 @@
-<div id="restr-easy-editor" class="mt-3">
+<div id="{{prefix}}restr-easy-editor" class="mt-3">
     <h5>Restriction Clause</h5>
     <div class="btn-toolbar mb-2 justify-content-between" role="toolbar">
         <div>
-            <div class="btn-group mr-2" id="restr-clauses" role="group" aria-label="Restriction clauses"></div>
+            <div class="btn-group mr-2" id="{{prefix}}restr-clauses" role="group"
+                 aria-label="Restriction clauses"></div>
             <div class="btn-group" role="group" aria-label="Add Restriction clause">
-                <button id="new-restr-clause" type="button" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+                <button id="{{prefix}}new-restr-clause" type="button" class="btn
+                btn-primary{{#read-only}} d-none{{/read-only}}"
+                        onclick="newRestrClause('{{prefix}}')" {{#read-only}}disabled{{/read-only}}>
+                    <i class="fas fa-plus"></i></button>
             </div>
         </div>
         <div>
             <div class="btn-group float-right" role="group" aria-label="Delete Restriction clause">
-                <button id="del-restr-clause" type="button" class="btn btn-danger"><i class="fas fa-trash"></i></button>
+                <button id="{{prefix}}del-restr-clause" type="button"
+                        class="btn btn-danger{{#read-only}} d-none{{/read-only}}"
+                        onclick="delRestrClause('{{prefix}}')" {{#read-only}}disabled{{/read-only}}>
+                    <i class="fas fa-trash"></i></button>
             </div>
         </div>
     </div>
@@ -17,139 +24,161 @@
     <div>
         <div class="form-row">
             <div class="form-group restr-nbf col" style="position:relative;">
-                <label for="nbf">Not Before</label>
-                <input type="text" class="form-control nbf datetimepicker-input" id="nbf" aria-describedby="nbf_help"
-                       data-toggle="datetimepicker" data-target="#nbf" placeholder="YYYY-MM-DD HH:mm:ss">
-                <small id="nbf_help" class="form-text text-muted">The mytoken cannot be used before this time.</small>
+                <label for="{{prefix}}nbf">Not Before</label>
+                <input type="text" class="form-control nbf datetimepicker-input" id="{{prefix}}nbf"
+                       aria-describedby="{{prefix}}nbf_help"
+                       data-toggle="datetimepicker" data-target="#{{prefix}}nbf" placeholder="YYYY-MM-DD HH:mm:ss"
+                       {{#read-only}}disabled{{/read-only}}>
+                <small id="{{prefix}}nbf_help" class="form-text text-muted">If set, the mytoken cannot be used before
+                    this
+                    time.</small>
             </div>
 
             <div class="form-group restr-exp col" style="position:relative;">
-                <label for="exp">Expires At</label>
-                <input type="text" class="form-control exp datetimepicker-input" id="exp" aria-describedby="exp_help"
-                       data-toggle="datetimepicker" data-target="#exp" placeholder="YYYY-MM-DD HH:mm:ss">
-                <small id="exp_help" class="form-text text-muted">The mytoken cannot be used after this time.</small>
+                <label for="{{prefix}}exp">Expires At</label>
+                <input type="text" class="form-control exp datetimepicker-input" id="{{prefix}}exp"
+                       aria-describedby="{{prefix}}exp_help"
+                       data-toggle="datetimepicker" data-target="#{{prefix}}exp" placeholder="YYYY-MM-DD HH:mm:ss"
+                       {{#read-only}}disabled{{/read-only}}>
+                <small id="{{prefix}}exp_help" class="form-text text-muted">If set, the mytoken cannot be used after
+                    this time.</small>
             </div>
         </div>
 
         <div class="form-group restr-scope">
-            <label for="scope-table">Scopes</label>
-            <table id="scope-table" class="table table-sm table-striped bg-my_grey" aria-describedby="scope-table_help">
-                <tbody id="scopeTableBody"></tbody>
+            <label for="{{prefix}}scope-table">Scopes</label>
+            <table id="{{prefix}}scope-table" class="table table-sm table-striped bg-my_grey"
+                   aria-describedby="{{prefix}}scope-table_help">
+                <tbody id="{{prefix}}scopeTableBody"></tbody>
             </table>
-            <small id="scope-table_help" class="form-text text-muted">Access Tokens obtained with this mytoken can only
-                have these scope values.</small>
+            <small id="{{prefix}}scope-table_help" class="form-text text-muted">If set, Access Tokens obtained with
+                this mytoken can only have these scope values.</small>
         </div>
 
         <div class="form-group restr-audience">
-            <label for="audience-table">Audiences</label>
-            <table id="audience-table" class="table table-sm table-striped bg-my_grey"
-                   aria-describedby="audience-table_help">
-                <thead>
+            <label for="{{prefix}}audience-table">Audiences</label>
+            <table id="{{prefix}}audience-table" class="table table-sm table-striped bg-my_grey"
+                   aria-describedby="{{prefix}}audience-table_help">
+                <thead class="{{#read-only}}d-none{{/read-only}}">
                 <tr>
-                    <th><input id="audienceInput" type="text" class="form-control add-list-input" value=""
-                               placeholder="https://..."></th>
+                    <th><input id="{{prefix}}audienceInput" type="text" class="form-control add-list-input" value=""
+                               placeholder="https://..." {{#read-only}}disabled{{/read-only}}></th>
                     <th class="align-middle">
-                        <button class="btn btn-small btn-add-list-item"><i class="fas fa-plus"></i></button>
+                        <button class="btn btn-small btn-add-list-item" instance-prefix="{{prefix}}"
+                                {{#read-only}}disabled{{/read-only}}><i class="fas
+                        fa-plus"></i></button>
                     </th>
                 </tr>
                 </thead>
-                <tbody class="list-table restr" id="audienceTableBody">
+                <tbody class="list-table restr" id="{{prefix}}audienceTableBody" instance-prefix="{{prefix}}">
                 </tbody>
             </table>
-            <small id="audience-table_help" class="form-text text-muted">Access Tokens obtained with this mytoken can
-                only be used at these audiences.</small>
+            <small id="{{prefix}}audience-table_help" class="form-text text-muted">If set, Access Tokens obtained with
+                this mytoken can only be used at these audiences.</small>
         </div>
 
         <div>
             <div>
-                <label for="select-ip-based-restr">Restrict request location based on</label>
-                <select id="select-ip-based-restr" class="select custom-select mb-2" data-live-search="true">
+                <label for="{{prefix}}select-ip-based-restr">Restrict request location based on</label>
+                <select id="{{prefix}}select-ip-based-restr" class="select custom-select mb-2"
+                        data-live-search="true" onchange="selectIPTable.call(this, '{{prefix}}')">
                     <option value="ip">IP addresses</option>
                     <option selected value="geoip_allow">Allowed countries</option>
                     <option value="geoip_disallow">Forbidden countries</option>
                 </select>
             </div>
             <div class="ml-3">
-                <div id="restr-ip" class="form-group restr d-none">
-                    <label for="ip-table">Allowed request IPs</label>
-                    <table id="ip-table" class="table table-sm table-striped bg-my_grey"
-                           aria-describedby="ip-table_help">
-                        <thead>
+                <div id="{{prefix}}restr-ip" class="form-group restr d-none">
+                    <label for="{{prefix}}ip-table">Allowed request IPs</label>
+                    <table id="{{prefix}}ip-table" class="table table-sm table-striped bg-my_grey"
+                           aria-describedby="{{prefix}}ip-table_help">
+                        <thead class="{{#read-only}}d-none{{/read-only}}">
                         <tr>
-                            <th><input id="ipInput" type="text" class="form-control add-list-input" value=""
-                                       placeholder="IP"></th>
+                            <th><input id="{{prefix}}ipInput" type="text" class="form-control add-list-input" value=""
+                                       placeholder="IP" {{#read-only}}disabled{{/read-only}}></th>
                             <th class="align-middle">
-                                <button class="btn btn-small btn-add-list-item"><i class="fas fa-plus"></i></button>
+                                <button class="btn btn-small btn-add-list-item" instance-prefix="{{prefix}}"
+                                        {{#read-only}}disabled{{/read-only}}><i
+                                        class="fas fa-plus"></i></button>
                             </th>
                         </tr>
                         </thead>
-                        <tbody class="list-table restr" id="ipTableBody">
+                        <tbody class="list-table restr" id="{{prefix}}ipTableBody" instance-prefix="{{prefix}}">
                         </tbody>
                     </table>
-                    <small id="ip-table_help" class="form-text text-muted">The mytoken can only be used from these IP
-                        addresses or subnets.</small>
+                    <small id="{{prefix}}ip-table_help" class="form-text text-muted">If set, the mytoken can only be
+                        used from these IP addresses or subnets.</small>
                 </div>
 
-                <div id="restr-geoip_allow" class="form-group restr">
-                    <label for="geoip-allow-table">Allowed request countries</label>
-                    <table id="geoip-allow-table" class="table table-sm table-striped bg-my_grey"
-                           aria-describedby="geoip-allow-table_help">
-                        <thead>
+                <div id="{{prefix}}restr-geoip_allow" class="form-group restr">
+                    <label for="{{prefix}}geoip-allow-table">Allowed request countries</label>
+                    <table id="{{prefix}}geoip-allow-table" class="table table-sm table-striped bg-my_grey"
+                           aria-describedby="{{prefix}}geoip-allow-table_help">
+                        <thead class="{{#read-only}}d-none{{/read-only}}">
                         <tr>
                             <th>
-                                <select id="geoip-allowInput" class="select custom-select country-select add-list-input"
-                                        data-live-search="true"></select>
-                            </th>
-                            <th class="align-middle">
-                                <button class="btn btn-small btn-add-list-item"><i class="fas fa-plus"></i></button>
-                            </th>
-                        </tr>
-                        </thead>
-                        <tbody class="list-table restr" id="geoip_allowTableBody">
-                        </tbody>
-                    </table>
-                    <small id="geoip-allow-table_help" class="form-text text-muted">The mytoken can only be used from
-                        these countries.</small>
-                </div>
-
-                <div id="restr-geoip_disallow" class="form-group restr d-none">
-                    <label for="geoip-disallow-table">Forbidden request countries</label>
-                    <table id="geoip-disallow-table" class="table table-sm table-striped bg-my_grey"
-                           aria-describedby="geoip-disallow-table_help">
-                        <thead>
-                        <tr>
-                            <th>
-                                <select id="geoip-disallowInput"
+                                <select id="{{prefix}}geoip-allowInput"
                                         class="select custom-select country-select add-list-input"
-                                        data-live-search="true"></select>
+                                        data-live-search="true" {{#read-only}}disabled{{/read-only}}></select>
                             </th>
                             <th class="align-middle">
-                                <button class="btn btn-small btn-add-list-item"><i class="fas fa-plus"></i></button>
+                                <button class="btn btn-small btn-add-list-item" instance-prefix="{{prefix}}"
+                                        {{#read-only}}disabled{{/read-only}}><i
+                                        class="fas fa-plus"></i></button>
                             </th>
                         </tr>
                         </thead>
-                        <tbody class="list-table restr" id="geoip_disallowTableBody">
+                        <tbody class="list-table restr" id="{{prefix}}geoip_allowTableBody"
+                               instance-prefix="{{prefix}}">
                         </tbody>
                     </table>
-                    <small id="geoip-disallow-table_help" class="form-text text-muted">The mytoken cannot be used from
-                        these countries.</small>
+                    <small id="{{prefix}}geoip-allow-table_help" class="form-text text-muted">If set, the mytoken can
+                        only be used from these countries.</small>
+                </div>
+
+                <div id="{{prefix}}restr-geoip_disallow" class="form-group restr d-none">
+                    <label for="{{prefix}}geoip-disallow-table">Forbidden request countries</label>
+                    <table id="{{prefix}}geoip-disallow-table" class="table table-sm table-striped bg-my_grey"
+                           aria-describedby="{{prefix}}geoip-disallow-table_help">
+                        <thead class="{{#read-only}}d-none{{/read-only}}">
+                        <tr>
+                            <th>
+                                <select id="{{prefix}}geoip-disallowInput"
+                                        class="select custom-select country-select add-list-input"
+                                        data-live-search="true" {{#read-only}}disabled{{/read-only}}></select>
+                            </th>
+                            <th class="align-middle">
+                                <button class="btn btn-small btn-add-list-item" instance-prefix="{{prefix}}"
+                                        {{#read-only}}disabled{{/read-only}}><i
+                                        class="fas fa-plus"></i></button>
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody class="list-table restr" id="{{prefix}}geoip_disallowTableBody"
+                               instance-prefix="{{prefix}}">
+                        </tbody>
+                    </table>
+                    <small id="{{prefix}}geoip-disallow-table_help" class="form-text text-muted">If set, the mytoken
+                        cannot be used from these countries.</small>
                 </div>
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group restr-usages_AT col">
-                <label for="usages_AT">Usages AT</label>
-                <input type="number" class="form-control" id="usages_AT" aria-describedby="usages_AT_help" min=0>
-                <small id="usages_AT_help" class="form-text text-muted">The mytoken can only be used this often to
-                    request access tokens.</small>
+                <label for="{{prefix}}usages_AT">Usages AT</label>
+                <input type="number" class="form-control usages_AT" id="{{prefix}}usages_AT"
+                       aria-describedby="{{prefix}}usages_AT_help" min=0 {{#read-only}}disabled{{/read-only}}>
+                <small id="{{prefix}}usages_AT_help" class="form-text text-muted">If set, the mytoken can only be used
+                    this often to request access tokens.</small>
             </div>
 
             <div class="form-group restr-usages_other col">
-                <label for="usages_other">Usages Other</label>
-                <input type="number" class="form-control" id="usages_other" aria-describedby="usages_other_help" min=0>
-                <small id="usages_other_help" class="form-text text-muted">The mytoken can only be used this often for
-                    requests other than requesting access tokens.</small>
+                <label for="{{prefix}}usages_other">Usages Other</label>
+                <input type="number" class="form-control usages_other" id="{{prefix}}usages_other"
+                       aria-describedby="{{prefix}}usages_other_help" min=0 {{#read-only}}disabled{{/read-only}}>
+                <small id="{{prefix}}usages_other_help" class="form-text text-muted">If set, the mytoken can only be
+                    used this often for requests other than requesting access tokens.</small>
             </div>
         </div>
     </div>

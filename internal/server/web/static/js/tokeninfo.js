@@ -39,6 +39,10 @@ function fillTokenInfo(tokenPayload) {
         rotationLifetime(tokeninfoPrefix).val(0);
         rotationAutoRevoke(tokeninfoPrefix).prop('checked', false);
         updateRotationIcon(tokeninfoPrefix);
+
+        setRestrictionsData([{}], tokeninfoPrefix);
+        scopeTableBody(tokeninfoPrefix).html("");
+        RestrToGUI(tokeninfoPrefix);
         return;
     }
     msg.text(JSON.stringify(tokenPayload, null, 4));
@@ -63,12 +67,21 @@ function fillTokenInfo(tokenPayload) {
     subtokenCapabilityChecks(tokeninfoPrefix).filter(":checked").closest('.capability').showB();
 
     // rotation
-    let rot = tokenPayload['rotation'];
+    let rot = tokenPayload['rotation'] || {};
     rotationAT(tokeninfoPrefix).prop('checked', rot['on_AT'] || false);
     rotationOther(tokeninfoPrefix).prop('checked', rot['on_other'] || false);
     rotationLifetime(tokeninfoPrefix).val(rot['lifetime'] || 0);
     rotationAutoRevoke(tokeninfoPrefix).prop('checked', rot['auto_revoke'] || false);
     updateRotationIcon(tokeninfoPrefix);
+
+    // restrictions
+    setRestrictionsData(tokenPayload['restrictions'] || [{}], tokeninfoPrefix);
+    scopeTableBody(tokeninfoPrefix).html("");
+    const scopes = getSupportedScopesFromStorage(tokenPayload['oidc_iss']);
+    for (const scope of scopes) {
+        _addScopeValueToGUI(scope, scopeTableBody(tokeninfoPrefix), "restr", tokeninfoPrefix);
+    }
+    RestrToGUI(tokeninfoPrefix);
 }
 
 function userAgentToHTMLIcons(userAgent) {
@@ -219,7 +232,11 @@ $('#list-reload').on('click', getListTokenInfo)
 
 const tokeninfoPrefix = "tokeninfo-";
 
-$(function () {
+function initTokeninfo(...next) {
     initCapabilities(tokeninfoPrefix);
     updateRotationIcon(tokeninfoPrefix);
-})
+    initRestr(tokeninfoPrefix);
+    $(prefixId("nbf", tokeninfoPrefix)).datetimepicker("minDate", null);
+    $(prefixId("exp", tokeninfoPrefix)).datetimepicker("minDate", null);
+    doNext(...next);
+}

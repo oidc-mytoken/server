@@ -55,5 +55,7 @@
 </div>
 
 <script>
-    readOnlyMode = {{#read-only}}true{{/read-only}}{{^read-only}}false{{/read-only}};
+    getPrefixData("{{prefix}}")['rotation'] = {
+    'read-only': {{#read-only}}true{{/read-only}}{{^read-only}}false{{/read-only}},
+    };
 </script>

@@ -22,6 +22,7 @@ function checkRotation(prefix = "") {
     let atEnabled = rotationAT(prefix).prop("checked");
     let otherEnabled = rotationOther(prefix).prop("checked");
     let rotationEnabled = atEnabled || otherEnabled;
+    let readOnlyMode = getPrefixData(prefix)['rotation']['read-only'] || false;
     rotationLifetime(prefix).prop("disabled", !rotationEnabled || readOnlyMode);
     rotationAutoRevoke(prefix).prop("disabled", !rotationEnabled || readOnlyMode);
     return [atEnabled, otherEnabled];

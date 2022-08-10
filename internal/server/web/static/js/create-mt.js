@@ -14,12 +14,14 @@ const $mtInstructions = $('#mt-instructions');
 
 const mtPrefix = "createMT-";
 
-$(function () {
+function initCreateMT(...next) {
     capabilityAT(mtPrefix).prop('checked', true);
     $('#' + mtPrefix + 'cp-tokeninfo').prop('checked', true);
     initCapabilities(mtPrefix);
     updateRotationIcon(mtPrefix);
-})
+    initRestr(mtPrefix);
+    doNext(...next);
+}
 
 
 $('#next-mt').on('click', function () {
@@ -43,7 +45,7 @@ function sendCreateMTReq() {
         "grant_type": "oidc_flow",
         "oidc_flow": "authorization_code",
         "redirect_type": "native",
-        "restrictions": restrictions,
+        "restrictions": getRestrictionsData(mtPrefix),
         "capabilities": getCheckedCapabilities(mtPrefix),
         "subtoken_capabilities": getCheckedSubtokenCapabilities(mtPrefix),
         "application_name": "mytoken webinterface"
@@ -85,11 +87,12 @@ function sendCreateMTReq() {
 }
 
 function checkRestrEmpty() {
-    if (restrictions.length === 0) {
+    let restr = getRestrictionsData(mtPrefix);
+    if (restr.length === 0) {
         return true;
     }
     let found = false;
-    restrictions.forEach(function (r) {
+    restr.forEach(function (r) {
         if (Object.keys(r).length > 0) {
             found = true;
         }
@@ -170,9 +173,11 @@ function polling(code, interval) {
                     default:
                         tokenTypeBadge.text("JWT");
                 }
-                mtShowSuccess(token);
-                $mtInstructions.hideB();
+                storageSet("tokeninfo_token", token, true);
                 window.clearInterval(intervalID);
+                mtResult.hideB();
+                mtConfig.showB();
+                $('#info-tab').click();
             },
             error: function (errRes) {
                 let error = errRes.responseJSON['error'];

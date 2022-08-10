@@ -19,6 +19,8 @@ async function update_tokeninfo() {
     let token = storagePop('tokeninfo_token', true);
     if (token === "") {
         token = $tokenInput.val();
+    } else {
+        $tokenInput.val(token);
     }
     let payload = {};
     if (token === "") {
@@ -97,7 +99,7 @@ async function update_tokeninfo() {
             }
         });
     } catch (e) {
-        console.log(e);
+        console.error(e);
     }
 
     let oidcIss = payload['oidc_iss'];
