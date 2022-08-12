@@ -72,7 +72,8 @@ function sendCreateMTReq() {
             authURL.attr("href", url);
             authURL.text(url);
             $mtInstructions.showB();
-            polling(code, interval)
+            polling(code, interval);
+            window.open(url, '_blank');
         },
         error: function (errRes) {
             let errMsg = getErrorMessage(errRes);
