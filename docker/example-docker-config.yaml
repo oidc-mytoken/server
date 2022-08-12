@@ -151,6 +151,10 @@ features:
   # Provides a web interface for in browser usage
   web_interface:
     enabled: true
+    # A director with the same structure as https://github.com/oidc-mytoken/server/tree/master/internal/server/web
+    # where web files can be located. If this option is set and a file is present here it is used to overwrite the
+    # default file. This can be used for customization, especially css.
+    # overwrite_dir: "/var/www/mytoken"
 
   ssh:
     enabled: true

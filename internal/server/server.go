@@ -23,6 +23,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/server/apiPath"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/server/ssh"
+	"github.com/oidc-mytoken/server/internal/utils/fileio"
 )
 
 var server *fiber.App
@@ -58,7 +59,14 @@ func init() {
 }
 
 func initTemplateEngine() {
-	engine := mustache.NewFileSystemPartials(http.FS(webFiles), ".mustache", http.FS(partials))
+	overWriteDir := config.Get().Features.WebInterface.OverwriteDir
+	engine := mustache.NewFileSystemPartials(
+		fileio.NewLocalAndOtherSearcherFilesystem(overWriteDir, http.FS(webFiles)),
+		".mustache",
+		fileio.NewLocalAndOtherSearcherFilesystem(
+			fileio.JoinIfFirstNotEmpty(overWriteDir, "partials"), http.FS(partials),
+		),
+	)
 	serverConfig.Views = engine
 }
 

@@ -22,6 +22,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/server/apiPath"
 	"github.com/oidc-mytoken/server/internal/server/routes"
+	"github.com/oidc-mytoken/server/internal/utils/fileio"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
@@ -96,7 +97,11 @@ func addStaticFiles(s fiber.Router) {
 	s.Use(
 		"/static", filesystem.New(
 			filesystem.Config{
-				Root:   http.FS(staticFS),
+				Root: fileio.NewLocalAndOtherSearcherFilesystem(
+					fileio.JoinIfFirstNotEmpty(
+						config.Get().Features.WebInterface.OverwriteDir, "static",
+					), http.FS(staticFS),
+				),
 				MaxAge: 3600,
 			},
 		),
@@ -107,8 +112,12 @@ func addFaviconMiddleware(s fiber.Router) {
 	s.Use(
 		favicon.New(
 			favicon.Config{
-				File:       "favicon.ico",
-				FileSystem: http.FS(faviconFS),
+				File: "favicon.ico",
+				FileSystem: fileio.NewLocalAndOtherSearcherFilesystem(
+					fileio.JoinIfFirstNotEmpty(
+						config.Get().Features.WebInterface.OverwriteDir, "static/img",
+					), http.FS(faviconFS),
+				),
 			},
 		),
 	)

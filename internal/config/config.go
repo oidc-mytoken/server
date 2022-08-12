@@ -93,7 +93,7 @@ var defaultConfig = Config{
 			Tree:       onlyEnable{true},
 			List:       onlyEnable{true},
 		},
-		WebInterface: onlyEnable{true},
+		WebInterface: webConfig{Enabled: true},
 		SSH: sshConf{
 			Enabled: false,
 		},
@@ -133,7 +133,7 @@ type featuresConf struct {
 	Polling                 pollingConf              `yaml:"polling_codes"`
 	TokenRotation           onlyEnable               `yaml:"token_rotation"`
 	TokenInfo               tokeninfoConfig          `yaml:"tokeninfo"`
-	WebInterface            onlyEnable               `yaml:"web_interface"`
+	WebInterface            webConfig                `yaml:"web_interface"`
 	DisabledRestrictionKeys model2.RestrictionClaims `yaml:"unsupported_restrictions"`
 	SSH                     sshConf                  `yaml:"ssh"`
 }
@@ -186,6 +186,11 @@ type tokeninfoConfig struct {
 	History    onlyEnable `yaml:"event_history"`
 	Tree       onlyEnable `yaml:"subtoken_tree"`
 	List       onlyEnable `yaml:"list_mytokens"`
+}
+
+type webConfig struct {
+	Enabled      bool   `yaml:"enabled"`
+	OverwriteDir string `yaml:"overwrite_dir"`
 }
 
 type shortTokenConfig struct {
