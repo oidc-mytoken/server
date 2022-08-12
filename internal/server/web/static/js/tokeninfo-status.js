@@ -15,6 +15,7 @@ const $tokeninfoBadgeExpDate = $('#tokeninfo-token-exp-date');
 
 const $tokeninfoTypeBadges = $('.tokeninfo-token-type');
 
+
 async function update_tokeninfo() {
     let token = storagePop('tokeninfo_token', true);
     if (token === "") {
@@ -37,6 +38,7 @@ async function update_tokeninfo() {
     }
     let tokeninfoEndpoint = storageGet('tokeninfo_endpoint');
     let jwksUri = storageGet('jwks_uri');
+    transferEndpoint = "";
     try {
         payload = jose.decodeJwt(token);
         let mytokenIss = payload['iss'];
@@ -48,6 +50,7 @@ async function update_tokeninfo() {
             }).then(function (data) {
                 tokeninfoEndpoint = data['tokeninfo_endpoint'];
                 jwksUri = data['jwks_uri'];
+                transferEndpoint = data['token_transfer_endpoint'];
             }).catch(function (e) {
                 console.error(e);
             });

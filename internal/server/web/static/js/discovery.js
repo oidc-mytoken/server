@@ -4,6 +4,7 @@ const configElements = [
     "usersettings_endpoint",
     "revocation_endpoint",
     "tokeninfo_endpoint",
+    "token_transfer_endpoint",
     "providers_supported",
     "jwks_uri"
 ]

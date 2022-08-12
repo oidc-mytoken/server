@@ -1,4 +1,6 @@
 const $tokenInput = $('#tokeninfo-token');
+const $errorModal = $('#error-modal');
+const $errorModalMsg = $('#error-modal-msg')
 
 function _tokeninfo(action, successFnc, errorFnc, token = undefined) {
     let data = {
@@ -240,3 +242,20 @@ function initTokeninfo(...next) {
     $(prefixId("exp", tokeninfoPrefix)).datetimepicker("minDate", null);
     doNext(...next);
 }
+
+let transferEndpoint = "";
+$('#create-tc').on('click', function () {
+    createTransferCode($tokenInput.val(),
+        function (tc, expiresIn) {
+            let now = new Date();
+            let expiresAt = formatTime(now.setSeconds(now.getSeconds() + expiresIn) / 1000);
+            $('.insert-tc').text(tc);
+            $('#tc-expires').text(expiresAt);
+            $('#tc-modal').modal();
+        },
+        function (errMsg) {
+            $errorModalMsg.text(errMsg);
+            $errorModal.modal();
+        },
+        transferEndpoint);
+});
