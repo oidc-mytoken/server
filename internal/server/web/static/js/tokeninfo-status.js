@@ -126,8 +126,9 @@ async function update_tokeninfo() {
         $tokeninfoBadgeIat.showB();
     }
     fillTokenInfo(payload);
+    $('#introspect-tab').tab('show');
 }
 
 $tokenInput.on('change', update_tokeninfo);
-$('#info-reload').on('click', update_tokeninfo)
-$('#info-tab').on('shown.bs.tab', update_tokeninfo)
+$('#info-reload').on('click', update_tokeninfo);
+$('#info-tab').on('shown.bs.tab', update_tokeninfo);
