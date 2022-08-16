@@ -41,7 +41,7 @@ function initDatetimePicker() {
     $(".nbf").on("change.datetimepicker", function (e) {
         let id = this.id;
         let prefix = extractPrefix("nbf", id);
-        $('#' + id.replace("nbf", "exp")).datetimepicker("minDate", e.date);
+        $('#' + id.replace("nbf", "exp")).datetimepicker("minDate", e.date || Date.now() / 1000);
         GUIToRestr_Nbf(prefix);
     });
     $(".exp").on("change.datetimepicker", function (e) {
