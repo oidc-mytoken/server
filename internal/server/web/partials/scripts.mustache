@@ -1,60 +1,66 @@
-<script src="/static/js/utils.js"></script>
-<script src="/static/js/storage.js"></script>
-<script src="/static/js/discovery.js"></script>
+<script src="{{instance-url}}/static/js/utils.js"></script>
+<script src="{{instance-url}}/static/js/storage.js"></script>
+<script src="{{instance-url}}/static/js/discovery.js"></script>
 {{^empty-navbar}}
-    <script src="/static/js/login-check.js"></script>
+    <script src="{{instance-url}}/static/js/login-check.js"></script>
     {{^logged-in}}
-        <script src="/static/js/login.js"></script>
+        <script src="{{instance-url}}/static/js/login.js"></script>
     {{/logged-in}}
     {{#logged-in}}
-        <script src="/static/js/lib/clipboard.min.js"></script>
-        <script src="/static/js/logged-in-utils.js"></script>
-        <script src="/static/js/lib/bootstrap4-toggle.min.js"></script>
-        <script src="/static/js/logout.js"></script>
+        <script src="{{instance-url}}/static/js/lib/clipboard.min.js"></script>
+        <script src="{{instance-url}}/static/js/logged-in-utils.js"></script>
+        <script src="{{instance-url}}/static/js/lib/bootstrap4-toggle.min.js"></script>
+        <script src="{{instance-url}}/static/js/logout.js"></script>
     {{/logged-in}}
     {{#home}}
-        <script src="/static/js/lib/user-agent.min.js"></script>
-        <script src="/static/js/mt-helper.js"></script>
-        <script src="/static/js/home.js"></script>
-        <script src="/static/js/create-at.js"></script>
-        <script src="/static/js/transfercode.js"></script>
-        <script src="/static/js/tokeninfo.js"></script>
-        <script type="module" src="/static/js/tokeninfo-status.js"></script>
-        <script src="/static/js/lib/behave.min.js"></script>
-        <script src="/static/js/restrictions.js"></script>
-        <script src="/static/js/rotation.js"></script>
-        <script src="/static/js/create-mt.js"></script>
-        <script src="/static/js/capabilities.js"></script>
+        <script src="{{instance-url}}/static/js/lib/user-agent.min.js"></script>
+        <script src="{{instance-url}}/static/js/mt-helper.js"></script>
+        <script src="{{instance-url}}/static/js/home.js"></script>
+        <script src="{{instance-url}}/static/js/create-at.js"></script>
+        <script src="{{instance-url}}/static/js/transfercode.js"></script>
+        <script src="{{instance-url}}/static/js/tokeninfo.js"></script>
+        <script type="module" src="{{instance-url}}/static/js/tokeninfo-status.js"></script>
+        <script src="{{instance-url}}/static/js/lib/behave.min.js"></script>
+        <script src="{{instance-url}}/static/js/restrictions.js"></script>
+        <script src="{{instance-url}}/static/js/rotation.js"></script>
+        <script src="{{instance-url}}/static/js/create-mt.js"></script>
+        <script src="{{instance-url}}/static/js/capabilities.js"></script>
     {{/home}}
     {{#settings}}
-        <script src="/static/js/tokeninfo.js"></script>
-        <script src="/static/js/mt-helper.js"></script>
-        <script src="/static/js/settings-helper.js"></script>
-        <script src="/static/js/settings.js"></script>
+        <script src="{{instance-url}}/static/js/tokeninfo.js"></script>
+        <script src="{{instance-url}}/static/js/mt-helper.js"></script>
+        <script src="{{instance-url}}/static/js/settings-helper.js"></script>
+        <script src="{{instance-url}}/static/js/settings.js"></script>
     {{/settings}}
     {{#settings-ssh}}
-        <script src="/static/js/lib/clipboard.min.js"></script>
-        <script src="/static/js/lib/behave.min.js"></script>
-        <script src="/static/js/ssh.js"></script>
-        <script src="/static/js/restrictions.js"></script>
-        <script src="/static/js/capabilities.js"></script>
+        <script src="{{instance-url}}/static/js/lib/clipboard.min.js"></script>
+        <script src="{{instance-url}}/static/js/lib/behave.min.js"></script>
+        <script src="{{instance-url}}/static/js/ssh.js"></script>
+        <script src="{{instance-url}}/static/js/restrictions.js"></script>
+        <script src="{{instance-url}}/static/js/capabilities.js"></script>
     {{/settings-ssh}}
 {{/empty-navbar}}
 {{#consent}}
-    <script src="/static/js/rotation.js"></script>
-    <script src="/static/js/lib/behave.min.js"></script>
-    <script src="/static/js/restrictions.js"></script>
-    <script src="/static/js/lib/bootstrap4-toggle.min.js"></script>
-    <script src="/static/js/consent.js"></script>
-    <script src="/static/js/capabilities.js"></script>
+    <script src="{{instance-url}}/static/js/rotation.js"></script>
+    <script src="{{instance-url}}/static/js/lib/behave.min.js"></script>
+    <script src="{{instance-url}}/static/js/restrictions.js"></script>
+    <script src="{{instance-url}}/static/js/lib/bootstrap4-toggle.min.js" crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
+    <script src="{{instance-url}}/static/js/consent.js"></script>
+    <script src="{{instance-url}}/static/js/capabilities.js"></script>
+    {{#consent-send}}
+        <script src="{{instance-url}}/static/js/consent-send.js"></script>
+    {{/consent-send}}
 {{/consent}}
 {{#restr-gui}}
-    <script src="/static/js/lib/moment-with-locales.min.js"
+    <script src="{{instance-url}}/static/js/lib/moment-with-locales.min.js"
             integrity="sha512-LGXaggshOkD/at6PFNcp2V2unf9LzFq6LE+sChH7ceMTDP0g2kn6Vxwgg7wkPP7AAtX+lmPqPdxB47A0Nz0cMQ=="
-            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="/static/js/lib/tempusdominus-bootstrap-4.min.js"
+            crossorigin="anonymous" referrerpolicy="no-referrer"
+    ></script>
+    <script src="{{instance-url}}/static/js/lib/tempusdominus-bootstrap-4.min.js"
             integrity="sha512-k6/Bkb8Fxf/c1Tkyl39yJwcOZ1P4cRrJu77p83zJjN2Z55prbFHxPs9vN7q3l3+tSMGPDdoH51AEU8Vgo1cgAA=="
-            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="/static/js/countries.js"></script>
-    <script src="/static/js/restr-gui.js"></script>
+            crossorigin="anonymous" referrerpolicy="no-referrer"
+    ></script>
+    <script src="{{instance-url}}/static/js/countries.js"></script>
+    <script src="{{instance-url}}/static/js/restr-gui.js"></script>
 {{/restr-gui}}

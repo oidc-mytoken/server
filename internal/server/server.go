@@ -109,6 +109,7 @@ func addRoutes(s fiber.Router) {
 	s.Get(routes.GetGeneralPaths().OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
 	s.Get("/c/:consent_code", consent.HandleConsent)
 	s.Post("/c/:consent_code", consent.HandleConsentPost)
+	s.Post("/c", consent.HandleCreateConsent)
 	s.Get("/native", handleNativeCallback)
 	s.Get("/native/abort", handleNativeConsentAbortCallback)
 	s.Get(routes.GetGeneralPaths().Privacy, handlePrivacy)

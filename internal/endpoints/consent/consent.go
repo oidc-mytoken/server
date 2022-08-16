@@ -14,6 +14,7 @@ import (
 	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/db"
+	pkg2 "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/server/httpStatus"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
@@ -31,25 +32,29 @@ import (
 )
 
 // handleConsent displays a consent page
-func handleConsent(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut) error {
-	c := authInfo.Capabilities
+func handleConsent(ctx *fiber.Ctx, info *pkg2.OIDCFlowRequest, includeConsentCallbacks bool) error {
+	c := info.Capabilities
 	binding := map[string]interface{}{
 		"consent":               true,
+		"consent-send":          includeConsentCallbacks,
 		"empty-navbar":          true,
 		"restr-gui":             true,
 		"collapse":              templating.Collapsable{All: true},
-		"restrictions":          pkg.WebRestrictions{Restrictions: authInfo.Restrictions},
+		"restrictions":          pkg.WebRestrictions{Restrictions: info.Restrictions},
 		"capabilities":          pkg.AllWebCapabilities(),
 		"subtoken-capabilities": pkg.AllWebCapabilities(),
 		"checked-capabilities":  c.Strings(),
-		"iss":                   authInfo.Issuer,
-		"supported_scopes":      strings.Join(config.Get().ProviderByIssuer[authInfo.Issuer].Scopes, " "),
-		"token-name":            authInfo.Name,
-		"rotation":              authInfo.Rotation,
-		"application":           authInfo.ApplicationName,
+		"iss":                   info.Issuer,
+		"supported_scopes":      strings.Join(config.Get().ProviderByIssuer[info.Issuer].Scopes, " "),
+		"token-name":            info.Name,
+		"rotation":              info.Rotation,
+		"application":           info.ApplicationName,
 	}
 	if c.Has(api.CapabilityCreateMT) {
-		binding["checked-subtoken-capabilities"] = authInfo.SubtokenCapabilities.Strings()
+		binding["checked-subtoken-capabilities"] = info.SubtokenCapabilities.Strings()
+	}
+	if !includeConsentCallbacks {
+		binding["instance-url"] = config.Get().IssuerURL
 	}
 	return ctx.Render("sites/consent", binding, "layouts/main")
 }
@@ -70,6 +75,34 @@ func getAuthInfoFromConsentCodeStr(rlog log.Ext1FieldLogger, code string) (
 	return authInfo, oState, err
 }
 
+// HandleCreateConsent returns a consent page for the posted parameters
+func HandleCreateConsent(ctx *fiber.Ctx) error {
+	req := pkg.ConsentRequest{}
+	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
+		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+	}
+	if req.Issuer == "" {
+		return model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: model2.BadRequestError("required parameter 'oidc_issuer' missing"),
+		}.Send(ctx)
+	}
+	info := &pkg2.OIDCFlowRequest{
+		OIDCFlowRequest: api.OIDCFlowRequest{
+			GeneralMytokenRequest: api.GeneralMytokenRequest{
+				Issuer:               req.Issuer,
+				Capabilities:         req.Capabilities,
+				SubtokenCapabilities: req.SubtokenCapabilities,
+				Name:                 req.TokenName,
+				Rotation:             req.Rotation,
+				ApplicationName:      req.ApplicationName,
+			},
+		},
+		Restrictions: req.Restrictions,
+	}
+	return handleConsent(ctx, info, false)
+}
+
 // HandleConsent displays a consent page
 func HandleConsent(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
@@ -78,7 +111,7 @@ func HandleConsent(ctx *fiber.Ctx) error {
 		// Don't log error here, it was already logged
 		return err
 	}
-	return handleConsent(ctx, authInfo)
+	return handleConsent(ctx, &(authInfo.AuthCodeFlowRequest.OIDCFlowRequest), true)
 }
 
 func handleConsentDecline(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut, oState *state.State) error {
@@ -111,9 +144,9 @@ func handleConsentDecline(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInf
 	}.Send(ctx)
 }
 
-// HandleConsentAccept handles the acceptance of a consent code
-func HandleConsentAccept(
-	rlog log.Ext1FieldLogger, req *pkg.ConsentPostRequest,
+// handleConsentAccept handles the acceptance of a consent code
+func handleConsentAccept(
+	rlog log.Ext1FieldLogger, req *pkg.ConsentApprovalRequest,
 	oState *state.State,
 ) *model.Response {
 	for _, c := range req.Capabilities {
@@ -175,9 +208,9 @@ func HandleConsentPost(ctx *fiber.Ctx) error {
 	if len(ctx.Body()) == 0 {
 		return handleConsentDecline(ctx, authInfo, oState)
 	}
-	req := pkg.ConsentPostRequest{}
+	req := pkg.ConsentApprovalRequest{}
 	if err = json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	return HandleConsentAccept(rlog, &req, oState).Send(ctx)
+	return handleConsentAccept(rlog, &req, oState).Send(ctx)
 }

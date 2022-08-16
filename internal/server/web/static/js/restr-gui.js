@@ -85,7 +85,7 @@ $(document).ready(function () {
 })
 
 function initRestrGUI(prefix = "") {
-    if (prefix !== tokeninfoPrefix) {
+    if (typeof (tokeninfoPrefix) === 'undefined' || prefix !== tokeninfoPrefix) {
         const scopes = typeof (supported_scopes) !== 'undefined' ? supported_scopes : getSupportedScopesFromStorage();
         for (const scope of scopes) {
             _addScopeValueToGUI(scope, scopeTableBody(prefix), "restr", prefix);

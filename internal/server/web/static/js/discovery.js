@@ -10,19 +10,24 @@ const configElements = [
 ]
 
 function discovery(...next) {
-    if (storageGet('discovery') !== null) {
-        doNext(...next);
-        return;
-    }
-    $.ajax({
-        type: "Get",
-        url: "/.well-known/mytoken-configuration",
-        success: function (res) {
-            configElements.forEach(function (el) {
-                storageSet(el, res[el]);
-            })
-            storageSet('discovery', Date.now())
+    try {
+        if (storageGet('discovery') !== null) {
             doNext(...next);
+            return;
         }
-    });
+        $.ajax({
+            type: "Get",
+            url: instanceURL + "/.well-known/mytoken-configuration",
+            success: function (res) {
+                configElements.forEach(function (el) {
+                    storageSet(el, res[el]);
+                })
+                storageSet('discovery', Date.now())
+                doNext(...next);
+            }
+        });
+    } catch (e) {
+        console.error(e);
+        doNext(...next);
+    }
 }

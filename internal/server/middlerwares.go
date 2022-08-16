@@ -142,6 +142,7 @@ func addCorsMiddleware(s fiber.Router) {
 	}
 	allowedPrefixes := []string{
 		apiPath.Prefix,
+		"/static",
 	}
 	s.Use(
 		cors.New(

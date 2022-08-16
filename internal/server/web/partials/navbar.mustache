@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-sm navbar-dark bg-primary">
-    <a class="navbar-brand" href="/{{#logged-in}}home{{/logged-in}}"><img src="/static/img/mytoken-grey.png"
-                                                                          alt="mytoken" style="height: 50px;"/></a>
+    <a class="navbar-brand" href="/{{#logged-in}}home{{/logged-in}}">
+        <img src="{{instance-url}}/static/img/mytoken-grey.png" alt="mytoken" style="height: 50px;"/></a>
     {{^empty-navbar}}
         <ul class="navbar-nav mr-auto">
         </ul>
