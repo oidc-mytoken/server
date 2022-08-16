@@ -130,16 +130,13 @@ const lastArrowI = '<i class="fas fa-arrow-circle-right" style="padding-right: 1
 
 function _tokenTreeToHTML(tree, depth) {
     let token = tree['token'];
-    let name = token['name'] || '';
+    let name = token['name'] || 'unnamed token';
+    let nameClass = name == 'unnamed token' ? 'class="text-muted"' : "";
     if (depth > 0) {
-        name = arrowI.repeat(depth - 1) + lastArrowI + name
+        name = arrowI.repeat(depth - 1) + lastArrowI + name;
     }
     let time = formatTime(token['created']);
-    let tableEntries = ['<tr>' +
-    '<td>' + name + '</td>' +
-    '<td>' + time + '</td>' +
-    '<td>' + token['ip'] + '</td>' +
-    '</tr>'];
+    let tableEntries = [`<tr><td ${nameClass}>${name}</td><td>${time}</td><td>${token['ip']}</td></tr>`];
     let children = tree['children'];
     if (children !== undefined) {
         children.forEach(function (child) {
