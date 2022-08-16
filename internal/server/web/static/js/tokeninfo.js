@@ -87,8 +87,14 @@ function fillTokenInfo(tokenPayload) {
 }
 
 function userAgentToHTMLIcons(userAgent) {
+    if (userAgent === "") {
+        return "";
+    }
+    if (userAgent.startsWith("oidc-agent")) {
+        return `<span class="user-agent" data-toggle="tooltip" data-placement="bottom" title="${userAgent}"><svg xmlns="http://www.w3.org/2000/svg" class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 79.378 70.108" xmlns:v="https://vecta.io/nano"><defs><filter id="A" x="0" width="1" y="0" height="1" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation=".002"/></filter></defs><path transform="matrix(.264583 0 0 .264583 -92.607809 -71.45579)" d="M500.02 270.074l-136.424.902c-5.112 1.186-8.552 3.813-11.311 8.637-2.02 3.532-2.235 5.262-2.25 18.072-.011 10.41.316 14.301 1.234 14.672 1.801.727 295.276.781 297.168.055 1.336-.513 1.582-2.734 1.582-14.287 0-12.217-.241-14.154-2.25-18.086-2.65-5.187-5.931-7.811-11.328-9.062-2.595-.602-69.508-.902-136.422-.902zM435.693 381.57c.458.013.924.078 1.393.196 2.706.682 45.825 43.726 45.819 45.739-.002.818-10.317 11.078-22.921 22.799-23.859 22.188-26.081 23.616-30.098 19.339-4.253-4.528-2.811-6.691 16.014-24.011 9.826-9.041 18.143-17.135 18.483-17.988.397-.996-5.823-7.864-17.381-19.189-16.683-16.347-17.975-17.899-17.645-21.187.342-3.411 3.13-5.791 6.337-5.699zm49.046 74.949h44.917 44.917l1.565 3.889c1.405 3.489 1.379 4.286-.248 7.75l-1.816 3.86h-44.419-44.421l-1.814-3.86c-1.628-3.463-1.653-4.261-.248-7.75zm15.28-121.488l-148.418.565c-1.428.519-1.582 10.037-1.582 98.034v97.462l2.646 1.973 2.648 1.973 145.248-.246 147.352-2.053v.002l2.105-1.805v-97.385c0-87.926-.154-97.437-1.582-97.956-1.034-.376-74.726-.565-148.418-.565z" fill="#fff" filter="url(#A)"/></svg></span>`;
+    }
     let icons = FaUserAgent.faUserAgent(userAgent);
-    return '<span class="user-agent" data-toggle="tooltip" data-placement="bottom" title="' + userAgent + '">' + icons.browser.html + '</i>' + icons.os.html + '</i>' + icons.platform.html + '</i></span>';
+    return `<span class="user-agent" data-toggle="tooltip" data-placement="bottom" title="${userAgent}">${icons.browser.html}</i>${icons.os.html}</i>${icons.platform.html}</i></span>`;
 }
 
 function historyToHTML(events) {
@@ -96,13 +102,13 @@ function historyToHTML(events) {
     events.forEach(function (event) {
         let comment = event['comment'] || '';
         let time = formatTime(event['time']);
-        let agentIcons = userAgentToHTMLIcons(event['user_agent']);
+        let agentIcons = userAgentToHTMLIcons(event['user_agent'] || "");
         let entry = '<tr>' +
             '<td>' + event['event'] + '</td>' +
             '<td>' + comment + '</td>' +
             '<td>' + time + '</td>' +
             '<td>' + event['ip'] + '</td>' +
-            '<td>' + agentIcons + '</td>' +
+            '<td class="text-center">' + agentIcons + '</td>' +
             '</tr>';
         tableEntries.push(entry);
     });
