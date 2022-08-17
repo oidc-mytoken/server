@@ -1,4 +1,4 @@
-$(function () {
+$(document).ready(function () {
     $('#tokenName').val(tokenName);
     if (!rot_null) {
         rotationAT().prop("checked", rot_onAT);

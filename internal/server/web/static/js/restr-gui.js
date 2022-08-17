@@ -14,8 +14,7 @@ function scopeTableBody(prefix = "") {
     return $('#' + prefix + 'scopeTableBody');
 }
 
-function initDatetimePicker() {
-    let $date_input = $('.datetimepicker-input');
+function initDatetimePicker(prefix = "") {
     let options = {
         format: 'YYYY-MM-DD HH:mm:ss',
         extraFormats: ['X'],
@@ -24,6 +23,7 @@ function initDatetimePicker() {
         buttons: {
             showClear: true,
         },
+        useCurrent: false,
         icons: {
             time: 'fas fa-clock',
             date: 'fas fa-calendar',
@@ -36,19 +36,20 @@ function initDatetimePicker() {
             close: 'fas fa-times'
         }
     };
-    $date_input.datetimepicker(options);
+    let $nbf = $(prefixId('nbf', prefix));
+    let $exp = $(prefixId('exp', prefix));
+    $nbf.datetimepicker(options);
+    $exp.datetimepicker(options);
 
-    $(".nbf").on("change.datetimepicker", function (e) {
+    $nbf.on("change.datetimepicker", function (e) {
         let id = this.id;
-        let prefix = extractPrefix("nbf", id);
         $('#' + id.replace("nbf", "exp")).datetimepicker("minDate", e.date || Date.now() / 1000);
-        GUIToRestr_Nbf(prefix);
+        GUIToRestr_Nbf(e.date, prefix);
     });
-    $(".exp").on("change.datetimepicker", function (e) {
+    $exp.on("change.datetimepicker", function (e) {
         let id = this.id;
-        let prefix = extractPrefix("exp", id);
         $('#' + id.replace("exp", "nbf")).datetimepicker("maxDate", e.date);
-        GUIToRestr_Exp(prefix);
+        GUIToRestr_Exp(e.date, prefix);
     });
 }
 
@@ -80,11 +81,11 @@ function _addScopeValueToGUI(scope, $htmlEl, prefix, prefixprefix = "") {
 
 
 $(document).ready(function () {
-    initDatetimePicker();
     initCountries();
 })
 
 function initRestrGUI(prefix = "") {
+    initDatetimePicker(prefix);
     if (typeof (tokeninfoPrefix) === 'undefined' || prefix !== tokeninfoPrefix) {
         const scopes = typeof (supported_scopes) !== 'undefined' ? supported_scopes : getSupportedScopesFromStorage();
         for (const scope of scopes) {
@@ -165,9 +166,8 @@ function GUIDelRestr(key, prefix = "") {
     updateRestrIcons(prefix);
 }
 
-function _guiToRestr_Time(id, restrKey, prefix = "") {
-    let date = $(id).datetimepicker('date');
-    if (date === null) {
+function _guiToRestr_Time(date, restrKey, prefix = "") {
+    if (!date) {
         GUIDelRestr(restrKey, prefix);
         return;
     }
@@ -199,12 +199,12 @@ function _guiToRestr_Table(id, restrKey, prefix = "") {
     GUISetRestr(restrKey, values.filter(onlyUnique), prefix);
 }
 
-function GUIToRestr_Nbf(prefix = "") {
-    _guiToRestr_Time(prefixId("nbf", prefix), 'nbf', prefix);
+function GUIToRestr_Nbf(date, prefix = "") {
+    _guiToRestr_Time(date, 'nbf', prefix);
 }
 
-function GUIToRestr_Exp(prefix = "") {
-    _guiToRestr_Time(prefixId("exp", prefix), 'exp', prefix);
+function GUIToRestr_Exp(date, prefix = "") {
+    _guiToRestr_Time(date, 'exp', prefix);
 }
 
 function GUIToRestr_Scopes(prefix = "") {
