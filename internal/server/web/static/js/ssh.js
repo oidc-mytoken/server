@@ -39,7 +39,8 @@ disableGrantCallbacks['ssh'] = function disableSSHCallback() {
 };
 
 function initSSH(...next) {
-    initRestrGUI();
+    initRestr();
+    initCapabilities();
     clearSSHKeyTable();
     useSettingsToken(function (token) {
         $.ajax({
@@ -65,8 +66,8 @@ function initSSH(...next) {
                 doNext(...next);
             },
             error: function (errRes) {
-                $errorModalMsg.text(getErrorMessage(errRes));
-                $errorModal.modal();
+                $settingsErrorModalMsg.text(getErrorMessage(errRes));
+                $settingsErrorModal.modal();
             },
         });
     });
@@ -113,13 +114,9 @@ function addSSHKey() {
             "grant_type": "mytoken",
             "ssh_key": $sshKeyInput.val(),
             "name": $('#keyName').val(),
-            "restrictions": restrictions,
-            "capabilities": $('.capability-check:checked').map(function (_, el) {
-                return $(el).val();
-            }).get(),
-            "subtoken_capabilities": $('.subtoken-capability-check:checked').map(function (_, el) {
-                return $(el).val();
-            }).get()
+            "restrictions": getRestrictionsData(),
+            "capabilities": getCheckedCapabilities(),
+            "subtoken_capabilities": getCheckedSubtokenCapabilities()
         };
         data = JSON.stringify(data);
         $.ajax({
@@ -291,8 +288,8 @@ function sendDeleteKeyRequest(keyFP) {
                 initSSH();
             },
             error: function (errRes) {
-                $errorModalMsg.text(getErrorMessage(errRes));
-                $errorModal.modal();
+                $settingsErrorModalMsg.text(getErrorMessage(errRes));
+                $settingsErrorModal.modal();
             },
         });
     });

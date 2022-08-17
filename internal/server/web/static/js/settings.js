@@ -22,15 +22,15 @@ function initGrants(...next) {
             },
             url: storageGet('usersettings_endpoint') + "/grants",
             success: function (res) {
-                let grants = res['grant_types'];
+                let grants = res['grant_types'] || [];
                 grants.forEach(function (grant) {
                     $('#' + grant['grant_type'] + '-GrantEnable').prop('checked', grant['enabled']);
                 })
                 doNext(...next);
             },
             error: function (errRes) {
-                $errorModalMsg.text(getErrorMessage(errRes));
-                $errorModal.modal();
+                $settingsErrorModalMsg.text(getErrorMessage(errRes));
+                $settingsErrorModal.modal();
             },
         });
     });
