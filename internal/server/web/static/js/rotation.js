@@ -34,21 +34,25 @@ function updateRotationIcon(prefix = "") {
         rotIcon(prefix).addClass("text-success");
         rotIcon(prefix).removeClass("text-info");
         rotIcon(prefix).removeClass("text-primary");
+        rotIcon(prefix).removeClass("text-muted");
         rotIcon(prefix).attr('data-original-title', "This token is rotated whenever it is used.");
     } else if (en[0]) {
         rotIcon(prefix).addClass("text-primary");
         rotIcon(prefix).removeClass("text-info");
         rotIcon(prefix).removeClass("text-success");
+        rotIcon(prefix).removeClass("text-muted");
         rotIcon(prefix).attr('data-original-title', "This token is rotated on access token requests.");
     } else if (en[1]) {
         rotIcon(prefix).addClass("text-info");
         rotIcon(prefix).removeClass("text-success");
         rotIcon(prefix).removeClass("text-primary");
+        rotIcon(prefix).removeClass("text-muted");
         rotIcon(prefix).attr('data-original-title', "This token is rotated on other requests than access token requests.");
     } else {
         rotIcon(prefix).removeClass("text-success");
         rotIcon(prefix).removeClass("text-info");
         rotIcon(prefix).removeClass("text-primary");
+        rotIcon(prefix).addClass("text-muted");
         rotIcon(prefix).attr('data-original-title', "This token is never rotated.");
     }
 }

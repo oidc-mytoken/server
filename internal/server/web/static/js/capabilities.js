@@ -226,30 +226,30 @@ function updateCapSummary(prefix = "") {
     capSummaryHowManyYellow(prefix).attr('data-original-title', `This mytoken has ${yellows} powerful capabilities.`);
     capSummaryHowManyRed(prefix).attr('data-original-title', `This mytoken has ${reds} very powerful capabilities.`);
 
-    capSummaryAT(prefix).removeClass("text-success");
-    capSummaryMT(prefix).removeClass("text-success");
-    capSummaryInfo(prefix).removeClass("text-success");
-    capSummarySettings(prefix).removeClass("text-success");
+    capSummaryAT(prefix).addClass("text-muted");
+    capSummaryMT(prefix).addClass("text-muted");
+    capSummaryInfo(prefix).addClass("text-muted");
+    capSummarySettings(prefix).addClass("text-muted");
     if (at) {
-        capSummaryAT(prefix).addClass("text-success");
+        capSummaryAT(prefix).removeClass("text-muted");
         capSummaryAT(prefix).attr('data-original-title', "This mytoken can be used to obtain OIDC Access Tokens.");
     } else {
         capSummaryAT(prefix).attr('data-original-title', "This mytoken cannot be used to obtain OIDC Access Tokens.");
     }
     if (mt) {
-        capSummaryMT(prefix).addClass("text-success");
+        capSummaryMT(prefix).removeClass("text-muted");
         capSummaryMT(prefix).attr('data-original-title', "This mytoken can be used to create sub-mytokens.");
     } else {
         capSummaryMT(prefix).attr('data-original-title', "This mytoken cannot be used to create sub-mytokens.");
     }
     if (info) {
-        capSummaryInfo(prefix).addClass("text-success");
+        capSummaryInfo(prefix).removeClass("text-muted");
         capSummaryInfo(prefix).attr('data-original-title', "This mytoken can be used to obtain tokeninfo about itself.");
     } else {
         capSummaryInfo(prefix).attr('data-original-title', "This mytoken cannot be used to obtain tokeninfo about itself.");
     }
     if (settings) {
-        capSummarySettings(prefix).addClass("text-success");
+        capSummarySettings(prefix).removeClass("text-muted");
         capSummarySettings(prefix).attr('data-original-title', "This mytoken can be used to change settings.");
     } else {
         capSummarySettings(prefix).attr('data-original-title', "This mytoken cannot be used to change settings.");
