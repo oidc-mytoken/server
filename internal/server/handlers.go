@@ -14,8 +14,8 @@ import (
 
 func handleIndex(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
-		loggedIn:          false,
-		"cookie-lifetime": cookies.CookieLifetime,
+		templating.MustacheKeyLoggedIn:       false,
+		templating.MustacheKeyCookieLifetime: cookies.CookieLifetime,
 	}
 	providers := []map[string]string{}
 	for _, p := range config.Get().Providers {
@@ -25,28 +25,28 @@ func handleIndex(ctx *fiber.Ctx) error {
 		providers = append(providers, pp)
 	}
 	binding["providers"] = providers
-	return ctx.Render("sites/index", binding, layoutMain)
+	return ctx.Render("sites/index", binding, templating.LayoutMain)
 }
 
 func handleHome(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
-		loggedIn:                true,
-		restrictionsGUI:         true,
-		"home":                  true,
-		"capabilities":          consent.AllWebCapabilities(),
-		"subtoken-capabilities": consent.AllWebCapabilities(),
-		"tokeninfo": map[string]interface{}{
-			"collapse": templating.Collapsable{
+		templating.MustacheKeyLoggedIn:             true,
+		templating.MustacheKeyRestrictionsGUI:      true,
+		templating.MustacheKeyHome:                 true,
+		templating.MustacheKeyCapabilities:         consent.AllWebCapabilities(),
+		templating.MustacheKeySubtokenCapabilities: consent.AllWebCapabilities(),
+		templating.MustacheSubTokeninfo: map[string]interface{}{
+			templating.MustacheKeyCollapse: templating.Collapsable{
 				CollapseRestr: true,
 			},
-			"prefix":    "tokeninfo-",
-			"read-only": true,
+			templating.MustacheKeyPrefix:   "tokeninfo-",
+			templating.MustacheKeyReadOnly: true,
 		},
-		"create-mt": map[string]interface{}{
-			"prefix": "createMT-",
+		templating.MustacheSubCreateMT: map[string]interface{}{
+			templating.MustacheKeyPrefix: "createMT-",
 		},
 	}
-	return ctx.Render("sites/home", binding, layoutMain)
+	return ctx.Render("sites/home", binding, templating.LayoutMain)
 }
 
 func handleSettings(ctx *fiber.Ctx) error {
@@ -67,10 +67,10 @@ func handleSettings(ctx *fiber.Ctx) error {
 			Link:        "/settings/grants/ssh",
 			partialName: "sites/settings-ssh",
 			bindingData: map[string]interface{}{
-				"restr-gui":             true,
-				"restrictions":          consent.WebRestrictions{},
-				"capabilities":          consent.AllWebCapabilities(),
-				"subtoken-capabilities": consent.AllWebCapabilities(),
+				templating.MustacheKeyRestrictionsGUI:      true,
+				templating.MustacheKeyRestrictions:         consent.WebRestrictions{},
+				templating.MustacheKeyCapabilities:         consent.AllWebCapabilities(),
+				templating.MustacheKeySubtokenCapabilities: consent.AllWebCapabilities(),
 			},
 		},
 	}
@@ -82,42 +82,42 @@ func handleSettings(ctx *fiber.Ctx) error {
 		g.EmbedBody = embed.String()
 	}
 	binding := map[string]interface{}{
-		"grants":                grants,
-		loggedIn:                true,
-		"settings":              true,
-		"settings-ssh":          true,
-		"restr-gui":             true,
-		"restrictions":          consent.WebRestrictions{},
-		"capabilities":          consent.AllWebCapabilities(),
-		"subtoken-capabilities": consent.AllWebCapabilities(),
+		templating.MustacheKeyGrants:               grants,
+		templating.MustacheKeyLoggedIn:             true,
+		templating.MustacheKeySettings:             true,
+		templating.MustacheKeySettingsSSH:          true,
+		templating.MustacheKeyRestrictionsGUI:      true,
+		templating.MustacheKeyRestrictions:         consent.WebRestrictions{},
+		templating.MustacheKeyCapabilities:         consent.AllWebCapabilities(),
+		templating.MustacheKeySubtokenCapabilities: consent.AllWebCapabilities(),
 	}
-	return ctx.Render("sites/settings", binding, layoutMain)
+	return ctx.Render("sites/settings", binding, templating.LayoutMain)
 }
 
 func handleNativeCallback(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
-		emptyNavbar:   true,
-		"application": ctx.Query("application"),
+		templating.MustacheKeyEmptyNavbar: true,
+		templating.MustacheKeyApplication: ctx.Query("application"),
 	}
-	return ctx.Render("sites/native", binding, layoutMain)
+	return ctx.Render("sites/native", binding, templating.LayoutMain)
 }
 
 func handleNativeConsentAbortCallback(ctx *fiber.Ctx) error {
 	binding := map[string]interface{}{
-		emptyNavbar:   true,
-		"application": ctx.Query("application"),
+		templating.MustacheKeyEmptyNavbar: true,
+		templating.MustacheKeyApplication: ctx.Query("application"),
 	}
-	return ctx.Render("sites/native.abort", binding, layoutMain)
+	return ctx.Render("sites/native.abort", binding, templating.LayoutMain)
 }
 
 func handlePrivacy(ctx *fiber.Ctx) error {
 	so := config.Get().ServiceOperator
 	binding := map[string]interface{}{
-		emptyNavbar:       true,
-		"name":            so.Name,
-		"homepage":        so.Homepage,
-		"contact":         so.Contact,
-		"privacy-contact": so.Privacy,
+		templating.MustacheKeyEmptyNavbar:    true,
+		templating.MustacheKeyName:           so.Name,
+		templating.MustacheKeyHomepage:       so.Homepage,
+		templating.MustacheKeyContact:        so.Contact,
+		templating.MustacheKeyPrivacyContact: so.Privacy,
 	}
-	return ctx.Render("sites/privacy", binding, layoutMain)
+	return ctx.Render("sites/privacy", binding, templating.LayoutMain)
 }
