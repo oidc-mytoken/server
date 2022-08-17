@@ -259,7 +259,10 @@ $('.usages_other').on('change', function () {
 });
 
 function _addListItem(value, tableBody, prefix = "") {
-    let ro = getPrefixData(prefix)['restrictions']['read-only'];
+    let ro = false;
+    if ('restrictions' in getPrefixData(prefix)) {
+        ro = getPrefixData(prefix)['restrictions']['read-only'];
+    }
     let disabled = ro ? " disabled" : "";
     let hide = ro ? " d-none" : "";
     let html = `<tr><td class="align-middle"><span class="table-item">${value}</span></td><td class="align-middle"><button class="btn btn-small btn-delete-list-item${hide}"${disabled}><i class="fas fa-minus"></i></button></td></tr>`;
