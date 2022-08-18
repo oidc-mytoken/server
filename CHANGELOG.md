@@ -36,6 +36,7 @@
 - Fixed a bug in the mytoken webinterface where token introspection did not work on the settings page
 - Fixed a bug in the mytoken webinterface restriction editor, where audiences would always be set to zero when switching
   from the JSON editor to the GUI editor
+- Fixed a bug where non-expiring mytokens would be revoked when database cleanup was enabled.
 
 ### Dependencies
 
