@@ -16,9 +16,11 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	pkg2 "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/server/httpStatus"
+	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/internal/utils/templating"
+	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo"
@@ -87,18 +89,30 @@ func HandleCreateConsent(ctx *fiber.Ctx) error {
 			Response: model2.BadRequestError("required parameter 'oidc_issuer' missing"),
 		}.Send(ctx)
 	}
+	rlog := logger.GetRequestLogger(ctx)
+	mt, _ := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
+	r, _ := restrictions.Tighten(rlog, mt.Restrictions, req.Restrictions)
+	capsFromParent := mt.SubtokenCapabilities
+	if capsFromParent == nil {
+		capsFromParent = mt.Capabilities
+	}
+	c := api.TightenCapabilities(capsFromParent, req.Capabilities)
+	var sc api.Capabilities = nil
+	if c.Has(api.CapabilityCreateMT) {
+		sc = api.TightenCapabilities(capsFromParent, req.SubtokenCapabilities)
+	}
 	info := &pkg2.OIDCFlowRequest{
 		OIDCFlowRequest: api.OIDCFlowRequest{
 			GeneralMytokenRequest: api.GeneralMytokenRequest{
 				Issuer:               req.Issuer,
-				Capabilities:         req.Capabilities,
-				SubtokenCapabilities: req.SubtokenCapabilities,
+				Capabilities:         c,
+				SubtokenCapabilities: sc,
 				Name:                 req.TokenName,
 				Rotation:             req.Rotation,
 				ApplicationName:      req.ApplicationName,
 			},
 		},
-		Restrictions: req.Restrictions,
+		Restrictions: r,
 	}
 	return handleConsent(ctx, info, false)
 }

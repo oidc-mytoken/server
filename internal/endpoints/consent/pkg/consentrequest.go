@@ -4,6 +4,7 @@ import (
 	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 )
 
 // ConsentApprovalRequest holds the post request for confirming consent
@@ -19,5 +20,6 @@ type ConsentApprovalRequest struct {
 // ConsentRequest holds the post request for creating a consent screen
 type ConsentRequest struct {
 	ConsentApprovalRequest
-	ApplicationName string `json:"application_name"`
+	ApplicationName string                            `json:"application_name"`
+	Mytoken         universalmytoken.UniversalMytoken `json:"mytoken"`
 }

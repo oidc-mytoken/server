@@ -117,15 +117,6 @@ func HandleMytokenFromMytokenReqChecks(
 	rlog log.Ext1FieldLogger, req *response.MytokenFromMytokenRequest, ip string,
 	ctx *fiber.Ctx,
 ) (*restrictions.Restriction, *mytoken.Mytoken, *model.Response) {
-	// if len(req.Capabilities) == 0 {
-	// 	return nil, nil, &model.Response{
-	// 		Status: fiber.StatusBadRequest,
-	// 		Response: api.Error{
-	// 			Error:            api.ErrorStrInvalidRequest,
-	// 			ErrorDescription: "capabilities cannot be empty",
-	// 		},
-	// 	}
-	// }
 	req.Restrictions.ReplaceThisIp(ip)
 	req.Restrictions.ClearUnsupportedKeys()
 	rlog.Trace("Parsed mytoken request")
