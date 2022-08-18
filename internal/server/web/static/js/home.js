@@ -1,10 +1,4 @@
-$(function () {
-    chainFunctions(
-        checkIfLoggedIn,
-        initAT,
-        initCreateMT,
-        initTokeninfo,
-    );
+function openCorrectTab() {
     // https://stackoverflow.com/a/17552459
     // Javascript to enable link to tab
     let url = document.location.toString();
@@ -15,7 +9,7 @@ $(function () {
         }
         $('.nav-tabs a[href="#' + hash + '"]').tab('show');
     }
-})
+}
 
 
 // With HTML5 history API, we can easily prevent scrolling!
