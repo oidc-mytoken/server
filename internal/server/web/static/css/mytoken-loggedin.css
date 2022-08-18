@@ -49,3 +49,8 @@ span.user-agent i + i {
     margin-top: -28px;
     right: 14px;
 }
+
+.token-fold {
+    cursor: pointer;
+    user-select: none;
+}

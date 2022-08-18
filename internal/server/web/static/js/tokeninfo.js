@@ -125,41 +125,56 @@ function historyToHTML(events) {
         '</tbody></table>';
 }
 
-const arrowI = '<i class="fas fa-chevron-circle-right" style="padding-right: 1em;"></i>';
-const lastArrowI = '<i class="fas fa-arrow-circle-right" style="padding-right: 1em;"></i>';
 
-function _tokenTreeToHTML(tree, depth) {
+let tokenTreeIDCounter = 1;
+
+function _tokenTreeToHTML(tree, depth, parentID = 0) {
     let token = tree['token'];
     let name = token['name'] || 'unnamed token';
-    let nameClass = name == 'unnamed token' ? 'class="text-muted"' : "";
-    if (depth > 0) {
-        name = arrowI.repeat(depth - 1) + lastArrowI + name;
-    }
+    let nameClass = name === 'unnamed token' ? ' text-muted' : '';
+    let thisID = `token-tree-el-${tokenTreeIDCounter++}`
     let time = formatTime(token['created']);
-    let tableEntries = [`<tr><td ${nameClass}>${name}</td><td>${time}</td><td>${token['ip']}</td></tr>`];
+    let tableEntries = "";
     let children = tree['children'];
+    let hasChildren = false;
     if (children !== undefined) {
         children.forEach(function (child) {
-            tableEntries = tableEntries.concat(_tokenTreeToHTML(child, depth + 1));
+            tableEntries = _tokenTreeToHTML(child, depth + 1, thisID) + tableEntries;
+            hasChildren = true;
         })
     }
+    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" class="${depth > 0 ? 'd-none' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${time}</td><td>${token['ip']}</td></tr>` + tableEntries;
     return tableEntries
 }
 
 function tokenlistToHTML(tokenTrees) {
-    let tableEntries = [];
+    let tableEntries = "";
     tokenTrees.forEach(function (tokenTree) {
-        tableEntries = tableEntries.concat(_tokenTreeToHTML(tokenTree, 0));
+        tableEntries = _tokenTreeToHTML(tokenTree, 0) + tableEntries;
     });
     return '<table class="table table-hover table-grey">' +
         '<thead><tr>' +
-        '<th>Token Name</th>' +
+        '<th style="min-width: 50%;">Token Name</th>' +
         '<th>Created</th>' +
         '<th>Created from IP</th>' +
         '</tr></thead>' +
         '<tbody>' +
-        tableEntries.join('') +
+        tableEntries +
         '</tbody></table>';
+}
+
+function activateTokenList() {
+    $('.token-fold').off('click').on('click', function () {
+        let $caret = $(this).find('i');
+        $caret.toggleClass('fa-caret-right');
+        $caret.toggleClass('fa-caret-down');
+        let $tr = $(this).parent();
+        let trID = $tr.attr('id');
+        let $childTrs = $tr.parent().find(`tr[parent-id="${trID}"]`);
+        $childTrs.toggleClass('d-none');
+        let $tdsWithOpenChilds = $childTrs.find('td.token-fold').has('i.fa-caret-down');
+        $tdsWithOpenChilds.click();
+    });
 }
 
 function getHistoryTokenInfo(e) {
@@ -187,6 +202,7 @@ function getTreeTokenInfo(e) {
     _tokeninfo('subtokens',
         function (res) {
             msg.html(tokenlistToHTML([res['mytokens']]));
+            activateTokenList();
             msg.removeClass('text-danger');
             copy.addClass('d-none');
         },
@@ -208,6 +224,7 @@ function getListTokenInfo(e) {
             _tokeninfo('list_mytokens',
                 function (infoRes) {
                     msg.html(tokenlistToHTML(infoRes['mytokens']));
+                    activateTokenList();
                     msg.removeClass('text-danger');
                     copy.addClass('d-none');
                 },
