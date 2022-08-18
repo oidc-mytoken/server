@@ -110,7 +110,7 @@ function historyToHTML(events) {
             '<td>' + event['ip'] + '</td>' +
             '<td class="text-center">' + agentIcons + '</td>' +
             '</tr>';
-        tableEntries.push(entry);
+        tableEntries.unshift(entry);
     });
     return '<table class="table table-hover table-grey">' +
         '<thead><tr>' +
