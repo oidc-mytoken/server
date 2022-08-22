@@ -25,7 +25,7 @@ type MytokenEntry struct {
 
 // MytokenEntryTree is a tree of MytokenEntry
 type MytokenEntryTree struct {
-	Token    MytokenEntry       `json:"token"`
+	Token    *MytokenEntry      `json:"token"`
 	Children []MytokenEntryTree `json:"children,omitempty"`
 }
 
@@ -64,7 +64,7 @@ func TokenSubTree(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) (Myt
 			break
 		}
 	}
-	tree, _ := tokensToTree(root, tokens)
+	tree, _ := tokensToTree(&root, tokens)
 	return tree, nil
 }
 
@@ -81,26 +81,26 @@ func tokensToTrees(tokens []MytokenEntry) (trees []MytokenEntryTree) {
 	}
 	var tmp MytokenEntryTree
 	for _, r := range roots {
-		tmp, tokens = tokensToTree(r, tokens)
+		tmp, tokens = tokensToTree(&r, tokens)
 		trees = append(trees, tmp)
 	}
 	return
 }
 
-func tokensToTree(root MytokenEntry, tokens []MytokenEntry) (MytokenEntryTree, []MytokenEntry) {
+func tokensToTree(root *MytokenEntry, tokens []MytokenEntry) (MytokenEntryTree, []MytokenEntry) {
 	tree := MytokenEntryTree{
 		Token: root,
 	}
 	children := popChildren(root, &tokens)
 	var cTree MytokenEntryTree
 	for _, c := range children {
-		cTree, tokens = tokensToTree(c, tokens)
+		cTree, tokens = tokensToTree(&c, tokens)
 		tree.Children = append(tree.Children, cTree)
 	}
 	return tree, tokens
 }
 
-func popChildren(root MytokenEntry, tokens *[]MytokenEntry) (children []MytokenEntry) {
+func popChildren(root *MytokenEntry, tokens *[]MytokenEntry) (children []MytokenEntry) {
 	i := 0
 	for i < len(*tokens) {
 		t := (*tokens)[i]
