@@ -343,8 +343,8 @@ github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRW
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/oidc-mytoken/api v0.6.0/go.mod h1:ljMG5L38yap1K+zvYBjsYXy2XYw6Vy0A4wACnnTHaCQ=
-github.com/oidc-mytoken/api v0.6.1-0.20220727084448-051d53b8cbaf h1:v/fE/bqDvGqMJ1VKt/sNCRL1HwnSuJjN3Yq6K1LNlrM=
-github.com/oidc-mytoken/api v0.6.1-0.20220727084448-051d53b8cbaf/go.mod h1:QVrI7WkJtcpOY6hVBw9c8YbkcYtA2qCRxOSO5oi8kA0=
+github.com/oidc-mytoken/api v0.6.1-0.20220822094739-58624fe11235 h1:4gLlG8yDuYyV3iUQtQPGx9avTwTGDwyKD/vogMn30Mo=
+github.com/oidc-mytoken/api v0.6.1-0.20220822094739-58624fe11235/go.mod h1:QVrI7WkJtcpOY6hVBw9c8YbkcYtA2qCRxOSO5oi8kA0=
 github.com/oidc-mytoken/lib v0.3.4 h1:/unsShxi11kDmw6pjrXk0uddLI4hyZKJ8U/4nJVjuQg=
 github.com/oidc-mytoken/lib v0.3.4/go.mod h1:kPnXTYv5gteBRtbQ0bp55lvSLP8V7vIunQXfCoxifOM=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=

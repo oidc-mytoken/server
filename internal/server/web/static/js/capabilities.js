@@ -17,6 +17,10 @@ function capabilityCreateMytoken(prefix = "") {
     return $('#' + prefix + 'cp-create_mytoken');
 }
 
+function capabilityRevokeAnyToken(prefix = "") {
+    return $('#' + prefix + 'cp-revoke_any_token');
+}
+
 function capabilityAT(prefix = "") {
     return $('#' + prefix + 'cp-AT');
 }
@@ -31,6 +35,10 @@ function capSummaryMT(prefix = "") {
 
 function capSummaryInfo(prefix = "") {
     return $('#' + prefix + 'cap-summary-info');
+}
+
+function capSummaryRevoke(prefix = "") {
+    return $('#' + prefix + 'cap-summary-revoke');
 }
 
 function capSummarySettings(prefix = "") {
@@ -187,6 +195,7 @@ function updateCapSummary(prefix = "") {
     let at = capabilityAT(prefix).prop("checked") || $('#sub-cp-AT').prop("checked");
     let mt = capabilityCreateMytoken(prefix).prop("checked");
     let info = searchAllChecked("tokeninfo", prefix);
+    let revoke = capabilityRevokeAnyToken(prefix).prop("checked");
     let settings = searchAllChecked("settings", prefix);
 
     let all = [];
@@ -229,6 +238,7 @@ function updateCapSummary(prefix = "") {
     capSummaryAT(prefix).addClass("text-muted");
     capSummaryMT(prefix).addClass("text-muted");
     capSummaryInfo(prefix).addClass("text-muted");
+    capSummaryRevoke(prefix).addClass("text-muted");
     capSummarySettings(prefix).addClass("text-muted");
     if (at) {
         capSummaryAT(prefix).removeClass("text-muted");
@@ -247,6 +257,12 @@ function updateCapSummary(prefix = "") {
         capSummaryInfo(prefix).attr('data-original-title', "This mytoken can be used to obtain tokeninfo about itself.");
     } else {
         capSummaryInfo(prefix).attr('data-original-title', "This mytoken cannot be used to obtain tokeninfo about itself.");
+    }
+    if (revoke) {
+        capSummaryRevoke(prefix).removeClass("text-muted");
+        capSummaryRevoke(prefix).attr('data-original-title', "This mytoken can be used to revoke other mytokens.");
+    } else {
+        capSummaryRevoke(prefix).attr('data-original-title', "This mytoken cannot be used to revoke other mytokens.");
     }
     if (settings) {
         capSummarySettings(prefix).removeClass("text-muted");

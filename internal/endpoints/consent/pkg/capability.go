@@ -136,6 +136,7 @@ var warningCapabilities = []string{
 	api.CapabilityListMT.Name,
 	api.CapabilitySettingsRead.Name,
 	api.CapabilitySSHGrant.Name,
+	api.CapabilityRevokeAnyToken.Name,
 }
 var dangerCapabilities = []string{
 	api.CapabilitySettings.Name,

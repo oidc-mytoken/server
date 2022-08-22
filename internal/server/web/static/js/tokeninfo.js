@@ -1,6 +1,4 @@
 const $tokenInput = $('#tokeninfo-token');
-const $errorModal = $('#error-modal');
-const $errorModalMsg = $('#error-modal-msg')
 
 function _tokeninfo(action, successFnc, errorFnc, token = undefined) {
     let data = {
@@ -128,7 +126,7 @@ function historyToHTML(events) {
 
 let tokenTreeIDCounter = 1;
 
-function _tokenTreeToHTML(tree, depth, parentID = 0) {
+function _tokenTreeToHTML(tree, deleteClass, depth, parentID = 0) {
     let token = tree['token'];
     let name = token['name'] || 'unnamed token';
     let nameClass = name === 'unnamed token' ? ' text-muted' : '';
@@ -139,24 +137,25 @@ function _tokenTreeToHTML(tree, depth, parentID = 0) {
     let hasChildren = false;
     if (children !== undefined) {
         children.forEach(function (child) {
-            tableEntries = _tokenTreeToHTML(child, depth + 1, thisID) + tableEntries;
+            tableEntries = _tokenTreeToHTML(child, deleteClass, depth + 1, thisID) + tableEntries;
             hasChildren = true;
         })
     }
-    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" class="${depth > 0 ? 'd-none' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${time}</td><td>${token['ip']}</td></tr>` + tableEntries;
+    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" class="${depth > 0 ? 'd-none' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${time}</td><td>${token['ip']}</td><td><button id="${token['revocation_id']}" class="btn ${deleteClass}" type="button" onclick="startRevocateID.call(this)"><i class="fas fa-trash"></i></button></td></tr>` + tableEntries;
     return tableEntries
 }
 
-function tokenlistToHTML(tokenTrees) {
+function tokenlistToHTML(tokenTrees, deleteClass) {
     let tableEntries = "";
     tokenTrees.forEach(function (tokenTree) {
-        tableEntries = _tokenTreeToHTML(tokenTree, 0) + tableEntries;
+        tableEntries = _tokenTreeToHTML(tokenTree, deleteClass, 0) + tableEntries;
     });
     return '<table class="table table-hover table-grey">' +
         '<thead><tr>' +
         '<th style="min-width: 50%;">Token Name</th>' +
         '<th>Created</th>' +
         '<th>Created from IP</th>' +
+        '<th></th>' +
         '</tr></thead>' +
         '<tbody>' +
         tableEntries +
@@ -195,13 +194,17 @@ function getHistoryTokenInfo(e) {
     return false;
 }
 
-function getTreeTokenInfo(e) {
+function getSubtokensInfo(e) {
     e.preventDefault();
+    _getSubtokensInfo();
+}
+
+function _getSubtokensInfo() {
     let msg = $('#tree-msg');
     let copy = $('#tree-copy');
     _tokeninfo('subtokens',
         function (res) {
-            msg.html(tokenlistToHTML([res['mytokens']]));
+            msg.html(tokenlistToHTML([res['mytokens']], revocationClassFromSubtokens));
             activateTokenList();
             msg.removeClass('text-danger');
             copy.addClass('d-none');
@@ -214,30 +217,34 @@ function getTreeTokenInfo(e) {
     return false;
 }
 
-function getListTokenInfo(e) {
-    e.preventDefault();
-    let msg = $('#list-msg');
-    let copy = $('#list-copy');
-    getMT(
-        function (res) {
-            const mToken = res['mytoken']
-            _tokeninfo('list_mytokens',
-                function (infoRes) {
-                    msg.html(tokenlistToHTML(infoRes['mytokens']));
-                    activateTokenList();
-                    msg.removeClass('text-danger');
-                    copy.addClass('d-none');
-                },
-                function (errRes) {
-                    msg.text(getErrorMessage(errRes));
-                    msg.addClass('text-danger');
-                    copy.removeClass('d-none');
-                }, mToken);
+const listMsg = $('#list-msg');
+const listCopy = $('#list-copy');
+
+function _getListTokenInfo(token) {
+    _tokeninfo('list_mytokens',
+        function (infoRes) {
+            listMsg.html(tokenlistToHTML(infoRes['mytokens'], revocationClassFromTokenList));
+            activateTokenList();
+            listMsg.removeClass('text-danger');
+            listCopy.addClass('d-none');
         },
         function (errRes) {
-            msg.text(getErrorMessage(errRes));
-            msg.addClass('text-danger');
-            copy.removeClass('d-none');
+            listMsg.text(getErrorMessage(errRes));
+            listMsg.addClass('text-danger');
+            listCopy.removeClass('d-none');
+        }, token);
+}
+
+function getListTokenInfo(e) {
+    e.preventDefault();
+    getMT(
+        function (res) {
+            _getListTokenInfo(res['mytoken']);
+        },
+        function (errRes) {
+            listMsg.text(getErrorMessage(errRes));
+            listMsg.addClass('text-danger');
+            listCopy.removeClass('d-none');
         },
         "list_mytokens"
     );
@@ -246,8 +253,8 @@ function getListTokenInfo(e) {
 
 $('#history-tab').on('shown.bs.tab', getHistoryTokenInfo)
 $('#history-reload').on('click', getHistoryTokenInfo)
-$('#tree-tab').on('shown.bs.tab', getTreeTokenInfo)
-$('#tree-reload').on('click', getTreeTokenInfo)
+$('#tree-tab').on('shown.bs.tab', getSubtokensInfo)
+$('#tree-reload').on('click', getSubtokensInfo)
 
 $('#list-mts-tab').on('shown.bs.tab', getListTokenInfo)
 $('#list-reload').on('click', getListTokenInfo)

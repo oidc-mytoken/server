@@ -21,7 +21,8 @@ $('#login-form').on('submit', function (e) {
         "AT",
         "settings",
         "list_mytokens",
-        "tokeninfo:introspect"
+        "tokeninfo:introspect",
+        "revoke_any_token"
     ]
     data['rotation'] = {
         "on_other": true,

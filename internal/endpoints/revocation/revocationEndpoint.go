@@ -12,6 +12,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
+	helper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
@@ -19,6 +20,7 @@ import (
 	sharedModel "github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken"
 	mytokenPkg "github.com/oidc-mytoken/server/shared/mytoken/pkg"
+	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
@@ -34,7 +36,16 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 	clearCookie := false
 	if req.Token == "" {
 		req.Token = ctx.Cookies("mytoken")
-		clearCookie = true
+		if req.RevocationID == "" {
+			clearCookie = true
+		}
+	}
+	if req.RevocationID != "" {
+		errRes := revokeByID(rlog, req)
+		if errRes != nil {
+			return errRes.Send(ctx)
+		}
+		return ctx.SendStatus(fiber.StatusNoContent)
 	}
 	errRes := revokeAnyToken(rlog, nil, req.Token, req.OIDCIssuer, req.Recursive)
 	if errRes != nil {
@@ -57,6 +68,35 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 		}.Send(ctx)
 	}
 	return ctx.SendStatus(fiber.StatusNoContent)
+}
+
+func revokeByID(rlog log.Ext1FieldLogger, req api.RevocationRequest) (errRes *model.Response) {
+	token, err := universalmytoken.Parse(rlog, req.Token)
+	if err != nil {
+		return model.ErrorToBadRequestErrorResponse(err)
+	}
+	authToken, err := mytokenPkg.ParseJWT(token.JWT)
+	if err != nil {
+		return model.ErrorToBadRequestErrorResponse(err)
+	}
+	isParent, err := helper.RevocationIDHasParent(rlog, nil, req.RevocationID, authToken.ID)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	if !isParent && !authToken.Capabilities.Has(api.CapabilityRevokeAnyToken) {
+		return &model.Response{
+			Status: fiber.StatusForbidden,
+			Response: api.Error{
+				Error: api.ErrorStrInsufficientCapabilities,
+				ErrorDescription: "The provided token is neither a parent of the the token to be revoked nor does it" +
+					" have the 'revoke_any_token' capability",
+			},
+		}
+	}
+	if err = helper.RevokeMT(rlog, nil, req.RevocationID, req.Recursive); err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	return
 }
 
 func revokeAnyToken(
@@ -117,8 +157,8 @@ func revokeTransferCode(rlog log.Ext1FieldLogger, tx *sqlx.Tx, token, issuer str
 				if err != nil {
 					return err
 				}
-				if valid { // if !valid the jwt field could not decrypted correctly, so we can skip that, but still delete
-					// the TransferCode
+				if valid { // if !valid the jwt field could not be decrypted correctly, so we can skip that,
+					// but still delete the TransferCode
 					errRes = revokeAnyToken(rlog, tx, jwt, issuer, true)
 					if errRes != nil {
 						return errors.New("placeholder")

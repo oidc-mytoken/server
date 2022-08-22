@@ -89,7 +89,7 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 	token, err := universalmytoken.Parse(rlog, tokenStr)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return model.ErrorToInternalServerErrorResponse(err)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	mt, err := mytoken.ParseJWT(token.JWT)
 	if err != nil {
