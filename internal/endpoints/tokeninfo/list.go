@@ -26,7 +26,7 @@ import (
 func doTokenInfoList(
 	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
 	usedRestriction *restrictions.Restriction,
-) (tokenList []tree.MytokenEntryTree, tokenUpdate *response.MytokenResponse, err error) {
+) (tokenList []*tree.MytokenEntryTree, tokenUpdate *response.MytokenResponse, err error) {
 	err = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
 			tokenList, err = tree.AllTokens(rlog, tx, mt.ID)
