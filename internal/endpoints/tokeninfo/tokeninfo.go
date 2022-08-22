@@ -32,11 +32,11 @@ func HandleTokenInfo(ctx *fiber.Ctx) error {
 	case model2.TokeninfoActionIntrospect:
 		return HandleTokenInfoIntrospect(rlog, mt, req.Mytoken.OriginalTokenType, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionEventHistory:
-		return HandleTokenInfoHistory(rlog, req, mt, clientMetadata).Send(ctx)
+		return HandleTokenInfoHistory(rlog, &req, mt, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionSubtokenTree:
-		return HandleTokenInfoSubtokens(rlog, req, mt, clientMetadata).Send(ctx)
+		return HandleTokenInfoSubtokens(rlog, &req, mt, clientMetadata).Send(ctx)
 	case model2.TokeninfoActionListMytokens:
-		return HandleTokenInfoList(rlog, req, mt, clientMetadata).Send(ctx)
+		return HandleTokenInfoList(rlog, &req, mt, clientMetadata).Send(ctx)
 	default:
 		return model.Response{
 			Status:   fiber.StatusBadRequest,

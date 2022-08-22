@@ -23,7 +23,7 @@ import (
 )
 
 func doTokenInfoSubtokens(
-	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+	rlog log.Ext1FieldLogger, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
 	usedRestriction *restrictions.Restriction,
 ) (tokenTree tree.MytokenEntryTree, tokenUpdate *response.MytokenResponse, err error) {
 	err = db.Transact(
@@ -57,7 +57,7 @@ func doTokenInfoSubtokens(
 
 // HandleTokenInfoSubtokens handles a tokeninfo list subtokens request
 func HandleTokenInfoSubtokens(
-	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+	rlog log.Ext1FieldLogger, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
 ) model.Response {
 	// If we call this function it means the token is valid.
 	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
