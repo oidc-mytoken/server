@@ -50,6 +50,7 @@ function fillTokenInfo(tokenPayload) {
     copy.removeClass('d-none');
 
     // capabilities
+    initCapabilities(tokeninfoPrefix);
     capabilityChecks(tokeninfoPrefix).prop("checked", false);
     subtokenCapabilityChecks(tokeninfoPrefix).prop("checked", false);
     for (let c of tokenPayload['capabilities']) {
@@ -60,11 +61,10 @@ function fillTokenInfo(tokenPayload) {
             checkCapability(c, 'sub-cp', tokeninfoPrefix);
         }
     }
-    initCapabilities(tokeninfoPrefix);
     capabilityChecks(tokeninfoPrefix).not(":checked").closest('.capability').hideB();
     subtokenCapabilityChecks(tokeninfoPrefix).not(":checked").closest('.capability').hideB();
-    capabilityChecks(tokeninfoPrefix).filter(":checked").closest('.capability').showB();
-    subtokenCapabilityChecks(tokeninfoPrefix).filter(":checked").closest('.capability').showB();
+    capabilityChecks(tokeninfoPrefix).filter(":checked").parents('.capability').showB();
+    subtokenCapabilityChecks(tokeninfoPrefix).filter(":checked").parents('.capability').showB();
 
     // rotation
     let rot = tokenPayload['rotation'] || {};

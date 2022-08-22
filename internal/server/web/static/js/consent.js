@@ -9,13 +9,13 @@ $(document).ready(function () {
         rotationAutoRevoke().prop("disabled", !rot_onAT && !rot_onOther);
     }
     updateRotationIcon();
+    initCapabilities();
     checkedCapabilities.forEach(function (value) {
         checkCapability(value, 'cp');
     })
     checkedSubtokenCapabilities.forEach(function (value) {
         checkCapability(value, 'sub-cp');
     })
-    initCapabilities();
     chainFunctions(
         discovery,
         function (...next) {

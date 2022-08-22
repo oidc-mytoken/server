@@ -15,9 +15,9 @@ const $mtInstructions = $('#mt-instructions');
 const mtPrefix = "createMT-";
 
 function initCreateMT(...next) {
-    capabilityAT(mtPrefix).prop('checked', true);
-    $('#' + mtPrefix + 'cp-tokeninfo').prop('checked', true);
     initCapabilities(mtPrefix);
+    checkCapability("tokeninfo", "cp", mtPrefix);
+    checkCapability("AT", "cp", mtPrefix);
     updateRotationIcon(mtPrefix);
     initRestr(mtPrefix);
     doNext(...next);
