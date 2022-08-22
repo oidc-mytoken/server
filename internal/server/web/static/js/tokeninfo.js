@@ -286,3 +286,11 @@ $('#create-tc').on('click', function () {
         },
         transferEndpoint);
 });
+
+$('#revoke-tokeninfo').on('click', function () {
+    for (const c of revocationClasses) {
+        $revocationFormID.removeClass(c);
+    }
+    $revocationFormID.addClass(revocationClassFromTokeninfo);
+    $revocationModal.modal();
+})

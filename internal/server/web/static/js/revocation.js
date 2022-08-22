@@ -4,10 +4,12 @@ const $revocationFormRecursive = $('#revoke-recursive');
 
 const revocationClassFromSubtokens = "revoke-from-subtokens";
 const revocationClassFromTokenList = "revoke-from-list";
+const revocationClassFromTokeninfo = "revoke-from-tokeninfo";
 
 const revocationClasses = [
     revocationClassFromSubtokens,
     revocationClassFromTokenList,
+    revocationClassFromTokeninfo,
 ]
 
 function useRevocationToken(callback) {
@@ -47,12 +49,10 @@ function useRevocationToken(callback) {
 }
 
 function revokeToken(token, recursive, okCallback) {
-    useRevocationToken(function (token) {
-        _revoke({
-            "token": token,
-            "recursive": recursive,
-        }, okCallback)
-    })
+    _revoke({
+        "token": token,
+        "recursive": recursive,
+    }, okCallback);
 }
 
 function revokeTokenID(id, recursive, okCallback) {
@@ -95,6 +95,11 @@ function revokeID() {
         revokeTokenFromSubtokens(id, recursive);
     } else if ($revocationFormID.hasClass(revocationClassFromTokenList)) {
         revokeTokenFromList(id, recursive)
+    } else if ($revocationFormID.hasClass(revocationClassFromTokeninfo)) {
+        revokeToken($tokenInput.val(), recursive, function () {
+            $tokenInput.val("");
+            $tokenInput.trigger("change");
+        })
     } else {
         revokeTokenID(id, recursive, function () {
         });
