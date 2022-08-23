@@ -470,7 +470,7 @@ var possibleConfigLocations = []string{
 func Load() {
 	load()
 	if err := validate(); err != nil {
-		log.Fatalf("%s", errorfmt.Full(err))
+		log.Fatalf("%s", errorfmt.Full(err)) // skipcq RVV-A0003
 	}
 }
 
