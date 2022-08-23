@@ -23,6 +23,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/server/apiPath"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/server/ssh"
+	"github.com/oidc-mytoken/server/internal/utils/fileio"
 )
 
 var server *fiber.App
@@ -58,7 +59,14 @@ func init() {
 }
 
 func initTemplateEngine() {
-	engine := mustache.NewFileSystemPartials(http.FS(webFiles), ".mustache", http.FS(partials))
+	overWriteDir := config.Get().Features.WebInterface.OverwriteDir
+	engine := mustache.NewFileSystemPartials(
+		fileio.NewLocalAndOtherSearcherFilesystem(overWriteDir, http.FS(webFiles)),
+		".mustache",
+		fileio.NewLocalAndOtherSearcherFilesystem(
+			fileio.JoinIfFirstNotEmpty(overWriteDir, "partials"), http.FS(partials),
+		),
+	)
 	serverConfig.Views = engine
 }
 
@@ -96,16 +104,16 @@ func Init() {
 func addRoutes(s fiber.Router) {
 	addWebRoutes(s)
 	s.Get(routes.GetGeneralPaths().ConfigurationEndpoint, configuration.HandleConfiguration)
-	s.Get("/.well-known/openid-configuration", configuration.HandleConfiguration)
+	s.Get(routes.WellknownOpenIDConfiguration, configuration.HandleConfiguration)
 	s.Get(routes.GetGeneralPaths().JWKSEndpoint, endpoints.HandleJWKS)
 	s.Get(routes.GetGeneralPaths().OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
 	s.Get("/c/:consent_code", consent.HandleConsent)
 	s.Post("/c/:consent_code", consent.HandleConsentPost)
+	s.Post("/c", consent.HandleCreateConsent)
 	s.Get("/native", handleNativeCallback)
 	s.Get("/native/abort", handleNativeConsentAbortCallback)
 	s.Get(routes.GetGeneralPaths().Privacy, handlePrivacy)
 	s.Get("/settings", handleSettings)
-	s.Get("/settings/grants/ssh", handleSSH)
 	addAPIRoutes(s)
 }
 

@@ -1,5 +1,5 @@
-const $errorModal = $('#error-modal')
-const $errorModalMsg = $('#error-modal-msg')
+const $settingsErrorModal = $('#settings-error-modal')
+const $settingsErrorModalMsg = $('#settings-error-modal-msg')
 
 function useSettingsToken(callback) {
     let tok = storageGet("settings_mytoken")
@@ -13,7 +13,7 @@ function useSettingsToken(callback) {
                 {
                     "name": "mytoken-web MT for settings",
                     "grant_type": "mytoken",
-                    "capabilities": ["tokeninfo_introspect", "settings"],
+                    "capabilities": ["tokeninfo:introspect", "settings"],
                     "restrictions": [
                         {
                             "exp": Math.floor(Date.now() / 1000) + 300,
@@ -29,8 +29,8 @@ function useSettingsToken(callback) {
                     callback(token);
                 },
                 function (errRes) {
-                    $errorModalMsg.text(getErrorMessage(errRes));
-                    $errorModal.modal();
+                    $settingsErrorModalMsg.text(getErrorMessage(errRes));
+                    $settingsErrorModal.modal();
                 }
             );
         },
@@ -54,8 +54,8 @@ function sendGrantRequest(grant, enable, okCallback) {
                 okCallback();
             },
             error: function (errRes) {
-                $errorModalMsg.text(getErrorMessage(errRes));
-                $errorModal.modal();
+                $settingsErrorModalMsg.text(getErrorMessage(errRes));
+                $settingsErrorModal.modal();
             },
         });
     });

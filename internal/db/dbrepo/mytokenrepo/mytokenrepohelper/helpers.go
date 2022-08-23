@@ -15,7 +15,7 @@ import (
 )
 
 // recursiveRevokeMT revokes the passed mytoken as well as all children
-func recursiveRevokeMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID) error {
+func recursiveRevokeMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id interface{}) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL MTokens_RevokeRec(?)`, id)
@@ -113,7 +113,7 @@ func UpdateSeqNo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID, seqno uint
 }
 
 // revokeMT revokes the passed mytoken but no children
-func revokeMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID) error {
+func revokeMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id interface{}) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			if err := encryptionkeyrepo.DeleteEncryptionKey(rlog, tx, id); err != nil {
@@ -126,12 +126,26 @@ func revokeMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID) error {
 }
 
 // RevokeMT revokes the passed mytoken and depending on the recursive parameter also its children
-func RevokeMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID, recursive bool) error {
+func RevokeMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id interface{}, recursive bool) error {
 	if recursive {
 		return recursiveRevokeMT(rlog, tx, id)
 	} else {
 		return revokeMT(rlog, tx, id)
 	}
+}
+
+// RevocationIDHasParent checks if the token for a revocation id is a child of the (potential) parent mytoken
+func RevocationIDHasParent(rlog log.Ext1FieldLogger, tx *sqlx.Tx, revocationID string, parent mtid.MTID) (
+	isParent bool, err error,
+) {
+	var count int
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Get(&count, `CALL MTokens_IsParentOf(?,?)`, parent, revocationID))
+		},
+	)
+	isParent = count > 0
+	return
 }
 
 // GetTokenUsagesAT returns how often a Mytoken was used with a specific restriction to obtain an access token

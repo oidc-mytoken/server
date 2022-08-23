@@ -8,7 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/golang-jwt/jwt"
@@ -107,7 +107,7 @@ func GetJWKS() jwk.Set {
 
 // LoadKey loads the private and public key
 func LoadKey() {
-	keyFileContent, err := ioutil.ReadFile(config.Get().Signing.KeyFile)
+	keyFileContent, err := os.ReadFile(config.Get().Signing.KeyFile)
 	if err != nil {
 		panic(err)
 	}
@@ -137,6 +137,9 @@ func LoadKey() {
 		panic(err)
 	}
 	if err = key.Set(jwk.KeyUsageKey, string(jwk.ForSignature)); err != nil {
+		panic(err)
+	}
+	if err = key.Set(jwk.AlgorithmKey, config.Get().Signing.Alg); err != nil {
 		panic(err)
 	}
 	jwks.Add(key)

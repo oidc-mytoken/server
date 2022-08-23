@@ -105,19 +105,29 @@ service_documentation: "https://mytoken-docs.data.kit.edu/"
 features:
   # The supported oidc flows
   oidc_flows:
-    - "authorization_code" # Always enabled
+    # Configurations for the authorization code flow, which is always enabled
+    authorization_code:
+      # Configurations related to client_type=web
+      web:
+        # A list of trusted redirect uris. If the client type is web and redirect_uri matches on of the following regexes the
+        # consent screen will be skipped. Do this only for applications with well-known redirect-uris and high trust. But it
+        # makes sense to add your own web interface.
+        trusted_redirect_uris:
+        #- "^(https:\\/\\/mytoken\\.example\\.com)?\\/"
+        # The time in seconds how long a mytoken cookie is valid, default is one week.
+        cookie_lifetime: 604800
 
   # Specify restriction keys to disable support for them; on default all restriction keys are supported.
   unsupported_restrictions:
-#    - nbf
-#    - exp
-#    - scope
-#    - audience
-#    - ip
-#    - geoip_allow
-#    - geoip_disallow
-#    - usages_AT
-#    - usages_other
+  #    - nbf
+  #    - exp
+  #    - scope
+  #    - audience
+  #    - ip
+  #    - geoip_allow
+  #    - geoip_disallow
+  #    - usages_AT
+  #    - usages_other
 
   # Revocation for tokens issued by mytoken. Only disable this if you have good reasons for it.
   token_revocation:
@@ -166,6 +176,10 @@ features:
   # Provides a web interface for in browser usage
   web_interface:
     enabled: true
+    # A director with the same structure as https://github.com/oidc-mytoken/server/tree/master/internal/server/web
+    # where web files can be located. If this option is set and a file is present here it is used to overwrite the
+    # default file. This can be used for customization, especially css.
+    # overwrite_dir: "/var/www/mytoken"
 
   ssh:
     enabled: true

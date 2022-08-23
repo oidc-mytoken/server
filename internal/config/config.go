@@ -1,8 +1,9 @@
 package config
 
 import (
-	"io/ioutil"
 	"net/url"
+	"os"
+	"regexp"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
 	"github.com/oidc-mytoken/server/shared/context"
-	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
@@ -67,8 +67,12 @@ var defaultConfig = Config{
 	},
 	ServiceDocumentation: "https://mytoken-docs.data.kit.edu/",
 	Features: featuresConf{
-		EnabledOIDCFlows: []model.OIDCFlow{
-			model.OIDCFlowAuthorizationCode,
+		OIDCFlows: oidcFlowsConf{
+			AuthCode: authcodeConf{
+				Web: authcodeWebClientsConf{
+					CookieLifetime: 3600 * 24 * 7,
+				},
+			},
 		},
 		TokenRevocation: onlyEnable{true},
 		ShortTokens: shortTokenConfig{
@@ -89,7 +93,7 @@ var defaultConfig = Config{
 			Tree:       onlyEnable{true},
 			List:       onlyEnable{true},
 		},
-		WebInterface: onlyEnable{true},
+		WebInterface: webConfig{Enabled: true},
 		SSH: sshConf{
 			Enabled: false,
 		},
@@ -122,16 +126,51 @@ type apiConf struct {
 }
 
 type featuresConf struct {
-	EnabledOIDCFlows        []model.OIDCFlow         `yaml:"enabled_oidc_flows"`
+	OIDCFlows               oidcFlowsConf            `yaml:"oidc_flows"`
 	TokenRevocation         onlyEnable               `yaml:"token_revocation"`
 	ShortTokens             shortTokenConfig         `yaml:"short_tokens"`
 	TransferCodes           onlyEnable               `yaml:"transfer_codes"`
 	Polling                 pollingConf              `yaml:"polling_codes"`
 	TokenRotation           onlyEnable               `yaml:"token_rotation"`
 	TokenInfo               tokeninfoConfig          `yaml:"tokeninfo"`
-	WebInterface            onlyEnable               `yaml:"web_interface"`
+	WebInterface            webConfig                `yaml:"web_interface"`
 	DisabledRestrictionKeys model2.RestrictionClaims `yaml:"unsupported_restrictions"`
 	SSH                     sshConf                  `yaml:"ssh"`
+}
+
+func (c *featuresConf) validate() error {
+	return c.OIDCFlows.validate()
+}
+
+type oidcFlowsConf struct {
+	AuthCode authcodeConf `yaml:"authorization_code"`
+}
+
+type authcodeConf struct {
+	Web authcodeWebClientsConf `yaml:"web"`
+}
+
+type authcodeWebClientsConf struct {
+	TrustedRedirectURIs   []string         `yaml:"trusted_redirect_uris"`
+	TrustedRedirectsRegex []*regexp.Regexp `yaml:"-"`
+	CookieLifetime        int              `yaml:"cookie_lifetime"`
+}
+
+func (c *oidcFlowsConf) validate() error {
+	return c.AuthCode.validate()
+}
+func (c *authcodeConf) validate() error {
+	return c.Web.validate()
+}
+func (c *authcodeWebClientsConf) validate() error {
+	for _, r := range c.TrustedRedirectURIs {
+		reg, err := regexp.Compile(r)
+		if err != nil {
+			return errors.Errorf("invalid config: invalid regex in truested_redirect_uris: '%s'", r)
+		}
+		c.TrustedRedirectsRegex = append(c.TrustedRedirectsRegex, reg)
+	}
+	return nil
 }
 
 type sshConf struct {
@@ -147,6 +186,11 @@ type tokeninfoConfig struct {
 	History    onlyEnable `yaml:"event_history"`
 	Tree       onlyEnable `yaml:"subtoken_tree"`
 	List       onlyEnable `yaml:"list_mytokens"`
+}
+
+type webConfig struct {
+	Enabled      bool   `yaml:"enabled"`
+	OverwriteDir string `yaml:"overwrite_dir"`
 }
 
 type shortTokenConfig struct {
@@ -281,7 +325,7 @@ func (conf *DBConf) GetPassword() string {
 	if conf.PasswordFile == "" {
 		return ""
 	}
-	content, err := ioutil.ReadFile(conf.PasswordFile)
+	content, err := os.ReadFile(conf.PasswordFile)
 	if err != nil {
 		log.WithError(err).Error()
 		return ""
@@ -343,6 +387,9 @@ func validate() error {
 	if err = conf.ServiceOperator.validate(); err != nil {
 		return err
 	}
+	if err = conf.Features.validate(); err != nil {
+		return err
+	}
 	if len(conf.Providers) <= 0 {
 		return errors.New("invalid config: providers must have at least one entry")
 	}
@@ -386,13 +433,12 @@ func validate() error {
 	if conf.Signing.Alg == "" {
 		return errors.New("invalid config: token signing alg not set")
 	}
-	model.OIDCFlowAuthorizationCode.AddToSliceIfNotFound(&conf.Features.EnabledOIDCFlows)
 	if conf.Features.SSH.Enabled {
 		if len(conf.Features.SSH.KeyFiles) == 0 {
 			return errors.New("invalid config: ssh feature enabled, but no ssh private key set")
 		}
 		for _, pkf := range conf.Features.SSH.KeyFiles {
-			pemBytes, err := ioutil.ReadFile(pkf)
+			pemBytes, err := os.ReadFile(pkf)
 			if err != nil {
 				return errors.Wrap(err, "reading ssh private key")
 			}

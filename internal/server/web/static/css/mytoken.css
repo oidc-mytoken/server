@@ -30,6 +30,12 @@
     padding: 10px;
 }
 
+.codely {
+    font-family: monospace;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 5px;
+}
+
 ul.list-group.list-group-striped li:nth-of-type(odd) {
     background: rgba(255, 255, 255, 0.05);
 }
@@ -42,4 +48,87 @@ ul.list-group li.list-group-item {
     border-top: 1px solid rgba(0, 0, 0, .15);
     border-left: 1px solid rgba(0, 0, 0, .15);
     border-right: 1px solid rgba(0, 0, 0, .15);
+}
+
+.toggle, .toggle-on, .toggle-off {
+    border-radius: 0.3rem;
+}
+
+.toggle.round, .toggle-on.round, .toggle-off.round {
+    border-radius: 20rem;
+}
+
+hr {
+    border-top-color: rgba(223, 105, 26, 0.3);
+}
+
+.smaller-lead {
+    font-weight: 300;
+    font-size: 1.1rem;
+}
+
+.no-top-border {
+    border-top: none !important;
+}
+
+.svg-icon {
+    width: 1em;
+    height: 1em;
+}
+
+.hover-text {
+    display: none;
+}
+
+.hover-item:hover .hover-text {
+    display: inline-block;
+}
+
+.hover-item:hover .non-hover-text {
+    display: none;
+}
+
+span.user-agent i + i {
+    padding-left: 1em;
+}
+
+@media (min-width: 1440px) {
+    .break-out {
+        margin: -1.25rem -125px;
+        padding: 1.25rem;
+    }
+}
+
+@media (min-width: 1600px) {
+    .break-out {
+        margin: -1.25rem -225px;
+        padding: 1.25rem;
+    }
+}
+
+.btn-copy {
+    position: absolute;
+    margin-top: -28px;
+    right: -8px;
+}
+
+.btn-copy-inline {
+    position: absolute;
+    right: 8px;
+}
+
+#sshHostConfigCopy {
+    margin-top: 0;
+    right: 15px;
+}
+
+.btn-reload {
+    position: absolute;
+    margin-top: -28px;
+    right: 14px;
+}
+
+.token-fold {
+    cursor: pointer;
+    user-select: none;
 }

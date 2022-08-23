@@ -1,29 +1,28 @@
 <div id="settings-grants">
-    <table class="table table-striped bg-my_grey">
-        <thead>
-        <tr>
-            <th>Grant Type</th>
-            <th>Description</th>
-            <th style="width: 50px;">Enabled</th>
-        </tr>
-        </thead>
-        <tbody id="grants-table">
+    <table class="table table-secondary">
+        <tbody>
         {{#grants}}
             <tr>
-                <td>{{DisplayName}}
-                    <a class="float-right text-primary" href="{{Link}}" data-toggle="tooltip" data-placement="top"
-                       title="Grant Type Settings">
-                        <i class="fas fa-cog"></i>
-                    </a></td>
-                <td>{{Description}}</td>
-                <td class="text-center">
-                    <div class="form-group">
-                        <div class="custom-control custom-switch">
-                            <input type="checkbox" class="custom-control-input grant-enable"
-                                   aria-describedby="{{Name}}-GrantHelp" id="{{Name}}-GrantEnable" name="{{Name}}">
-                            <label class="custom-control-label" for="{{Name}}-GrantEnable"><span class="sr-only"></span></label>
-                        </div>
-                    </div>
+                <td style="width: 10%;"><h3 class="d-flex justify-content-between">{{DisplayName}}</h3></td>
+                <td class="smaller-lead">{{Description}}</td>
+                <td style="width: 1%;" class="text-center">
+                        <span class="custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input grant-enable"
+                   aria-describedby="{{Name}}-GrantHelp" id="{{Name}}-GrantEnable" name="{{Name}}">
+            <label class="custom-control-label" for="{{Name}}-GrantEnable">Enabled</label>
+                        </span>
+                </td>
+                <td style="width: 11%;" class="text-right">
+                    <button style="width: 100%;" class="btn btn-light my-expand" type="button" data-toggle="collapse"
+                            data-target="#settings-{{Name}}-body" aria-expanded="false"
+                            aria-controls="settings-{{Name}}-body">Expand
+                    </button>
+                </td>
+            </tr>
+            <tr class="collapse no-top-border" id="settings-{{Name}}-body">
+                <td class="no-top-border"></td>
+                <td class="no-top-border" colspan="3">
+                    <div>{{{EmbedBody}}}</div>
                 </td>
             </tr>
 
@@ -66,21 +65,8 @@
                     </div>
                 </div>
             </div>
+
         {{/grants}}
         </tbody>
     </table>
-</div>
-
-<div class="modal fade" tabindex="-1" role="dialog" id="error-modal">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content bg-danger">
-            <div class="modal-header">
-                <h5 class="modal-title">Error</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="error-modal-msg"></div>
-        </div>
-    </div>
 </div>

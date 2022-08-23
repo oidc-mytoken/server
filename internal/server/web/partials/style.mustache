@@ -1,21 +1,17 @@
-<link rel="stylesheet" href="/static/css/colors.css">
-{{#logged-in}}
-    <link rel="stylesheet" href="/static/css/mytoken-loggedin.css">
-    <link rel="stylesheet" href="/static/css/lib/bootstrap4-toggle.min.css">
-{{/logged-in}}
+<link rel="stylesheet" href="{{instance-url}}/static/css/colors.css">
+<link rel="stylesheet" href="{{instance-url}}/static/css/lib/bootstrap4-toggle.min.css">
 {{#consent}}
-    <link rel="stylesheet" href="/static/css/lib/bootstrap4-toggle.min.css">
-    <link rel="stylesheet" href="/static/css/capabilities.css">
+    <link rel="stylesheet" href="{{instance-url}}/static/css/capabilities.css">
 {{/consent}}
 {{#settings-ssh}}
-    <link rel="stylesheet" href="/static/css/capabilities.css">
+    <link rel="stylesheet" href="{{instance-url}}/static/css/capabilities.css">
 {{/settings-ssh}}
 {{#home}}
-    <link rel="stylesheet" href="/static/css/capabilities.css">
+    <link rel="stylesheet" href="{{instance-url}}/static/css/capabilities.css">
 {{/home}}
 {{#restr-gui}}
-    <link rel="stylesheet" href="/static/css/lib/tempusdominus-bootstrap-4.min.css"
+    <link rel="stylesheet" href="{{instance-url}}/static/css/lib/tempusdominus-bootstrap-4.min.css"
           integrity="sha512-3JRrEUwaCkFUBLK1N8HehwQgu8e23jTH4np5NHOmQOobuC4ROQxFwFgBLTnhcnQRMs84muMh0PnnwXlPq5MGjg=="
-          crossorigin="anonymous" referrerpolicy="no-referrer"/>
-    <link rel="stylesheet" href="/static/css/restr-gui.css">
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="{{instance-url}}/static/css/restr-gui.css">
 {{/restr-gui}}

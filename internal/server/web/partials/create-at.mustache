@@ -2,25 +2,32 @@
     <div class="form-row">
         <div class="form-group col">
             <label for="at-scope-table">Scopes</label>
-            <table id="at-scope-table" class="table table-sm table-striped bg-my_grey" aria-describedby="at-scope-table_help">
+            <table id="at-scope-table" class="table table-sm table-striped bg-my_grey"
+                   aria-describedby="at-scope-table_help">
                 <tbody id="at-scopeTableBody"></tbody>
             </table>
-            <small id="at-scope-table_help" class="form-text text-muted">The Access Token will only have these scope values.</small>
+            <small id="at-scope-table_help" class="form-text text-muted">The Access Token will only have these scope
+                values.</small>
         </div>
 
         <div class="form-group col">
             <label for="at-audience-table">Audiences</label>
-            <table id="at-audience-table" class="table table-sm table-striped bg-my_grey" aria-describedby="at-audience-table_help">
+            <table id="at-audience-table" class="table table-sm table-striped bg-my_grey"
+                   aria-describedby="at-audience-table_help">
                 <thead>
                 <tr>
-                    <th><input id="at-audienceInput" type="text" class="form-control add-list-input" value="" placeholder="https://..."></th>
-                    <th class="align-middle"><button class="btn btn-small btn-add-list-item"><i class="fas fa-plus"></i></button></th>
+                    <th><input id="at-audienceInput" type="text" class="form-control add-list-input" value=""
+                               placeholder="https://..."></th>
+                    <th class="align-middle">
+                        <button class="btn btn-small btn-add-list-item"><i class="fas fa-plus"></i></button>
+                    </th>
                 </tr>
                 </thead>
                 <tbody class="list-table" id="at-audienceTableBody">
                 </tbody>
             </table>
-            <small id="at-audience-table_help" class="form-text text-muted">The Access Token can only be used at these audiences.</small>
+            <small id="at-audience-table_help" class="form-text text-muted">The Access Token can only be used at these
+                audiences.</small>
         </div>
     </div>
     <a href="#at" class="btn btn-primary mx-auto d-block" id="get-at">Get new Access Token</a>
@@ -34,10 +41,11 @@
         <div id="at-pending-spinner" class="spinner-border text-primary d-none" role="status">
             <span class="sr-only">Loading...</span>
         </div>
-        <button class="btn btn-copy" id="at-result-copy" data-toggle="tooltip" data-placement="bottom" title="Copy to clipboard" data-clipboard-target="#at-result-msg">
+        <button class="btn btn-copy copier" id="at-result-copy" data-toggle="tooltip" data-placement="bottom"
+                title="Copy to clipboard" data-clipboard-target="#at-result-msg">
             <i class="far fa-copy"></i>
         </button>
-        <pre class="card-text" id="at-result-msg"></pre>
+        <pre class="card-text codely" id="at-result-msg"></pre>
     </div>
     <a href="#at" class="btn btn-primary mx-auto d-block" id="next-at">Get another Access Token</a>
 </div>

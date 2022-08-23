@@ -141,7 +141,11 @@ func getIDlogger(id string) log.Ext1FieldLogger {
 
 // GetRequestLogger returns a logrus.Ext1FieldLogger that always includes a request's id
 func GetRequestLogger(ctx *fiber.Ctx) log.Ext1FieldLogger {
-	return getIDlogger(ctx.Locals("requestid").(string))
+	rid := ctx.Locals("requestid")
+	if rid != nil {
+		return getIDlogger(rid.(string))
+	}
+	return getIDlogger("")
 }
 
 // GetSSHRequestLogger returns a logrus.Ext1FieldLogger that always includes an ssh request's id

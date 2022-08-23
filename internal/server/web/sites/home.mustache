@@ -1,43 +1,76 @@
-
-
-<div class="alert alert-info alert-dismissible fade show" role="alert">
-    <h3>Welcome {{name}}</h3>
-    <p>
-        This is a demo instance of the mytoken service. This service is currently under active development.<br>
-        For more information refer to: <a href="https://mytoken-docs.data.kit.edu">https://mytoken-docs.data.kit.edu</a>
-    </p>
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
-</div>
-
-
-
 <div class="card">
     <div class="card-header">
         <ul class="nav nav-tabs card-header-tabs">
+            {{#logged-in}}
+                <li class="nav-item">
+                    <a class="nav-link active" id="at-tab" data-toggle="tab" href="#at" role="tab" aria-controls="at"
+                       aria-selected="true">Access Token</a>
+                </li>
+            {{/logged-in}}
             <li class="nav-item">
-                <a class="nav-link active" id="at-tab" data-toggle="tab" href="#at" role="tab" aria-controls="at" aria-selected="true">Access Token</a>
+                <a class="nav-link{{^logged-in}} active{{/logged-in}}" id="mt-tab" data-toggle="tab" href="#mt"
+                   role="tab" aria-controls="mt" aria-selected="false">Create Mytoken</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="info-tab" data-toggle="tab" href="#info" role="tab" aria-controls="info" aria-selected="false">Tokeninfo</a>
+                <a class="nav-link" id="info-tab" data-toggle="tab" href="#info" role="tab" aria-controls="info"
+                   aria-selected="false">Tokeninfo</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="mt-tab" data-toggle="tab" href="#mt" role="tab" aria-controls="mt" aria-selected="false">Mytoken</a>
+                <a class="nav-link" id="tc-tab" data-toggle="tab" href="#transfer" role="tab"
+                   aria-controls="transfer" aria-selected="false">Exchange Transfercode</a>
             </li>
+            {{#logged-in}}
+                <li class="nav-item">
+                    <a class="nav-link" id="list-mts-tab" data-toggle="tab" href="#list-mts" role="tab"
+                       aria-controls="list-mts" aria-selected="false">My Mytokens</a>
+                </li>
+            {{/logged-in}}
         </ul>
     </div>
     <div class="card-body tab-content">
-        <div class="tab-pane show active" id="at" role="tabpanel" aria-labelledby="at-tab">
-            {{> create-at}}
+        {{#logged-in}}
+            <div class="tab-pane show active" id="at" role="tabpanel" aria-labelledby="at-tab">
+                {{> create-at}}
+            </div>
+        {{/logged-in}}
+        <div class="tab-pane bg-secondary break-out{{^logged-in}} active{{/logged-in}}" id="mt" role="tabpanel"
+             aria-labelledby="mt-tab">
+            <div class="bg-secondary ">
+                {{> create-mt}}
+            </div>
         </div>
         <div class="tab-pane" id="info" role="tabpanel" aria-labelledby="info-tab">
             {{> tokeninfo}}
         </div>
-        <div class="tab-pane bg-secondary break-out" id="mt" role="tabpanel" aria-labelledby="mt-tab">
-                <div class="bg-secondary ">
-                {{> create-mt}}
-                </div>
+        <div class="tab-pane" id="transfer" role="tabpanel" aria-labelledby="tc-tab">
+            {{> transfercode}}
+        </div>
+        {{#logged-in}}
+            <div class="tab-pane" id="list-mts" role="tabpanel" aria-labelledby="list-mts-tab">
+                {{> list-mts}}
+            </div>
+        {{/logged-in}}
+    </div>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="error-modal">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content bg-danger">
+            <div class="modal-header">
+                <h5 class="modal-title">Error</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="error-modal-msg"></div>
         </div>
     </div>
 </div>
+
+{{>revocation-modal}}
+
+{{^logged-in}}
+    <script>
+        let cookieLifetime = {{cookie-lifetime}};
+    </script>
+{{/logged-in}}

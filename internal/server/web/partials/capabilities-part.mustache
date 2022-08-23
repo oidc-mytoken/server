@@ -3,16 +3,11 @@
         {{> capability-single-part}}
     {{/ReadWriteCapability}}
     <ul class="list-group">
-        {{#ReadOnlyCapability}}
-            <li class="list-group-item capability">
-                {{> capability-single-part}}
-            </li>
-        {{/ReadOnlyCapability}}
         {{#Children}}
             {{> capabilities-part}}
         {{/Children}}
         {{#IsCreateMT}}
-            <div id="subtokenCapabilities">
+            <div id="{{prefix}}subtokenCapabilities">
                 {{#subtoken-capabilities}}
                     {{> sub-capabilities-part}}
                 {{/subtoken-capabilities}}

@@ -1,4 +1,3 @@
-
 const mtResult = $('#mt-result');
 const mtResultColor = $('#mt-result-color');
 const mtConfig = $('#mt-config');
@@ -13,23 +12,26 @@ const maxTokenLenDiv = $('#max_token_len_div');
 const tokenTypeBadge = $('#token-badge');
 const $mtInstructions = $('#mt-instructions');
 
+const mtPrefix = "createMT-";
 
-$(function () {
-    $('#cp-AT').prop('checked', true)
-    $('#cp-tokeninfo').prop('checked', true)
-})
+function initCreateMT(...next) {
+    initCapabilities(mtPrefix);
+    checkCapability("tokeninfo", "cp", mtPrefix);
+    checkCapability("AT", "cp", mtPrefix);
+    updateRotationIcon(mtPrefix);
+    initRestr(mtPrefix);
+    doNext(...next);
+}
 
 
-
-
-$('#next-mt').on('click', function(){
+$('#next-mt').on('click', function () {
     window.clearInterval(intervalID);
     mtResult.hideB();
     mtConfig.showB();
 })
 
-$('#select-token-type').on('change', function (){
-    if ($(this).val()==="auto") {
+$('#select-token-type').on('change', function () {
+    if ($(this).val() === "auto") {
         maxTokenLenDiv.showB();
     } else {
         maxTokenLenDiv.hideB();
@@ -43,17 +45,18 @@ function sendCreateMTReq() {
         "grant_type": "oidc_flow",
         "oidc_flow": "authorization_code",
         "redirect_type": "native",
-        "restrictions": restrictions,
-        "capabilities": getCheckedCapabilities(),
-        "subtoken_capabilities": getCheckedSubtokenCapabilities()
+        "restrictions": getRestrictionsData(mtPrefix),
+        "capabilities": getCheckedCapabilities(mtPrefix),
+        "subtoken_capabilities": getCheckedSubtokenCapabilities(mtPrefix),
+        "application_name": "mytoken webinterface"
     };
     let token_type = $('#select-token-type').val();
-    if (token_type==="auto") {
+    if (token_type === "auto") {
         data['max_token_len'] = Number($('#max_token_len').val());
     } else {
         data['response_type'] = token_type;
     }
-    let rot = getRotationFromForm();
+    let rot = getRotationFromForm(mtPrefix);
     if (rot) {
         data["rotation"] = rot;
     }
@@ -62,14 +65,15 @@ function sendCreateMTReq() {
         type: "POST",
         url: storageGet('mytoken_endpoint'),
         data: data,
-        success: function (res){
+        success: function (res) {
             let url = res['consent_uri'];
             let code = res['polling_code'];
             let interval = res['interval'];
             authURL.attr("href", url);
             authURL.text(url);
             $mtInstructions.showB();
-            polling(code, interval)
+            polling(code, interval);
+            window.open(url, '_blank');
         },
         error: function (errRes) {
             let errMsg = getErrorMessage(errRes);
@@ -84,11 +88,12 @@ function sendCreateMTReq() {
 }
 
 function checkRestrEmpty() {
-    if (restrictions.length === 0) {
+    let restr = getRestrictionsData(mtPrefix);
+    if (restr.length === 0) {
         return true;
     }
     let found = false;
-    restrictions.forEach(function (r) {
+    restr.forEach(function (r) {
         if (Object.keys(r).length > 0) {
             found = true;
         }
@@ -115,6 +120,7 @@ function mtShowPending() {
     mtResultColor.removeClass('alert-success');
     mtResultColor.removeClass('alert-danger');
 }
+
 function mtShowSuccess(msg) {
     mtPendingHeading.hideB();
     mtPendingSpinner.hideB();
@@ -126,6 +132,7 @@ function mtShowSuccess(msg) {
     mtResultColor.removeClass('alert-warning');
     mtResultColor.removeClass('alert-danger');
 }
+
 function mtShowError(msg) {
     mtPendingHeading.hideB();
     mtPendingSpinner.hideB();
@@ -141,18 +148,18 @@ function mtShowError(msg) {
 let intervalID;
 
 function polling(code, interval) {
-    interval = interval ? interval*1000 : 5000;
+    interval = interval ? interval * 1000 : 5000;
     let data = {
         "grant_type": "polling_code",
         "polling_code": code,
     }
     data = JSON.stringify(data);
-   intervalID = window.setInterval(function (){
+    intervalID = window.setInterval(function () {
         $.ajax({
             type: "POST",
             url: storageGet("mytoken_endpoint"),
             data: data,
-            success: function(res) {
+            success: function (res) {
                 let token_type = res['mytoken_type'];
                 let token = res['mytoken'];
                 switch (token_type) {
@@ -167,11 +174,13 @@ function polling(code, interval) {
                     default:
                         tokenTypeBadge.text("JWT");
                 }
-                mtShowSuccess(token);
-                $mtInstructions.hideB();
+                storageSet("tokeninfo_token", token, true);
                 window.clearInterval(intervalID);
+                mtResult.hideB();
+                mtConfig.showB();
+                $('#info-tab').click();
             },
-            error: function(errRes) {
+            error: function (errRes) {
                 let error = errRes.responseJSON['error'];
                 let message;
                 switch (error) {
@@ -181,26 +190,22 @@ function polling(code, interval) {
                         return;
                     case "access_denied":
                         message = "You denied the authorization request.";
-                        window.clearInterval(intervalID);
                         break;
                     case "expired_token":
                         message = "Code expired. You might want to restart the flow.";
-                        window.clearInterval(intervalID);
                         break;
                     case "invalid_grant":
                     case "invalid_token":
                         message = "Code already used.";
-                        window.clearInterval(intervalID);
                         break;
                     case "undefined":
                         message = "No response from server";
-                        window.clearInterval(intervalID);
                         break;
                     default:
                         message = getErrorMessage(errRes);
-                        window.clearInterval(intervalID);
                         break;
                 }
+                window.clearInterval(intervalID);
                 mtShowError(message)
             }
         });

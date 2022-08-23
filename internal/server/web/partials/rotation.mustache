@@ -1,32 +1,61 @@
-<div>
-    <h4>Token Rotation</h4>
+<div class="row">
+    <h4 class="col">Token Rotation <span id="{{prefix}}rot-summary" class="ml-2">
+        <i class="fas fa-sync text-muted" id="{{prefix}}rot-icon" data-toggle="tooltip" data-placement="bottom" title=""
+           data-original-title=""></i>
+    </span></h4>
+    {{#collapse.Rotation}}
+        <button class="btn btn-info my-expand" type="button" data-toggle="collapse" data-target="#{{prefix}}rot-body"
+                aria-expanded="false" aria-controls="{{prefix}}rot-body" id="{{prefix}}rot-expand">Expand
+        </button>
+    {{/collapse.Rotation}}
+</div>
+
+
+<div id="{{prefix}}rot-body" class="{{#collapse.Rotation}}collapse{{/collapse.Rotation}}">
     <div class="form-group">
         <div class="custom-control custom-switch">
-            <input type="checkbox" class="custom-control-input" aria-describedby="rotationATHelp" id="rotationAT">
-            <label class="custom-control-label" for="rotationAT">On Access Token requests</label>
+            <input type="checkbox" class="custom-control-input rotationAT" aria-describedby="{{prefix}}rotationATHelp"
+                   id="{{prefix}}rotationAT" {{#read-only}}disabled{{/read-only}}>
+            <label class="custom-control-label" for="{{prefix}}rotationAT">On Access Token requests</label>
         </div>
-        <small id="rotationATHelp" class="form-text text-muted">If the mytoken is used to request an Access Token, a new mytoken will be returned.</small>
+        <small id="{{prefix}}rotationATHelp" class="form-text text-muted">If the mytoken is used to request an Access
+            Token, a new
+            mytoken will be returned.</small>
     </div>
 
     <div class="form-group">
         <div class="custom-control custom-switch">
-            <input type="checkbox" class="custom-control-input" aria-describedby="rotationOtherHelp" id="rotationOther">
-            <label class="custom-control-label" for="rotationOther">On other requests</label>
+            <input type="checkbox" class="custom-control-input rotationOther"
+                   aria-describedby="{{prefix}}rotationOtherHelp"
+                   id="{{prefix}}rotationOther" {{#read-only}}disabled{{/read-only}}>
+            <label class="custom-control-label" for="{{prefix}}rotationOther">On all other requests</label>
         </div>
-        <small id="rotationOtherHelp" class="form-text text-muted">If the mytoken is used for other requests than requesting an Access Token, a new mytoken will be returned.</small>
+        <small id="{{prefix}}rotationOtherHelp" class="form-text text-muted">If the mytoken is used for other requests
+            than
+            requesting an Access Token, a new mytoken will be returned.</small>
     </div>
 
     <div class="form-group">
-        <label for="rotationLifetime">Lifetime</label>
-        <input type="number" class="form-control" id="rotationLifetime" aria-describedby="rotationLifetimeHelp" min=0 value=0 disabled>
-        <small id="rotationLifetimeHelp" class="form-text text-muted">The lifetime of a single Mytoken given in seconds. (Infinite lifetime if set to 0)</small>
+        <label for="{{prefix}}rotationLifetime">Lifetime</label>
+        <input type="number" class="form-control" id="{{prefix}}rotationLifetime"
+               aria-describedby="{{prefix}}rotationLifetimeHelp" min=0 value=0 disabled>
+        <small id="{{prefix}}rotationLifetimeHelp" class="form-text text-muted">The lifetime of a single Mytoken given
+            in seconds. (Infinite lifetime if set to 0)</small>
     </div>
 
     <div class="form-group">
         <div class="custom-control custom-switch">
-            <input type="checkbox" class="custom-control-input" aria-describedby="rotationAutoRevokeHelp" id="rotationAutoRevoke" disabled>
-            <label class="custom-control-label" for="rotationAutoRevoke">Automatic revocation</label>
+            <input type="checkbox" class="custom-control-input" aria-describedby="{{prefix}}rotationAutoRevokeHelp"
+                   id="{{prefix}}rotationAutoRevoke" disabled>
+            <label class="custom-control-label" for="{{prefix}}rotationAutoRevoke">Automatic revocation</label>
         </div>
-        <small id="rotationAutoRevokeHelp" class="form-text text-muted">If the mytoken server detects a misuse, the mytoken will be automatically revoked.</small>
+        <small id="{{prefix}}rotationAutoRevokeHelp" class="form-text text-muted">If the mytoken server detects a
+            misuse, the mytoken will be automatically revoked.</small>
     </div>
 </div>
+
+<script>
+    getPrefixData("{{prefix}}")['rotation'] = {
+    'read-only': {{#read-only}}true{{/read-only}}{{^read-only}}false{{/read-only}},
+    };
+</script>

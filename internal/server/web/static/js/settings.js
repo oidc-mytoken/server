@@ -2,6 +2,7 @@ $(function () {
     chainFunctions(
         checkIfLoggedIn,
         initGrants,
+        initSSH,
     );
     // https://stackoverflow.com/a/17552459
     // Javascript to enable link to tab
@@ -12,7 +13,7 @@ $(function () {
     }
 })
 
-function initGrants() {
+function initGrants(...next) {
     useSettingsToken(function (token) {
         $.ajax({
             type: "GET",
@@ -21,14 +22,15 @@ function initGrants() {
             },
             url: storageGet('usersettings_endpoint') + "/grants",
             success: function (res) {
-                let grants = res['grant_types'];
+                let grants = res['grant_types'] || [];
                 grants.forEach(function (grant) {
                     $('#' + grant['grant_type'] + '-GrantEnable').prop('checked', grant['enabled']);
                 })
+                doNext(...next);
             },
             error: function (errRes) {
-                $errorModalMsg.text(getErrorMessage(errRes));
-                $errorModal.modal();
+                $settingsErrorModalMsg.text(getErrorMessage(errRes));
+                $settingsErrorModal.modal();
             },
         });
     });
@@ -48,11 +50,16 @@ $('.grant-enable').click(function () {
 function enableGrant(grant) {
     sendGrantRequest(grant, true, function () {
         $('#' + grant + '-GrantEnable').prop('checked', true);
+        enableGrantCallbacks[grant]();
     });
 }
 
 function disableGrant(grant) {
     sendGrantRequest(grant, false, function () {
         $('#' + grant + '-GrantEnable').prop('checked', false);
+        disableGrantCallbacks[grant]();
     });
 }
+
+let enableGrantCallbacks = {};
+let disableGrantCallbacks = {};

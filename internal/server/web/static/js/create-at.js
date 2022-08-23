@@ -1,4 +1,3 @@
-
 const atResult = $('#at-result');
 const atResultColor = $('#at-result-color');
 const atConfig = $('#at-config');
@@ -10,7 +9,7 @@ const atCopyButton = $('#at-result-copy');
 const atResultMsg = $('#at-result-msg');
 
 
-$('#next-at').on('click', function(){
+$('#next-at').on('click', function () {
     atResult.hideB();
     atConfig.showB();
 })
@@ -28,6 +27,7 @@ function atShowPending() {
     atResultColor.removeClass('alert-success');
     atResultColor.removeClass('alert-danger');
 }
+
 function atShowSuccess(msg) {
     atPendingHeading.hideB();
     atPendingSpinner.hideB();
@@ -39,6 +39,7 @@ function atShowSuccess(msg) {
     atResultColor.removeClass('alert-danger');
     atResultColor.removeClass('alert-warning');
 }
+
 function atShowError(msg) {
     atPendingHeading.hideB();
     atPendingSpinner.hideB();
@@ -57,7 +58,7 @@ function _getATScopesFromGUI() {
         return null;
     }
     let scopes = []
-    checkedScopeBoxes.each(function(i){
+    checkedScopeBoxes.each(function (i) {
         scopes.push($(this).val());
     })
     return scopes.join(' ');
@@ -70,7 +71,7 @@ function _getATAudsFromGUI() {
         return null;
     }
     let auds = [];
-    items.each(function (){
+    items.each(function () {
         auds.push($(this).text());
     })
     return auds.filter(onlyUnique).join(' ')
@@ -83,14 +84,14 @@ function getAT(okCallback, errCallback, mToken) {
     };
     let scopes = _getATScopesFromGUI()
     if (scopes) {
-        data["scope"]=scopes;
+        data["scope"] = scopes;
     }
     let auds = _getATAudsFromGUI()
     if (auds) {
         data["audience"] = auds;
     }
     if (mToken) {
-        data["mytoken"]=mToken
+        data["mytoken"] = mToken
     }
 
     data = JSON.stringify(data);
@@ -101,16 +102,16 @@ function getAT(okCallback, errCallback, mToken) {
         success: okCallback,
         error: errCallback,
         dataType: "json",
-        contentType : "application/json"
+        contentType: "application/json"
     });
 }
 
-$('#get-at').on('click', function(e){
+$('#get-at').on('click', function (e) {
     getMT(
         function (res) {
             const mToken = res['mytoken']
             getAT(
-                function(tokenRes) {
+                function (tokenRes) {
                     atShowSuccess(tokenRes['access_token']);
                 },
                 function (errRes) {
@@ -132,7 +133,7 @@ $('#get-at').on('click', function(e){
 
 function initAT(...next) {
     let scopes = storageGet("token_scopes");
-    if (scopes==="") { // token not restricted with scopes
+    if (scopes === "") { // token not restricted with scopes
         scopes = getSupportedScopesFromStorage();
     } else {
         scopes = scopes.split(' ')

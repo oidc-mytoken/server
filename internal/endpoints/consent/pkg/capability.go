@@ -136,6 +136,7 @@ var warningCapabilities = []string{
 	api.CapabilityListMT.Name,
 	api.CapabilitySettingsRead.Name,
 	api.CapabilitySSHGrant.Name,
+	api.CapabilityRevokeAnyToken.Name,
 }
 var dangerCapabilities = []string{
 	api.CapabilitySettings.Name,
@@ -167,11 +168,13 @@ func (c webCapability) getDangerLevel() int {
 }
 
 // ColorClass returns the html class for coloring this Capability
+// skipcq: CRT-P0003
 func (c webCapability) ColorClass() string {
 	return textColorByDanger(c.getDangerLevel())
 }
 
 // CapabilityLevel returns a string describing the power of this capability
+// skipcq: CRT-P0003
 func (c webCapability) CapabilityLevel() string {
 	intClass := c.getIntClass()
 	switch intClass {
@@ -186,6 +189,7 @@ func (c webCapability) CapabilityLevel() string {
 }
 
 // IsCreateMT checks if this WebCapability is api.CapabilityCreateMT
+// skipcq: CRT-P0003
 func (c WebCapability) IsCreateMT() bool {
 	return c.ReadWriteCapability.Name == api.CapabilityCreateMT.Name
 }

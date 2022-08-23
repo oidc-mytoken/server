@@ -1,12 +1,15 @@
-.table-item{
+.table-item {
     padding: 0.375rem 0.75rem;
 }
-.toggle{
-    width: 110px!important;
+
+.toggle.restr-editor, .toggle-on.restr-editor, .toggle-off.restr-editor {
+    width: 110px !important;
 }
-.btn-add-list-item{
+
+.btn-add-list-item {
     padding: 0;
 }
-.btn-delete-list-item{
+
+.btn-delete-list-item {
     padding: 0;
 }

@@ -40,7 +40,7 @@ func ReencryptEncryptionKey(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.
 }
 
 // DeleteEncryptionKey deletes the encryption key for a mytoken.
-func DeleteEncryptionKey(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) error {
+func DeleteEncryptionKey(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID interface{}) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			keyID, err := getEncryptionKeyID(rlog, tx, tokenID)
@@ -104,7 +104,7 @@ func (res RTCryptKeyDBRes) Decrypt(jwt string) (string, error) {
 }
 
 // getEncryptionKeyID returns the id of the encryption key used for encrypting the RT linked to this mytoken
-func getEncryptionKeyID(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID) (uint64, error) {
+func getEncryptionKeyID(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID interface{}) (uint64, error) {
 	var res RTCryptKeyDBRes
 	err := db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {

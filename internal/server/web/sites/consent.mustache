@@ -1,42 +1,39 @@
 <div class="container-fluid p-5">
-<h3 class="text-center">Approval Required</h3>
-<p class="text-center lead">
-    Do you want to create a mytoken with the following properties?
-</p>
+    <h3 class="text-center">Approval Required</h3>
+    <p class="text-center lead">
+        An application {{#application}}('{{application}}') {{/application}}requests a mytoken with the
+        following properties:
+    </p>
 
-<div class="row">
-    <div class="col">
-        <div class="form-group alert border">
-            <h4>Token Name</h4>
-            <label for="tokenName">Token Name</label>
-            <input type="text" class="form-control" id="tokenName" aria-describedby="tokenNameHelp" placeholder="Name">
-            <small id="tokenNameHelp" class="form-text text-muted">Give the Mytoken a name, so you can identify it better.</small>
+    <div class="row">
+        <div class="col">
+            <div class="alert border">
+                {{> capabilities}}
+            </div>
+            <div class="form-group alert border">
+                <div class="input-group">
+                    <h4 class="input-group-text">Token Name</h4>
+                    <input type="text" class="form-control" id="tokenName" placeholder="Name">
+                </div>
+            </div>
         </div>
-
-        <div class="alert border">
-            {{> rotation}}
-        </div>
-
-    </div>
-    <div class="col">
-        <div class="alert border">
-            {{> capabilities}}
-        </div>
-    </div>
-    <div class="col">
-        <div class="alert border">
-            {{> restrictions}}
+        <div class="col">
+            <div class="alert border">
+                {{> restrictions}}
+            </div>
+            <div class="alert border">
+                {{> rotation}}
+            </div>
         </div>
     </div>
-</div>
 
-<div class="text-center">
-    <h4>Do you want to approve this mytoken?</h4>
-    <button class="btn btn-primary" role="button" onclick="approve()">Continue</button>
-    <button class="btn btn-secondary" role="button" onclick="cancel()">Cancel</button>
-</div>
+    <div class="text-center">
+        <h4>Do you want to approve this mytoken?</h4>
+        <button class="btn btn-primary" role="button" onclick="_approve()">Continue</button>
+        <button class="btn btn-secondary" role="button" onclick="cancel()">Cancel</button>
+    </div>
 
-{{> error-message }}
+    {{> error-message }}
 </div>
 
 <script>

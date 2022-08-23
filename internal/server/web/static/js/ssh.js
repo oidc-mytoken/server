@@ -19,24 +19,6 @@ const $hostConfigDiv = $('#sshHostConfigDiv');
 const $sshFollowInstructions = $('#follow-instructions');
 const $noSSHKeyEntry = $('#noSSHKeyEntry')
 
-
-let clipboard = new ClipboardJS('.btn-copy');
-clipboard.on('success', function (e) {
-    e.clearSelection();
-    let el = $(e.trigger);
-    let originalText = el.attr('data-original-title');
-    el.attr('data-original-title', 'Copied!').tooltip('show');
-    el.attr('data-original-title', originalText);
-});
-
-$(function () {
-    chainFunctions(
-        checkIfLoggedIn,
-        initRestrGUI,
-        initSSH,
-    );
-})
-
 $('#addModal').on('hidden.bs.modal', function () {
     window.clearInterval(intervalID);
     $sshResult.hideB();
@@ -44,23 +26,23 @@ $('#addModal').on('hidden.bs.modal', function () {
     initSSH();
 })
 
-function enableSSH() {
-    sendGrantRequest('ssh', true, function () {
-        $sshGrantStatusEnabled.showB();
-        $sshGrantStatusDisabled.hideB();
-        $addSSHKeyBtn.prop('disabled', false);
-    });
-}
+enableGrantCallbacks['ssh'] = function enableSSHCallback() {
+    $sshGrantStatusEnabled.showB();
+    $sshGrantStatusDisabled.hideB();
+    $addSSHKeyBtn.prop('disabled', false);
+};
 
-function disableSSH() {
-    sendGrantRequest('ssh', false, function () {
-        $sshGrantStatusEnabled.hideB();
-        $sshGrantStatusDisabled.showB();
-        $addSSHKeyBtn.prop('disabled', true);
-    });
-}
+disableGrantCallbacks['ssh'] = function disableSSHCallback() {
+    $sshGrantStatusEnabled.hideB();
+    $sshGrantStatusDisabled.showB();
+    $addSSHKeyBtn.prop('disabled', true);
+};
 
-function initSSH() {
+function initSSH(...next) {
+    initRestr();
+    initCapabilities();
+    checkCapability("tokeninfo", "cp", mtPrefix);
+    checkCapability("AT", "cp", mtPrefix);
     clearSSHKeyTable();
     useSettingsToken(function (token) {
         $.ajax({
@@ -83,10 +65,11 @@ function initSSH() {
                         addSSHKeyToTable(key);
                     })
                 }
+                doNext(...next);
             },
             error: function (errRes) {
-                $errorModalMsg.text(getErrorMessage(errRes));
-                $errorModal.modal();
+                $settingsErrorModalMsg.text(getErrorMessage(errRes));
+                $settingsErrorModal.modal();
             },
         });
     });
@@ -133,13 +116,10 @@ function addSSHKey() {
             "grant_type": "mytoken",
             "ssh_key": $sshKeyInput.val(),
             "name": $('#keyName').val(),
-            "restrictions": restrictions,
-            "capabilities": $('.capability-check:checked').map(function (_, el) {
-                return $(el).val();
-            }).get(),
-            "subtoken_capabilities": $('.subtoken-capability-check:checked').map(function (_, el) {
-                return $(el).val();
-            }).get()
+            "restrictions": getRestrictionsData(),
+            "capabilities": getCheckedCapabilities(),
+            "subtoken_capabilities": getCheckedSubtokenCapabilities(),
+            "application_name": "mytoken webinterface"
         };
         data = JSON.stringify(data);
         $.ajax({
@@ -311,8 +291,8 @@ function sendDeleteKeyRequest(keyFP) {
                 initSSH();
             },
             error: function (errRes) {
-                $errorModalMsg.text(getErrorMessage(errRes));
-                $errorModal.modal();
+                $settingsErrorModalMsg.text(getErrorMessage(errRes));
+                $settingsErrorModal.modal();
             },
         });
     });

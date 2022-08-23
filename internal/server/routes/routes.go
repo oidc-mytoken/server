@@ -8,6 +8,9 @@ import (
 
 var routes *paths
 
+const WellknownMytokenConfiguration = "/.well-known/mytoken-configuration"
+const WellknownOpenIDConfiguration = "/.well-known/openid-configuration"
+
 // init initializes the server route paths
 func init() {
 	routes = &paths{
@@ -22,7 +25,7 @@ func init() {
 			},
 		},
 		other: GeneralPaths{
-			ConfigurationEndpoint: "/.well-known/mytoken-configuration",
+			ConfigurationEndpoint: WellknownMytokenConfiguration,
 			OIDCRedirectEndpoint:  "/redirect",
 			JWKSEndpoint:          "/jwks",
 			ConsentEndpoint:       "/c",

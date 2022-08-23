@@ -1,13 +1,13 @@
-$(function (){
+$(function () {
     checkIfLoggedIn();
 })
 
-$('#login-form').on('submit', function(e){
+$('#login-form').on('submit', function (e) {
     e.preventDefault();
     let data = $(this).serializeObject()
     data['restrictions'] = [
         {
-            "exp": Math.floor(Date.now() / 1000) + 3600 * 24 * 7, // TODO configurable
+            "exp": Math.floor(Date.now() / 1000) + cookieLifetime,
             "ip": ["this"],
             "usages_AT": 1,
             "usages_other": 100,
@@ -21,7 +21,8 @@ $('#login-form').on('submit', function(e){
         "AT",
         "settings",
         "list_mytokens",
-        "tokeninfo:introspect"
+        "tokeninfo:introspect",
+        "revoke_any_token"
     ]
     data['rotation'] = {
         "on_other": true,
@@ -37,10 +38,20 @@ $('#login-form').on('submit', function(e){
         url: storageGet("mytoken_endpoint"),
         data: data,
         success: function (res) {
-            window.location.href = res['consent_uri'];
+            let consent_uri = res['consent_uri'];
+            let auth_uri = res['authorization_uri'];
+            let uri;
+            if (consent_uri !== undefined) {
+                uri = consent_uri;
+            } else if (auth_uri !== undefined) {
+                uri = auth_uri;
+            } else {
+                console.error("Unexpected response: ", res);
+            }
+            window.location.href = uri;
         },
         dataType: "json",
-        contentType : "application/json"
+        contentType: "application/json"
     });
     return false;
 });

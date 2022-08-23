@@ -69,7 +69,7 @@ func basicConfiguration() *pkg.MytokenConfiguration {
 			pkgModel.GrantTypeOIDCFlow,
 			pkgModel.GrantTypeMytoken,
 		},
-		MytokenEndpointOIDCFlowsSupported: config.Get().Features.EnabledOIDCFlows,
+		MytokenEndpointOIDCFlowsSupported: []pkgModel.OIDCFlow{pkgModel.OIDCFlowAuthorizationCode},
 		ResponseTypesSupported:            []pkgModel.ResponseType{pkgModel.ResponseTypeToken},
 		TokenEndpoint: utils.CombineURLPath(
 			config.Get().IssuerURL, apiPaths.AccessTokenEndpoint,

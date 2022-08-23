@@ -1,4 +1,3 @@
-
 function checkIfLoggedIn(...next) {
     chainFunctions(
         discovery,
@@ -9,14 +8,14 @@ function checkIfLoggedIn(...next) {
 
 function _checkIfLoggedIn(...next) {
     let data = {
-        'action':'introspect'
+        'action': 'introspect'
     };
     data = JSON.stringify(data);
     $.ajax({
         type: "POST",
         url: storageGet('tokeninfo_endpoint'),
         data: data,
-        success: function(res){
+        success: function (res) {
             let token = res['token'];
             let iss = token['oidc_iss'];
             if (iss) {
@@ -35,7 +34,7 @@ function _checkIfLoggedIn(...next) {
             }
         },
         dataType: "json",
-        contentType : "application/json"
+        contentType: "application/json"
     });
 }
 

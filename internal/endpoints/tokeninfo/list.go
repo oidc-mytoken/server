@@ -24,9 +24,9 @@ import (
 )
 
 func doTokenInfoList(
-	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+	rlog log.Ext1FieldLogger, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
 	usedRestriction *restrictions.Restriction,
-) (tokenList []tree.MytokenEntryTree, tokenUpdate *response.MytokenResponse, err error) {
+) (tokenList []*tree.MytokenEntryTree, tokenUpdate *response.MytokenResponse, err error) {
 	err = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
 			tokenList, err = tree.AllTokens(rlog, tx, mt.ID)
@@ -58,7 +58,7 @@ func doTokenInfoList(
 
 // HandleTokenInfoList handles a tokeninfo list request
 func HandleTokenInfoList(
-	rlog log.Ext1FieldLogger, req pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+	rlog log.Ext1FieldLogger, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
 ) model.Response {
 	// If we call this function it means the token is valid.
 	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(

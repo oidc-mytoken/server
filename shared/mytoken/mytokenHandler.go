@@ -89,7 +89,7 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 	token, err := universalmytoken.Parse(rlog, tokenStr)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return model.ErrorToInternalServerErrorResponse(err)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	mt, err := mytoken.ParseJWT(token.JWT)
 	if err != nil {
@@ -117,15 +117,6 @@ func HandleMytokenFromMytokenReqChecks(
 	rlog log.Ext1FieldLogger, req *response.MytokenFromMytokenRequest, ip string,
 	ctx *fiber.Ctx,
 ) (*restrictions.Restriction, *mytoken.Mytoken, *model.Response) {
-	// if len(req.Capabilities) == 0 {
-	// 	return nil, nil, &model.Response{
-	// 		Status: fiber.StatusBadRequest,
-	// 		Response: api.Error{
-	// 			Error:            api.ErrorStrInvalidRequest,
-	// 			ErrorDescription: "capabilities cannot be empty",
-	// 		},
-	// 	}
-	// }
 	req.Restrictions.ReplaceThisIp(ip)
 	req.Restrictions.ClearUnsupportedKeys()
 	rlog.Trace("Parsed mytoken request")

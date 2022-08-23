@@ -2,6 +2,7 @@ package authcode
 
 import (
 	"database/sql"
+	"fmt"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -23,6 +24,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/issuer"
 	"github.com/oidc-mytoken/server/internal/oidc/pkce"
+	"github.com/oidc-mytoken/server/internal/server/httpStatus"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
@@ -50,10 +52,19 @@ func Init() {
 
 // GetAuthorizationURL creates a authorization url
 func GetAuthorizationURL(
-	rlog log.Ext1FieldLogger, provider *config.ProviderConf, oState, pkceChallenge string,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, provider *config.ProviderConf, oState *state.State,
 	restrictions restrictions.Restrictions,
-) string {
+) (string, error) {
 	rlog.Debug("Generating authorization url")
+	pkceCode := pkce.NewS256PKCE(utils.RandASCIIString(44))
+	if err := db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return authcodeinforepo.SetCodeVerifier(rlog, tx, oState, pkceCode.Verifier())
+		},
+	); err != nil {
+		return "", err
+	}
+	pkceChallenge, _ := pkceCode.Challenge()
 	scopes := restrictions.GetScopes()
 	if len(scopes) <= 0 {
 		scopes = provider.Scopes
@@ -87,7 +98,16 @@ func GetAuthorizationURL(
 		)
 	}
 
-	return oauth2Config.AuthCodeURL(oState, additionalParams...)
+	return oauth2Config.AuthCodeURL(oState.State(), additionalParams...), nil
+}
+
+func trustedRedirectURI(redirectUri string) bool {
+	for _, r := range config.Get().Features.OIDCFlows.AuthCode.Web.TrustedRedirectsRegex {
+		if r.MatchString(redirectUri) {
+			return true
+		}
+	}
+	return false
 }
 
 // StartAuthCodeFlow starts an authorization code flow
@@ -95,6 +115,16 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq *response.OIDCFlowRequest) *model
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle authcode")
 	req := oidcReq.ToAuthCodeFlowRequest()
+	native := req.Native() && config.Get().Features.Polling.Enabled
+	if !native && req.RedirectURI == "" {
+		return &model.Response{
+			Status: fiber.StatusBadRequest,
+			Response: api.Error{
+				Error:            api.ErrorStrInvalidRequest,
+				ErrorDescription: "parameter redirect_uri must be given for client_type=web",
+			},
+		}
+	}
 	req.Restrictions.ReplaceThisIp(ctx.IP())
 	req.Restrictions.ClearUnsupportedKeys()
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
@@ -123,7 +153,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq *response.OIDCFlowRequest) *model
 	res := api.AuthCodeFlowResponse{
 		ConsentURI: utils.CombineURLPath(consentEndpoint, consentCode.String()),
 	}
-	if req.Native() && config.Get().Features.Polling.Enabled {
+	if native {
 		poll := authFlowInfo.State.PollingCode(rlog)
 		authFlowInfo.PollingCode = transfercoderepo.CreatePollingCode(poll, req.ResponseType, req.MaxTokenLen)
 		res.PollingInfo = api.PollingInfo{
@@ -135,6 +165,22 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq *response.OIDCFlowRequest) *model
 	if err := authFlowInfo.Store(rlog, nil); err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	if !native && trustedRedirectURI(req.RedirectURI) {
+		authURI, err := GetAuthorizationURL(
+			rlog, nil, provider, state.NewState(consentCode.GetState()),
+			req.Restrictions,
+		)
+		if err != nil {
+			rlog.Errorf("%s", errorfmt.Full(err))
+			return model.ErrorToInternalServerErrorResponse(err)
+		}
+		return &model.Response{
+			Status: httpStatus.StatusOKForward,
+			Response: map[string]string{
+				"authorization_uri": authURI,
+			},
+		}
 	}
 	return &model.Response{
 		Status:   fiber.StatusOK,
@@ -249,9 +295,13 @@ func CodeExchange(
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if authInfo.PollingCode {
+		url := "/native"
+		if authInfo.ApplicationName != "" {
+			url = fmt.Sprintf("%s?application=%s", url, authInfo.ApplicationName)
+		}
 		return &model.Response{
 			Status:   fiber.StatusSeeOther,
-			Response: "/native",
+			Response: url,
 		}
 	}
 	res, err := ste.Token.ToTokenResponse(rlog, authInfo.ResponseType, authInfo.MaxTokenLen, networkData, "")

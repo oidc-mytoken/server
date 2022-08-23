@@ -15,6 +15,9 @@ type UnixTime int64
 
 // Time returns the UnixTime as time.Time
 func (t UnixTime) Time() time.Time {
+	if t == 0 {
+		return time.Time{}
+	}
 	return time.Unix(int64(t), 0)
 }
 

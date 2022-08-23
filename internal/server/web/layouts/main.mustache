@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>mytoken</title>
-    <link rel="stylesheet" href="/static/css/lib/superhero-bootstrap.min.css">
-    <link rel="stylesheet" href="/static/lib/fontawesome/fontawesome-free-5.15.4-web/css/all.min.css">
-    <link rel="stylesheet" href="/static/css/mytoken.css">
+    <link rel="stylesheet" href="{{instance-url}}/static/css/lib/superhero-bootstrap.min.css">
+    <link rel="stylesheet" href="{{instance-url}}/static/lib/fontawesome/fontawesome-free-5.15.4-web/css/all.min.css">
+    <link rel="stylesheet" href="{{instance-url}}/static/css/mytoken.css">
     {{> style }}
+    <script src="{{instance-url}}/static/js/prefixdata.js"></script>
 </head>
 <body>
 <div id="page-container">
@@ -21,14 +22,17 @@
 </div>
 
 
-<script src="/static/js/lib/jquery.min.js"
-        integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="></script>
-<script src="/static/js/lib/bootstrap.bundle.min.js"
-        integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns"></script>
+<script src="{{instance-url}}/static/js/lib/jquery.min.js"
+        integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="{{instance-url}}/static/js/lib/bootstrap.bundle.min.js"
+        integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
 <script>
     $(function () {
         $('[data-toggle="tooltip"]').tooltip();
     })
+    const instanceURL = "{{instance-url}}";
 </script>
 {{> scripts }}
 </body>
