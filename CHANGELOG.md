@@ -69,11 +69,11 @@
 
 ### Dependencies
 
-- Bump github.com/valyala/fasthttp from 1.37.0 to 1.38.0
+- Bump github.com/valyala/fasthttp from 1.37.0 to 1.39.0
 - Bump github.com/gofiber/fiber/v2 from 2.34.0 to 2.35.0
 - Bump github.com/sirupsen/logrus from 1.8.1 to 1.9.0
-- Bump github.com/gofiber/template from 1.6.28 to 1.6.29
-- Bump github.com/gofiber/helmet/v2 from 2.2.13 to 2.2.14
+- Bump github.com/gofiber/template from 1.6.28 to 1.6.30
+- Bump github.com/gofiber/helmet/v2 from 2.2.13 to 2.2.15
 
 ## mytoken 0.4.3
 
