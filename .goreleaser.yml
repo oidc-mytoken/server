@@ -51,14 +51,14 @@ nfpms:
     release: 1
     section: misc
     bindir: /usr/bin
-    empty_folders:
-      - /var/log/mytoken
     contents:
       - src: config/example-config.yaml
         dst: /etc/mytoken/example-config.yaml
         type: config
       - src: config/mytoken.service
         dst: /etc/systemd/system/mytoken.service
+      - dst: /var/log/mytoken
+        type: dir
     overrides:
       rpm:
         replacements:
