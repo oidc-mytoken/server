@@ -118,7 +118,8 @@ function addSSHKey() {
             "name": $('#keyName').val(),
             "restrictions": getRestrictionsData(),
             "capabilities": getCheckedCapabilities(),
-            "subtoken_capabilities": getCheckedSubtokenCapabilities()
+            "subtoken_capabilities": getCheckedSubtokenCapabilities(),
+            "application_name": "mytoken webinterface"
         };
         data = JSON.stringify(data);
         $.ajax({
