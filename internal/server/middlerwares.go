@@ -139,6 +139,7 @@ func addCorsMiddleware(s fiber.Router) {
 	allowedPaths := []string{
 		routes.WellknownMytokenConfiguration,
 		routes.WellknownOpenIDConfiguration,
+		routes.GetGeneralPaths().JWKSEndpoint,
 	}
 	allowedPrefixes := []string{
 		apiPath.Prefix,

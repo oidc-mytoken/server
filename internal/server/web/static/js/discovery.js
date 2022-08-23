@@ -17,7 +17,7 @@ function discovery(...next) {
         }
         $.ajax({
             type: "Get",
-            url: instanceURL + "/.well-known/mytoken-configuration",
+            url: instanceURL + (instanceURL.endsWith("/") ? "" : "/") + ".well-known/mytoken-configuration",
             success: function (res) {
                 configElements.forEach(function (el) {
                     storageSet(el, res[el]);

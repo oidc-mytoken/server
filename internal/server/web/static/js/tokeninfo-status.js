@@ -44,8 +44,12 @@ async function update_tokeninfo() {
         let mytokenIss = payload['iss'];
         $tokeninfoTypeBadges.hideB();
         $tokeninfoBadgeTypeJWTInvalid.showB();
+        if (mytokenIss.endsWith("/")) {
+            mytokenIss = mytokenIss.substring(0, mytokenIss.length - 1);
+        }
         if (!mytokenIss.startsWith(window.location.href)) {
-            await fetch(mytokenIss + "/.well-known/mytoken-configuration").then(function (res) {
+            let url = mytokenIss + "/.well-known/mytoken-configuration";
+            await fetch(url).then(function (res) {
                 return res.json();
             }).then(function (data) {
                 tokeninfoEndpoint = data['tokeninfo_endpoint'];
