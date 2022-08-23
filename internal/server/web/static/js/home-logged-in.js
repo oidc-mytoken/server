@@ -1,3 +1,5 @@
+let loggedIn = true;
+
 $(function () {
     chainFunctions(
         checkIfLoggedIn,
