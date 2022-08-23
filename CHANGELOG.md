@@ -17,26 +17,55 @@
 ### Features
 
 - Trusted web applications can skip the consent screen
-
-### Enhancements
-
-- Reworked and improved several parts of the web interface:
-  - Consent Screen: On default a more compressed view is shown, where sections can be expanded if needed.
+- Reworked and improved major parts of the web interface:
+  - Consent Screen:
+    - On default a more compressed view is shown, where sections can be expanded if needed.
+    - Displays the content of the `application_name` parameter if given.
+    - Added possibility for clients to create a consent screen for mytoken-from-mytoken requests
+  - Home Screen:
+    - Replaced the tokeninfo pane with a new one
+      - Removed tokeninfo about the session's mytoken
+      - Added a tokeninfo pane to display tokeninfo for arbitrary mytokens (incl. introspection, history, subtokens)
+      - Added possibility to create a transfer code
+      - Moved the list of mytokens to a separate pane
+      - Improved displaying the tree structure of mytokens
+      - Reversed the token history order
+    - Added "Exchange transfercode" pane, where a transfercode can be exchanged into a mytoken
+    - Some parts can be used without being logged-in
+  - Token Revocation:
+    - Added possibility to revoke a mytoken in the tokeninfo pane
+    - Added possibility to revoke listed tokens in the "My Mytokens" pane and in the "Tokeninfo - Subtokens" pane.
   - Capabilities:
     - Simplified the checking of capabilities
     - Read/Write capabilities are now not split but can be toggled
+  - Create Mytoken:
+    - After creation the mytoken is displayed in the tokeninfo pane, where it can be copied and of course
+      information about the token is displayed
   - Settings:
     - Grant Types:
       - Include pages of different grant types in this view.
       - Grant Types can be expanded (collapsed on default).
       - Link to grant type page that was not clear enough is no longer needed.
 
+### API
+
+- Added `application_name` to mytoken requests.
+- Added `token_type` to token introspection response.
+- Added possibility to revoke tokens by `revocation_id`:
+  - Added new `revoke_any_token` capability.
+  - Added `revocation_id` parameter to responses that list tokens.
+
+### Enhancements
+
+- Admins can adapt the webinterface, i.e. for a custom style
+
 ### Bugfixes
 
 - Fixed a bug in the mytoken webinterface where token introspection did not work on the settings page
-- Fixed a bug in the mytoken webinterface restriction editor, where audiences would always be set to zero when switching
-  from the JSON editor to the GUI editor
+- Fixed a bug in the mytoken webinterface restrictions editor, where audiences would always be set to zero when
+  switching from the JSON editor to the GUI editor
 - Fixed a bug where non-expiring mytokens would be revoked when database cleanup was enabled.
+- Fixed a bug where the server could potentially crash
 
 ### Dependencies
 
@@ -156,8 +185,8 @@
 
 ### API
 
-- Don't redirect from `/.well-known/openid-configuration` to `/.well-known/mytoken-configuration`. Instead returning the
-  same content on both endpoints.
+- Don't redirect from `/.well-known/openid-configuration` to `/.well-known/mytoken-configuration`. Instead,
+  returning the same content on both endpoints.
 
 ### Enhancements
 
