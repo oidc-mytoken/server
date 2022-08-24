@@ -12,7 +12,19 @@
 <!-- ### Dependencies -->
 <!--  -->
 
-## mytoken 0.5
+## mytoken 0.5.1
+
+### Enhancements
+
+- In the tokeninfo - subtokens pane of the webinterface now only show the subtokens of the token in question,
+  leaving out the actual token as their parent
+
+### Bugfixes
+
+- Fixed two bugs in the tokeninfo webinterface when introspecting mytokens issued by another server
+- Fixed CORS of jwks
+
+## mytoken 0.5.0
 
 ### Features
 
