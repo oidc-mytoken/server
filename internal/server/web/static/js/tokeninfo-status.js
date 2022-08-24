@@ -36,7 +36,7 @@ async function update_tokeninfo() {
         fillTokenInfo(payload);
         return;
     }
-    let tokeninfoEndpoint = storageGet('tokeninfo_endpoint');
+    tokeninfoEndpointToUse = storageGet('tokeninfo_endpoint');
     let jwksUri = storageGet('jwks_uri');
     transferEndpoint = "";
     try {
@@ -52,7 +52,7 @@ async function update_tokeninfo() {
             await fetch(url).then(function (res) {
                 return res.json();
             }).then(function (data) {
-                tokeninfoEndpoint = data['tokeninfo_endpoint'];
+                tokeninfoEndpointToUse = data['tokeninfo_endpoint'];
                 jwksUri = data['jwks_uri'];
                 transferEndpoint = data['token_transfer_endpoint'];
             }).catch(function (e) {
@@ -78,7 +78,7 @@ async function update_tokeninfo() {
     try {
         await $.ajax({
             type: "POST",
-            url: tokeninfoEndpoint,
+            url: tokeninfoEndpointToUse,
             data: JSON.stringify({
                 'action': 'introspect',
                 'mytoken': token,

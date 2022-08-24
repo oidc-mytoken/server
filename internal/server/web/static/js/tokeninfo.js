@@ -1,5 +1,7 @@
 const $tokenInput = $('#tokeninfo-token');
 
+let tokeninfoEndpointToUse;
+
 function _tokeninfo(action, successFnc, errorFnc, token = undefined) {
     let data = {
         'action': action
@@ -10,7 +12,7 @@ function _tokeninfo(action, successFnc, errorFnc, token = undefined) {
     data = JSON.stringify(data);
     $.ajax({
         type: "POST",
-        url: storageGet('tokeninfo_endpoint'),
+        url: tokeninfoEndpointToUse,
         data: data,
         success: successFnc,
         error: errorFnc,
@@ -222,6 +224,7 @@ const listMsg = $('#list-msg');
 const listCopy = $('#list-copy');
 
 function _getListTokenInfo(token) {
+    tokeninfoEndpointToUse = storageGet("tokeninfo_endpoint");
     _tokeninfo('list_mytokens',
         function (infoRes) {
             listMsg.html(tokenlistToHTML(infoRes['mytokens'], revocationClassFromTokenList));
