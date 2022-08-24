@@ -153,6 +153,9 @@ function tokenlistToHTML(tokenTrees, deleteClass) {
     tokenTrees.forEach(function (tokenTree) {
         tableEntries = _tokenTreeToHTML(tokenTree, deleteClass, 0) + tableEntries;
     });
+    if (tableEntries === "") {
+        tableEntries = `<tr><td colSpan="4" class="text-muted text-center">No subtokens</td></tr>`;
+    }
     return '<table class="table table-hover table-grey">' +
         '<thead><tr>' +
         '<th style="min-width: 50%;">Token Name</th>' +
@@ -207,7 +210,12 @@ function _getSubtokensInfo() {
     let copy = $('#tree-copy');
     _tokeninfo('subtokens',
         function (res) {
-            msg.html(tokenlistToHTML([res['mytokens']], revocationClassFromSubtokens));
+            let token = res['mytokens'];
+            let subtokens = [];
+            if ('children' in token) {
+                subtokens = token['children'];
+            }
+            msg.html(tokenlistToHTML(subtokens, revocationClassFromSubtokens));
             activateTokenList();
             msg.removeClass('text-danger');
             copy.addClass('d-none');
