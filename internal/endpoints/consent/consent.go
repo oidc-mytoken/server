@@ -37,26 +37,32 @@ import (
 func handleConsent(ctx *fiber.Ctx, info *pkg2.OIDCFlowRequest, includeConsentCallbacks bool) error {
 	c := info.Capabilities
 	binding := map[string]interface{}{
-		"consent":               true,
-		"consent-send":          includeConsentCallbacks,
-		"empty-navbar":          true,
-		"restr-gui":             true,
-		"collapse":              templating.Collapsable{All: true},
-		"restrictions":          pkg.WebRestrictions{Restrictions: info.Restrictions},
-		"capabilities":          pkg.AllWebCapabilities(),
-		"subtoken-capabilities": pkg.AllWebCapabilities(),
-		"checked-capabilities":  c.Strings(),
-		"iss":                   info.Issuer,
-		"supported_scopes":      strings.Join(config.Get().ProviderByIssuer[info.Issuer].Scopes, " "),
-		"token-name":            info.Name,
-		"rotation":              info.Rotation,
-		"application":           info.ApplicationName,
+		templating.MustacheKeyConsent:              true,
+		templating.MustacheKeyConsentSend:          includeConsentCallbacks,
+		templating.MustacheKeyEmptyNavbar:          true,
+		templating.MustacheKeyRestrictionsGUI:      true,
+		templating.MustacheKeyCollapse:             templating.Collapsable{All: true},
+		templating.MustacheKeyRestrictions:         pkg.WebRestrictions{Restrictions: info.Restrictions},
+		templating.MustacheKeyCapabilities:         pkg.AllWebCapabilities(),
+		templating.MustacheKeySubtokenCapabilities: pkg.AllWebCapabilities(),
+		templating.MustacheKeyCheckedCapabilities:  c.Strings(),
+		templating.MustacheKeyIss:                  info.Issuer,
+		templating.MustacheKeySupportedScopes: strings.Join(
+			config.Get().ProviderByIssuer[info.Issuer].Scopes, " ",
+		),
+		templating.MustacheKeyTokenName:   info.Name,
+		templating.MustacheKeyRotation:    info.Rotation,
+		templating.MustacheKeyApplication: info.ApplicationName,
 	}
 	if c.Has(api.CapabilityCreateMT) {
-		binding["checked-subtoken-capabilities"] = info.SubtokenCapabilities.Strings()
+		binding[templating.MustacheKeyCheckedSubtokenCapabilities] = info.SubtokenCapabilities.Strings()
 	}
 	if !includeConsentCallbacks {
-		binding["instance-url"] = config.Get().IssuerURL
+		iss := config.Get().IssuerURL
+		if iss[len(iss)-1] == '/' {
+			iss = iss[:len(iss)-1]
+		}
+		binding[templating.MustacheKeyInstanceUrl] = iss
 	}
 	return ctx.Render("sites/consent", binding, "layouts/main")
 }
