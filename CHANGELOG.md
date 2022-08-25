@@ -12,6 +12,12 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.5.2
+
+### Bugfixes
+
+- Fixed a bug with requesting a consent screen for mytoken requests
+
 ## mytoken 0.5.1
 
 ### Enhancements
