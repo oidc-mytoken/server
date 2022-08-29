@@ -87,6 +87,7 @@ $(document).ready(function () {
 function initRestrGUI(prefix = "") {
     initDatetimePicker(prefix);
     if (typeof (tokeninfoPrefix) === 'undefined' || prefix !== tokeninfoPrefix) {
+        scopeTableBody(prefix).html("");
         const scopes = typeof (supported_scopes) !== 'undefined' ? supported_scopes : getSupportedScopesFromStorage();
         for (const scope of scopes) {
             _addScopeValueToGUI(scope, scopeTableBody(prefix), "restr", prefix);

@@ -12,6 +12,13 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.5.4
+
+### Bugfixes
+
+- Fixed a bug in the webinterface where scope restrictions did not update correctly when not logged in and issuer
+  changed
+
 ## mytoken 0.5.3
 
 ### Bugfixes
