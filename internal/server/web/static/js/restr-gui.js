@@ -127,7 +127,7 @@ function initRestrGUI(prefix = "") {
 function getSupportedScopesFromStorage(iss = "") {
     const providers = storageGet("providers_supported");
     if (iss === "") {
-        iss = typeof (issuer) !== 'undefined' ? issuer : storageGet("oidc_issuer");
+        iss = typeof (issuer) !== 'undefined' ? issuer : storageGet("oidc_issuer") || $('#login-iss').val();
     }
     return providers.find(x => x.issuer === iss).scopes_supported;
 }
