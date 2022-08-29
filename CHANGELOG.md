@@ -12,6 +12,12 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.5.3
+
+### Bugfixes
+
+- Fixed a bug in the webinterface where mytokens could not be created when not logged-in
+
 ## mytoken 0.5.2
 
 ### Bugfixes

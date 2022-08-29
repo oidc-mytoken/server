@@ -41,7 +41,7 @@ $('#select-token-type').on('change', function () {
 function sendCreateMTReq() {
     let data = {
         "name": $('#tokenName').val(),
-        "oidc_issuer": storageGet("oidc_issuer"),
+        "oidc_issuer": storageGet("oidc_issuer") || $('#login-iss').val(),
         "grant_type": "oidc_flow",
         "oidc_flow": "authorization_code",
         "redirect_type": "native",
