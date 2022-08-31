@@ -9,7 +9,7 @@ require (
 	github.com/gliderlabs/ssh v0.3.4
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-sql-driver/mysql v1.6.0
-	github.com/gofiber/fiber/v2 v2.36.0
+	github.com/gofiber/fiber/v2 v2.37.0
 	github.com/gofiber/helmet/v2 v2.2.15
 	github.com/gofiber/template v1.6.30
 	github.com/golang-jwt/jwt v3.2.2+incompatible
