@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
+	"github.com/valyala/fasthttp"
 
 	"github.com/oidc-mytoken/server/shared/context"
 )
@@ -22,13 +23,14 @@ func init() {
 }
 
 // Init initializes the http client
-func Init(hostURL string) {
+func Init(hostURL, userAgent string) {
 	if hostURL != "" {
 		client.SetBaseURL(hostURL)
 	}
 	if log.IsLevelEnabled(log.DebugLevel) {
 		client.SetDebug(true)
 	}
+	client.SetHeader(fasthttp.HeaderUserAgent, userAgent)
 }
 
 // Do returns the client, so it can be used to do requests

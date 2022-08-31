@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -68,9 +69,9 @@ func MustReadFile(filename string) []byte {
 	return file
 }
 
-// ReadConfigFile checks if a file exists in one of the configuration
+// MustReadConfigFile checks if a file exists in one of the configuration
 // directories and returns the content. If no file is found, mytoken exists.
-func ReadConfigFile(filename string, locations []string) ([]byte, string) {
+func MustReadConfigFile(filename string, locations []string) ([]byte, string) {
 	for _, dir := range locations {
 		if strings.HasPrefix(dir, "~") {
 			homeDir := os.Getenv("HOME")
@@ -88,4 +89,26 @@ func ReadConfigFile(filename string, locations []string) ([]byte, string) {
 	}
 	log.WithField("filepath", filename).Fatal(errMsg)
 	return nil, ""
+}
+
+// ReadConfigFile checks if a file exists in one of the configuration
+// directories and returns the content. If no file is found, mytoken returns an error
+func ReadConfigFile(filename string, locations []string) ([]byte, string, error) {
+	for _, dir := range locations {
+		if strings.HasPrefix(dir, "~") {
+			homeDir := os.Getenv("HOME")
+			dir = filepath.Join(homeDir, dir[1:])
+		}
+		filep := filepath.Join(dir, filename)
+		log.WithField("filepath", filep).Debug("Looking for config file")
+		if FileExists(filep) {
+			data, err := ReadFile(filep)
+			return data, dir, err
+		}
+	}
+	errMsg := "Could not find config file"
+	if len(locations) > 1 {
+		errMsg += " in any of the possible directories"
+	}
+	return nil, "", errors.New(errMsg)
 }

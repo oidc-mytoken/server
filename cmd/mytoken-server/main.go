@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/versionrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings"
+	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -31,7 +33,7 @@ func main() {
 	authcode.Init()
 	versionrepo.ConnectToVersion()
 	jws.LoadKey()
-	httpClient.Init(config.Get().IssuerURL)
+	httpClient.Init(config.Get().IssuerURL, fmt.Sprintf("mytoken-server %s", version.VERSION()))
 	geoip.Init()
 	settings.InitSettings()
 	cookies.Init()
