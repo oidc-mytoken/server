@@ -12,6 +12,13 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.6.0
+
+### Bugfixes
+
+- Fixed a bug where mytokens with the `revoke_any_token` capabilities could revoke mytokens of other users if they
+  can get possesion of the `revocation_id`
+
 ## mytoken 0.5.4
 
 ### Bugfixes
