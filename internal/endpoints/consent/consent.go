@@ -37,25 +37,21 @@ import (
 func handleConsent(ctx *fiber.Ctx, info *pkg2.OIDCFlowRequest, includeConsentCallbacks bool) error {
 	c := info.Capabilities
 	binding := map[string]interface{}{
-		templating.MustacheKeyConsent:              true,
-		templating.MustacheKeyConsentSend:          includeConsentCallbacks,
-		templating.MustacheKeyEmptyNavbar:          true,
-		templating.MustacheKeyRestrictionsGUI:      true,
-		templating.MustacheKeyCollapse:             templating.Collapsable{All: true},
-		templating.MustacheKeyRestrictions:         pkg.WebRestrictions{Restrictions: info.Restrictions},
-		templating.MustacheKeyCapabilities:         pkg.AllWebCapabilities(),
-		templating.MustacheKeySubtokenCapabilities: pkg.AllWebCapabilities(),
-		templating.MustacheKeyCheckedCapabilities:  c.Strings(),
-		templating.MustacheKeyIss:                  info.Issuer,
+		templating.MustacheKeyConsent:             true,
+		templating.MustacheKeyConsentSend:         includeConsentCallbacks,
+		templating.MustacheKeyEmptyNavbar:         true,
+		templating.MustacheKeyRestrictionsGUI:     true,
+		templating.MustacheKeyCollapse:            templating.Collapsable{All: true},
+		templating.MustacheKeyRestrictions:        pkg.WebRestrictions{Restrictions: info.Restrictions},
+		templating.MustacheKeyCapabilities:        pkg.AllWebCapabilities(),
+		templating.MustacheKeyCheckedCapabilities: c.Strings(),
+		templating.MustacheKeyIss:                 info.Issuer,
 		templating.MustacheKeySupportedScopes: strings.Join(
 			config.Get().ProviderByIssuer[info.Issuer].Scopes, " ",
 		),
 		templating.MustacheKeyTokenName:   info.Name,
 		templating.MustacheKeyRotation:    info.Rotation,
 		templating.MustacheKeyApplication: info.ApplicationName,
-	}
-	if c.Has(api.CapabilityCreateMT) {
-		binding[templating.MustacheKeyCheckedSubtokenCapabilities] = info.SubtokenCapabilities.Strings()
 	}
 	if !includeConsentCallbacks {
 		iss := config.Get().IssuerURL
@@ -98,24 +94,15 @@ func HandleCreateConsent(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
 	mt, _ := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
 	r, _ := restrictions.Tighten(rlog, mt.Restrictions, req.Restrictions)
-	capsFromParent := mt.SubtokenCapabilities
-	if capsFromParent == nil {
-		capsFromParent = mt.Capabilities
-	}
-	c := api.TightenCapabilities(capsFromParent, req.Capabilities)
-	var sc api.Capabilities = nil
-	if c.Has(api.CapabilityCreateMT) {
-		sc = api.TightenCapabilities(capsFromParent, req.SubtokenCapabilities)
-	}
+	c := api.TightenCapabilities(mt.Capabilities, req.Capabilities)
 	info := &pkg2.OIDCFlowRequest{
 		OIDCFlowRequest: api.OIDCFlowRequest{
 			GeneralMytokenRequest: api.GeneralMytokenRequest{
-				Issuer:               req.Issuer,
-				Capabilities:         c,
-				SubtokenCapabilities: sc,
-				Name:                 req.TokenName,
-				Rotation:             req.Rotation,
-				ApplicationName:      req.ApplicationName,
+				Issuer:          req.Issuer,
+				Capabilities:    c,
+				Name:            req.TokenName,
+				Rotation:        req.Rotation,
+				ApplicationName: req.ApplicationName,
 			},
 		},
 		Restrictions: r,
@@ -177,14 +164,6 @@ func handleConsentAccept(
 			}
 		}
 	}
-	for _, c := range req.SubtokenCapabilities {
-		if !api.AllCapabilities.Has(c) {
-			return &model.Response{
-				Status:   fiber.StatusBadRequest,
-				Response: model2.BadRequestError(fmt.Sprintf("unknown subtoken_capability '%s'", c)),
-			}
-		}
-	}
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
 	if !ok {
 		return &model.Response{
@@ -197,8 +176,7 @@ func handleConsentAccept(
 	if err = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
 			if err = authcodeinforepo.UpdateTokenInfoByState(
-				rlog, tx, oState, req.Restrictions, req.Capabilities, req.SubtokenCapabilities, req.Rotation,
-				req.TokenName,
+				rlog, tx, oState, req.Restrictions, req.Capabilities, req.Rotation, req.TokenName,
 			); err != nil {
 				return err
 			}

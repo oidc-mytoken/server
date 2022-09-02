@@ -48,11 +48,7 @@
         {{/rotation}}
     const rot_null = {{^rotation}}true{{/rotation}}{{#rotation}}false{{/rotation}};
     let checkedCapabilities = [];
-    let checkedSubtokenCapabilities = [];
         {{#checked-capabilities}}
         checkedCapabilities.push("{{.}}");
         {{/checked-capabilities}}
-        {{#checked-subtoken-capabilities}}
-        checkedSubtokenCapabilities.push("{{.}}");
-        {{/checked-subtoken-capabilities}}
 </script>

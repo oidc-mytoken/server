@@ -1,15 +1,3 @@
-function requestMT(data, okCallback, errCallback) {
-    $.ajax({
-        type: "POST",
-        url: storageGet('mytoken_endpoint'),
-        data: JSON.stringify(data),
-        success: okCallback,
-        error: errCallback,
-        dataType: "json",
-        contentType: "application/json"
-    });
-}
-
 function revokeMT(callback, recursive = true) {
     let data = {
         "recursive": recursive

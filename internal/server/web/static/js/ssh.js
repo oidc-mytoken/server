@@ -41,37 +41,32 @@ disableGrantCallbacks['ssh'] = function disableSSHCallback() {
 function initSSH(...next) {
     initRestr();
     initCapabilities();
-    checkCapability("tokeninfo", "cp", mtPrefix);
-    checkCapability("AT", "cp", mtPrefix);
+    checkCapability("tokeninfo", mtPrefix);
+    checkCapability("AT", mtPrefix);
     clearSSHKeyTable();
-    useSettingsToken(function (token) {
-        $.ajax({
-            type: "GET",
-            headers: {
-                "Authorization": "Bearer " + token,
-            },
-            url: storageGet('usersettings_endpoint') + "/grants/ssh",
-            success: function (res) {
-                if (res['grant_enabled']) {
-                    $sshGrantStatusEnabled.showB();
-                } else {
-                    $sshGrantStatusDisabled.showB();
-                }
-                let sshKeys = res['ssh_keys'];
-                if (sshKeys === undefined || sshKeys === null) {
-                    $noSSHKeyEntry.showB();
-                } else {
-                    sshKeys.forEach(function (key) {
-                        addSSHKeyToTable(key);
-                    })
-                }
-                doNext(...next);
-            },
-            error: function (errRes) {
-                $settingsErrorModalMsg.text(getErrorMessage(errRes));
-                $settingsErrorModal.modal();
-            },
-        });
+    $.ajax({
+        type: "GET",
+        url: storageGet('usersettings_endpoint') + "/grants/ssh",
+        success: function (res) {
+            if (res['grant_enabled']) {
+                $sshGrantStatusEnabled.showB();
+            } else {
+                $sshGrantStatusDisabled.showB();
+            }
+            let sshKeys = res['ssh_keys'];
+            if (sshKeys === undefined || sshKeys === null) {
+                $noSSHKeyEntry.showB();
+            } else {
+                sshKeys.forEach(function (key) {
+                    addSSHKeyToTable(key);
+                })
+            }
+            doNext(...next);
+        },
+        error: function (errRes) {
+            $settingsErrorModalMsg.text(getErrorMessage(errRes));
+            $settingsErrorModal.modal();
+        },
     });
 }
 
@@ -110,38 +105,34 @@ $sshKeyFile.on('change', function () {
 })
 
 function addSSHKey() {
-    useSettingsToken(function (token) {
-        let data = {
-            "mytoken": token,
-            "grant_type": "mytoken",
-            "ssh_key": $sshKeyInput.val(),
-            "name": $('#keyName').val(),
-            "restrictions": getRestrictionsData(),
-            "capabilities": getCheckedCapabilities(),
-            "subtoken_capabilities": getCheckedSubtokenCapabilities(),
-            "application_name": "mytoken webinterface"
-        };
-        data = JSON.stringify(data);
-        $.ajax({
-            type: "POST",
-            data: data,
-            dataType: "json",
-            contentType: "application/json",
-            url: storageGet('usersettings_endpoint') + "/grants/ssh",
-            success: function (res) {
-                let url = res['consent_uri'];
-                let code = res['polling_code'];
-                let interval = res['interval'];
-                $authURL.attr("href", url);
-                $authURL.text(url);
-                polling(code, interval)
-            },
-            error: function (errRes) {
-                let errMsg = getErrorMessage(errRes);
-                sshShowError(errMsg);
-            },
-        });
-    })
+    let data = {
+        "grant_type": "mytoken",
+        "ssh_key": $sshKeyInput.val(),
+        "name": $('#keyName').val(),
+        "restrictions": getRestrictionsData(),
+        "capabilities": getCheckedCapabilities(),
+        "application_name": "mytoken webinterface"
+    };
+    data = JSON.stringify(data);
+    $.ajax({
+        type: "POST",
+        data: data,
+        dataType: "json",
+        contentType: "application/json",
+        url: storageGet('usersettings_endpoint') + "/grants/ssh",
+        success: function (res) {
+            let url = res['consent_uri'];
+            let code = res['polling_code'];
+            let interval = res['interval'];
+            $authURL.attr("href", url);
+            $authURL.text(url);
+            polling(code, interval)
+        },
+        error: function (errRes) {
+            let errMsg = getErrorMessage(errRes);
+            sshShowError(errMsg);
+        },
+    });
     sshShowPending();
     $sshResult.showB();
     $sshForm.hideB();
@@ -275,25 +266,22 @@ function deleteKey(el) {
 }
 
 function sendDeleteKeyRequest(keyFP) {
-    useSettingsToken(function (token) {
-        let data = {
-            "mytoken": token,
-            "ssh_key_fp": keyFP,
-        }
-        data = JSON.stringify(data);
-        $.ajax({
-            type: "DELETE",
-            data: data,
-            dataType: "json",
-            contentType: "application/json",
-            url: storageGet('usersettings_endpoint') + "/grants/ssh",
-            success: function () {
-                initSSH();
-            },
-            error: function (errRes) {
-                $settingsErrorModalMsg.text(getErrorMessage(errRes));
-                $settingsErrorModal.modal();
-            },
-        });
+    let data = {
+        "ssh_key_fp": keyFP,
+    }
+    data = JSON.stringify(data);
+    $.ajax({
+        type: "DELETE",
+        data: data,
+        dataType: "json",
+        contentType: "application/json",
+        url: storageGet('usersettings_endpoint') + "/grants/ssh",
+        success: function () {
+            initSSH();
+        },
+        error: function (errRes) {
+            $settingsErrorModalMsg.text(getErrorMessage(errRes));
+            $settingsErrorModal.modal();
+        },
     });
 }

@@ -80,9 +80,6 @@ func (r *OIDCFlowRequest) UnmarshalJSON(data []byte) error {
 	o.clientType = o.RedirectType
 	o.redirectURI = o.RedirectURI
 	*r = OIDCFlowRequest(o.ofr)
-	if r.SubtokenCapabilities != nil && !r.Capabilities.Has(api.CapabilityCreateMT) {
-		r.SubtokenCapabilities = nil
-	}
 	return nil
 }
 

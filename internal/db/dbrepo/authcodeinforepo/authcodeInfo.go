@@ -107,7 +107,7 @@ func DeleteAuthFlowInfoByState(rlog log.Ext1FieldLogger, tx *sqlx.Tx, state *sta
 
 // UpdateTokenInfoByState updates the stored AuthFlowInfo for the given state
 func UpdateTokenInfoByState(
-	rlog log.Ext1FieldLogger, tx *sqlx.Tx, state *state.State, r restrictions.Restrictions, c, sc api.Capabilities,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, state *state.State, r restrictions.Restrictions, c api.Capabilities,
 	rot *api.Rotation, tokenName string,
 ) error {
 	return db.RunWithinTransaction(
@@ -118,7 +118,6 @@ func UpdateTokenInfoByState(
 			}
 			info.Restrictions = r
 			info.Capabilities = c
-			info.SubtokenCapabilities = sc
 			info.Rotation = rot
 			info.Name = tokenName
 			_, err = tx.Exec(

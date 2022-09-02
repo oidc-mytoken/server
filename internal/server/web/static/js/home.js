@@ -27,21 +27,3 @@ $('.nav-tabs a').on('shown.bs.tab', function (e) {
         $found.triggerHandler('shown.bs.tab');
     }
 })
-
-
-function getMT(okCallback, errCallback, capability = "AT") {
-    let data = {
-        "name": "mytoken-web MT for " + capability,
-        "grant_type": "mytoken",
-        "capabilities": [capability],
-        "restrictions": [
-            {
-                "exp": Math.floor(Date.now() / 1000) + 60,
-                "ip": ["this"],
-                "usages_AT": capability === "AT" ? 1 : 0,
-                "usages_other": capability === "AT" ? 0 : 1
-            }
-        ]
-    };
-    requestMT(data, okCallback, errCallback);
-}

@@ -16,8 +16,8 @@ const mtPrefix = "createMT-";
 
 function initCreateMT(...next) {
     initCapabilities(mtPrefix);
-    checkCapability("tokeninfo", "cp", mtPrefix);
-    checkCapability("AT", "cp", mtPrefix);
+    checkCapability("tokeninfo", mtPrefix);
+    checkCapability("AT", mtPrefix);
     updateRotationIcon(mtPrefix);
     initRestr(mtPrefix);
     doNext(...next);
@@ -47,7 +47,6 @@ function sendCreateMTReq() {
         "redirect_type": "native",
         "restrictions": getRestrictionsData(mtPrefix),
         "capabilities": getCheckedCapabilities(mtPrefix),
-        "subtoken_capabilities": getCheckedSubtokenCapabilities(mtPrefix),
         "application_name": "mytoken webinterface"
     };
     let token_type = $('#select-token-type').val();

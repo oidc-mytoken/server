@@ -14,25 +14,20 @@ $(function () {
 })
 
 function initGrants(...next) {
-    useSettingsToken(function (token) {
-        $.ajax({
-            type: "GET",
-            headers: {
-                "Authorization": "Bearer " + token,
-            },
-            url: storageGet('usersettings_endpoint') + "/grants",
-            success: function (res) {
-                let grants = res['grant_types'] || [];
-                grants.forEach(function (grant) {
-                    $('#' + grant['grant_type'] + '-GrantEnable').prop('checked', grant['enabled']);
-                })
-                doNext(...next);
-            },
-            error: function (errRes) {
-                $settingsErrorModalMsg.text(getErrorMessage(errRes));
-                $settingsErrorModal.modal();
-            },
-        });
+    $.ajax({
+        type: "GET",
+        url: storageGet('usersettings_endpoint') + "/grants",
+        success: function (res) {
+            let grants = res['grant_types'] || [];
+            grants.forEach(function (grant) {
+                $('#' + grant['grant_type'] + '-GrantEnable').prop('checked', grant['enabled']);
+            })
+            doNext(...next);
+        },
+        error: function (errRes) {
+            $settingsErrorModalMsg.text(getErrorMessage(errRes));
+            $settingsErrorModal.modal();
+        },
     });
 }
 
