@@ -125,7 +125,7 @@ $('#get-at').on('click', function (e) {
 function initAT(...next) {
     let scopes = storageGet("token_scopes");
     if (scopes === "") { // token not restricted with scopes
-        scopes = getSupportedScopesFromStorage();
+        scopes = getSupportedScopesFromStorage(storageGet("oidc_issuer"));
     } else {
         scopes = scopes.split(' ')
     }

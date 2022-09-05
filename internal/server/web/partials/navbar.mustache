@@ -24,7 +24,7 @@
             <form class="form-inline" id="login-form" method="post" role="form">
                 <input type="hidden" name="grant_type" value="oidc_flow"/>
                 <input type="hidden" name="oidc_flow" value="authorization_code"/>
-                <select id="login-iss" class="form-control custom-select" name="oidc_issuer">
+                <select class="form-control custom-select" name="oidc_issuer">
                     {{#providers}}
                         <option value="{{issuer}}">{{name}}</option>
                     {{/providers}}

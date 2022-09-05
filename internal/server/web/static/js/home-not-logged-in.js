@@ -8,7 +8,3 @@ $(function () {
     );
     openCorrectTab();
 })
-
-$('#login-iss').on('change', function () {
-    initRestrGUI(mtPrefix);
-});

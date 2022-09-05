@@ -3,6 +3,19 @@
         <div>
             <div class="row">
                 <div class="col">
+                    <div class="alert border border-primary">
+                        <h4>OpenID Provider</h4>
+                        <label for="mt-oidc-iss">OpenID Provider</label>
+                        <select id="mt-oidc-iss" class="form-control custom-select">
+                            {{#providers}}
+                                <option value="{{issuer}}">{{name}}</option>
+                            {{/providers}}
+                        </select>
+                        <small id="mt-oidc-iss-help" class="form-text text-muted">OpenID Provider for which this
+                            mytoken can obtain access tokens.
+                        </small>
+                    </div>
+
                     <div class="form-group alert border">
                         <h4>Token Name</h4>
                         <label for="tokenName">Token Name</label>

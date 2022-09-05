@@ -11,10 +11,14 @@ const authURL = $('#authorization-url');
 const maxTokenLenDiv = $('#max_token_len_div');
 const tokenTypeBadge = $('#token-badge');
 const $mtInstructions = $('#mt-instructions');
+const $mtOIDCIss = $('#mt-oidc-iss');
 
 const mtPrefix = "createMT-";
 
 function initCreateMT(...next) {
+    if (loggedIn) {
+        $mtOIDCIss.val(storageGet("oidc_issuer"));
+    }
     initCapabilities(mtPrefix);
     checkCapability("tokeninfo", mtPrefix);
     checkCapability("AT", mtPrefix);
@@ -23,6 +27,9 @@ function initCreateMT(...next) {
     doNext(...next);
 }
 
+$mtOIDCIss.on('change', function () {
+    initRestrGUI(mtPrefix);
+});
 
 $('#next-mt').on('click', function () {
     window.clearInterval(intervalID);
@@ -41,7 +48,7 @@ $('#select-token-type').on('change', function () {
 function sendCreateMTReq() {
     let data = {
         "name": $('#tokenName').val(),
-        "oidc_issuer": storageGet("oidc_issuer") || $('#login-iss').val(),
+        "oidc_issuer": $mtOIDCIss.val(),
         "grant_type": "oidc_flow",
         "oidc_flow": "authorization_code",
         "redirect_type": "native",

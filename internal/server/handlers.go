@@ -16,6 +16,10 @@ func handleIndex(ctx *fiber.Ctx) error {
 	binding := homeBindingData()
 	binding[templating.MustacheKeyLoggedIn] = false
 	binding[templating.MustacheKeyCookieLifetime] = cookies.CookieLifetime
+	return ctx.Render("sites/home", binding, templating.LayoutMain)
+}
+
+func homeBindingData() map[string]interface{} {
 	providers := []map[string]string{}
 	for _, p := range config.Get().Providers {
 		pp := make(map[string]string, 2)
@@ -23,11 +27,6 @@ func handleIndex(ctx *fiber.Ctx) error {
 		pp["name"] = p.Name
 		providers = append(providers, pp)
 	}
-	binding["providers"] = providers
-	return ctx.Render("sites/home", binding, templating.LayoutMain)
-}
-
-func homeBindingData() map[string]interface{} {
 	return map[string]interface{}{
 		templating.MustacheKeyLoggedIn:        true,
 		templating.MustacheKeyRestrictionsGUI: true,
@@ -43,6 +42,7 @@ func homeBindingData() map[string]interface{} {
 		templating.MustacheSubCreateMT: map[string]interface{}{
 			templating.MustacheKeyPrefix: "createMT-",
 		},
+		"providers": providers,
 	}
 }
 
