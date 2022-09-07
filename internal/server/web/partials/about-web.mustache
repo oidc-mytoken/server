@@ -1,0 +1,72 @@
+<div class="row">
+    <div class="col">
+        <div class="alert border">
+            <h4 class="text-primary">The Mytoken Service</h4>
+            <p>
+                Mytoken is a service to obtain OpenID Connect Access Tokens in an easy but secure way
+                for extended periods of time and across multiple devices.
+            </p>
+            <p>
+                To do so, users can create mytokens with exactly the properties they need for the job.
+                These mytokens can easily be used (from multiple devices) to obtain OIDC access tokens.
+                Mytokens and access tokens can be obtained from this web interface or the command line.
+                For more details please refer to the <a href="https://mytoken-docs.data.kit.edu"
+                                                        target="_blank" rel="noopener noreferrer">full
+                documentation</a>.
+            </p>
+        </div>
+    </div>
+    <div class="col">
+        <div class="alert border">
+            <h4 class="text-primary">Mytoken Web</h4>
+            <p>On this web interface you can:</p>
+        <ul>
+            <li>
+                <button role="button" class="btn btn-link" onclick="$('#mt-tab').click()">Create a mytoken</button>
+            </li>
+            <li>
+                <button role="button" class="btn btn-link" onclick="$('#info-tab').click()">
+                    Get information about a mytoken
+                </button>
+            </li>
+            <li>
+                <button role="button" class="btn btn-link" onclick="$('#tc-tab').click()">
+                    Exchange a transfer code into a mytoken
+                </button>
+            </li>
+            {{^logged-in}}
+            </ul>
+                <p>After sign in you additionally can:</p>
+            <ul>
+            {{/logged-in}}
+            <li>
+                {{#logged-in}}
+                <button role="button" class="btn btn-link" onclick="$('#at-tab').click()">
+                {{/logged-in}}
+                Obtain access tokens
+                {{#logged-in}}
+                </button>
+                {{/logged-in}}
+            </li>
+            <li>
+                {{#logged-in}}
+                <button role="button" class="btn btn-link" onclick="$('#list-mts-tab').click()">
+                {{/logged-in}}
+                List your mytokens and revoke them
+                {{#logged-in}}
+                </button>
+                {{/logged-in}}
+            </li>
+            <li>
+                {{#logged-in}}
+                <button role="button" class="btn btn-link" onclick="document.getElementById('settings-link').click()">
+                {{/logged-in}}
+                Change settings
+                {{#logged-in}}
+                </button>
+                {{/logged-in}}
+            </li>
+        </ul>
+        </div>
+    </div>
+</div>

@@ -132,3 +132,7 @@ span.user-agent i + i {
     cursor: pointer;
     user-select: none;
 }
+
+.btn-link {
+    padding: 0;
+}

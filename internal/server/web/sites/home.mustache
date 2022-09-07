@@ -1,14 +1,18 @@
 <div class="card">
     <div class="card-header">
         <ul class="nav nav-tabs card-header-tabs">
+            <li class="nav-item">
+                <a class="nav-link active" id="about-tab" data-toggle="tab" href="#about" role="tab"
+                   aria-controls="about" aria-selected="true">About Web</a>
+            </li>
             {{#logged-in}}
                 <li class="nav-item">
-                    <a class="nav-link active" id="at-tab" data-toggle="tab" href="#at" role="tab" aria-controls="at"
-                       aria-selected="true">Access Token</a>
+                    <a class="nav-link" id="at-tab" data-toggle="tab" href="#at" role="tab" aria-controls="at"
+                       aria-selected="false">Access Token</a>
                 </li>
             {{/logged-in}}
             <li class="nav-item">
-                <a class="nav-link{{^logged-in}} active{{/logged-in}}" id="mt-tab" data-toggle="tab" href="#mt"
+                <a class="nav-link" id="mt-tab" data-toggle="tab" href="#mt"
                    role="tab" aria-controls="mt" aria-selected="false">Create Mytoken</a>
             </li>
             <li class="nav-item">
@@ -28,13 +32,15 @@
         </ul>
     </div>
     <div class="card-body tab-content">
+        <div class="tab-pane show active" id="about" role="tabpanel" aria-labelledby="about-tab">
+            {{> about-web}}
+        </div>
         {{#logged-in}}
-            <div class="tab-pane show active" id="at" role="tabpanel" aria-labelledby="at-tab">
+            <div class="tab-pane" id="at" role="tabpanel" aria-labelledby="at-tab">
                 {{> create-at}}
             </div>
         {{/logged-in}}
-        <div class="tab-pane bg-secondary break-out{{^logged-in}} active{{/logged-in}}" id="mt" role="tabpanel"
-             aria-labelledby="mt-tab">
+        <div class="tab-pane bg-secondary break-out" id="mt" role="tabpanel" aria-labelledby="mt-tab">
             <div class="bg-secondary ">
                 {{> create-mt}}
             </div>
@@ -53,19 +59,6 @@
     </div>
 </div>
 
-<div class="modal fade" tabindex="-1" role="dialog" id="error-modal">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content bg-danger">
-            <div class="modal-header">
-                <h5 class="modal-title">Error</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="error-modal-msg"></div>
-        </div>
-    </div>
-</div>
 
 {{>revocation-modal}}
 
