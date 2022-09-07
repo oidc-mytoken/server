@@ -19,7 +19,9 @@ $('#login-form').on('submit', function (e) {
         "revoke_any_token"
     ]
     data['rotation'] = {
+        "on_AT": true,
         "on_other": true,
+        "auto_revoke": true,
         "lifetime": 3600 * 24,
     }
     data['client_type'] = 'web';
