@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/Songmu/prompter v0.5.1
-	github.com/coreos/go-oidc/v3 v3.2.0
+	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/fatih/structs v1.1.0
 	github.com/gliderlabs/ssh v0.3.4
 	github.com/go-resty/resty/v2 v2.7.0
@@ -27,7 +27,7 @@ require (
 	github.com/valyala/fasthttp v1.39.0
 	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
 	golang.org/x/mod v0.5.1
-	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
+	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467
 	gopkg.in/yaml.v3 v3.0.1
 )
