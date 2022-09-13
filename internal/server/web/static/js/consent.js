@@ -11,10 +11,7 @@ $(document).ready(function () {
     updateRotationIcon();
     initCapabilities();
     checkedCapabilities.forEach(function (value) {
-        checkCapability(value, 'cp');
-    })
-    checkedSubtokenCapabilities.forEach(function (value) {
-        checkCapability(value, 'sub-cp');
+        checkCapability(value);
     })
     chainFunctions(
         discovery,
@@ -29,7 +26,6 @@ function _approve() {
         "oidc_issuer": issuer,
         "restrictions": getRestrictionsData(),
         "capabilities": getCheckedCapabilities(),
-        "subtoken_capabilities": getCheckedSubtokenCapabilities(),
         "name": $('#tokenName').val(),
         "rotation": getRotationFromForm()
     };

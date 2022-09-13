@@ -226,3 +226,18 @@ func GetMTName(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID) (name db.Nul
 	)
 	return
 }
+
+// CheckMytokensAreForSameUser checks if two mytoken ids belong to the same user
+func CheckMytokensAreForSameUser(rlog log.Ext1FieldLogger, tx *sqlx.Tx, a, b interface{}) (
+	same bool, err error,
+) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			var c int
+			err = errors.WithStack(tx.Get(&c, `CALL MTokens_CheckIfTokensForSameUser(?,?)`, a, b))
+			same = c > 0
+			return err
+		},
+	)
+	return
+}

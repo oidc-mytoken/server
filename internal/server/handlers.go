@@ -16,6 +16,10 @@ func handleIndex(ctx *fiber.Ctx) error {
 	binding := homeBindingData()
 	binding[templating.MustacheKeyLoggedIn] = false
 	binding[templating.MustacheKeyCookieLifetime] = cookies.CookieLifetime
+	return ctx.Render("sites/home", binding, templating.LayoutMain)
+}
+
+func homeBindingData() map[string]interface{} {
 	providers := []map[string]string{}
 	for _, p := range config.Get().Providers {
 		pp := make(map[string]string, 2)
@@ -23,17 +27,11 @@ func handleIndex(ctx *fiber.Ctx) error {
 		pp["name"] = p.Name
 		providers = append(providers, pp)
 	}
-	binding["providers"] = providers
-	return ctx.Render("sites/home", binding, templating.LayoutMain)
-}
-
-func homeBindingData() map[string]interface{} {
 	return map[string]interface{}{
-		templating.MustacheKeyLoggedIn:             true,
-		templating.MustacheKeyRestrictionsGUI:      true,
-		templating.MustacheKeyHome:                 true,
-		templating.MustacheKeyCapabilities:         consent.AllWebCapabilities(),
-		templating.MustacheKeySubtokenCapabilities: consent.AllWebCapabilities(),
+		templating.MustacheKeyLoggedIn:        true,
+		templating.MustacheKeyRestrictionsGUI: true,
+		templating.MustacheKeyHome:            true,
+		templating.MustacheKeyCapabilities:    consent.AllWebCapabilities(),
 		templating.MustacheSubTokeninfo: map[string]interface{}{
 			templating.MustacheKeyCollapse: templating.Collapsable{
 				CollapseRestr: true,
@@ -44,6 +42,7 @@ func homeBindingData() map[string]interface{} {
 		templating.MustacheSubCreateMT: map[string]interface{}{
 			templating.MustacheKeyPrefix: "createMT-",
 		},
+		"providers": providers,
 	}
 }
 
@@ -69,10 +68,9 @@ func handleSettings(ctx *fiber.Ctx) error {
 			Link:        "/settings/grants/ssh",
 			partialName: "sites/settings-ssh",
 			bindingData: map[string]interface{}{
-				templating.MustacheKeyRestrictionsGUI:      true,
-				templating.MustacheKeyRestrictions:         consent.WebRestrictions{},
-				templating.MustacheKeyCapabilities:         consent.AllWebCapabilities(),
-				templating.MustacheKeySubtokenCapabilities: consent.AllWebCapabilities(),
+				templating.MustacheKeyRestrictionsGUI: true,
+				templating.MustacheKeyRestrictions:    consent.WebRestrictions{},
+				templating.MustacheKeyCapabilities:    consent.AllWebCapabilities(),
 			},
 		},
 	}
@@ -84,14 +82,13 @@ func handleSettings(ctx *fiber.Ctx) error {
 		g.EmbedBody = embed.String()
 	}
 	binding := map[string]interface{}{
-		templating.MustacheKeyGrants:               grants,
-		templating.MustacheKeyLoggedIn:             true,
-		templating.MustacheKeySettings:             true,
-		templating.MustacheKeySettingsSSH:          true,
-		templating.MustacheKeyRestrictionsGUI:      true,
-		templating.MustacheKeyRestrictions:         consent.WebRestrictions{},
-		templating.MustacheKeyCapabilities:         consent.AllWebCapabilities(),
-		templating.MustacheKeySubtokenCapabilities: consent.AllWebCapabilities(),
+		templating.MustacheKeyGrants:          grants,
+		templating.MustacheKeyLoggedIn:        true,
+		templating.MustacheKeySettings:        true,
+		templating.MustacheKeySettingsSSH:     true,
+		templating.MustacheKeyRestrictionsGUI: true,
+		templating.MustacheKeyRestrictions:    consent.WebRestrictions{},
+		templating.MustacheKeyCapabilities:    consent.AllWebCapabilities(),
 	}
 	return ctx.Render("sites/settings", binding, templating.LayoutMain)
 }

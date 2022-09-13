@@ -100,10 +100,9 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 		Status: fiber.StatusOK,
 		Response: response.MytokenResponse{
 			MytokenResponse: api.MytokenResponse{
-				Mytoken:              token.OriginalToken,
-				ExpiresIn:            mt.ExpiresIn(),
-				Capabilities:         mt.Capabilities,
-				SubtokenCapabilities: mt.SubtokenCapabilities,
+				Mytoken:      token.OriginalToken,
+				ExpiresIn:    mt.ExpiresIn(),
+				Capabilities: mt.Capabilities,
 			},
 			MytokenType:  token.OriginalTokenType,
 			Restrictions: mt.Restrictions,
@@ -247,23 +246,15 @@ func createMytokenEntry(
 			Response: pkgModel.BadRequestError("requested restrictions are not subset of original restrictions"),
 		}
 	}
-	capsFromParent := parent.SubtokenCapabilities
-	if capsFromParent == nil {
-		capsFromParent = parent.Capabilities
-	}
-	c := api.TightenCapabilities(capsFromParent, req.Capabilities)
+	c := api.TightenCapabilities(parent.Capabilities, req.Capabilities)
 	if len(c) == 0 {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: pkgModel.BadRequestError("mytoken to be issued cannot have any of the requested capabilities"),
 		}
 	}
-	var sc api.Capabilities = nil
-	if c.Has(api.CapabilityCreateMT) {
-		sc = api.TightenCapabilities(capsFromParent, req.SubtokenCapabilities)
-	}
 	ste := mytokenrepo.NewMytokenEntry(
-		mytoken.NewMytoken(parent.OIDCSubject, parent.OIDCIssuer, req.Name, r, c, sc, req.Rotation, parent.AuthTime),
+		mytoken.NewMytoken(parent.OIDCSubject, parent.OIDCIssuer, req.Name, r, c, req.Rotation, parent.AuthTime),
 		req.Name, networkData,
 	)
 	encryptionKey, _, err := encryptionkeyrepo.GetEncryptionKey(rlog, nil, parent.ID, req.Mytoken.JWT)

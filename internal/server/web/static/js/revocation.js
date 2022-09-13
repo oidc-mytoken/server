@@ -12,42 +12,6 @@ const revocationClasses = [
     revocationClassFromTokeninfo,
 ]
 
-function useRevocationToken(callback) {
-    let tok = storageGet("revocation_mytoken")
-    _tokeninfo(
-        'introspect',
-        function () {
-            callback(tok);
-        },
-        function () {
-            requestMT(
-                {
-                    "name": "mytoken-web MT for revocations",
-                    "grant_type": "mytoken",
-                    "capabilities": ["tokeninfo:introspect", "revoke_any_token", "list_mytokens"],
-                    "restrictions": [
-                        {
-                            "exp": Math.floor(Date.now() / 1000) + 300,
-                            "ip": ["this"],
-                            "usages_AT": 0,
-                            "usages_other": 60,
-                        }
-                    ]
-                },
-                function (res) {
-                    let token = res['mytoken'];
-                    storageSet('revocation_mytoken', token, true);
-                    callback(token);
-                },
-                function (errRes) {
-                    $errorModalMsg.text(getErrorMessage(errRes));
-                    $errorModal.modal();
-                }
-            );
-        },
-        tok);
-}
-
 function revokeToken(token, recursive, okCallback) {
     _revoke({
         "token": token,
@@ -56,15 +20,10 @@ function revokeToken(token, recursive, okCallback) {
 }
 
 function revokeTokenID(id, recursive, okCallback) {
-    useRevocationToken(function (token) {
-        _revoke({
-            "token": token,
-            "revocation_id": id,
-            "recursive": recursive,
-        }, function () {
-            okCallback(token);
-        })
-    })
+    _revoke({
+        "revocation_id": id,
+        "recursive": recursive,
+    }, okCallback);
 }
 
 function revokeTokenFromList(id, recursive) {

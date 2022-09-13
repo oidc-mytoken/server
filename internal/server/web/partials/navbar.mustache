@@ -7,7 +7,7 @@
         {{#logged-in}}
             <ul class="navbar-nav">
                 <li class="nav-item bg-my_blue_dark" id="settings">
-                    <a class="nav-link hover-item text-center" href="/settings">
+                    <a id="settings-link" class="nav-link hover-item text-center" href="/settings">
                         <i class="fas fa-cog non-hover-text"></i>
                         <span class="hover-text" id="gear-text">Settings</span>
                     </a>
@@ -24,7 +24,7 @@
             <form class="form-inline" id="login-form" method="post" role="form">
                 <input type="hidden" name="grant_type" value="oidc_flow"/>
                 <input type="hidden" name="oidc_flow" value="authorization_code"/>
-                <select id="login-iss" class="form-control custom-select" name="oidc_issuer">
+                <select class="form-control custom-select" name="oidc_issuer">
                     {{#providers}}
                         <option value="{{issuer}}">{{name}}</option>
                     {{/providers}}

@@ -8,24 +8,20 @@ $('#login-form').on('submit', function (e) {
     data['restrictions'] = [
         {
             "exp": Math.floor(Date.now() / 1000) + cookieLifetime,
-            "ip": ["this"],
-            "usages_AT": 1,
-            "usages_other": 100,
+            "ip": ["this"]
         }
     ]
     data['capabilities'] = [
-        "create_mytoken",
         "tokeninfo",
-    ]
-    data['subtoken_capabilities'] = [
         "AT",
         "settings",
         "list_mytokens",
-        "tokeninfo:introspect",
         "revoke_any_token"
     ]
     data['rotation'] = {
+        "on_AT": true,
         "on_other": true,
+        "auto_revoke": true,
         "lifetime": 3600 * 24,
     }
     data['client_type'] = 'web';

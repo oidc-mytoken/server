@@ -12,6 +12,26 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.6.0
+
+### API
+
+- Dropped `subtoken_capabilities`, since the benefit was minimal, but made things more complex
+  - Removed `subtoken_capabilities` from all API requests and responses
+  - Removed `subtoken_capabilities` from the mytoken
+
+### Enhancements
+
+- Added introduction text in the web interface
+- Session mytoken in web interface no longer uses `subtoken_capabilities` due to the drop, moved subtoken
+  capabilities to the session mytoken as capabilities; added rotation on AT requests, added auto revocation
+
+### Bugfixes
+
+- Fixed a bug where mytokens with the `revoke_any_token` capabilities could revoke mytokens of other users if they
+  can get possesion of the `revocation_id`
+- Fixed problems in the web interface with restrictions / issuer selection when not logged in.
+
 ## mytoken 0.5.4
 
 ### Bugfixes

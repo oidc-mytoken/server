@@ -5,9 +5,6 @@ function capabilityChecks(prefix = "") {
     return $('.capability-check[instance-prefix="' + prefix + '"]');
 }
 
-function subtokenCapabilityChecks(prefix = "") {
-    return $('.subtoken-capability-check[instance-prefix="' + prefix + '"]');
-}
 
 function capRWModes(prefix = "") {
     return $allCapRWModes.filter('[instance-prefix="' + prefix + '"]');
@@ -57,9 +54,6 @@ function capSummaryHowManyRed(prefix = "") {
     return $('#' + prefix + 'cap-summary-count-red');
 }
 
-function subtokenCapabilities(prefix = "") {
-    return $('#' + prefix + 'subtokenCapabilities');
-}
 
 function enableCapability(cap, prefix = "") {
     // This function should be called after initCapabilities to preselect / check capabilities
@@ -80,65 +74,25 @@ $('.capability-check').click(function () {
     checkThisCapability.call(this);
     updateCapSummary(this.getAttribute('instance-prefix'));
 })
-$('.subtoken-capability-check').click(function () {
-    checkThisSubCapability.call(this);
-    updateCapSummary(this.getAttribute('instance-prefix'));
-})
-
-
-$createMTCaps.on("click", function () {
-    let enabled = $(this).prop("checked");
-    let prefix = extractPrefix("cp-create_mytoken", this.id);
-    let $subtokenCapabilities = subtokenCapabilities(prefix);
-    $subtokenCapabilities.toggleClass('d-none');
-    let $capabilityCheck = $subtokenCapabilities.find('.subtoken-capability-check');
-    $capabilityCheck.prop("disabled", !enabled);
-});
-
-function checkThisSubCapability() {
-    _checkThisCapability.call(this, "subtoken-capability");
-}
 
 function checkThisCapability() {
-    _checkThisCapability.call(this, "capability");
-}
-
-function _checkThisCapability(type_prefix) {
     let activated = $(this).prop('checked');
-    let classCheck = '.' + type_prefix + '-check'
-    $(this).closest('li.list-group-item').find(classCheck).prop('checked', activated);
+    $(this).closest('li.list-group-item').find('.capability-check').prop('checked', activated);
     if (!activated) {
-        $(this).parents('li.list-group-item').children('div').children('div').children(classCheck).prop('checked', false);
+        $(this).parents('li.list-group-item').children('div').children('div').children('.capability-check').prop('checked', false);
     }
 }
 
 function initCapabilities(prefix) {
     capabilityChecks(prefix).each(checkThisCapability);
-    subtokenCapabilityChecks(prefix).each(checkThisSubCapability);
-    if (!capabilityCreateMytoken(prefix).prop("checked")) {
-        subtokenCapabilities(prefix).hideB();
-    } else {
-        subtokenCapabilities(prefix).showB();
-    }
     updateCapSummary(prefix);
     capRWModes(prefix).trigger('update-change');
 }
 
 function getCheckedCapabilities(prefix = "") {
-    return _getCheckedCapabilities(capabilityChecks(prefix), 'cp', prefix);
-}
-
-function getCheckedSubtokenCapabilities(prefix = "") {
-    if (!capabilityCreateMytoken(prefix).prop("checked")) {
-        return [];
-    }
-    return _getCheckedCapabilities(subtokenCapabilityChecks(prefix), 'sub-cp', prefix);
-}
-
-function _getCheckedCapabilities($checks, idPrefix, preprefix = "") {
-    let caps = $checks.filter(':checked').map(function (_, el) {
+    let caps = capabilityChecks(prefix).filter(':checked').map(function (_, el) {
         let v = $(el).val();
-        let $rw = $('#' + escapeSelector(preprefix + idPrefix + '-' + rPrefix + v + '-mode'));
+        let $rw = $(prefixId('cp-' + rPrefix + v + '-mode', prefix));
         if ($rw.length && !$rw.prop('checked')) {
             v = rPrefix + v;
         }
@@ -186,13 +140,9 @@ function isChildCapability(a, b) {
     return true;
 }
 
-function getCheckedCapabilitesAndSubtokencapabilities(prefix = "") {
-    return getCheckedCapabilities(prefix).concat(getCheckedSubtokenCapabilities(prefix));
-}
-
 function searchAllChecked(str, prefix = "") {
     let read = "read@" + str
-    for (const c of getCheckedCapabilitesAndSubtokencapabilities(prefix)) {
+    for (const c of getCheckedCapabilities(prefix)) {
         if (c === str || c === read) {
             return true;
         }
@@ -204,26 +154,18 @@ function searchAllChecked(str, prefix = "") {
 }
 
 function updateCapSummary(prefix = "") {
-    let at = capabilityAT(prefix).prop("checked") || $('#sub-cp-AT').prop("checked");
+    let at = capabilityAT(prefix).prop("checked");
     let mt = capabilityCreateMytoken(prefix).prop("checked");
     let info = searchAllChecked("tokeninfo", prefix);
     let revoke = capabilityRevokeAnyToken(prefix).prop("checked");
     let settings = searchAllChecked("settings", prefix);
 
-    let all = [];
-    $.merge(all, capabilityChecks(prefix));
-    if (capabilityCreateMytoken(prefix).prop('checked')) {
-        $.merge(all, subtokenCapabilityChecks(prefix));
-    }
     let counter = {
         'green': {},
         'yellow': {},
         'red': {}
     }
-    for (const c of all) {
-        if (!c.checked) {
-            continue;
-        }
+    for (const c of capabilityChecks(prefix).filter(':checked')) {
         let name = $(c).val();
         let $icon = $($(c).closest('li.list-group-item').find('i.fa-exclamation-circle').not('.d-none')[0]);
         if ($icon.hasClass('text-success')) {
@@ -311,13 +253,13 @@ $allCapRWModes.change(function () {
     updateCapSummary(this.getAttribute("instance-prefix"));
 });
 
-function checkCapability(cap, typePrefix, prefix = "") {
+function checkCapability(cap, prefix = "") {
     let rCap = cap.startsWith(rPrefix);
     if (rCap) {
         cap = cap.substring(rPrefix.length);
     }
-    enableCapability(typePrefix + '-' + cap, prefix);
-    let $mode = $('#' + prefix + typePrefix + '-' + escapeSelector(rPrefix + cap) + '-mode');
+    enableCapability('cp-' + cap, prefix);
+    let $mode = $(prefixId('cp-' + rPrefix + cap + '-mode', prefix));
     let disabled = $mode.prop('disabled');
     $mode.prop('disabled', false);
     $mode.bootstrapToggle(rCap ? 'off' : 'on');

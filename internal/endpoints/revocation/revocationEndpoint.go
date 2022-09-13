@@ -93,6 +93,19 @@ func revokeByID(rlog log.Ext1FieldLogger, req api.RevocationRequest) (errRes *mo
 			},
 		}
 	}
+	same, err := helper.CheckMytokensAreForSameUser(rlog, nil, req.RevocationID, authToken.ID)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	if !same {
+		return &model.Response{
+			Status: fiber.StatusForbidden,
+			Response: api.Error{
+				Error:            api.ErrorStrInvalidGrant,
+				ErrorDescription: "The provided token cannot be used to revoke this revocation_id",
+			},
+		}
+	}
 	if err = helper.RevokeMT(rlog, nil, req.RevocationID, req.Recursive); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}

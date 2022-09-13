@@ -36,8 +36,5 @@ func (r *MytokenFromMytokenRequest) UnmarshalJSON(data []byte) error {
 		return errors.WithStack(err)
 	}
 	*r = MytokenFromMytokenRequest(*rr)
-	if r.SubtokenCapabilities != nil && !r.Capabilities.Has(api.CapabilityCreateMT) {
-		r.SubtokenCapabilities = nil
-	}
 	return nil
 }

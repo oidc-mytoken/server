@@ -77,7 +77,7 @@ function _getATAudsFromGUI() {
     return auds.filter(onlyUnique).join(' ')
 }
 
-function getAT(okCallback, errCallback, mToken) {
+function getAT(okCallback, errCallback, mToken = undefined) {
     let data = {
         "grant_type": "mytoken",
         "comment": "from web interface"
@@ -90,7 +90,7 @@ function getAT(okCallback, errCallback, mToken) {
     if (auds) {
         data["audience"] = auds;
     }
-    if (mToken) {
+    if (mToken !== undefined) {
         data["mytoken"] = mToken
     }
 
@@ -107,24 +107,15 @@ function getAT(okCallback, errCallback, mToken) {
 }
 
 $('#get-at').on('click', function (e) {
-    getMT(
-        function (res) {
-            const mToken = res['mytoken']
-            getAT(
-                function (tokenRes) {
-                    atShowSuccess(tokenRes['access_token']);
-                },
-                function (errRes) {
-                    let errMsg = getErrorMessage(errRes);
-                    atShowError(errMsg);
-                },
-                mToken);
+    getAT(
+        function (tokenRes) {
+            atShowSuccess(tokenRes['access_token']);
         },
         function (errRes) {
             let errMsg = getErrorMessage(errRes);
             atShowError(errMsg);
-        }
-    );
+        });
+
     atResult.showB();
     atConfig.hideB();
     atShowPending();
@@ -134,7 +125,7 @@ $('#get-at').on('click', function (e) {
 function initAT(...next) {
     let scopes = storageGet("token_scopes");
     if (scopes === "") { // token not restricted with scopes
-        scopes = getSupportedScopesFromStorage();
+        scopes = getSupportedScopesFromStorage(storageGet("oidc_issuer"));
     } else {
         scopes = scopes.split(' ')
     }

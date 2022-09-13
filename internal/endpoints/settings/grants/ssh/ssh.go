@@ -198,11 +198,10 @@ func handleAddSSHSettingsCallback(
 	mytokenReq := my.OIDCFlowRequest{
 		OIDCFlowRequest: api.OIDCFlowRequest{
 			GeneralMytokenRequest: api.GeneralMytokenRequest{
-				Issuer:               mt.OIDCIssuer,
-				GrantType:            api.GrantTypeOIDCFlow,
-				Capabilities:         req.Capabilities,
-				SubtokenCapabilities: req.SubtokenCapabilities,
-				Name:                 embedSSHKeyNameInMTName(req.Name),
+				Issuer:       mt.OIDCIssuer,
+				GrantType:    api.GrantTypeOIDCFlow,
+				Capabilities: req.Capabilities,
+				Name:         embedSSHKeyNameInMTName(req.Name),
 			},
 		},
 		OIDCFlow:     model.OIDCFlowAuthorizationCode,

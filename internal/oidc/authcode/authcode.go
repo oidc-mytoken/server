@@ -333,7 +333,6 @@ func createMytokenEntry(
 			authFlowInfo.Name,
 			authFlowInfo.Restrictions,
 			authFlowInfo.Capabilities,
-			authFlowInfo.SubtokenCapabilities,
 			authFlowInfo.Rotation,
 			unixtime.Now(),
 		),
