@@ -32,6 +32,15 @@
   can get possesion of the `revocation_id`
 - Fixed problems in the web interface with restrictions / issuer selection when not logged in.
 
+### Dependencies
+
+- Bump github.com/coreos/go-oidc/v3 from 3.2.0 to 3.4.0
+- Bump github.com/gofiber/template from 1.6.30 to 1.7.1
+- Bump github.com/gofiber/fiber/v2 from 2.36.0 to 2.37.1
+- Bump github.com/valyala/fasthttp from 1.39.0 to 1.40.0
+- Bump github.com/gliderlabs/ssh from 0.3.4 to 0.3.5
+- Bump github.com/gofiber/helmet/v2 from 2.2.15 to 2.2.16
+
 ## mytoken 0.5.4
 
 ### Bugfixes

@@ -9,7 +9,7 @@ const (
 	MAJOR = 0
 	MINOR = 6
 	FIX   = 0
-	DEV   = true
+	DEV   = false
 )
 
 var version = fmt.Sprintf("%d.%d.%d", MAJOR, MINOR, FIX)
