@@ -27,23 +27,13 @@ import (
 
 // Mytoken is a mytoken Mytoken
 type Mytoken struct {
-	// On update also update api.Mytoken
-	Version      api.TokenVersion          `json:"ver"`
-	TokenType    string                    `json:"token_type"`
-	Issuer       string                    `json:"iss"`
-	Subject      string                    `json:"sub"`
+	api.Mytoken
 	ExpiresAt    unixtime.UnixTime         `json:"exp,omitempty"`
 	NotBefore    unixtime.UnixTime         `json:"nbf"`
 	IssuedAt     unixtime.UnixTime         `json:"iat"`
 	AuthTime     unixtime.UnixTime         `json:"auth_time,omitempty"`
 	ID           mtid.MTID                 `json:"jti"`
-	SeqNo        uint64                    `json:"seq_no"`
-	Name         string                    `json:"name,omitempty"`
-	Audience     string                    `json:"aud"`
-	OIDCSubject  string                    `json:"oidc_sub"`
-	OIDCIssuer   string                    `json:"oidc_iss"`
 	Restrictions restrictions.Restrictions `json:"restrictions,omitempty"`
-	Capabilities api.Capabilities          `json:"capabilities"`
 	Rotation     *api.Rotation             `json:"rotation,omitempty"`
 	jwt          string
 }
@@ -105,21 +95,23 @@ func NewMytoken(
 ) *Mytoken {
 	now := unixtime.Now()
 	mt := &Mytoken{
-		Version:      api.TokenVer,
-		TokenType:    api.TokenType,
-		ID:           mtid.New(),
-		SeqNo:        1,
-		Name:         name,
-		IssuedAt:     now,
-		NotBefore:    now,
-		AuthTime:     authTime,
-		Issuer:       config.Get().IssuerURL,
-		Subject:      utils.CreateMytokenSubject(oidcSub, oidcIss),
-		Audience:     config.Get().IssuerURL,
-		OIDCIssuer:   oidcIss,
-		OIDCSubject:  oidcSub,
-		Capabilities: c,
-		Rotation:     rot,
+		Mytoken: api.Mytoken{
+			Version:      api.TokenVer,
+			TokenType:    api.TokenType,
+			SeqNo:        1,
+			Name:         name,
+			Issuer:       config.Get().IssuerURL,
+			Subject:      utils.CreateMytokenSubject(oidcSub, oidcIss),
+			Audience:     config.Get().IssuerURL,
+			OIDCIssuer:   oidcIss,
+			OIDCSubject:  oidcSub,
+			Capabilities: c,
+		},
+		ID:        mtid.New(),
+		IssuedAt:  now,
+		NotBefore: now,
+		AuthTime:  authTime,
+		Rotation:  rot,
 	}
 	r.EnforceMaxLifetime(oidcIss)
 	if len(r) > 0 {
