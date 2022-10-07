@@ -363,8 +363,8 @@ github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWb
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/oidc-mytoken/api v0.8.0 h1:V/8LyLcVtYX1xxj+r6KyShDYUhl1giHLPVB6dTZyQtk=
 github.com/oidc-mytoken/api v0.8.0/go.mod h1:DBIlUbaIgGlf607VZx8zFC97VR3WNN0kaMVO1AqyTdE=
-github.com/oidc-mytoken/lib v0.5.0 h1:/DHEjHCSVDFE5DXyXUp3dO7NWZfSFN2nYVaigYdmv5w=
-github.com/oidc-mytoken/lib v0.5.0/go.mod h1:r6shfKy8/15vqGJvciCPphRkKffvIegSqj0uA6kzuns=
+github.com/oidc-mytoken/lib v0.6.0 h1:hsydbF2QPrL40kWny2mWciW055TpuPPkcTMMqzHl/6s=
+github.com/oidc-mytoken/lib v0.6.0/go.mod h1:r6shfKy8/15vqGJvciCPphRkKffvIegSqj0uA6kzuns=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pelletier/go-toml v1.9.4/go.mod h1:u1nR/EPcESfeI/szUZKdtJ0xRNbUoANCkoOuaOx1Y+c=

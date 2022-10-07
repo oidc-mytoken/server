@@ -18,7 +18,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lestrrat-go/jwx v1.2.25
 	github.com/oidc-mytoken/api v0.8.0
-	github.com/oidc-mytoken/lib v0.5.0
+	github.com/oidc-mytoken/lib v0.6.0
 	github.com/pires/go-proxyproto v0.6.2
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
