@@ -12,6 +12,12 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.6.1
+
+### Bugfixes
+
+- Fixed a bug in the web interface where the scope selection indicator for access tokens where not updated.
+
 ## mytoken 0.6.0
 
 ### API
