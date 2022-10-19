@@ -17,6 +17,7 @@
         <script src="{{instance-url}}/static/js/lib/user-agent.min.js"></script>
         <script src="{{instance-url}}/static/js/mt-helper.js"></script>
         <script src="{{instance-url}}/static/js/home.js"></script>
+        <script src="{{instance-url}}/static/js/scope.js"></script>
         <script src="{{instance-url}}/static/js/create-at.js"></script>
         <script src="{{instance-url}}/static/js/transfercode.js"></script>
         <script src="{{instance-url}}/static/js/tokeninfo.js"></script>
@@ -64,5 +65,8 @@
             crossorigin="anonymous" referrerpolicy="no-referrer"
     ></script>
     <script src="{{instance-url}}/static/js/countries.js"></script>
+    {{^home}}
+        <script src="{{instance-url}}/static/js/scope.js"></script>
+    {{/home}}
     <script src="{{instance-url}}/static/js/restr-gui.js"></script>
 {{/restr-gui}}
