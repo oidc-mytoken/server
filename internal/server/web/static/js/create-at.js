@@ -131,7 +131,8 @@ function initAT(...next) {
     }
     let $table = $('#at-scopeTableBody');
     for (const scope of scopes) {
-        _addScopeValueToGUI(scope, $table, "at");
+        _addScopeValueToGUI(scope, $table, "", "at");
     }
+    initScopesGUI("at");
     doNext(...next);
 }
