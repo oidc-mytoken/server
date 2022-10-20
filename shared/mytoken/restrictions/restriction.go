@@ -14,6 +14,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+	"github.com/oidc-mytoken/server/internal/utils/iputils"
 
 	"github.com/oidc-mytoken/api/v0"
 
@@ -59,8 +60,8 @@ func (r *Restrictions) ClearUnsupportedKeys() {
 		if disabledRestrictionKeys().Has(model.RestrictionClaimAudiences) {
 			rr.Audiences = nil
 		}
-		if disabledRestrictionKeys().Has(model.RestrictionClaimIPs) {
-			rr.IPs = nil
+		if disabledRestrictionKeys().Has(model.RestrictionClaimHosts) {
+			rr.Hosts = nil
 		}
 		if disabledRestrictionKeys().Has(model.RestrictionClaimGeoIPAllow) {
 			rr.GeoIPAllow = nil
@@ -76,6 +77,37 @@ func (r *Restrictions) ClearUnsupportedKeys() {
 		}
 		// (*r)[i] = rr
 	}
+}
+
+// legacyHash returns the legacy hash of this restriction (using "ip" instead of "hosts" key
+func (r *Restriction) legacyHash() ([]byte, error) {
+	type legacy struct {
+		NotBefore     unixtime.UnixTime `json:"nbf,omitempty"`
+		ExpiresAt     unixtime.UnixTime `json:"exp,omitempty"`
+		Scope         string            `json:"scope,omitempty"`
+		Audiences     []string          `json:"audience,omitempty"`
+		Hosts         []string          `json:"ip,omitempty"`
+		GeoIPAllow    []string          `json:"geoip_allow,omitempty"`
+		GeoIPDisallow []string          `json:"geoip_disallow,omitempty"`
+		UsagesAT      *int64            `json:"usages_AT,omitempty"`
+		UsagesOther   *int64            `json:"usages_other,omitempty"`
+	}
+	l := legacy{
+		NotBefore:     r.NotBefore,
+		ExpiresAt:     r.ExpiresAt,
+		Scope:         r.Scope,
+		Audiences:     r.Audiences,
+		Hosts:         r.Hosts,
+		GeoIPAllow:    r.GeoIPAllow,
+		GeoIPDisallow: r.GeoIPDisallow,
+		UsagesAT:      r.UsagesAT,
+		UsagesOther:   r.UsagesOther,
+	}
+	j, err := json.Marshal(l)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return hashUtils.SHA512(j), nil
 }
 
 // hash returns the hash of this restriction
@@ -105,16 +137,16 @@ func (r *Restriction) verifyTimeBased(rlog log.Ext1FieldLogger) bool {
 	now := unixtime.Now()
 	return r.verifyNbf(now) && r.verifyExp(now)
 }
-func (r *Restriction) verifyIPBased(rlog log.Ext1FieldLogger, ip string) bool {
-	return r.verifyIPs(rlog, ip) && r.verifyGeoIP(rlog, ip)
+func (r *Restriction) verifyLocationBased(rlog log.Ext1FieldLogger, ip string) bool {
+	return r.verifyHosts(rlog, ip) && r.verifyGeoIP(rlog, ip)
 }
-func (r *Restriction) verifyIPs(rlog log.Ext1FieldLogger, ip string) bool {
-	if disabledRestrictionKeys().Has(model.RestrictionClaimIPs) {
+func (r *Restriction) verifyHosts(rlog log.Ext1FieldLogger, ip string) bool {
+	if disabledRestrictionKeys().Has(model.RestrictionClaimHosts) {
 		return true
 	}
-	rlog.Trace("Verifying ips")
-	return len(r.IPs) == 0 ||
-		utils.IPIsIn(ip, r.IPs)
+	rlog.Trace("Verifying hosts")
+	return len(r.Hosts) == 0 ||
+		iputils.IPIsIn(ip, r.Hosts)
 }
 func (r *Restriction) verifyGeoIP(rlog log.Ext1FieldLogger, ip string) bool {
 	rlog.Trace("Verifying ip geo location")
@@ -144,6 +176,14 @@ func (r *Restriction) verifyGeoIPDisallow(rlog log.Ext1FieldLogger, ip string) b
 }
 func (r *Restriction) getATUsageCounts(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID) (*int64, error) {
 	hash, err := r.hash()
+	if err != nil {
+		return nil, err
+	}
+	usages, err := mytokenrepohelper.GetTokenUsagesAT(rlog, tx, myID, string(hash))
+	if err != nil || usages != nil {
+		return usages, err
+	}
+	hash, err = r.legacyHash()
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +260,7 @@ func (r *Restriction) verifyOtherUsageCounts(rlog log.Ext1FieldLogger, tx *sqlx.
 }
 func (r *Restriction) verify(rlog log.Ext1FieldLogger, ip string) bool {
 	return r.verifyTimeBased(rlog) &&
-		r.verifyIPBased(rlog, ip)
+		r.verifyLocationBased(rlog, ip)
 }
 func (r *Restriction) verifyAT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, ip string, id mtid.MTID) bool {
 	return r.verify(rlog, ip) && r.verifyATUsageCounts(rlog, tx, id)
@@ -480,7 +520,7 @@ func Tighten(rlog log.Ext1FieldLogger, old, wanted Restrictions) (res Restrictio
 // ReplaceThisIp replaces the special value 'this' with the given ip.
 func (r *Restrictions) ReplaceThisIp(ip string) {
 	for _, rr := range *r {
-		utils.ReplaceStringInSlice(&rr.IPs, "this", ip, false)
+		utils.ReplaceStringInSlice(&rr.Hosts, "this", ip, false)
 	}
 }
 
@@ -512,7 +552,7 @@ func (r *Restriction) isTighterThan(b *Restriction) bool {
 	) && len(b.Audiences) != 0 {
 		return false
 	}
-	if len(r.IPs) == 0 && len(b.IPs) > 0 || !utils.IPsAreSubSet(r.IPs, b.IPs) && len(b.IPs) != 0 {
+	if len(r.Hosts) == 0 && len(b.Hosts) > 0 || !iputils.IPsAreSubSet(r.Hosts, b.Hosts) && len(b.Hosts) != 0 {
 		return false
 	}
 	if len(r.GeoIPAllow) == 0 && len(b.GeoIPAllow) > 0 || !utils.IsSubSet(

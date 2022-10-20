@@ -205,19 +205,6 @@ function GUIToRestr_Scopes(prefix = "") {
     GUISetRestr('scope', scopes.join(' '), prefix);
 }
 
-//
-// function GUIToRestr_IPs(prefix="") {
-//     _guiToRestr_Table(prefixId('ipTableBody',prefix), "ip",prefix);
-// }
-//
-// function GUIToRestr_GeoIPAllow(prefix="") {
-//     _guiToRestr_Table(prefixId('geoip-allowTableBody',prefix), "geoip_allow",prefix);
-// }
-//
-// function GUIToRestr_GeoIPDisallow(prefix="") {
-//     _guiToRestr_Table(prefixId('geoip-disallowTableBody',prefix), "geoip_disallow",prefix);
-// }
-
 function GUIToRestr_UsagesAT(prefix = "") {
     let usages = usagesAT(prefix).val()
     if (usages === "") {
@@ -302,11 +289,16 @@ function restrClauseToGUI(prefix = "") {
             _addListItem(a, $(prefixId('audienceTableBody', prefix)), prefix);
         }
     }
-    if (restr.ip) {
+    if (restr.hosts) {
+        for (const host of restr.hosts) {
+            _addListItem(host, $(prefixId('hostTableBody', prefix)), prefix);
+        }
+    } else if (restr.ip) {
         for (const ip of restr.ip) {
-            _addListItem(ip, $(prefixId('ipTableBody', prefix)), prefix);
+            _addListItem(ip, $(prefixId('hostTableBody', prefix)), prefix);
         }
     }
+
     if (restr.geoip_allow) {
         for (const code of restr.geoip_allow) {
             let country = countriesByCode[code.toUpperCase()];
@@ -373,7 +365,7 @@ function delRestrClause(prefix = "") {
 }
 
 function selectIPTable(prefix = "") {
-    $(prefixId('restr-ip', prefix)).hideB();
+    $(prefixId('restr-hosts', prefix)).hideB();
     $(prefixId('restr-geoip_allow', prefix)).hideB();
     $(prefixId('restr-geoip_disallow', prefix)).hideB();
     $(prefixId('restr-' + $(this).val(), prefix)).showB();

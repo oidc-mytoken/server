@@ -10,8 +10,8 @@ function restrIconTime(prefix = "") {
     return $('#' + prefix + 'r-icon-time');
 }
 
-function restrIconIP(prefix = "") {
-    return $('#' + prefix + 'r-icon-ip');
+function restrIconHost(prefix = "") {
+    return $('#' + prefix + 'r-icon-host');
 }
 
 function restrIconScope(prefix = "") {
@@ -49,10 +49,10 @@ function updateRestrIcons(prefix = "") {
         if (aud !== undefined && aud.length > 0) {
             howManyClausesRestrictAud++;
         }
-        let ip = r['ip'];
+        let hosts = r['hosts'] || r['ip'];
         let ipW = r['geoip_allow'];
         let ipB = r['geoip_disallow'];
-        if ((ip !== undefined && ip.length > 0) ||
+        if ((hosts !== undefined && hosts.length > 0) ||
             (ipW !== undefined && ipW.length > 0) ||
             (ipB !== undefined && ipB.length > 0)) {
             howManyClausesRestrictIP++;
@@ -72,15 +72,16 @@ function updateRestrIcons(prefix = "") {
     }
     let restr = getRestrictionsData(prefix);
     if (howManyClausesRestrictIP === restr.length && restr.length > 0) {
-        restrIconIP(prefix).addClass('text-success');
-        restrIconIP(prefix).removeClass('text-warning');
-        restrIconIP(prefix).removeClass('text-danger');
-        restrIconIP(prefix).attr('data-original-title', "The IPs from which this token can be used are restricted.");
+        restrIconHost(prefix).addClass('text-success');
+        restrIconHost(prefix).removeClass('text-warning');
+        restrIconHost(prefix).removeClass('text-danger');
+        restrIconHost(prefix).attr('data-original-title', "The hosts from which this token can be used are" +
+            " restricted.");
     } else {
-        restrIconIP(prefix).addClass('text-warning');
-        restrIconIP(prefix).removeClass('text-success');
-        restrIconIP(prefix).removeClass('text-danger');
-        restrIconIP(prefix).attr('data-original-title', "This token can be used from any IP.");
+        restrIconHost(prefix).addClass('text-warning');
+        restrIconHost(prefix).removeClass('text-success');
+        restrIconHost(prefix).removeClass('text-danger');
+        restrIconHost(prefix).attr('data-original-title', "This token can be used from any host.");
     }
     if (howManyClausesRestrictScope === restr.length && restr.length > 0) {
         restrIconScope(prefix).addClass('text-success');

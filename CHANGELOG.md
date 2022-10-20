@@ -14,6 +14,20 @@
 
 ## mytoken 0.6.1
 
+### API
+
+- Changed the restriction `ip` key to `hosts`:
+  - Backward compatibility is preserved. The legacy key `ip` is still accepted.
+  - The `hosts` entry can contain:
+    - Single ip address
+    - Subnet address
+    - Host name (with or without wildcard)
+      - To compare against this, on request a reverse dns lookup is done for the request's ip address
+
+### Enhancements
+
+- Location restriction can now be done with host names, not only plain ip addresses, see above for more details.
+
 ### Bugfixes
 
 - Fixed a bug in the web interface where the scope selection indicator for access tokens where not updated.
