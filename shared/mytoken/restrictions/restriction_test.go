@@ -528,10 +528,10 @@ func TestRestriction_isTighterThan(t *testing.T) {
 		},
 		{
 			name: "IP",
-			a:    Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}},
+			a:    Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.12"}}},
 			b: Restriction{
 				Restriction: api.Restriction{
-					IPs: []string{
+					Hosts: []string{
 						"192.168.0.12",
 						"192.168.0.14",
 					},
@@ -543,21 +543,21 @@ func TestRestriction_isTighterThan(t *testing.T) {
 			name: "IP Reversed",
 			a: Restriction{
 				Restriction: api.Restriction{
-					IPs: []string{
+					Hosts: []string{
 						"192.168.0.12",
 						"192.168.0.14",
 					},
 				},
 			},
-			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}},
+			b:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.12"}}},
 			expected: false,
 		},
 		{
 			name: "IP with explicit net",
-			a:    Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12/24"}}},
+			a:    Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.12/24"}}},
 			b: Restriction{
 				Restriction: api.Restriction{
-					IPs: []string{
+					Hosts: []string{
 						"192.168.0.12",
 						"192.168.0.14",
 					},
@@ -569,33 +569,33 @@ func TestRestriction_isTighterThan(t *testing.T) {
 			name: "IP with explicit net Reversed",
 			a: Restriction{
 				Restriction: api.Restriction{
-					IPs: []string{
+					Hosts: []string{
 						"192.168.0.12",
 						"192.168.0.14",
 					},
 				},
 			},
-			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12/24"}}},
+			b:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.12/24"}}},
 			expected: false,
 		},
 		{
 			name:     "IP Subnet",
-			a:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}},
-			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}},
+			a:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.12"}}},
+			b:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.0/24"}}},
 			expected: true,
 		},
 		{
 			name:     "IP Subnet Reversed",
-			a:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}},
-			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}},
+			a:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.0/24"}}},
+			b:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.12"}}},
 			expected: false,
 		},
 		{
 			name: "IP Subnet + IP",
-			a:    Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}},
+			a:    Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.12"}}},
 			b: Restriction{
 				Restriction: api.Restriction{
-					IPs: []string{
+					Hosts: []string{
 						"192.168.0.0/24",
 						"192.168.1.2",
 					},
@@ -607,21 +607,21 @@ func TestRestriction_isTighterThan(t *testing.T) {
 			name: "IP Subnet + IP Reversed",
 			a: Restriction{
 				Restriction: api.Restriction{
-					IPs: []string{
+					Hosts: []string{
 						"192.168.0.0/24",
 						"192.168.1.2",
 					},
 				},
 			},
-			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.12"}}},
+			b:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.12"}}},
 			expected: false,
 		},
 		{
 			name: "IP Subnets + IP",
-			a:    Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}},
+			a:    Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.0/24"}}},
 			b: Restriction{
 				Restriction: api.Restriction{
-					IPs: []string{
+					Hosts: []string{
 						"192.168.0.0/24",
 						"192.168.1.2",
 					},
@@ -633,49 +633,49 @@ func TestRestriction_isTighterThan(t *testing.T) {
 			name: "IP Subnets + IP Reversed",
 			a: Restriction{
 				Restriction: api.Restriction{
-					IPs: []string{
+					Hosts: []string{
 						"192.168.0.0/24",
 						"192.168.1.2",
 					},
 				},
 			},
-			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}},
+			b:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.0/24"}}},
 			expected: false,
 		},
 		{
 			name:     "IP Different sized Subnets",
-			a:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}},
-			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/16"}}},
+			a:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.0/24"}}},
+			b:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.0/16"}}},
 			expected: true,
 		},
 		{
 			name:     "IP Different sized Subnets Reversed",
-			a:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/16"}}},
-			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/24"}}},
+			a:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.0/16"}}},
+			b:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.0/24"}}},
 			expected: false,
 		},
 		{
 			name:     "IP Different sized Subnets 2",
-			a:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.128.0/24"}}},
-			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/16"}}},
+			a:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.128.0/24"}}},
+			b:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.0/16"}}},
 			expected: true,
 		},
 		{
 			name:     "IP Different sized Subnets 2 Reversed",
-			a:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/16"}}},
-			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.128.0/24"}}},
+			a:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.0/16"}}},
+			b:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.128.0/24"}}},
 			expected: false,
 		},
 		{
 			name:     "IP Different Subnets",
-			a:        Restriction{Restriction: api.Restriction{IPs: []string{"193.168.0.0/24"}}},
-			b:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/16"}}},
+			a:        Restriction{Restriction: api.Restriction{Hosts: []string{"193.168.0.0/24"}}},
+			b:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.0/16"}}},
 			expected: false,
 		},
 		{
 			name:     "IP Different Subnets Reversed",
-			a:        Restriction{Restriction: api.Restriction{IPs: []string{"192.168.0.0/16"}}},
-			b:        Restriction{Restriction: api.Restriction{IPs: []string{"193.168.0.0/24"}}},
+			a:        Restriction{Restriction: api.Restriction{Hosts: []string{"192.168.0.0/16"}}},
+			b:        Restriction{Restriction: api.Restriction{Hosts: []string{"193.168.0.0/24"}}},
 			expected: false,
 		},
 		{
@@ -683,7 +683,7 @@ func TestRestriction_isTighterThan(t *testing.T) {
 			a:    Restriction{},
 			b: Restriction{
 				Restriction: api.Restriction{
-					IPs: []string{
+					Hosts: []string{
 						"192.168.0.12",
 						"192.168.0.42",
 					},
@@ -695,7 +695,7 @@ func TestRestriction_isTighterThan(t *testing.T) {
 			name: "IP B empty",
 			a: Restriction{
 				Restriction: api.Restriction{
-					IPs: []string{
+					Hosts: []string{
 						"192.168.0.12",
 						"192.168.0.42",
 					},
@@ -703,6 +703,276 @@ func TestRestriction_isTighterThan(t *testing.T) {
 			},
 			b:        Restriction{},
 			expected: true,
+		},
+		{
+			name: "Hosts equal",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"test.example.com",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"test.example.com",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Hosts equal wildcard",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.example.com",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.example.com",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Hosts one wildcard",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"test.example.com",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.example.com",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Hosts one wildcard reversed",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.example.com",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"test.example.com",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Hosts two wildcards",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.test.example.com",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.example.com",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Hosts two wildcards reversed",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.example.com",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.test.example.com",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Hosts wildcard different",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"test.other.com",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.example.com",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Host with ip",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"stackoverflow.com",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"198.252.206.16",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Host with ip reversed",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"198.252.206.16",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"stackoverflow.com",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "wildcard Host with ip",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"198.252.206.16",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*stackoverflow.com",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "wildcard Host with ip",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"198.252.206.16",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*stackoverflow.com",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "wildcard Host with ip reversed",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.stackoverflow.com",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"198.252.206.16",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "wildcard Host 2 with ip",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"198.252.206.16",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.stackoverflow.com",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "wildcard Host 2 with ip reversed",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.stackoverflow.com",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"198.252.206.16",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "invalid ip for host",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"test.example.com",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"192.168.0.42",
+					},
+				},
+			},
+			expected: false,
 		},
 		{
 			name: "GeoIP Allow Subset",
@@ -1058,7 +1328,7 @@ func TestRestriction_isTighterThan(t *testing.T) {
 						"b",
 						"c",
 					},
-					IPs: []string{
+					Hosts: []string{
 						"a",
 						"b",
 						"c",
@@ -1087,7 +1357,7 @@ func TestRestriction_isTighterThan(t *testing.T) {
 						"b",
 						"c",
 					},
-					IPs: []string{
+					Hosts: []string{
 						"a",
 						"b",
 						"c",
@@ -1120,7 +1390,7 @@ func TestRestriction_isTighterThan(t *testing.T) {
 						"b",
 						"c",
 					},
-					IPs: []string{
+					Hosts: []string{
 						"a",
 						"b",
 						"c",
@@ -1149,7 +1419,7 @@ func TestRestriction_isTighterThan(t *testing.T) {
 						"b",
 						"c",
 					},
-					IPs: []string{
+					Hosts: []string{
 						"a",
 						"b",
 						"c",
@@ -1182,7 +1452,7 @@ func TestRestriction_isTighterThan(t *testing.T) {
 						"b",
 						"c",
 					},
-					IPs: []string{
+					Hosts: []string{
 						"a",
 						"b",
 						"c",
@@ -1211,7 +1481,7 @@ func TestRestriction_isTighterThan(t *testing.T) {
 						"b",
 						"c",
 					},
-					IPs: []string{
+					Hosts: []string{
 						"a",
 						"b",
 						"c",
@@ -1360,18 +1630,70 @@ func TestRestriction_hash(t *testing.T) {
 		NotBefore: 1599939600,
 		ExpiresAt: 1599948600,
 		Restriction: api.Restriction{
-			IPs:      []string{"192.168.0.31"},
+			Hosts:    []string{"192.168.0.31"},
 			UsagesAT: utils.NewInt64(11),
 		},
 	}
 
-	hash, err := r.hash()
-	if err != nil {
-		t.Error(err)
+	cases := []struct {
+		name    string
+		r       Restriction
+		expHash string
+	}{
+		{
+			name:    "hash",
+			r:       r,
+			expHash: "umVWTDmDgo2NLCgUWFtTn4G8PfjUZYTMxJ5QJGGo4ZNFOno76ggNdQcPhDsfWfYMy79n6oxnwiahbvHZUuI96w==",
+		},
 	}
-	expected := "BS3WfHbHNUiVU8sJ+F49H9+69HnFtfVDy2m22vBv588nZ0kGblVNxZEcrTN+5NUiRkM7W80N4VpPgwEZBZl+3g=="
-	if string(hash) != expected {
-		t.Errorf("hash '%s' does not match expected hash '%s'", hash, expected)
+	for _, c := range cases {
+		t.Run(
+			c.name, func(t *testing.T) {
+				hash, err := c.r.hash()
+				if err != nil {
+					t.Error(err)
+				}
+				if string(hash) != c.expHash {
+					t.Errorf("hash '%s' does not match expected hash '%s'", hash, c.expHash)
+				}
+			},
+		)
+	}
+}
+
+func TestRestriction_legacyHash(t *testing.T) {
+	r := Restriction{
+		NotBefore: 1599939600,
+		ExpiresAt: 1599948600,
+		Restriction: api.Restriction{
+			Hosts:    []string{"192.168.0.31"},
+			UsagesAT: utils.NewInt64(11),
+		},
+	}
+
+	cases := []struct {
+		name    string
+		r       Restriction
+		expHash string
+	}{
+		{
+			name:    "legacy hash",
+			r:       r,
+			expHash: "BS3WfHbHNUiVU8sJ+F49H9+69HnFtfVDy2m22vBv588nZ0kGblVNxZEcrTN+5NUiRkM7W80N4VpPgwEZBZl+3g==",
+		},
+	}
+	for _, c := range cases {
+		t.Run(
+			c.name, func(t *testing.T) {
+				hash, err := c.r.legacyHash()
+				if err != nil {
+					t.Error(err)
+				}
+				if string(hash) != c.expHash {
+					t.Errorf("hash '%s' does not match expected hash '%s'", hash, c.expHash)
+				}
+			},
+		)
 	}
 }
 

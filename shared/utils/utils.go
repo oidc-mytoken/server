@@ -1,11 +1,9 @@
 package utils
 
 import (
-	"bytes"
 	"encoding/base64"
 	"fmt"
 	"math/rand"
-	"net"
 	"strings"
 	"time"
 	"unsafe"
@@ -88,53 +86,6 @@ func IsSubSet(a, b []string) bool {
 		}
 	}
 	return true
-}
-
-// IPsAreSubSet checks if all ips of ipsA are contained in ipsB, it will also check ip subnets
-func IPsAreSubSet(ipsA, ipsB []string) bool {
-	for _, ipA := range ipsA {
-		if !IPIsIn(ipA, ipsB) {
-			return false
-		}
-	}
-	return true
-}
-
-func parseIP(ip string) (net.IP, *net.IPNet) {
-	ipA, ipNet, err := net.ParseCIDR(ip)
-	if err != nil {
-		ipA = net.ParseIP(ip)
-	}
-	if ipNet != nil && !ipA.Equal(ipNet.IP) {
-		ipNet = nil
-	}
-	return ipA, ipNet
-}
-
-// IPIsIn checks if a ip is in a slice of ips, it will also check ip subnets
-func IPIsIn(ip string, ips []string) bool {
-	if len(ips) == 0 {
-		return false
-	}
-	ipA, ipNetA := parseIP(ip)
-	for _, ipp := range ips {
-		ipB, ipNetB := parseIP(ipp)
-		if ipNetA == nil && ipNetB == nil {
-			if ipA.Equal(ipB) {
-				return true
-			}
-		} else if ipNetA == nil && ipNetB != nil {
-			if ipNetB.Contains(ipA) {
-				return true
-			}
-		} else if ipNetA != nil && ipNetB != nil {
-			if ipNetB.Contains(ipA) && bytes.Compare(ipNetA.Mask, ipNetB.Mask) >= 0 {
-				return true
-			}
-		}
-		// check for ipNetA != nil && ipNetB == nil not needed -> won't work
-	}
-	return false
 }
 
 // CombineURLPath combines multiple parts of a url
