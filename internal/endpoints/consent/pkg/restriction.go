@@ -24,7 +24,7 @@ func (r WebRestrictions) Text() string {
 	return string(data)
 }
 
-func (r WebRestrictions) getTimeClass() int {
+func (r *WebRestrictions) getTimeClass() int {
 	if r.timeClass != nil {
 		return *r.timeClass
 	}
@@ -42,7 +42,7 @@ func (r WebRestrictions) getTimeClass() int {
 	return -1
 }
 
-func (r WebRestrictions) getScopeClass() bool {
+func (r *WebRestrictions) getScopeClass() bool {
 	if r.scopeClass != nil {
 		return *r.scopeClass
 	}
@@ -55,7 +55,7 @@ func (r WebRestrictions) getScopeClass() bool {
 	return s
 }
 
-func (r WebRestrictions) getIPClass() bool {
+func (r *WebRestrictions) getIPClass() bool {
 	if r.ipClass != nil {
 		return *r.ipClass
 	}
@@ -78,7 +78,7 @@ func (r WebRestrictions) getIPClass() bool {
 	return ip
 }
 
-func (r WebRestrictions) getAudClass() bool {
+func (r *WebRestrictions) getAudClass() bool {
 	if r.audClass != nil {
 		return *r.audClass
 	}
@@ -91,7 +91,7 @@ func (r WebRestrictions) getAudClass() bool {
 	return a
 }
 
-func (r WebRestrictions) getUsageClass() bool {
+func (r *WebRestrictions) getUsageClass() bool {
 	if r.usagesClass != nil {
 		return *r.usagesClass
 	}
