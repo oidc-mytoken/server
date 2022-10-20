@@ -23,8 +23,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/server/apiPath"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/fileio"
+	"github.com/oidc-mytoken/server/internal/utils/iputils"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
-	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 //go:embed web/static
@@ -80,7 +80,7 @@ func addLimiterMiddleware(s fiber.Router) {
 		limiter.New(
 			limiter.Config{
 				Next: func(c *fiber.Ctx) bool {
-					return utils.IPIsIn(c.IP(), limiterConf.AlwaysAllow)
+					return iputils.IPIsIn(c.IP(), limiterConf.AlwaysAllow)
 				},
 				Max:        limiterConf.Max,
 				Expiration: time.Duration(limiterConf.Window) * time.Second,

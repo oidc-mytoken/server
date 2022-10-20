@@ -61,7 +61,7 @@ func (r WebRestrictions) getIPClass() bool {
 	}
 	ip := false
 	for _, rr := range r.Restrictions {
-		if len(rr.IPs) > 0 {
+		if len(rr.Hosts) > 0 {
 			ip = true
 			break
 		}
