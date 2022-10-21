@@ -11,7 +11,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/cache"
 )
 
-const hostLookupTimeout = 50 * time.Millisecond
+const hostLookupTimeout = 500 * time.Millisecond
 
 func getHost(ip string) string {
 	cacheHost, found := cache.Get(cache.IPHostCache, ip)
