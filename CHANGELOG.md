@@ -27,6 +27,7 @@
 ### Enhancements
 
 - Location restriction can now be done with host names, not only plain ip addresses, see above for more details.
+- Improved code quality
 
 ### Bugfixes
 
