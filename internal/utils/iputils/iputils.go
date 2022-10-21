@@ -20,7 +20,7 @@ func getHost(ip string) string {
 	ctx, cancel := context.WithTimeout(context.TODO(), hostLookupTimeout)
 	defer cancel()
 	r := net.Resolver{
-		PreferGo: true,
+		// PreferGo: true,
 	}
 	hosts, err := r.LookupAddr(ctx, ip)
 	if err != nil && len(hosts) < 1 {
