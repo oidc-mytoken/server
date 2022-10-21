@@ -30,6 +30,10 @@ jobs:
             dep ensure
         fi
 
+    - name: Test host
+      run: |
+        host 198.252.206.16
+        ping 198.252.206.16
 
     - name: Build Server Setup
       run: go build -v github.com/oidc-mytoken/server/cmd/mytoken-server/mytoken-setup
