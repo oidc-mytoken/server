@@ -2,33 +2,23 @@ package iputils
 
 import (
 	"bytes"
-	"context"
 	"net"
 	"strings"
-	"time"
 
 	"github.com/oidc-mytoken/server/internal/utils/cache"
 )
 
-const hostLookupTimeout = 50 * time.Millisecond
-
-func getHost(ip string) string {
+func getHosts(ip string) []string {
 	cacheHost, found := cache.Get(cache.IPHostCache, ip)
 	if found {
-		return cacheHost.(string)
+		return cacheHost.([]string)
 	}
-	ctx, cancel := context.WithTimeout(context.TODO(), hostLookupTimeout)
-	defer cancel()
-	r := net.Resolver{
-		PreferGo: true,
+	hosts, err := net.LookupAddr(ip)
+	if err != nil {
+		return nil
 	}
-	hosts, err := r.LookupAddr(ctx, ip)
-	if err != nil && len(hosts) < 1 {
-		return ""
-	}
-	host := hosts[0]
-	cache.Set(cache.IPHostCache, ip, host)
-	return host
+	cache.Set(cache.IPHostCache, ip, hosts)
+	return hosts
 }
 
 // IPsAreSubSet checks if all ips of ipsA are contained in ipsB, it will also check ip subnets
@@ -89,17 +79,23 @@ func compareIPToIP(ip, ipp string) bool {
 }
 
 func compareIPToHost(ip, host string) bool {
-	ipHost := getHost(ip)
-	if ipHost == "" {
+	ipHosts := getHosts(ip)
+	if len(ipHosts) == 0 {
 		return false
 	}
-	if ipHost[len(ipHost)-1] == '.' && host[len(host)-1] != '.' {
-		host += "."
+	for _, ipHost := range ipHosts {
+		if ipHost[len(ipHost)-1] == '.' && host[len(host)-1] != '.' {
+			host += "."
+		}
+		if len(host) > 1 && host[0] == '*' {
+			if strings.HasSuffix(ipHost, host[1:]) {
+				return true
+			}
+		} else if strings.Compare(ipHost, host) == 0 {
+			return true
+		}
 	}
-	if len(host) > 1 && host[0] == '*' {
-		return strings.HasSuffix(ipHost, host[1:])
-	}
-	return strings.Compare(ipHost, host) == 0
+	return false
 }
 
 func ipValid(ip net.IP) bool {
@@ -131,11 +127,16 @@ func compareHostToIP(host, ip string) bool {
 	if len(host) > 0 && host[len(host)-1] != '.' {
 		host += "."
 	}
-	ipHost := getHost(ip)
-	if len(ipHost) > 0 && ipHost[len(ipHost)-1] != '.' {
-		ipHost += "."
+	ipHosts := getHosts(ip)
+	for _, ipHost := range ipHosts {
+		if len(ipHost) > 0 && ipHost[len(ipHost)-1] != '.' {
+			ipHost += "."
+		}
+		if host == ipHost {
+			return true
+		}
 	}
-	return host == ipHost
+	return false
 }
 
 func compareHostToHost(a, b string) bool {
