@@ -1,0 +1,7 @@
+contact_links:
+  - name: Q&A
+    url: https://github.com/oidc-mytoken/server/discussions/new?category=q-a
+    about: Please ask questions here.
+  - name: Security Contact
+    url: mailto:m-sec@lists.kit.edu
+    about: Please report security vulnerabilities here.
