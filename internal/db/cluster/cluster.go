@@ -20,7 +20,7 @@ import (
 func NewFromConfig(conf config.DBConf) *Cluster {
 	c := newCluster(len(conf.Hosts))
 	c.conf = &conf
-	c.startReconnector()
+	go c.runReconnector()
 	c.AddNodes()
 	log.Debug("Created db cluster")
 	return c
@@ -93,27 +93,25 @@ func (c *Cluster) addNode(n *node) error {
 	return nil
 }
 
-func (c *Cluster) startReconnector() {
-	go func() {
-		for {
-			select {
-			case <-c.stop:
+func (c *Cluster) runReconnector() {
+	for {
+		select {
+		case <-c.stop:
+			log.Debug("Stopping re-connector")
+			return
+		default:
+			log.Debug("Run checkNodesDown")
+			if c.checkNodesDown() {
 				log.Debug("Stopping re-connector")
 				return
-			default:
-				log.Debug("Run checkNodesDown")
-				if c.checkNodesDown() {
-					log.Debug("Stopping re-connector")
-					return
-				}
-				conf := c.conf
-				if conf == nil {
-					conf = &config.Get().DB
-				}
-				time.Sleep(time.Duration(conf.ReconnectInterval) * time.Second)
 			}
+			conf := c.conf
+			if conf == nil {
+				conf = &config.Get().DB
+			}
+			time.Sleep(time.Duration(conf.ReconnectInterval) * time.Second)
 		}
-	}()
+	}
 }
 
 func (c *Cluster) checkNodesDown() bool {

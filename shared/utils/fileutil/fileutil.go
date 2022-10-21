@@ -49,7 +49,10 @@ func Append(path, content string, doNotCreateIfDoesNotExist ...bool) error {
 	}
 	defer f.Close()
 	_, err = f.WriteString(content)
-	return err
+	if err != nil {
+		return err
+	}
+	return f.Sync()
 }
 
 // ReadFile reads a given file and returns the content.

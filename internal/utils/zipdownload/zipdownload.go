@@ -3,7 +3,7 @@ package zipdownload
 import (
 	"archive/zip"
 	"bytes"
-	"io/ioutil"
+	"io"
 
 	"github.com/pkg/errors"
 
@@ -41,6 +41,6 @@ func readZipFile(zf *zip.File) ([]byte, error) {
 		return nil, errors.WithStack(err)
 	}
 	defer f.Close()
-	data, err := ioutil.ReadAll(f)
+	data, err := io.ReadAll(f)
 	return data, errors.WithStack(err)
 }

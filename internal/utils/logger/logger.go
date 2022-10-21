@@ -2,7 +2,6 @@ package logger
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -108,7 +107,7 @@ func SetOutput() {
 			LogLevels: minLogLevelToLevels(logLevel),
 		},
 	)
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 }
 
 func minLogLevelToLevels(minLevel log.Level) (levels []log.Level) {

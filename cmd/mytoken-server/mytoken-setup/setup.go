@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -40,8 +39,12 @@ func (cred _rootDBCredentials) toDBConf() config.DBConf {
 
 var dbFlags = []cli.Flag{
 	&cli.StringFlag{
-		Name:        "user",
-		Aliases:     []string{"u", "root-user", "db-user"},
+		Name: "user",
+		Aliases: []string{
+			"u",
+			"root-user",
+			"db-user",
+		},
 		Usage:       "The username for the (root) user used for setting up the db",
 		EnvVars:     []string{"DB_USER"},
 		Value:       "root",
@@ -49,10 +52,18 @@ var dbFlags = []cli.Flag{
 		Placeholder: "ROOT",
 	},
 	&cli.StringFlag{
-		Name:        "password",
-		Aliases:     []string{"p", "pw", "db-password", "db-pw"},
-		Usage:       "The password for the (root) user used for setting up the db",
-		EnvVars:     []string{"DB_PW", "DB_PASSWORD"},
+		Name: "password",
+		Aliases: []string{
+			"p",
+			"pw",
+			"db-password",
+			"db-pw",
+		},
+		Usage: "The password for the (root) user used for setting up the db",
+		EnvVars: []string{
+			"DB_PW",
+			"DB_PASSWORD",
+		},
 		Destination: &rootDBCredentials.Password,
 		Placeholder: "PASSWORD",
 	},
@@ -162,7 +173,7 @@ func installGEOIPDB(_ *cli.Context) error {
 		return err
 	}
 	log.Debug("Downloaded zip file")
-	err = ioutil.WriteFile(config.Get().GeoIPDBFile, archive["IP2LOCATION-LITE-DB1.IPV6.BIN"], 0644)
+	err = os.WriteFile(config.Get().GeoIPDBFile, archive["IP2LOCATION-LITE-DB1.IPV6.BIN"], 0600)
 	if err == nil {
 		log.WithField("file", config.Get().GeoIPDBFile).Debug("Installed geo ip database")
 		fmt.Printf("Installed geo ip database file to '%s'.\n", config.Get().GeoIPDBFile)
@@ -185,7 +196,7 @@ func createSigningKey(_ *cli.Context) error {
 			os.Exit(1)
 		}
 	}
-	if err = ioutil.WriteFile(sigKeyFile, []byte(str), 0600); err != nil {
+	if err = os.WriteFile(sigKeyFile, []byte(str), 0600); err != nil {
 		return err
 	}
 	log.WithField("filepath", sigKeyFile).Debug("Wrote key to file")
