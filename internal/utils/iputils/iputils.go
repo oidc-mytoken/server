@@ -3,6 +3,7 @@ package iputils
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net"
 	"strings"
 	"time"
@@ -89,7 +90,9 @@ func compareIPToIP(ip, ipp string) bool {
 }
 
 func compareIPToHost(ip, host string) bool {
+	fmt.Printf("Compare ip '%s' to host '%s'\n", ip, host) //TODO
 	ipHost := getHost(ip)
+	fmt.Printf("Compare iphost '%s' to host '%s'\n", ipHost, host) //TODO
 	if ipHost == "" {
 		return false
 	}
@@ -131,7 +134,9 @@ func compareHostToIP(host, ip string) bool {
 	if len(host) > 0 && host[len(host)-1] != '.' {
 		host += "."
 	}
+	fmt.Printf("Compare host '%s' to ip '%s'\n", host, ip) //TODO
 	ipHost := getHost(ip)
+	fmt.Printf("Compare host '%s' to iphost '%s'\n", host, ipHost) //TODO
 	if len(ipHost) > 0 && ipHost[len(ipHost)-1] != '.' {
 		ipHost += "."
 	}
