@@ -2,6 +2,7 @@ project_name: mytoken-server
 before:
   hooks:
     - go mod tidy
+dist: results
 builds:
   - id: server
     main: ./cmd/mytoken-server
@@ -10,8 +11,8 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-    gcflags:
-      - all=-trimpath={{.Env.GOPATH}}
+    flags:
+      - -trimpath
     mod_timestamp: '{{ .CommitTimestamp }}'
   - id: setup
     main: ./cmd/mytoken-server/mytoken-setup
@@ -155,6 +156,7 @@ dockers:
     image_templates:
       - "oidcmytoken/mytoken-migratedb:unstable"
       - "oidcmytoken/mytoken-migratedb:{{ .Tag }}"
+    dockerfile: cmd/mytoken-server/mytoken-migratedb/Dockerfile
     build_flag_templates:
       - "--pull"
       - "--label=org.opencontainers.image.created={{.Date}}"
@@ -166,8 +168,12 @@ checksum:
 snapshot:
   name_template: "{{ .Tag }}-next"
 release:
-  disable: true
+  #  disable: true
   prerelease: auto
+  draft: true
+  github:
+    owner: oidc-mytoken
+    name: server
   name_template: "{{.ProjectName}} {{.Version}}"
 changelog:
   sort: asc

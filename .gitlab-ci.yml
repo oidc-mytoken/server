@@ -1,0 +1,15 @@
+prerelease:
+  stage: build
+  image:
+    name: docker:stable
+  services:
+    - docker:dind
+  only:
+    - tags
+  tags:
+    - linux
+  variables:
+    GIT_DEPTH: 0
+  #    DOCKER_REGISTRY: https://registry.hub.docker.com/v1/
+  script:
+    - ./.gitlab-ci-script.sh
