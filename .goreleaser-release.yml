@@ -2,6 +2,7 @@ project_name: mytoken-server
 before:
   hooks:
     - go mod tidy
+dist: results
 builds:
   - id: server
     main: ./cmd/mytoken-server
