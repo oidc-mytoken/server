@@ -21,8 +21,8 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-    gcflags:
-      - all=-trimpath={{.Env.GOPATH}}
+    flags:
+      - -trimpath
     mod_timestamp: '{{ .CommitTimestamp }}'
   - id: migratedb
     main: ./cmd/mytoken-server/mytoken-migratedb
@@ -31,18 +31,17 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-    gcflags:
-      - all=-trimpath={{.Env.GOPATH}}
+    flags:
+      - -trimpath
     mod_timestamp: '{{ .CommitTimestamp }}'
 archives:
-   -
-     replacements:
-       darwin: macOS
-       386: 32-bit
-       amd64: 64-bit
-     format_overrides:
-       - goos: windows
-         format: zip
+  - replacements:
+      darwin: macOS
+      386: 32-bit
+      amd64: 64-bit
+    format_overrides:
+      - goos: windows
+        format: zip
 nfpms:
   - id: server-pkg
     package_name: mytoken-server
@@ -51,7 +50,7 @@ nfpms:
     file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}"
     builds:
       - server
-    homepage: https://mytoken-doc.data.kit.edu/server/intro
+    homepage: https://mytoken-docs.data.kit.edu/server
     maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
     description: Mytoken is a central web service with the goal to easily obtain OpenID Connect access tokens across devices.
     license: MIT
@@ -81,7 +80,7 @@ nfpms:
     file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}"
     builds:
       - setup
-    homepage: https://mytoken-doc.data.kit.edu/server/intro
+    homepage: https://mytoken-docs.data.kit.edu/server
     maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
     description: A setup utility for the mytoken-server
     license: MIT
@@ -103,7 +102,7 @@ nfpms:
     file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}"
     builds:
       - migratedb
-    homepage: https://mytoken-doc.data.kit.edu/server/intro
+    homepage: https://mytoken-docs.data.kit.edu/server
     maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
     description: A tool for migrating the database between versions
     license: MIT

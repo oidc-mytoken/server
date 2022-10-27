@@ -1,5 +1,53 @@
-prerelease:
+image: golang:1.19
+stages:
+  - build
+  - test
+  - lint
+  - release
+
+default:
+  tags:
+    - linux
+
+test:
+  stage: test
+  script:
+    - go test -v ./...
+
+test_race:
+  stage: test
+  script:
+    - go test -race -v ./...
+
+lint:
+  stage: lint
+  before_script:
+    - go install golang.org/x/lint/golint
+  script:
+    - golint -set_exit_status ./...
+
+vet:
+  stage: lint
+  script:
+    - go vet ./...
+
+build_server:
   stage: build
+  script:
+    - go build github.com/oidc-mytoken/server/cmd/mytoken-server
+
+build_setup:
+  stage: build
+  script:
+    - go build github.com/oidc-mytoken/server/cmd/mytoken-server/mytoken-setup
+
+build_migratedb:
+  stage: build
+  script:
+    - go build github.com/oidc-mytoken/server/cmd/mytoken-server/mytoken-migratedb
+
+prerelease:
+  stage: release
   image:
     name: docker:stable
   services:
@@ -13,3 +61,5 @@ prerelease:
   #    DOCKER_REGISTRY: https://registry.hub.docker.com/v1/
   script:
     - ./.gitlab-ci-script.sh
+  after_script:
+    - curl -d "repo=github.com/oidc-mytoken/server" https://goreportcard.com/checks
