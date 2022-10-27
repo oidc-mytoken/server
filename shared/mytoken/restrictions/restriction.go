@@ -8,19 +8,17 @@ import (
 
 	"github.com/jinzhu/copier"
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
-	"github.com/oidc-mytoken/server/internal/utils/iputils"
-
-	"github.com/oidc-mytoken/api/v0"
-
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/utils/geoip"
-	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/internal/utils/hashutils"
+	"github.com/oidc-mytoken/server/internal/utils/iputils"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
@@ -107,7 +105,7 @@ func (r *Restriction) legacyHash() ([]byte, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return hashUtils.SHA512(j), nil
+	return hashutils.SHA512(j), nil
 }
 
 // hash returns the hash of this restriction
@@ -116,7 +114,7 @@ func (r *Restriction) hash() ([]byte, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return hashUtils.SHA512(j), nil
+	return hashutils.SHA512(j), nil
 }
 
 func (r *Restriction) verifyNbf(now unixtime.UnixTime) bool {
@@ -517,8 +515,8 @@ func Tighten(rlog log.Ext1FieldLogger, old, wanted Restrictions) (res Restrictio
 	return
 }
 
-// ReplaceThisIp replaces the special value 'this' with the given ip.
-func (r *Restrictions) ReplaceThisIp(ip string) {
+// ReplaceThisIP replaces the special value 'this' with the given ip.
+func (r *Restrictions) ReplaceThisIP(ip string) {
 	for _, rr := range *r {
 		utils.ReplaceStringInSlice(&rr.Hosts, "this", ip, false)
 	}

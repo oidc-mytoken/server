@@ -10,7 +10,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
@@ -23,7 +23,7 @@ func HandlePollingCode(ctx *fiber.Ctx) error {
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	clientMetaData := ctxUtils.ClientMetaData(ctx)
+	clientMetaData := ctxutils.ClientMetaData(ctx)
 	mt, token, pollingCodeStatus, errRes := CheckPollingCodeReq(rlog, req, *clientMetaData, false)
 	if errRes != nil {
 		return errRes.Send(ctx)

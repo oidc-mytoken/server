@@ -9,7 +9,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/internal/utils/hashutils"
 )
 
 const stateLen = 16
@@ -38,7 +38,7 @@ func NewState(state string) *State {
 // Hash returns the hash for this State
 func (s *State) Hash() string {
 	if s.hash == "" {
-		s.hash = hashUtils.SHA3_512Str([]byte(s.state))
+		s.hash = hashutils.SHA3_512Str([]byte(s.state))
 	}
 	return s.hash
 }
@@ -46,7 +46,7 @@ func (s *State) Hash() string {
 // PollingCode returns the polling code for this State
 func (s *State) PollingCode(rlog log.Ext1FieldLogger) string {
 	if s.pollingCode == "" {
-		s.pollingCode = hashUtils.HMACBasedHash([]byte(s.state))[:config.Get().Features.Polling.Len]
+		s.pollingCode = hashutils.HMACBasedHash([]byte(s.state))[:config.Get().Features.Polling.Len]
 		rlog.WithField("state", s.state).WithField(
 			"polling_code", s.pollingCode,
 		).Debug("Created polling_code for state")

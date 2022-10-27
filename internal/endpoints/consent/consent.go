@@ -15,7 +15,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	pkg2 "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
-	"github.com/oidc-mytoken/server/internal/server/httpStatus"
+	"github.com/oidc-mytoken/server/internal/server/httpstatus"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
@@ -58,7 +58,7 @@ func handleConsent(ctx *fiber.Ctx, info *pkg2.OIDCFlowRequest, includeConsentCal
 		if iss[len(iss)-1] == '/' {
 			iss = iss[:len(iss)-1]
 		}
-		binding[templating.MustacheKeyInstanceUrl] = iss
+		binding[templating.MustacheKeyInstanceURL] = iss
 	}
 	return ctx.Render("sites/consent", binding, "layouts/main")
 }
@@ -144,7 +144,7 @@ func handleConsentDecline(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInf
 		}
 	}
 	return model.Response{
-		Status: httpStatus.StatusOKForward,
+		Status: httpstatus.StatusOKForward,
 		Response: map[string]string{
 			"url": url,
 		},
@@ -188,7 +188,7 @@ func handleConsentAccept(
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	return &model.Response{
-		Status: httpStatus.StatusOKForward,
+		Status: httpstatus.StatusOKForward,
 		Response: map[string]string{
 			"authorization_uri": authURI,
 		},

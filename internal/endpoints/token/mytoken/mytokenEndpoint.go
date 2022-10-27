@@ -11,7 +11,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/polling"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
-	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/shared/model"
 	"github.com/oidc-mytoken/server/shared/mytoken"
@@ -25,7 +25,7 @@ var defaultCapabilities = api.Capabilities{
 // HandleMytokenEndpoint handles requests on the mytoken endpoint
 func HandleMytokenEndpoint(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
-	grantType, err := ctxUtils.GetGrantType(ctx)
+	grantType, err := ctxutils.GetGrantType(ctx)
 	if err != nil {
 		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}

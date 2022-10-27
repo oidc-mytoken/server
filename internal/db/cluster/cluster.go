@@ -225,7 +225,6 @@ func (c *Cluster) next(rlog log.Ext1FieldLogger) *node {
 func (c *Cluster) RunWithinTransaction(rlog log.Ext1FieldLogger, tx *sqlx.Tx, fn func(*sqlx.Tx) error) error {
 	if tx == nil {
 		return c.Transact(rlog, fn)
-	} else {
-		return fn(tx)
 	}
+	return fn(tx)
 }

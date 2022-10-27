@@ -21,16 +21,16 @@ import (
 	serverModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
 	"github.com/oidc-mytoken/server/internal/server/ssh"
-	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
-	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/internal/utils/hashutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/shared/model"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
+	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
 )
 
 // HandleGetSSHInfo handles requests to return information about a user's ssh keys
@@ -102,7 +102,7 @@ func HandleDeleteSSHKey(ctx *fiber.Ctx) error {
 // HandlePost handles POST requests to the ssh grant endpoint, this includes the initial request to add an ssh public
 // key as well as the following polling requests.
 func HandlePost(ctx *fiber.Ctx) error {
-	grantType, err := ctxUtils.GetGrantType(ctx)
+	grantType, err := ctxutils.GetGrantType(ctx)
 	if err != nil {
 		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
@@ -249,14 +249,14 @@ func handlePollingCode(ctx *fiber.Ctx) error {
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	clientMetaData := ctxUtils.ClientMetaData(ctx)
+	clientMetaData := ctxutils.ClientMetaData(ctx)
 	mt, token, status, errRes := polling.CheckPollingCodeReq(rlog, req, *clientMetaData, true)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
 	user := utils.RandASCIIString(16)
-	userHash := hashUtils.SHA3_512Str([]byte(user))
-	encryptedMT, err := cryptUtils.AES256Encrypt(token, user)
+	userHash := hashutils.SHA3_512Str([]byte(user))
+	encryptedMT, err := cryptutils.AES256Encrypt(token, user)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
 		return serverModel.ErrorToInternalServerErrorResponse(err).Send(ctx)

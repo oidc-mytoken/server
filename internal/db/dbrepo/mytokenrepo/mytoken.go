@@ -15,7 +15,7 @@ import (
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
+	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
@@ -40,8 +40,8 @@ type MytokenEntry struct {
 // InitRefreshToken links a refresh token to this MytokenEntry
 func (mte *MytokenEntry) InitRefreshToken(rt string) error {
 	mte.refreshToken = rt
-	mte.encryptionKey = cryptUtils.RandomBytes(32)
-	tmp, err := cryptUtils.AESEncrypt(mte.refreshToken, mte.encryptionKey)
+	mte.encryptionKey = cryptutils.RandomBytes(32)
+	tmp, err := cryptutils.AESEncrypt(mte.refreshToken, mte.encryptionKey)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (mte *MytokenEntry) InitRefreshToken(rt string) error {
 	if err != nil {
 		return err
 	}
-	tmp, err = cryptUtils.AES256Encrypt(base64.StdEncoding.EncodeToString(mte.encryptionKey), jwt)
+	tmp, err = cryptutils.AES256Encrypt(base64.StdEncoding.EncodeToString(mte.encryptionKey), jwt)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (mte *MytokenEntry) SetRefreshToken(rtID uint64, key []byte) error {
 	if err != nil {
 		return err
 	}
-	tmp, err := cryptUtils.AES256Encrypt(base64.StdEncoding.EncodeToString(key), jwt)
+	tmp, err := cryptutils.AES256Encrypt(base64.StdEncoding.EncodeToString(key), jwt)
 	if err != nil {
 		return err
 	}

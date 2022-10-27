@@ -7,12 +7,12 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/oidc-mytoken/server/shared/httpClient"
+	"github.com/oidc-mytoken/server/shared/httpclient"
 )
 
 // DownloadZipped downloads a zip archive and returns all contained files
 func DownloadZipped(url string) (map[string][]byte, error) {
-	resp, err := httpClient.Do().R().Get(url)
+	resp, err := httpclient.Do().R().Get(url)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

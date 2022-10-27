@@ -8,7 +8,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/internal/utils/hashutils"
 )
 
 // MTID is a type for the mytoken id
@@ -43,7 +43,7 @@ func (i *MTID) HashValid() bool {
 // Hash returns the MTID's hash
 func (i *MTID) Hash() string {
 	if i.hash == "" && i.Valid() {
-		i.hash = hashUtils.SHA512Str(i.Bytes())
+		i.hash = hashutils.SHA512Str(i.Bytes())
 	}
 	return i.hash
 }

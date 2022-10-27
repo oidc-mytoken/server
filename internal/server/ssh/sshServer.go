@@ -13,7 +13,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/sshrepo"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
-	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/internal/utils/hashutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
 
@@ -21,7 +21,7 @@ func checkPubKey(ctx ssh.Context, key ssh.PublicKey) bool {
 	sessionID := ctx.SessionID()
 	rlog := logger.GetSSHRequestLogger(sessionID)
 	sshUser := ctx.User()
-	sshUserHash := hashUtils.SHA3_512Str([]byte(sshUser))
+	sshUserHash := hashutils.SHA3_512Str([]byte(sshUser))
 	sshKeyFP := gossh.FingerprintSHA256(key)
 	ip := ctx.RemoteAddr().String()
 	if addr, ok := ctx.RemoteAddr().(*net.TCPAddr); ok {

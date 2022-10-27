@@ -9,7 +9,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	model2 "github.com/oidc-mytoken/server/shared/model"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
@@ -36,7 +36,7 @@ func RequireMytoken(rlog log.Ext1FieldLogger, reqToken *universalmytoken.Univers
 	*mytoken.Mytoken, *model.Response,
 ) {
 	if reqToken.JWT == "" {
-		t, found := ctxUtils.GetMytoken(ctx)
+		t, found := ctxutils.GetMytoken(ctx)
 		if t == nil {
 			errDesc := "no mytoken found in request"
 			if found {

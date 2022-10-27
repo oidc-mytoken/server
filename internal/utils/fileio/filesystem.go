@@ -12,9 +12,9 @@ import (
 // Filesystems for a file returning the first one found
 type SearcherFilesystem []http.FileSystem
 
-type SearcherFile []http.File
+type searcherFile []http.File
 
-func (sf SearcherFile) collectErrors(callback func(file http.File) error) error {
+func (sf searcherFile) collectErrors(callback func(file http.File) error) error {
 	err := mulerrors.Errors{}
 	for _, f := range sf {
 		e := callback(f)
@@ -29,7 +29,7 @@ func (sf SearcherFile) collectErrors(callback func(file http.File) error) error 
 }
 
 // Close implements the http.File interface
-func (sf SearcherFile) Close() error {
+func (sf searcherFile) Close() error {
 	return sf.collectErrors(
 		func(file http.File) error {
 			return file.Close()
@@ -38,7 +38,7 @@ func (sf SearcherFile) Close() error {
 }
 
 // Read implements the http.File interface
-func (sf SearcherFile) Read(p []byte) (n int, err error) {
+func (sf searcherFile) Read(p []byte) (n int, err error) {
 	for _, f := range sf {
 		buffer := make([]byte, len(p))
 		n, err = f.Read(buffer)
@@ -51,7 +51,7 @@ func (sf SearcherFile) Read(p []byte) (n int, err error) {
 }
 
 // Seek implements the http.File interface
-func (sf SearcherFile) Seek(offset int64, whence int) (i int64, e error) {
+func (sf searcherFile) Seek(offset int64, whence int) (i int64, e error) {
 	for _, f := range sf {
 		i, e = f.Seek(offset, whence)
 		if e == nil {
@@ -62,7 +62,7 @@ func (sf SearcherFile) Seek(offset int64, whence int) (i int64, e error) {
 }
 
 // Readdir implements the http.File interface
-func (sf SearcherFile) Readdir(count int) (infos []fs.FileInfo, err error) {
+func (sf searcherFile) Readdir(count int) (infos []fs.FileInfo, err error) {
 	for _, f := range sf {
 		if count > 0 && len(infos) >= count {
 			break
@@ -91,7 +91,7 @@ func (sf SearcherFile) Readdir(count int) (infos []fs.FileInfo, err error) {
 }
 
 // Stat implements the http.File interface
-func (sf SearcherFile) Stat() (i fs.FileInfo, e error) {
+func (sf searcherFile) Stat() (i fs.FileInfo, e error) {
 	for _, f := range sf {
 		i, e = f.Stat()
 		if e == nil {
@@ -103,7 +103,7 @@ func (sf SearcherFile) Stat() (i fs.FileInfo, e error) {
 
 // Open implements the http.FileSystem interface
 func (lfs SearcherFilesystem) Open(name string) (http.File, error) {
-	sf := SearcherFile{}
+	sf := searcherFile{}
 	for _, ffs := range lfs {
 		if ffs == nil {
 			continue

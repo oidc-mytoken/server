@@ -12,7 +12,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 )
 
-type SmartLogger struct {
+type smartLogger struct {
 	*log.Entry
 	rootHook *rootHook
 	ctx      smartLoggerContext
@@ -127,7 +127,7 @@ func getIDlogger(id string) log.Ext1FieldLogger {
 	if !config.Get().Logging.Internal.Smart.Enabled {
 		return getLogEntry(id, log.StandardLogger())
 	}
-	smartLog := &SmartLogger{
+	smartLog := &smartLogger{
 		ctx: smartLoggerContext{
 			buffer: new(bytes.Buffer),
 			id:     id,
@@ -149,6 +149,6 @@ func GetRequestLogger(ctx *fiber.Ctx) log.Ext1FieldLogger {
 }
 
 // GetSSHRequestLogger returns a logrus.Ext1FieldLogger that always includes an ssh request's id
-func GetSSHRequestLogger(sessionId string) log.Ext1FieldLogger {
-	return getIDlogger(sessionId)
+func GetSSHRequestLogger(sessionID string) log.Ext1FieldLogger {
+	return getIDlogger(sessionID)
 }
