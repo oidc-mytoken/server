@@ -29,7 +29,7 @@ test_race:
 lint:
   stage: lint
   before_script:
-    - go install golang.org/x/lint/golint
+    - go install golang.org/x/lint/golint@latest
   script:
     - golint -set_exit_status ./...
 
