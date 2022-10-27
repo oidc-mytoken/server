@@ -8,6 +8,13 @@ stages:
 default:
   tags:
     - linux
+  cache:
+    paths:
+      - .cache
+
+before_script:
+  - mkdir -p .cache
+  - export GOPATH=${CI_PROJECT_DIR}/.cache
 
 test:
   stage: test
@@ -58,7 +65,10 @@ prerelease:
     - linux
   variables:
     GIT_DEPTH: 0
-  #    DOCKER_REGISTRY: https://registry.hub.docker.com/v1/
+    REPO_HOST: repo.data.kit.edu
+    REPO_USER: cicd
+    REPO_BASE: /var/www/prerel
+    REPO_SIGN_KEY: F35D41344946F23D5D77AFD1E89B3987AEB6032B
   script:
     - ./.gitlab-ci-script.sh
   after_script:
