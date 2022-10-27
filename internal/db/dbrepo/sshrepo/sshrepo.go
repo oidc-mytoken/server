@@ -13,7 +13,7 @@ import (
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
+	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
 )
 
 // GetSSHInfo returns the SSHInfo stored in the database for the passed key and user hashes.
@@ -65,7 +65,7 @@ type SSHInfo struct {
 
 // Decrypt decrypts the encrypted mytoken linked to this ssh key with the passed password
 func (i SSHInfo) Decrypt(password string) (*mytoken.Mytoken, error) {
-	decryptedMT, err := cryptUtils.AES256Decrypt(i.EncryptedMT, password)
+	decryptedMT, err := cryptutils.AES256Decrypt(i.EncryptedMT, password)
 	if err != nil {
 		return nil, err
 	}

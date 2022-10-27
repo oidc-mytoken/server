@@ -1,4 +1,4 @@
-package httpStatus
+package httpstatus
 
 // Proprietary defined status codes
 const (

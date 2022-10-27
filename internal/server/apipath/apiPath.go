@@ -1,4 +1,4 @@
-package apiPath
+package apipath
 
 // Prefix is the api prefix path component
 const Prefix = "/api"

@@ -1,4 +1,4 @@
-package issuerUtils
+package issuerutils
 
 import "testing"
 

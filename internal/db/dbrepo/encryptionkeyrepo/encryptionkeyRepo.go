@@ -9,7 +9,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
+	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
 )
 
 // ReencryptEncryptionKey re-encrypts the encryption key for a mytoken. This is needed when the mytoken changes, e.g. on
@@ -25,11 +25,11 @@ func ReencryptEncryptionKey(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.
 			if err = errors.WithStack(tx.Get(&encryptedKey, `CALL EncryptionKeys_Get(?)`, keyID)); err != nil {
 				return err
 			}
-			key, err := cryptUtils.AES256Decrypt(encryptedKey, oldJWT)
+			key, err := cryptutils.AES256Decrypt(encryptedKey, oldJWT)
 			if err != nil {
 				return err
 			}
-			updatedKey, err := cryptUtils.AES256Encrypt(key, newJWT)
+			updatedKey, err := cryptutils.AES256Encrypt(key, newJWT)
 			if err != nil {
 				return err
 			}
@@ -78,7 +78,7 @@ type EncryptionKey string
 
 // Decrypt returns the decrypted encryption key
 func (k EncryptionKey) Decrypt(jwt string) ([]byte, error) {
-	decryptedKey, err := cryptUtils.AES256Decrypt(string(k), jwt)
+	decryptedKey, err := cryptutils.AES256Decrypt(string(k), jwt)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (res RTCryptKeyDBRes) Decrypt(jwt string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return cryptUtils.AESDecrypt(res.RT, key)
+	return cryptutils.AESDecrypt(res.RT, key)
 }
 
 // getEncryptionKeyID returns the id of the encryption key used for encrypting the RT linked to this mytoken

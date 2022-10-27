@@ -20,7 +20,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
-	"github.com/oidc-mytoken/server/internal/server/apiPath"
+	"github.com/oidc-mytoken/server/internal/server/apipath"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/fileio"
 	"github.com/oidc-mytoken/server/internal/utils/iputils"
@@ -142,7 +142,7 @@ func addCorsMiddleware(s fiber.Router) {
 		routes.GetGeneralPaths().JWKSEndpoint,
 	}
 	allowedPrefixes := []string{
-		apiPath.Prefix,
+		apipath.Prefix,
 		"/static",
 	}
 	s.Use(

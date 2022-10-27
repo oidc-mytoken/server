@@ -8,7 +8,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
+	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
 )
 
 // DeleteCrypted deletes an entry from the CryptStore
@@ -29,7 +29,7 @@ func UpdateRefreshToken(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID
 			if err != nil {
 				return err
 			}
-			updatedRT, err := cryptUtils.AESEncrypt(newRT, key)
+			updatedRT, err := cryptutils.AESEncrypt(newRT, key)
 			if err != nil {
 				return err
 			}

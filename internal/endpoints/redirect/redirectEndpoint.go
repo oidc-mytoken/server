@@ -13,8 +13,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
-	"github.com/oidc-mytoken/server/internal/server/httpStatus"
-	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/server/httpstatus"
+	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 	pkgModel "github.com/oidc-mytoken/server/shared/model"
@@ -40,7 +40,7 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 			}
 		}
 		oidcErrorDescription := ctx.Query("error_description")
-		return ctx.Status(httpStatus.StatusOIDPError).Render(
+		return ctx.Status(httpstatus.StatusOIDPError).Render(
 			"sites/error", map[string]interface{}{
 				"empty-navbar":  true,
 				"error-heading": "OIDC error",
@@ -49,7 +49,7 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 		)
 	}
 	code := ctx.Query("code")
-	res := authcode.CodeExchange(rlog, oState, code, *ctxUtils.ClientMetaData(ctx))
+	res := authcode.CodeExchange(rlog, oState, code, *ctxutils.ClientMetaData(ctx))
 
 	if fasthttp.StatusCodeIsRedirect(res.Status) {
 		return res.Send(ctx)

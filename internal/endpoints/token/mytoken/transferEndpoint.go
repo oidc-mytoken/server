@@ -9,7 +9,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
-	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 	pkgModel "github.com/oidc-mytoken/server/shared/model"
@@ -32,7 +32,7 @@ func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
 	}
 
 	transferCode, expiresIn, err := mytoken.CreateTransferCode(
-		rlog, mt.ID, req.Mytoken.JWT, false, req.Mytoken.OriginalTokenType, *ctxUtils.ClientMetaData(ctx),
+		rlog, mt.ID, req.Mytoken.JWT, false, req.Mytoken.OriginalTokenType, *ctxutils.ClientMetaData(ctx),
 	)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))

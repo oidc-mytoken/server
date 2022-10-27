@@ -11,7 +11,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
-	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 	model2 "github.com/oidc-mytoken/server/shared/model"
 )
@@ -27,7 +27,7 @@ func HandleTokenInfo(ctx *fiber.Ctx) error {
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
-	clientMetadata := ctxUtils.ClientMetaData(ctx)
+	clientMetadata := ctxutils.ClientMetaData(ctx)
 	switch req.Action {
 	case model2.TokeninfoActionIntrospect:
 		return HandleTokenInfoIntrospect(rlog, mt, req.Mytoken.OriginalTokenType, clientMetadata).Send(ctx)

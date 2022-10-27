@@ -9,7 +9,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
+	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
 )
 
 // AccessToken holds database information about an access token
@@ -35,7 +35,7 @@ func (t *AccessToken) toDBObject() (*accessToken, error) {
 	if err != nil {
 		return nil, err
 	}
-	token, err := cryptUtils.AES256Encrypt(t.Token, stJWT)
+	token, err := cryptutils.AES256Encrypt(t.Token, stJWT)
 	if err != nil {
 		return nil, err
 	}

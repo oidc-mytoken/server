@@ -8,10 +8,10 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/internal/utils/hashutils"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/cryptUtils"
+	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
 )
 
 // proxyToken holds information for proxy tokens, i.e. tokens that proxy another token, e.g. a short token
@@ -31,7 +31,7 @@ func newProxyToken(size int) *proxyToken {
 }
 
 func createProxyToken(token string) *proxyToken {
-	id := hashUtils.SHA512Str([]byte(token))
+	id := hashutils.SHA512Str([]byte(token))
 	return &proxyToken{
 		id:    id,
 		token: token,
@@ -42,7 +42,7 @@ func createProxyToken(token string) *proxyToken {
 func parseProxyToken(token string) *proxyToken {
 	var id string
 	if token != "" {
-		id = hashUtils.SHA512Str([]byte(token))
+		id = hashutils.SHA512Str([]byte(token))
 	}
 	return &proxyToken{
 		id:    id,
@@ -62,7 +62,7 @@ func (pt proxyToken) Token() string {
 // ID returns the id of this token
 func (pt *proxyToken) ID() string {
 	if pt.id == "" {
-		pt.id = hashUtils.SHA512Str([]byte(pt.token))
+		pt.id = hashutils.SHA512Str([]byte(pt.token))
 	}
 	return pt.id
 }
@@ -71,7 +71,7 @@ func (pt *proxyToken) ID() string {
 func (pt *proxyToken) SetJWT(jwt string, mID mtid.MTID) (err error) {
 	pt.mtID = mID
 	pt.decryptedJWT = jwt
-	pt.encryptedJWT, err = cryptUtils.AES256Encrypt(jwt, pt.token)
+	pt.encryptedJWT, err = cryptutils.AES256Encrypt(jwt, pt.token)
 	return
 }
 
@@ -108,7 +108,7 @@ func (pt *proxyToken) JWT(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (jwt string, va
 	if pt.encryptedJWT == "" {
 		return
 	}
-	jwt, err = cryptUtils.AES256Decrypt(pt.encryptedJWT, pt.token)
+	jwt, err = cryptutils.AES256Decrypt(pt.encryptedJWT, pt.token)
 	pt.decryptedJWT = jwt
 	return
 }

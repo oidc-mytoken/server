@@ -24,7 +24,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/issuer"
 	"github.com/oidc-mytoken/server/internal/oidc/pkce"
-	"github.com/oidc-mytoken/server/internal/server/httpStatus"
+	"github.com/oidc-mytoken/server/internal/server/httpstatus"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
@@ -34,7 +34,7 @@ import (
 	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
+	"github.com/oidc-mytoken/server/shared/utils/issuerutils"
 	"github.com/oidc-mytoken/server/shared/utils/jwtutils"
 	"github.com/oidc-mytoken/server/shared/utils/ternary"
 	"github.com/oidc-mytoken/server/shared/utils/unixtime"
@@ -81,7 +81,7 @@ func GetAuthorizationURL(
 		oauth2.SetAuthURLParam("code_challenge", pkceChallenge),
 		oauth2.SetAuthURLParam("code_challenge_method", pkce.TransformationS256.String()),
 	}
-	if issuerUtils.CompareIssuerURLs(provider.Issuer, issuer.GOOGLE) {
+	if issuerutils.CompareIssuerURLs(provider.Issuer, issuer.GOOGLE) {
 		additionalParams = append(additionalParams, oauth2.AccessTypeOffline)
 	} else if !utils.StringInSlice(oidc.ScopeOfflineAccess, oauth2Config.Scopes) {
 		oauth2Config.Scopes = append(oauth2Config.Scopes, oidc.ScopeOfflineAccess)
@@ -101,9 +101,9 @@ func GetAuthorizationURL(
 	return oauth2Config.AuthCodeURL(oState.State(), additionalParams...), nil
 }
 
-func trustedRedirectURI(redirectUri string) bool {
+func trustedRedirectURI(redirectURI string) bool {
 	for _, r := range config.Get().Features.OIDCFlows.AuthCode.Web.TrustedRedirectsRegex {
-		if r.MatchString(redirectUri) {
+		if r.MatchString(redirectURI) {
 			return true
 		}
 	}
@@ -125,7 +125,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq *response.OIDCFlowRequest) *model
 			},
 		}
 	}
-	req.Restrictions.ReplaceThisIp(ctx.IP())
+	req.Restrictions.ReplaceThisIP(ctx.IP())
 	req.Restrictions.ClearUnsupportedKeys()
 	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
 	if !ok {
@@ -176,7 +176,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq *response.OIDCFlowRequest) *model
 			return model.ErrorToInternalServerErrorResponse(err)
 		}
 		return &model.Response{
-			Status: httpStatus.StatusOKForward,
+			Status: httpstatus.StatusOKForward,
 			Response: map[string]string{
 				"authorization_uri": authURI,
 			},

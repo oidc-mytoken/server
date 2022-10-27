@@ -1,4 +1,4 @@
-package oidcReqRes
+package oidcreqres
 
 import (
 	"encoding/json"

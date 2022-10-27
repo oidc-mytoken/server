@@ -7,7 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
-	"github.com/oidc-mytoken/server/internal/server/apiPath"
+	"github.com/oidc-mytoken/server/internal/server/apipath"
 )
 
 const (
@@ -37,7 +37,7 @@ func MytokenCookie(mytoken string) *fiber.Cookie {
 	return &fiber.Cookie{
 		Name:     mytokenCookieName,
 		Value:    mytoken,
-		Path:     apiPath.Prefix,
+		Path:     apipath.Prefix,
 		Domain:   cookieDomain,
 		MaxAge:   CookieLifetime,
 		Secure:   cookieSecure,
@@ -51,7 +51,7 @@ func TransferCodeCookie(transferCode string, expiresIn int) *fiber.Cookie {
 	return &fiber.Cookie{
 		Name:     transferCodeCookieName,
 		Value:    transferCode,
-		Path:     apiPath.Prefix,
+		Path:     apipath.Prefix,
 		Domain:   cookieDomain,
 		MaxAge:   expiresIn,
 		Secure:   cookieSecure,

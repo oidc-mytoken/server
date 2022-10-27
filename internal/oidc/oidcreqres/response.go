@@ -1,4 +1,4 @@
-package oidcReqRes
+package oidcreqres
 
 // OIDCErrorResponse is the error response of an oidc provider
 type OIDCErrorResponse struct {

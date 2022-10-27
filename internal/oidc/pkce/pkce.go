@@ -11,31 +11,31 @@ import (
 type PKCE struct {
 	verifier  string
 	challenge string
-	method    PKCEMethod
+	method    Method
 }
 
-// PKCEMethod is a type for the code challenge methods
-type PKCEMethod string
+// Method is a type for the code challenge methods
+type Method string
 
-// Defines for the possible PKCEMethod
+// Defines for the possible Method
 const (
-	TransformationPlain = PKCEMethod("plain")
-	TransformationS256  = PKCEMethod("S256")
+	TransformationPlain = Method("plain")
+	TransformationS256  = Method("S256")
 )
 
-func (m PKCEMethod) String() string {
+func (m Method) String() string {
 	return string(m)
 }
 
-// NewPKCE creates a new PKCE for the passed verifier and PKCEMethod
-func NewPKCE(verifier string, method PKCEMethod) *PKCE {
+// NewPKCE creates a new PKCE for the passed verifier and Method
+func NewPKCE(verifier string, method Method) *PKCE {
 	return &PKCE{
 		verifier: verifier,
 		method:   method,
 	}
 }
 
-// NewS256PKCE creates a new PKCE for the passed verifier and the PKCEMethod TransformationS256
+// NewS256PKCE creates a new PKCE for the passed verifier and the Method TransformationS256
 func NewS256PKCE(verifier string) *PKCE {
 	return NewPKCE(verifier, TransformationS256)
 }
@@ -45,7 +45,7 @@ func (pkce PKCE) Verifier() string {
 	return pkce.verifier
 }
 
-// Challenge returns the code_challenge according to the defined PKCEMethod
+// Challenge returns the code_challenge according to the defined Method
 func (pkce *PKCE) Challenge() (string, error) {
 	var err error
 	if pkce.challenge == "" {

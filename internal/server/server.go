@@ -20,7 +20,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/consent"
 	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
 	"github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/internal/server/apiPath"
+	"github.com/oidc-mytoken/server/internal/server/apipath"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/server/ssh"
 	"github.com/oidc-mytoken/server/internal/utils/fileio"
@@ -80,7 +80,7 @@ func Init() {
 	server.Use(
 		func(ctx *fiber.Ctx) error {
 			path := ctx.Path()
-			if !strings.HasPrefix(path, apiPath.Prefix) && ctx.Accepts(
+			if !strings.HasPrefix(path, apipath.Prefix) && ctx.Accepts(
 				fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8,
 			) != "" {
 				ctx.Status(fiber.StatusNotFound)
