@@ -12,6 +12,7 @@ default:
     paths:
       - .cache
 
+
 before_script:
   - mkdir -p .cache
   - export GOPATH=${CI_PROJECT_DIR}/.cache
@@ -67,9 +68,9 @@ prerelease:
     GIT_DEPTH: 0
     REPO_HOST: repo.data.kit.edu
     REPO_USER: cicd
-    REPO_BASE: /var/www/prerel
-    REPO_SIGN_KEY: F35D41344946F23D5D77AFD1E89B3987AEB6032B
+    REPO_TARGET: /prerel
   script:
-    - ./.gitlab-ci-script.sh
+    - .gitlab-ci-scripts/goreleaser.sh
+    - .gitlab-ci-scripts/upload.sh
   after_script:
     - curl -d "repo=github.com/oidc-mytoken/server" https://goreportcard.com/checks
