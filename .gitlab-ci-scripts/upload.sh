@@ -1,3 +1,7 @@
+
+#REPO_TARGET="$(if echo $CI_COMMIT_TAG | grep -q '-'; then echo '/'; else echo '/prerel'; fi)"
+REPO_TARGET="/prerel"
+
 # ssh-key-script
 [ -e /tmp/ssh-private-keys/${REPO_USER} ] && {
   eval $(ssh-agent -s)
