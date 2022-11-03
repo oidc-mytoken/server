@@ -12,7 +12,7 @@
 <!-- ### Dependencies -->
 <!--  -->
 
-## mytoken 0.6.1-a
+## mytoken 0.6.1-b
 
 ### API
 
@@ -27,6 +27,8 @@
 ### Enhancements
 
 - Location restriction can now be done with host names, not only plain ip addresses, see above for more details.
+- Webinterface: Added message to tokeninfo after MT creation and TC exchange to indicate that users must copy the
+  mytoken to persist it.
 - Improved code quality
 
 ### Bugfixes
