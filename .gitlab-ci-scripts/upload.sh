@@ -25,11 +25,11 @@ sign_repos() {
 upload_files() {
   UPLOAD_DIR=/tmp/package-upload
   ssh "${REPO_USER}@${REPO_HOST}" "rm -rf $UPLOAD_DIR && mkdir -p $UPLOAD_DIR"
-  scp "${REPO_USER}@${REPO_HOST}" results/* $UPLOAD_DIR
+  scp results/* "${REPO_USER}@${REPO_HOST}:${UPLOAD_DIR}"
 }
 
 distribute_files() {
-    ssh "${REPO_USER}@${REPO_HOST}" "~/ci-voodoo/ci-tools/distribute-local-packages.sh -t ${REPO_TARGET}" -w mytoken
+    ssh "${REPO_USER}@${REPO_HOST}" "~/ci-voodoo/ci-tools/distribute-local-packages.sh -t ${REPO_TARGET} -w mytoken"
 }
 
 
