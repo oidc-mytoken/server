@@ -12,16 +12,23 @@ const $tokeninfoBadgeIat = $('#tokeninfo-token-iat');
 const $tokeninfoBadgeExp = $('#tokeninfo-token-exp');
 const $tokeninfoBadgeIatDate = $('#tokeninfo-token-iat-date');
 const $tokeninfoBadgeExpDate = $('#tokeninfo-token-exp-date');
-
 const $tokeninfoTypeBadges = $('.tokeninfo-token-type');
+const $tokeninfoTokenGoneWarningMsg = $('#token-gone-warning');
 
+$('#tokeninfo-token-copy').on('click', function () {
+    if (!$tokeninfoTokenGoneWarningMsg.hasClass('d-none')) {
+        $tokeninfoTokenGoneWarningMsg.alert('close');
+    }
+});
 
 async function update_tokeninfo() {
     let token = storagePop('tokeninfo_token', true);
     if (token === "") {
         token = $tokenInput.val();
+        $tokeninfoTokenGoneWarningMsg.hideB();
     } else {
         $tokenInput.val(token);
+        $tokeninfoTokenGoneWarningMsg.showB();
     }
     let payload = {};
     if (token === "") {
