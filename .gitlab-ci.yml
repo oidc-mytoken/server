@@ -68,7 +68,6 @@ prerelease:
     GIT_DEPTH: 0
     REPO_HOST: repo.data.kit.edu
     REPO_USER: cicd
-    REPO_TARGET: /prerel
   script:
     - .gitlab-ci-scripts/goreleaser.sh
     - .gitlab-ci-scripts/upload.sh
