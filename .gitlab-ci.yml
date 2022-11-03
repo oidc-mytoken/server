@@ -72,4 +72,4 @@ prerelease:
     - .gitlab-ci-scripts/goreleaser.sh
     - .gitlab-ci-scripts/upload.sh
   after_script:
-    - curl -d "repo=github.com/oidc-mytoken/server" https://goreportcard.com/checks
+    - docker run --rm curlimages/curl -d "repo=github.com/oidc-mytoken/server" https://goreportcard.com/checks
