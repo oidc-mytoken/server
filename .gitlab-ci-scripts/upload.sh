@@ -18,22 +18,22 @@ ssh-add -l
 ssh -o StrictHostKeyChecking=no "${REPO_USER}@${REPO_HOST}" "hostname -f"
 
 # sign-repo function
-sign-repos() {
+sign_repos() {
     ssh "${REPO_USER}@${REPO_HOST}" "~/ci-voodoo/ci-tools/sign-all-repos.sh -t ${REPO_TARGET}"
 }
 
-upload-files() {
+upload_files() {
   UPLOAD_DIR=/tmp/package-upload
   ssh "${REPO_USER}@${REPO_HOST}" "rm -rf $UPLOAD_DIR && mkdir -p $UPLOAD_DIR"
   scp "${REPO_USER}@${REPO_HOST}" results/* $UPLOAD_DIR
 }
 
-distribute-files() {
+distribute_files() {
     ssh "${REPO_USER}@${REPO_HOST}" "~/ci-voodoo/ci-tools/distribute-local-packages.sh -t ${REPO_TARGET}" -w mytoken
 }
 
 
 # upload and sign
-upload-files
-distribute-files
-sign-repos
+upload_files
+distribute_files
+sign_repos
