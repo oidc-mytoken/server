@@ -12,7 +12,7 @@
 <!-- ### Dependencies -->
 <!--  -->
 
-## mytoken 0.6.1
+## mytoken 0.6.1-c
 
 ### API
 
