@@ -71,7 +71,7 @@ prerelease:
     REPO_HOST: repo.data.kit.edu
     REPO_USER: cicd
   script:
-    - .gitlab-ci-scripts/set-prerel-version
+    - docker run --rm -v $PWD:/tmp/mytoken -w /tmp/mytoken bitnami/git .gitlab-ci-scripts/set-prerel-version
     - .gitlab-ci-scripts/goreleaser.sh
     - .gitlab-ci-scripts/upload.sh
   after_script:
