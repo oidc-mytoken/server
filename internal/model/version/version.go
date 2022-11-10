@@ -1,11 +1,13 @@
 package version
 
 import (
-	_ "embed"
+	_ "embed" // for go:embed
 	"strconv"
 	"strings"
 )
 
+// VERSION holds the server's version
+//
 //go:embed VERSION
 var VERSION string
 
