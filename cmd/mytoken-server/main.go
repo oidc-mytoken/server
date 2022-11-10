@@ -33,7 +33,7 @@ func main() {
 	authcode.Init()
 	versionrepo.ConnectToVersion()
 	jws.LoadKey()
-	httpclient.Init(config.Get().IssuerURL, fmt.Sprintf("mytoken-server %s", version.VERSION()))
+	httpclient.Init(config.Get().IssuerURL, fmt.Sprintf("mytoken-server %s", version.VERSION))
 	geoip.Init()
 	settings.InitSettings()
 	cookies.Init()

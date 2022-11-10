@@ -16,3 +16,4 @@ dist/
 /docker/db.env
 /docker/haproxy/haproxy.cfg
 /docker/.env
+/results/

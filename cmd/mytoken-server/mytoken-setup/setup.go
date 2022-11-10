@@ -86,7 +86,7 @@ var sigKeyFile string
 var app = &cli.App{
 	Name:     "mytoken-setup",
 	Usage:    "Command line client for easily setting up a mytoken server",
-	Version:  version.VERSION(),
+	Version:  version.VERSION,
 	Compiled: time.Time{},
 	Authors: []*cli.Author{
 		{

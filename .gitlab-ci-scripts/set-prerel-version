@@ -1,0 +1,12 @@
+#!/bin/bash
+
+MASTER_BRANCH=master
+VERSION_FILE=internal/model/version/VERSION
+
+PREREL=$(git rev-list --count HEAD ^$MASTER_BRANCH)
+VERSION=$(cat $VERSION_FILE)
+FULL_VERSION="${VERSION}-pr${PREREL}"
+echo "$FULL_VERSION" > $VERSION_FILE
+git add $VERSION_FILE
+git commit -m "dummy prerel version"
+git tag "v${FULL_VERSION}"

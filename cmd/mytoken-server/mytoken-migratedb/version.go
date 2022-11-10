@@ -40,7 +40,7 @@ func getDoneMap(state versionrepo.DBVersionState) (map[string]bool, map[string]b
 }
 
 func migrateDB(mytokenNodes []string) error {
-	v := "v" + version.VERSION()
+	v := "v" + version.VERSION
 	dbState, err := versionrepo.GetVersionState(log.StandardLogger(), nil)
 	if err != nil {
 		return err

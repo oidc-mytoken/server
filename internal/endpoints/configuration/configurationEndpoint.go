@@ -62,7 +62,7 @@ func basicConfiguration() *pkg.MytokenConfiguration {
 			ProvidersSupported:   getProvidersFromConfig(),
 			TokenSigningAlgValue: config.Get().Signing.Alg,
 			ServiceDocumentation: config.Get().ServiceDocumentation,
-			Version:              version.VERSION(),
+			Version:              version.VERSION,
 		},
 		AccessTokenEndpointGrantTypesSupported: []pkgModel.GrantType{pkgModel.GrantTypeMytoken},
 		MytokenEndpointGrantTypesSupported: []pkgModel.GrantType{
