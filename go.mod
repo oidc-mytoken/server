@@ -27,7 +27,7 @@ require (
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
 	github.com/valyala/fasthttp v1.41.0
 	golang.org/x/crypto v0.2.0
-	golang.org/x/mod v0.6.0
+	golang.org/x/mod v0.7.0
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
 	golang.org/x/term v0.2.0
 	gopkg.in/yaml.v3 v3.0.1
