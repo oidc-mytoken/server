@@ -61,7 +61,9 @@ prerelease:
   services:
     - docker:dind
   only:
-    - tags
+    refs:
+      - tags
+      - prerel
   tags:
     - linux
   variables:
@@ -69,6 +71,7 @@ prerelease:
     REPO_HOST: repo.data.kit.edu
     REPO_USER: cicd
   script:
+    - .gitlab-ci-scripts/set-prerel-version
     - .gitlab-ci-scripts/goreleaser.sh
     - .gitlab-ci-scripts/upload.sh
   after_script:

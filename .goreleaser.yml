@@ -57,7 +57,7 @@ nfpms:
     formats:
       - deb
       - rpm
-    release: 1
+    release: "1"
     section: misc
     bindir: /usr/bin
     contents:
@@ -87,7 +87,7 @@ nfpms:
     formats:
       - deb
       - rpm
-    release: 1
+    release: "1"
     section: misc
     bindir: /usr/bin
     overrides:
@@ -111,7 +111,7 @@ nfpms:
     formats:
       - deb
       - rpm
-    release: 1
+    release: "1"
     section: misc
     bindir: /usr/bin
     overrides:
