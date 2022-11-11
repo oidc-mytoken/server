@@ -29,10 +29,7 @@ func init() {
 	ps := strings.Split(v[2], "-")
 	FIX, _ = strconv.Atoi(ps[0])
 	if len(ps) > 1 {
-		pre := ps[1]
-		if strings.HasPrefix(pre, "pr") {
-			pre = pre[2:]
-		}
+		pre := strings.TrimPrefix(ps[1], "pr")
 		PRE, _ = strconv.Atoi(pre)
 	}
 }
