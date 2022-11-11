@@ -1,6 +1,6 @@
 #!/bin/sh
 
-MASTER_BRANCH=master
+MASTER_BRANCH=refs/remotes/origin/master
 VERSION_FILE=internal/model/version/VERSION
 
 git config --global --add safe.directory "$PWD"
