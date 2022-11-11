@@ -12,6 +12,8 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.7.0
+
 ## mytoken 0.6.1
 
 ### API
