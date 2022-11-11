@@ -37,7 +37,8 @@ server:
     # The time window in which the maximum number of requests is allowed, i.e. the quota is reset after this time.
     # The time is given in seconds.
     window: 300
-    # Use the list to exclude hosts from the request limit. You can specify single IP addresses as well as subnets.
+    # Use the list to exclude hosts from the request limit. You can specify single IP addresses, subnets and
+    # hostnames including wildcards.
     always_allow:
       - "127.0.0.1"
 
@@ -123,7 +124,7 @@ features:
   #    - exp
   #    - scope
   #    - audience
-  #    - ip
+  #    - hosts
   #    - geoip_allow
   #    - geoip_disallow
   #    - usages_AT

@@ -1,7 +1,7 @@
 package state
 
 import (
-	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/internal/utils/hashutils"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
@@ -32,7 +32,7 @@ func ConsentCodeFromStr(code string) *ConsentCode {
 // GetState returns the state linked to a ConsentCode
 func (c *ConsentCode) GetState() string {
 	if c.state == "" {
-		c.state = hashUtils.HMACBasedHash([]byte(c.code))[:stateLen]
+		c.state = hashutils.HMACBasedHash([]byte(c.code))[:stateLen]
 	}
 	return c.state
 }

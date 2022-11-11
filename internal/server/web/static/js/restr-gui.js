@@ -94,29 +94,7 @@ function initRestrGUI(prefix = "") {
         }
     }
 
-    $('.scope-checkbox[instance-prefix="' + prefix + '"]').on("click", function () {
-        let allScopesInactive = $(this).parents('tbody').find('.scope-inactive');
-        let allScopesActive = $(this).parents('tbody').find('.scope-active');
-        let checkedScopeBoxes = $(this).parents('tbody').find('.scope-checkbox:checked');
-        let activeIcon = $(this).parents('tr').find('.scope-active');
-        let inactiveIcon = $(this).parents('tr').find('.scope-inactive');
-        let activated = $(this).prop('checked');
-        if (activated) {
-            if (checkedScopeBoxes.length === 1) { // There was no box checked before, but now one has been checked
-                allScopesActive.hideB();
-                allScopesInactive.showB();
-            }
-            inactiveIcon.hideB();
-            activeIcon.showB();
-        } else {
-            activeIcon.hideB();
-            inactiveIcon.showB();
-        }
-        if (checkedScopeBoxes.length === 0) {
-            allScopesInactive.hideB();
-            allScopesActive.showB();
-        }
-    })
+    initScopesGUI(prefix);
     scopeTableBody(prefix).find('.scope-checkbox').on("click", function () {
         GUIToRestr_Scopes(prefix);
     })
@@ -227,19 +205,6 @@ function GUIToRestr_Scopes(prefix = "") {
     GUISetRestr('scope', scopes.join(' '), prefix);
 }
 
-//
-// function GUIToRestr_IPs(prefix="") {
-//     _guiToRestr_Table(prefixId('ipTableBody',prefix), "ip",prefix);
-// }
-//
-// function GUIToRestr_GeoIPAllow(prefix="") {
-//     _guiToRestr_Table(prefixId('geoip-allowTableBody',prefix), "geoip_allow",prefix);
-// }
-//
-// function GUIToRestr_GeoIPDisallow(prefix="") {
-//     _guiToRestr_Table(prefixId('geoip-disallowTableBody',prefix), "geoip_disallow",prefix);
-// }
-
 function GUIToRestr_UsagesAT(prefix = "") {
     let usages = usagesAT(prefix).val()
     if (usages === "") {
@@ -324,11 +289,16 @@ function restrClauseToGUI(prefix = "") {
             _addListItem(a, $(prefixId('audienceTableBody', prefix)), prefix);
         }
     }
-    if (restr.ip) {
+    if (restr.hosts) {
+        for (const host of restr.hosts) {
+            _addListItem(host, $(prefixId('hostTableBody', prefix)), prefix);
+        }
+    } else if (restr.ip) {
         for (const ip of restr.ip) {
-            _addListItem(ip, $(prefixId('ipTableBody', prefix)), prefix);
+            _addListItem(ip, $(prefixId('hostTableBody', prefix)), prefix);
         }
     }
+
     if (restr.geoip_allow) {
         for (const code of restr.geoip_allow) {
             let country = countriesByCode[code.toUpperCase()];
@@ -395,7 +365,7 @@ function delRestrClause(prefix = "") {
 }
 
 function selectIPTable(prefix = "") {
-    $(prefixId('restr-ip', prefix)).hideB();
+    $(prefixId('restr-hosts', prefix)).hideB();
     $(prefixId('restr-geoip_allow', prefix)).hideB();
     $(prefixId('restr-geoip_disallow', prefix)).hideB();
     $(prefixId('restr-' + $(this).val(), prefix)).showB();

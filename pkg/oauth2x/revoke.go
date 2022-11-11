@@ -2,7 +2,7 @@ package oauth2x
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -24,7 +24,7 @@ func (c *Config) RevokeToken(oauth2Config *oauth2.Config, token string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("unable to read response body: %v", err)
 		}

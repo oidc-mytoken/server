@@ -1,4 +1,4 @@
-package issuerUtils
+package issuerutils
 
 import (
 	"fmt"
@@ -13,10 +13,9 @@ func GetIssuerWithAndWithoutSlash(iss string) (string, string) {
 	if strings.HasSuffix(iss0, "/") {
 		iss1 = strings.TrimSuffix(iss0, "/")
 		return iss1, iss0
-	} else {
-		iss1 = fmt.Sprintf("%s%c", iss0, '/')
-		return iss0, iss1
 	}
+	iss1 = fmt.Sprintf("%s%c", iss0, '/')
+	return iss0, iss1
 }
 
 // CompareIssuerURLs compares two issuer urls. Issuer urls are also accepted as

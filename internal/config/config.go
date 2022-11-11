@@ -14,12 +14,12 @@ import (
 
 	model2 "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+	"github.com/oidc-mytoken/server/shared/utils/issuerutils"
 
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
 	"github.com/oidc-mytoken/server/shared/context"
 	"github.com/oidc-mytoken/server/shared/utils"
 	"github.com/oidc-mytoken/server/shared/utils/fileutil"
-	"github.com/oidc-mytoken/server/shared/utils/issuerUtils"
 )
 
 var defaultConfig = Config{
@@ -417,7 +417,7 @@ func validate() error {
 		if len(p.Scopes) <= 0 {
 			return errors.Errorf("invalid config: provider.scopes not set (Index %d)", i)
 		}
-		iss0, iss1 := issuerUtils.GetIssuerWithAndWithoutSlash(p.Issuer)
+		iss0, iss1 := issuerutils.GetIssuerWithAndWithoutSlash(p.Issuer)
 		conf.ProviderByIssuer[iss0] = p
 		conf.ProviderByIssuer[iss1] = p
 		if p.AudienceRequestParameter == "" {

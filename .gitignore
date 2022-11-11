@@ -1,4 +1,5 @@
 /.idea/
+/.cache/
 /mytoken
 /mytoken-setup
 /mytoken-server
@@ -15,3 +16,4 @@ dist/
 /docker/db.env
 /docker/haproxy/haproxy.cfg
 /docker/.env
+/results/

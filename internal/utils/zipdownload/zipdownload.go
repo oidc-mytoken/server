@@ -3,16 +3,16 @@ package zipdownload
 import (
 	"archive/zip"
 	"bytes"
-	"io/ioutil"
+	"io"
 
 	"github.com/pkg/errors"
 
-	"github.com/oidc-mytoken/server/shared/httpClient"
+	"github.com/oidc-mytoken/server/shared/httpclient"
 )
 
 // DownloadZipped downloads a zip archive and returns all contained files
 func DownloadZipped(url string) (map[string][]byte, error) {
-	resp, err := httpClient.Do().R().Get(url)
+	resp, err := httpclient.Do().R().Get(url)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -41,6 +41,6 @@ func readZipFile(zf *zip.File) ([]byte, error) {
 		return nil, errors.WithStack(err)
 	}
 	defer f.Close()
-	data, err := ioutil.ReadAll(f)
+	data, err := io.ReadAll(f)
 	return data, errors.WithStack(err)
 }

@@ -1,24 +1,35 @@
 package version
 
 import (
-	"fmt"
+	_ "embed" // for go:embed
+	"strconv"
+	"strings"
 )
+
+// VERSION holds the server's version
+//
+//go:embed VERSION
+var VERSION string
 
 // Version segments
-const (
-	MAJOR = 0
-	MINOR = 6
-	FIX   = 0
-	DEV   = false
+var (
+	MAJOR int
+	MINOR int
+	FIX   int
+	PRE   int
 )
 
-var version = fmt.Sprintf("%d.%d.%d", MAJOR, MINOR, FIX)
-var devVersion = fmt.Sprintf("%s-dev", version)
-
-// VERSION returns the current mytoken version
-func VERSION() string {
-	if DEV {
-		return devVersion
+func init() {
+	if VERSION[len(VERSION)-1] == '\n' {
+		VERSION = VERSION[:len(VERSION)-1]
 	}
-	return version
+	v := strings.Split(VERSION, ".")
+	MAJOR, _ = strconv.Atoi(v[0])
+	MINOR, _ = strconv.Atoi(v[1])
+	ps := strings.Split(v[2], "-")
+	FIX, _ = strconv.Atoi(ps[0])
+	if len(ps) > 1 {
+		pre := strings.TrimPrefix(ps[1], "pr")
+		PRE, _ = strconv.Atoi(pre)
+	}
 }

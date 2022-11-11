@@ -30,7 +30,7 @@ const (
 	MustacheKeyTokenName           = "token-name"
 	MustacheKeyIss                 = "iss"
 	MustacheKeySupportedScopes     = "supported_scopes"
-	MustacheKeyInstanceUrl         = "instance-url"
+	MustacheKeyInstanceURL         = "instance-url"
 )
 
 // Keys for sub configs

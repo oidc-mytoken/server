@@ -14,7 +14,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
-	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
@@ -37,6 +37,7 @@ var settingsMetadata = api.SettingsMetaData{
 	GrantTypeEndpoint: "grants",
 }
 
+// HandleSettings handles Metadata requests to the settings endpoint
 func HandleSettings(ctx *fiber.Ctx) error {
 	res := serverModel.Response{
 		Status:   fiber.StatusOK,
@@ -77,7 +78,7 @@ func HandleSettingsHelper(
 			if tokenGoneAfterCallback {
 				return
 			}
-			clientMetaData := ctxUtils.ClientMetaData(ctx)
+			clientMetaData := ctxutils.ClientMetaData(ctx)
 			if logEvent != nil {
 				if err = eventService.LogEvent(
 					rlog, tx, eventService.MTEvent{

@@ -10,7 +10,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
-	"github.com/oidc-mytoken/server/internal/utils/hashUtils"
+	"github.com/oidc-mytoken/server/internal/utils/hashutils"
 	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
 
@@ -129,9 +129,8 @@ func revokeMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id interface{}) error {
 func RevokeMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id interface{}, recursive bool) error {
 	if recursive {
 		return recursiveRevokeMT(rlog, tx, id)
-	} else {
-		return revokeMT(rlog, tx, id)
 	}
+	return revokeMT(rlog, tx, id)
 }
 
 // RevocationIDHasParent checks if the token for a revocation id is a child of the (potential) parent mytoken
@@ -197,7 +196,7 @@ func IncreaseTokenUsageAT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID,
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(
 				`CALL TokenUsages_IncrAT(?,?,?)`,
-				myID, jsonRestriction, hashUtils.SHA512Str(jsonRestriction),
+				myID, jsonRestriction, hashutils.SHA512Str(jsonRestriction),
 			)
 			return errors.WithStack(err)
 		},
@@ -210,7 +209,7 @@ func IncreaseTokenUsageOther(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MT
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(
 				`CALL TokenUsages_IncrOther(?,?,?)`,
-				myID, jsonRestriction, hashUtils.SHA512Str(jsonRestriction),
+				myID, jsonRestriction, hashutils.SHA512Str(jsonRestriction),
 			)
 			return errors.WithStack(err)
 		},

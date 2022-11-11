@@ -12,6 +12,38 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.6.1
+
+### API
+
+- Changed the restriction `ip` key to `hosts`:
+  - Backward compatibility is preserved. The legacy key `ip` is still accepted.
+  - The `hosts` entry can contain:
+    - Single ip address
+    - Subnet address
+    - Host name (with or without wildcard)
+      - To compare against this, on request a reverse dns lookup is done for the request's ip address
+
+### Enhancements
+
+- Location restriction can now be done with host names, not only plain ip addresses, see above for more details.
+- Webinterface: Added message to tokeninfo after MT creation and TC exchange to indicate that users must copy the
+  mytoken to persist it.
+- Improved code quality
+
+### Bugfixes
+
+- Fixed a bug in the web interface where the scope selection indicator for access tokens where not updated.
+
+### Dependencies
+
+- Bump go version to 1.19
+- Bump golang.org/x/mod from 0.5.1 to 0.7.0
+- Bump golang.org/x/crypto to 0.2.0
+- Bump golang.org/x/term to 0.2.0
+- Bump github.com/gofiber/fiber/v2 from 2.37.1 to 2.39.0
+- Bump github.com/gofiber/helmet/v2 from 2.2.16 to 2.2.18
+
 ## mytoken 0.6.0
 
 ### API

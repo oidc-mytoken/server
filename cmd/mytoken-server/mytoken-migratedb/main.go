@@ -28,7 +28,7 @@ var dbConfig struct {
 var app = &cli.App{
 	Name:     "mytoken-migratedb",
 	Usage:    "Command line client for easy database migration between mytoken versions",
-	Version:  version.VERSION(),
+	Version:  version.VERSION,
 	Compiled: time.Time{},
 	Authors: []*cli.Author{
 		{

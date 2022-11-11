@@ -32,7 +32,7 @@ const ( // assert that these are in the same order as api.AllRestrictionKeys
 	RestrictionClaimExpiresAt
 	RestrictionClaimScope
 	RestrictionClaimAudiences
-	RestrictionClaimIPs
+	RestrictionClaimHosts
 	RestrictionClaimGeoIPAllow
 	RestrictionClaimGeoIPDisallow
 	RestrictionClaimUsagesAT
@@ -106,7 +106,7 @@ func (rc RestrictionClaim) MarshalJSON() ([]byte, error) {
 	return data, errors.WithStack(err)
 }
 
-// Has checks if a a RestrictionClaim is in a RestrictionClaims
+// Has checks if a RestrictionClaim is in a RestrictionClaims
 func (rks RestrictionClaims) Has(rk RestrictionClaim) bool {
 	for _, k := range rks {
 		if k == rk {

@@ -1,4 +1,4 @@
-package hashUtils
+package hashutils
 
 import (
 	"testing"

@@ -1,0 +1,187 @@
+project_name: mytoken-server
+before:
+  hooks:
+    - go mod tidy
+dist: results
+builds:
+  - id: server
+    main: ./cmd/mytoken-server
+    binary: mytoken-server
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    flags:
+      - -trimpath
+    mod_timestamp: '{{ .CommitTimestamp }}'
+  - id: setup
+    main: ./cmd/mytoken-server/mytoken-setup
+    binary: mytoken-setup
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    flags:
+      - -trimpath
+    mod_timestamp: '{{ .CommitTimestamp }}'
+  - id: migratedb
+    main: ./cmd/mytoken-server/mytoken-migratedb
+    binary: mytoken-migratedb
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    flags:
+      - -trimpath
+    mod_timestamp: '{{ .CommitTimestamp }}'
+archives:
+  - replacements:
+      darwin: macOS
+      386: 32-bit
+      amd64: 64-bit
+    format_overrides:
+      - goos: windows
+        format: zip
+nfpms:
+  - id: server-pkg
+    package_name: mytoken-server
+    replacements:
+      386: i386
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}"
+    builds:
+      - server
+    homepage: https://mytoken-docs.data.kit.edu/server
+    maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
+    description: Mytoken is a central web service with the goal to easily obtain OpenID Connect access tokens across devices.
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    release: "1"
+    section: misc
+    bindir: /usr/bin
+    contents:
+      - src: config/example-config.yaml
+        dst: /etc/mytoken/example-config.yaml
+        type: config
+      - src: config/mytoken.service
+        dst: /etc/systemd/system/mytoken.service
+      - dst: /var/log/mytoken
+        type: dir
+    overrides:
+      rpm:
+        replacements:
+          amd64: x86_64
+        file_name_template: "{{ .PackageName }}-{{ .Version }}.{{ .Arch }}"
+  - id: setup-pkg
+    package_name: mytoken-server-setup
+    replacements:
+      386: i386
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}"
+    builds:
+      - setup
+    homepage: https://mytoken-docs.data.kit.edu/server
+    maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
+    description: A setup utility for the mytoken-server
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    release: "1"
+    section: misc
+    bindir: /usr/bin
+    overrides:
+      rpm:
+        replacements:
+          amd64: x86_64
+        file_name_template: "{{ .PackageName }}-{{ .Version }}.{{ .Arch }}"
+  - id: migratedb-pkg
+    package_name: mytoken-server-migratedb
+    replacements:
+      386: i386
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}"
+    builds:
+      - migratedb
+    homepage: https://mytoken-docs.data.kit.edu/server
+    maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
+    description: A tool for migrating the database between versions
+    license: MIT
+    dependencies:
+      - mariadb-client
+    formats:
+      - deb
+      - rpm
+    release: "1"
+    section: misc
+    bindir: /usr/bin
+    overrides:
+      rpm:
+        replacements:
+          amd64: x86_64
+        file_name_template: "{{ .PackageName }}-{{ .Version }}.{{ .Arch }}"
+dockers:
+  - goos: linux
+    goarch: amd64
+    ids:
+      - server
+    image_templates:
+      - "oidcmytoken/mytoken-server:latest"
+      - "oidcmytoken/mytoken-server:{{ .Tag }}"
+      - "oidcmytoken/mytoken-server:v{{ .Major }}"
+      - "oidcmytoken/mytoken-server:v{{ .Major }}.{{ .Minor }}"
+    dockerfile: cmd/mytoken-server/Dockerfile
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title=mytoken-server"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+  - goos: linux
+    goarch: amd64
+    ids:
+      - setup
+    image_templates:
+      - "oidcmytoken/mytoken-setup:latest"
+      - "oidcmytoken/mytoken-setup:{{ .Tag }}"
+      - "oidcmytoken/mytoken-setup:v{{ .Major }}"
+      - "oidcmytoken/mytoken-setup:v{{ .Major }}.{{ .Minor }}"
+    dockerfile: cmd/mytoken-server/mytoken-setup/Dockerfile
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title=mytoken-setup"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+  - goos: linux
+    goarch: amd64
+    ids:
+      - migratedb
+    image_templates:
+      - "oidcmytoken/mytoken-migratedb:latest"
+      - "oidcmytoken/mytoken-migratedb:{{ .Tag }}"
+      - "oidcmytoken/mytoken-migratedb:v{{ .Major }}"
+      - "oidcmytoken/mytoken-migratedb:v{{ .Major }}.{{ .Minor }}"
+    dockerfile: cmd/mytoken-server/mytoken-migratedb/Dockerfile
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title=mytoken-migratedb"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+release:
+  prerelease: auto
+  draft: true
+  github:
+    owner: oidc-mytoken
+    name: server
+  name_template: "{{.ProjectName}} {{.Version}}"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+MASTER_BRANCH=refs/remotes/origin/master
+VERSION_FILE=internal/model/version/VERSION
+
+git config --global --add safe.directory "$PWD"
+git config user.email "ci@repo.data.kit.edu"
+git config user.name "cicd"
+
+PREREL=$(git rev-list --count HEAD ^$MASTER_BRANCH)
+VERSION=$(cat $VERSION_FILE)
+FULL_VERSION="${VERSION}-pr${PREREL}"
+echo "$FULL_VERSION" > $VERSION_FILE
+git add $VERSION_FILE
+git commit -m "dummy prerel version"
+git tag "v${FULL_VERSION}"

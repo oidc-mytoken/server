@@ -18,7 +18,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/oidc/refresh"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
-	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
+	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/shared/model"
@@ -65,7 +65,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		return errRes.Send(ctx)
 	}
 
-	return HandleAccessTokenRefresh(rlog, mt, req, *ctxUtils.ClientMetaData(ctx), provider, usedRestriction).Send(ctx)
+	return HandleAccessTokenRefresh(rlog, mt, req, *ctxutils.ClientMetaData(ctx), provider, usedRestriction).Send(ctx)
 }
 
 func parseScopesAndAudienceToUse(
@@ -110,7 +110,7 @@ func HandleAccessTokenRefresh(
 	}
 
 	scopes, auds := parseScopesAndAudienceToUse(req.Scope, req.Audience, usedRestriction, provider.Scopes)
-	oidcRes, oidcErrRes, err := refresh.RefreshFlowAndUpdateDB(rlog, provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds)
+	oidcRes, oidcErrRes, err := refresh.DoFlowAndUpdateDB(rlog, provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
 		return serverModel.ErrorToInternalServerErrorResponse(err)

@@ -12,8 +12,10 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/cryptstore"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
+	"github.com/oidc-mytoken/server/internal/server/httpstatus"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
+	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
@@ -29,8 +31,6 @@ import (
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/revoke"
-	"github.com/oidc-mytoken/server/internal/server/httpStatus"
-	"github.com/oidc-mytoken/server/internal/utils/ctxUtils"
 	pkgModel "github.com/oidc-mytoken/server/shared/model"
 	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
 	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
@@ -74,7 +74,7 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 				return errors.New(errResPlaceholder)
 			}
 			tokenStr, err = transfercoderepo.PopTokenForTransferCode(
-				rlog, tx, req.TransferCode, *ctxUtils.ClientMetaData(ctx),
+				rlog, tx, req.TransferCode, *ctxutils.ClientMetaData(ctx),
 			)
 			return err
 		},
@@ -116,7 +116,7 @@ func HandleMytokenFromMytokenReqChecks(
 	rlog log.Ext1FieldLogger, req *response.MytokenFromMytokenRequest, ip string,
 	ctx *fiber.Ctx,
 ) (*restrictions.Restriction, *mytoken.Mytoken, *model.Response) {
-	req.Restrictions.ReplaceThisIp(ip)
+	req.Restrictions.ReplaceThisIP(ip)
 	req.Restrictions.ClearUnsupportedKeys()
 	rlog.Trace("Parsed mytoken request")
 
@@ -150,7 +150,7 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	if errRes != nil {
 		return errRes
 	}
-	return HandleMytokenFromMytokenReq(rlog, mt, req, ctxUtils.ClientMetaData(ctx), usedRestriction)
+	return HandleMytokenFromMytokenReq(rlog, mt, req, ctxutils.ClientMetaData(ctx), usedRestriction)
 }
 
 // HandleMytokenFromMytokenReq handles a mytoken request (from an existing mytoken)
@@ -315,7 +315,7 @@ func RevokeMytoken(
 	}
 	if strings.HasPrefix(errorfmt.Error(err), "oidc_error") {
 		return &model.Response{
-			Status:   httpStatus.StatusOIDPError,
+			Status:   httpstatus.StatusOIDPError,
 			Response: pkgModel.OIDCError(errorfmt.Error(err), ""),
 		}
 	}

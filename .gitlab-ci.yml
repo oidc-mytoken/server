@@ -1,0 +1,79 @@
+image: golang:1.19
+stages:
+  - build
+  - test
+  - lint
+  - release
+
+default:
+  tags:
+    - linux
+  cache:
+    paths:
+      - .cache
+
+
+before_script:
+  - mkdir -p .cache
+  - export GOPATH=${CI_PROJECT_DIR}/.cache
+
+test:
+  stage: test
+  script:
+    - go test -v ./...
+
+test_race:
+  stage: test
+  script:
+    - go test -race -v ./...
+
+lint:
+  stage: lint
+  before_script:
+    - go install golang.org/x/lint/golint@latest
+  script:
+    - golint -set_exit_status ./...
+
+vet:
+  stage: lint
+  script:
+    - go vet ./...
+
+build_server:
+  stage: build
+  script:
+    - go build github.com/oidc-mytoken/server/cmd/mytoken-server
+
+build_setup:
+  stage: build
+  script:
+    - go build github.com/oidc-mytoken/server/cmd/mytoken-server/mytoken-setup
+
+build_migratedb:
+  stage: build
+  script:
+    - go build github.com/oidc-mytoken/server/cmd/mytoken-server/mytoken-migratedb
+
+prerelease:
+  stage: release
+  image:
+    name: docker:stable
+  services:
+    - docker:dind
+  only:
+    refs:
+      - tags
+      - prerel
+  tags:
+    - linux
+  variables:
+    GIT_STRATEGY: clone
+    GIT_DEPTH: 0
+    REPO_HOST: repo.data.kit.edu
+    REPO_USER: cicd
+  script:
+    - docker run --rm -v $PWD:/tmp/mytoken -w /tmp/mytoken bitnami/git .gitlab-ci-scripts/set-prerel-version
+    - .gitlab-ci-scripts/goreleaser.sh
+    - .gitlab-ci-scripts/upload.sh
+  after_script:
+    - docker run --rm curlimages/curl -d "repo=github.com/oidc-mytoken/server" https://goreportcard.com/checks

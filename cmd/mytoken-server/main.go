@@ -12,6 +12,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/settings"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
+	"github.com/oidc-mytoken/server/shared/httpclient"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
@@ -21,7 +22,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/server"
 	"github.com/oidc-mytoken/server/internal/utils/geoip"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
-	"github.com/oidc-mytoken/server/shared/httpClient"
 )
 
 func main() {
@@ -33,7 +33,7 @@ func main() {
 	authcode.Init()
 	versionrepo.ConnectToVersion()
 	jws.LoadKey()
-	httpClient.Init(config.Get().IssuerURL, fmt.Sprintf("mytoken-server %s", version.VERSION()))
+	httpclient.Init(config.Get().IssuerURL, fmt.Sprintf("mytoken-server %s", version.VERSION))
 	geoip.Init()
 	settings.InitSettings()
 	cookies.Init()
@@ -42,7 +42,7 @@ func main() {
 }
 
 func handleSignals() {
-	signals := make(chan os.Signal)
+	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGHUP, syscall.SIGUSR1)
 	go func() {
 		for {

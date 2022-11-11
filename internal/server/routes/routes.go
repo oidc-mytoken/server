@@ -2,13 +2,16 @@ package routes
 
 import (
 	"github.com/oidc-mytoken/server/internal/model/version"
-	"github.com/oidc-mytoken/server/internal/server/apiPath"
+	"github.com/oidc-mytoken/server/internal/server/apipath"
 	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 var routes *paths
 
+// WellknownMytokenConfiguration is the mytoken configuration path suffix
 const WellknownMytokenConfiguration = "/.well-known/mytoken-configuration"
+
+// WellknownOpenIDConfiguration is the openid configuration path suffix
 const WellknownOpenIDConfiguration = "/.well-known/openid-configuration"
 
 // init initializes the server route paths
@@ -16,12 +19,12 @@ func init() {
 	routes = &paths{
 		api: map[int]APIPaths{
 			0: {
-				MytokenEndpoint:       utils.CombineURLPath(apiPath.V0, "/token/my"),
-				AccessTokenEndpoint:   utils.CombineURLPath(apiPath.V0, "/token/access"),
-				TokenInfoEndpoint:     utils.CombineURLPath(apiPath.V0, "/tokeninfo"),
-				RevocationEndpoint:    utils.CombineURLPath(apiPath.V0, "/token/revoke"),
-				TokenTransferEndpoint: utils.CombineURLPath(apiPath.V0, "/token/transfer"),
-				UserSettingEndpoint:   utils.CombineURLPath(apiPath.V0, "/settings"),
+				MytokenEndpoint:       utils.CombineURLPath(apipath.V0, "/token/my"),
+				AccessTokenEndpoint:   utils.CombineURLPath(apipath.V0, "/token/access"),
+				TokenInfoEndpoint:     utils.CombineURLPath(apipath.V0, "/tokeninfo"),
+				RevocationEndpoint:    utils.CombineURLPath(apipath.V0, "/token/revoke"),
+				TokenTransferEndpoint: utils.CombineURLPath(apipath.V0, "/token/transfer"),
+				UserSettingEndpoint:   utils.CombineURLPath(apipath.V0, "/settings"),
 			},
 		},
 		other: GeneralPaths{

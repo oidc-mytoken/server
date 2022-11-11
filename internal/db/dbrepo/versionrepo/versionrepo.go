@@ -126,7 +126,7 @@ func ConnectToVersion() {
 	if hasAllVersions, missingVersions := state.dBHasAllVersions(); !hasAllVersions {
 		log.WithFields(
 			log.Fields{
-				"server_version":         version.VERSION(),
+				"server_version":         version.VERSION,
 				"missing_versions_in_db": missingVersions,
 			},
 		).Fatal("database schema not updated to this server version")
