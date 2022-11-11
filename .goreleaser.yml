@@ -167,7 +167,7 @@ checksum:
 snapshot:
   name_template: "{{ .Tag }}-next"
 release:
-  #  disable: true
+  disable: true
   prerelease: auto
   draft: true
   github:
