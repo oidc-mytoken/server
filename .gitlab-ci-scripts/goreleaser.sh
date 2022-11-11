@@ -3,7 +3,7 @@ first=$(grep '^## ' -nm1 CHANGELOG.md | cut -d':' -f1); \
   second=$(grep '^## ' -nm2 CHANGELOG.md | tail -n1 | cut -d':' -f1); \
   tail -n+$first CHANGELOG.md | head -n$(($second-$first)) > ../shared/release.md
 GORELEASER_CONFIG=".goreleaser.yml"
-if [ -z "$CI_COMMIT_TAG" ] || echo "$CI_COMMIT_TAG" | grep -qv; then
+if ! [ -z "$CI_COMMIT_TAG" ] && echo "$CI_COMMIT_TAG" | grep -qv '-'; then
 GORELEASER_CONFIG=".goreleaser-release.yml"
 fi
 BASEDIR=/go/src/github.com/oidc-mytoken/server
