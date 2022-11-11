@@ -67,7 +67,6 @@ prerelease:
   tags:
     - linux
   variables:
-    GIT_STRATEGY: clone
     GIT_DEPTH: 0
     REPO_HOST: repo.data.kit.edu
     REPO_USER: cicd
