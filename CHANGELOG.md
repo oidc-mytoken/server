@@ -38,9 +38,11 @@
 ### Dependencies
 
 - Bump go version to 1.19
-- Bump golang.org/x/mod from 0.5.1 to 0.6.0
-- Bump github.com/gofiber/fiber/v2 from 2.37.1 to 2.38.1
-- Bump github.com/gofiber/helmet/v2 from 2.2.16 to 2.2.17
+- Bump golang.org/x/mod from 0.5.1 to 0.7.0
+- Bump golang.org/x/crypto to 0.2.0
+- Bump golang.org/x/term to 0.2.0
+- Bump github.com/gofiber/fiber/v2 from 2.37.1 to 2.39.0
+- Bump github.com/gofiber/helmet/v2 from 2.2.16 to 2.2.18
 
 ## mytoken 0.6.0
 
