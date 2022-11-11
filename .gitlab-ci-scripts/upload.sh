@@ -1,6 +1,8 @@
 
-#REPO_TARGET="$(if echo "$CI_COMMIT_TAG" | grep -q '-'; then echo '/prerel'; else echo '/'; fi)"
 REPO_TARGET="/prerel"
+if [ -n "$CI_COMMIT_TAG" ] && echo "$CI_COMMIT_TAG" | grep -qv '-'; then
+  REPO_TARGET="/preprod"
+fi
 
 # ssh-key-script
 [ -e /tmp/ssh-private-keys/${REPO_USER} ] && {
@@ -37,4 +39,3 @@ distribute_files() {
 upload_files
 distribute_files
 sign_repos
-#echo "$CI_COMMIT_TAG" | grep -q '-' && sign_repos
