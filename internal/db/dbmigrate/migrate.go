@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/mod/semver"
 
-	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/internal/utils"
 )
 
 // Commands is a type for holding sql commands that should run before and after a version update

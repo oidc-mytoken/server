@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/utils/utils/jwtutils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -15,13 +16,11 @@ import (
 	helper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/mytoken"
+	mytokenPkg "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	sharedModel "github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/mytoken"
-	mytokenPkg "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
-	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 // HandleRevoke handles requests to the revocation endpoint
@@ -115,7 +114,7 @@ func revokeByID(rlog log.Ext1FieldLogger, req api.RevocationRequest) (errRes *mo
 func revokeAnyToken(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, token, issuer string, recursive bool,
 ) (errRes *model.Response) {
-	if utils.IsJWT(token) { // normal Mytoken
+	if jwtutils.IsJWT(token) { // normal Mytoken
 		return revokeMytoken(rlog, tx, token, issuer, recursive)
 	} else if len(token) == config.Get().Features.Polling.Len { // Transfer Code
 		return revokeTransferCode(rlog, tx, token, issuer)
@@ -151,7 +150,7 @@ func revokeMytoken(rlog log.Ext1FieldLogger, tx *sqlx.Tx, jwt, issuer string, re
 	if issuer != "" && mt.OIDCIssuer != issuer {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: sharedModel.BadRequestError("token not for specified issuer"),
+			Response: model.BadRequestError("token not for specified issuer"),
 		}
 	}
 	return mytoken.RevokeMytoken(rlog, tx, mt.ID, jwt, recursive, mt.OIDCIssuer)

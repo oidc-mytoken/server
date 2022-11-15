@@ -3,8 +3,8 @@ package pkg
 import (
 	"github.com/oidc-mytoken/api/v0"
 
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 )
 
 // ConsentApprovalRequest holds the post request for confirming consent

@@ -15,12 +15,12 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	pkg2 "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/server/httpstatus"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/internal/utils/templating"
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo"
@@ -29,8 +29,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
-	model2 "github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/internal/utils"
 )
 
 // handleConsent displays a consent page
@@ -88,7 +87,7 @@ func HandleCreateConsent(ctx *fiber.Ctx) error {
 	if req.Issuer == "" {
 		return model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model2.BadRequestError("required parameter 'oidc_issuer' missing"),
+			Response: model.BadRequestError("required parameter 'oidc_issuer' missing"),
 		}.Send(ctx)
 	}
 	rlog := logger.GetRequestLogger(ctx)
@@ -160,7 +159,7 @@ func handleConsentAccept(
 		if !api.AllCapabilities.Has(c) {
 			return &model.Response{
 				Status:   fiber.StatusBadRequest,
-				Response: model2.BadRequestError(fmt.Sprintf("unknown capability '%s'", c)),
+				Response: model.BadRequestError(fmt.Sprintf("unknown capability '%s'", c)),
 			}
 		}
 	}

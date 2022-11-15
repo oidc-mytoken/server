@@ -3,8 +3,8 @@ package pkg
 import (
 	"github.com/oidc-mytoken/api/v0"
 
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 )
 
 // SSHKeyDeleteRequest is a type for a request to delete an ssh key

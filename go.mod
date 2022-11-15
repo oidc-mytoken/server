@@ -7,7 +7,6 @@ require (
 	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/fatih/structs v1.1.0
 	github.com/gliderlabs/ssh v0.3.5
-	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gofiber/fiber/v2 v2.39.0
 	github.com/gofiber/helmet/v2 v2.2.18
@@ -19,6 +18,7 @@ require (
 	github.com/lestrrat-go/jwx v1.2.25
 	github.com/oidc-mytoken/api v0.9.1
 	github.com/oidc-mytoken/lib v0.6.1
+	github.com/oidc-mytoken/utils v0.1.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pires/go-proxyproto v0.6.2
 	github.com/pkg/errors v0.9.1
@@ -39,6 +39,7 @@ require (
 	github.com/cbroglie/mustache v1.4.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
+	github.com/go-resty/resty/v2 v2.7.0 // indirect
 	github.com/goccy/go-json v0.9.7 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/klauspost/compress v1.15.11 // indirect

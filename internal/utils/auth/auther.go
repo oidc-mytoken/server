@@ -9,16 +9,15 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/model"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
-	model2 "github.com/oidc-mytoken/server/shared/model"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 )
 
 // RequireGrantType checks that the passed model.GrantType are the same, and returns an error model.Response if not
-func RequireGrantType(rlog log.Ext1FieldLogger, want, got model2.GrantType) *model.Response {
+func RequireGrantType(rlog log.Ext1FieldLogger, want, got model.GrantType) *model.Response {
 	if got != want {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
@@ -44,7 +43,7 @@ func RequireMytoken(rlog log.Ext1FieldLogger, reqToken *universalmytoken.Univers
 			}
 			return nil, &model.Response{
 				Status:   fiber.StatusUnauthorized,
-				Response: model2.InvalidTokenError(errDesc),
+				Response: model.InvalidTokenError(errDesc),
 			}
 		}
 		*reqToken = *t
@@ -54,7 +53,7 @@ func RequireMytoken(rlog log.Ext1FieldLogger, reqToken *universalmytoken.Univers
 	if err != nil {
 		return nil, &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model2.InvalidTokenError(errorfmt.Error(err)),
+			Response: model.InvalidTokenError(errorfmt.Error(err)),
 		}
 	}
 	rlog.Trace("Parsed mytoken")
@@ -72,7 +71,7 @@ func RequireMytokenNotRevoked(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mt *mytoken
 	if revoked {
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
-			Response: model2.InvalidTokenError(""),
+			Response: model.InvalidTokenError(""),
 		}
 	}
 	rlog.Trace("Checked mytoken not revoked")
@@ -106,7 +105,7 @@ func RequireMatchingIssuer(rlog log.Ext1FieldLogger, mtOIDCIssuer string, reques
 	if *requestIssuer != mtOIDCIssuer {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model2.BadRequestError("token not for specified issuer"),
+			Response: model.BadRequestError("token not for specified issuer"),
 		}
 	}
 	provider, ok := config.Get().ProviderByIssuer[*requestIssuer]

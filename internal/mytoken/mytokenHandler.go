@@ -10,34 +10,32 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/cryptstore"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
-	"github.com/oidc-mytoken/server/internal/server/httpstatus"
-	"github.com/oidc-mytoken/server/internal/utils/auth"
-	"github.com/oidc-mytoken/server/internal/utils/cookies"
-	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
-	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
-	"github.com/oidc-mytoken/server/internal/utils/logger"
-	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
-
 	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/cryptstore"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo"
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
+	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
+	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/internal/oidc/revoke"
-	pkgModel "github.com/oidc-mytoken/server/shared/model"
-	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
-	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
+	"github.com/oidc-mytoken/server/internal/server/httpstatus"
+	"github.com/oidc-mytoken/server/internal/utils/auth"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
+	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
+	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
 
 const errResPlaceholder = "error_res"
@@ -230,27 +228,27 @@ func createMytokenEntry(
 	if !rtFound {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.InvalidTokenError(""),
+			Response: model.InvalidTokenError(""),
 		}
 	}
 	if changed := req.Restrictions.EnforceMaxLifetime(parent.OIDCIssuer); changed && req.FailOnRestrictionsNotTighter {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.BadRequestError("requested restrictions do not respect maximum mytoken lifetime"),
+			Response: model.BadRequestError("requested restrictions do not respect maximum mytoken lifetime"),
 		}
 	}
 	r, ok := restrictions.Tighten(rlog, parent.Restrictions, req.Restrictions)
 	if !ok && req.FailOnRestrictionsNotTighter {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.BadRequestError("requested restrictions are not subset of original restrictions"),
+			Response: model.BadRequestError("requested restrictions are not subset of original restrictions"),
 		}
 	}
 	c := api.TightenCapabilities(parent.Capabilities, req.Capabilities)
 	if len(c) == 0 {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.BadRequestError("mytoken to be issued cannot have any of the requested capabilities"),
+			Response: model.BadRequestError("mytoken to be issued cannot have any of the requested capabilities"),
 		}
 	}
 	ste := mytokenrepo.NewMytokenEntry(
@@ -316,7 +314,7 @@ func RevokeMytoken(
 	if strings.HasPrefix(errorfmt.Error(err), "oidc_error") {
 		return &model.Response{
 			Status:   httpstatus.StatusOIDPError,
-			Response: pkgModel.OIDCError(errorfmt.Error(err), ""),
+			Response: model.OIDCError(errorfmt.Error(err), ""),
 		}
 	}
 	rlog.Errorf("%s", errorfmt.Full(err))

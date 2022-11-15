@@ -3,8 +3,8 @@ package pkg
 import (
 	"github.com/oidc-mytoken/api/v0"
 
-	"github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 )
 
 // GrantTypeRequest is a type for a enable/disable grant type request

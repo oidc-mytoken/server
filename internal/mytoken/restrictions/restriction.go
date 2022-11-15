@@ -9,19 +9,20 @@ import (
 	"github.com/jinzhu/copier"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/unixtime"
+	"github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	iutils "github.com/oidc-mytoken/server/internal/utils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/geoip"
 	"github.com/oidc-mytoken/server/internal/utils/hashutils"
 	"github.com/oidc-mytoken/server/internal/utils/iputils"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
 // Restrictions is a slice of Restriction
@@ -337,7 +338,7 @@ func (r Restrictions) WithScopes(rlog log.Ext1FieldLogger, scopes []string) (ret
 		return r
 	}
 	for _, rr := range r {
-		if rr.Scope == "" || utils.IsSubSet(scopes, utils.SplitIgnoreEmpty(rr.Scope, " ")) {
+		if rr.Scope == "" || utils.IsSubSet(scopes, iutils.SplitIgnoreEmpty(rr.Scope, " ")) {
 			ret = append(ret, rr)
 		}
 	}
@@ -414,7 +415,7 @@ func (r *Restrictions) GetNotBefore() unixtime.UnixTime {
 // GetScopes returns the union of all scopes, i.e. all scopes that must be requested at the issuer
 func (r *Restrictions) GetScopes() (scopes []string) {
 	for _, rr := range *r {
-		scopes = append(scopes, utils.SplitIgnoreEmpty(rr.Scope, " ")...)
+		scopes = append(scopes, iutils.SplitIgnoreEmpty(rr.Scope, " ")...)
 	}
 	scopes = utils.UniqueSlice(scopes)
 	return
@@ -434,7 +435,7 @@ func (r *Restrictions) GetAudiences() (auds []string) {
 // eliminate scopes that are not enabled for the oidc client, because it also could be a custom scope.
 func (r *Restrictions) SetMaxScopes(mScopes []string) {
 	for _, rr := range *r {
-		rScopes := utils.SplitIgnoreEmpty(rr.Scope, " ")
+		rScopes := iutils.SplitIgnoreEmpty(rr.Scope, " ")
 		okScopes := utils.IntersectSlices(mScopes, rScopes)
 		rr.Scope = strings.Join(okScopes, " ")
 	}
@@ -534,11 +535,11 @@ func (r *Restriction) isTighterThan(b *Restriction) bool {
 	if r.ExpiresAt == 0 && b.ExpiresAt != 0 || r.ExpiresAt > b.ExpiresAt && b.ExpiresAt != 0 {
 		return false
 	}
-	rScopes := utils.SplitIgnoreEmpty(r.Scope, " ")
+	rScopes := iutils.SplitIgnoreEmpty(r.Scope, " ")
 	if r.Scope == "" {
 		rScopes = []string{}
 	}
-	bScopes := utils.SplitIgnoreEmpty(b.Scope, " ")
+	bScopes := iutils.SplitIgnoreEmpty(b.Scope, " ")
 	if b.Scope == "" {
 		bScopes = []string{}
 	}
@@ -563,10 +564,10 @@ func (r *Restriction) isTighterThan(b *Restriction) bool {
 	) { // for Disallow-list r must have all the values from b to be tighter
 		return false
 	}
-	if utils.CompareNullableIntsWithNilAsInfinity(r.UsagesAT, b.UsagesAT) > 0 {
+	if iutils.CompareNullableIntsWithNilAsInfinity(r.UsagesAT, b.UsagesAT) > 0 {
 		return false
 	}
-	if utils.CompareNullableIntsWithNilAsInfinity(r.UsagesOther, b.UsagesOther) > 0 {
+	if iutils.CompareNullableIntsWithNilAsInfinity(r.UsagesOther, b.UsagesOther) > 0 {
 		return false
 	}
 	return true

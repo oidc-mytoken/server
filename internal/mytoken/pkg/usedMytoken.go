@@ -4,7 +4,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 )
 
 // UsedMytoken is a type for a Mytoken that has been used, it additionally has information how often it has been used

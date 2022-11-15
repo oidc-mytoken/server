@@ -5,18 +5,17 @@ import (
 	"encoding/base64"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/unixtime"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/oidc-mytoken/api/v0"
-
 	"github.com/oidc-mytoken/server/internal/db"
-	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
-	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
-	"github.com/oidc-mytoken/server/shared/utils/unixtime"
+	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
+	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/utils/cryptutils"
 )
 
 // MytokenEntry holds the information of a MytokenEntry as stored in the

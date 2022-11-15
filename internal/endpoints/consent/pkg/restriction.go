@@ -3,9 +3,10 @@ package pkg
 import (
 	"encoding/json"
 
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/unixtime"
+	"github.com/oidc-mytoken/utils/unixtime"
+	"github.com/oidc-mytoken/utils/utils"
+
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 )
 
 // WebRestrictions a type for representing restrictions.Restrictions in the consent screen

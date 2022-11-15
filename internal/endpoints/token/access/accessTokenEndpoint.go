@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/utils/jwtutils"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -14,21 +15,19 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/cryptstore"
 	request "github.com/oidc-mytoken/server/internal/endpoints/token/access/pkg"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
-	serverModel "github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/model"
+	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
+	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/oidc/refresh"
+	"github.com/oidc-mytoken/server/internal/utils"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	"github.com/oidc-mytoken/server/shared/model"
-	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
-	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
-	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/jwtutils"
 )
 
 // HandleAccessTokenEndpoint handles request on the access token endpoint
@@ -37,7 +36,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	rlog.Debug("Handle access token request")
 	req := request.NewAccessTokenRequest()
 	if err := ctx.BodyParser(&req); err != nil {
-		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	rlog.Trace("Parsed access token request")
 	if req.Mytoken.JWT == "" {
@@ -96,14 +95,14 @@ func parseScopesAndAudienceToUse(
 func HandleAccessTokenRefresh(
 	rlog log.Ext1FieldLogger, mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData api.ClientMetaData,
 	provider *config.ProviderConf, usedRestriction *restrictions.Restriction,
-) *serverModel.Response {
+) *model.Response {
 	rt, rtFound, dbErr := cryptstore.GetRefreshToken(rlog, nil, mt.ID, req.Mytoken.JWT)
 	if dbErr != nil {
 		rlog.Errorf("%s", errorfmt.Full(dbErr))
-		return serverModel.ErrorToInternalServerErrorResponse(dbErr)
+		return model.ErrorToInternalServerErrorResponse(dbErr)
 	}
 	if !rtFound {
-		return &serverModel.Response{
+		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
 			Response: model.InvalidTokenError("No refresh token attached"),
 		}
@@ -113,10 +112,10 @@ func HandleAccessTokenRefresh(
 	oidcRes, oidcErrRes, err := refresh.DoFlowAndUpdateDB(rlog, provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return serverModel.ErrorToInternalServerErrorResponse(err)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if oidcErrRes != nil {
-		return &serverModel.Response{
+		return &model.Response{
 			Status:   oidcErrRes.Status,
 			Response: model.OIDCError(oidcErrRes.Error, oidcErrRes.ErrorDescription),
 		}
@@ -162,7 +161,7 @@ func HandleAccessTokenRefresh(
 		},
 	); err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return serverModel.ErrorToInternalServerErrorResponse(err)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
 
 	rsp := request.AccessTokenResponse{
@@ -179,7 +178,7 @@ func HandleAccessTokenRefresh(
 		rsp.TokenUpdate = tokenUpdate
 		cake = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
 	}
-	return &serverModel.Response{
+	return &model.Response{
 		Status:   fiber.StatusOK,
 		Response: rsp,
 		Cookies:  cake,

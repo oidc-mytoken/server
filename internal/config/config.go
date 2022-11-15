@@ -7,19 +7,19 @@ import (
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/oidc-mytoken/utils/context"
+	"github.com/oidc-mytoken/utils/utils/fileutil"
+	"github.com/oidc-mytoken/utils/utils/issuerutils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v3"
 
 	model2 "github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/utils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
-	"github.com/oidc-mytoken/server/shared/utils/issuerutils"
 
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
-	"github.com/oidc-mytoken/server/shared/context"
-	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 )
 
 var defaultConfig = Config{
