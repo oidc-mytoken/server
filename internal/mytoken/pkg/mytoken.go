@@ -5,6 +5,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/utils/unixtime"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -15,14 +16,13 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/jws"
+	"github.com/oidc-mytoken/server/internal/model"
+	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
+	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/internal/utils"
-	"github.com/oidc-mytoken/server/shared/model"
-	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
-	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
-	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
 // Mytoken is a mytoken Mytoken

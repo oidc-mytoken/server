@@ -7,8 +7,8 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/utils/cryptutils"
 )
 
 // DeleteCrypted deletes an entry from the CryptStore

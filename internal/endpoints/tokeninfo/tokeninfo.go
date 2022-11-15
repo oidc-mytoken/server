@@ -9,11 +9,11 @@ import (
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
+	model2 "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	model2 "github.com/oidc-mytoken/server/shared/model"
 )
 
 // HandleTokenInfo handles requests to the tokeninfo endpoint

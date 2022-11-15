@@ -5,8 +5,7 @@ import (
 
 	"github.com/jinzhu/copier"
 	"github.com/oidc-mytoken/api/v0"
-
-	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/utils/utils"
 )
 
 // WebCapability is type for representing api.Capability in the consent screen

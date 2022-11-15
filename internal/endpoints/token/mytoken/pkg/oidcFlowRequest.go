@@ -7,8 +7,8 @@ import (
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
 
-	"github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 )
 
 // OIDCFlowRequest holds the request for an OIDC Flow request

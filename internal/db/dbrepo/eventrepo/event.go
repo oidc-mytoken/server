@@ -8,8 +8,8 @@ import (
 	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
+	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
 // EventDBObject holds information needed for storing an event in the database

@@ -1,14 +1,14 @@
 package refresh
 
 import (
+	"github.com/oidc-mytoken/utils/httpclient"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/cryptstore"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcreqres"
-	"github.com/oidc-mytoken/server/shared/httpclient"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
 
 // UpdateChangedRT is a function that should update a refresh token, it takes the old value as well as the new one

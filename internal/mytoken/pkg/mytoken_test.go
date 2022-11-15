@@ -3,7 +3,7 @@ package mytoken
 import (
 	"testing"
 
-	"github.com/oidc-mytoken/server/shared/utils/unixtime"
+	"github.com/oidc-mytoken/utils/unixtime"
 )
 
 func TestMytoken_ExpiresIn(t *testing.T) {
@@ -34,7 +34,8 @@ func TestMytoken_ExpiresIn(t *testing.T) {
 				expires := test.mt.ExpiresIn()
 				if expires != test.expected {
 					t.Errorf(
-						"Expected expires in for '%+v' to be '%d', but instead is '%d'", test.mt, test.expected, expires,
+						"Expected expires in for '%+v' to be '%d', but instead is '%d'", test.mt, test.expected,
+						expires,
 					)
 				}
 			},

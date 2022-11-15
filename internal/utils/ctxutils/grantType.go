@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pkg/errors"
 
-	"github.com/oidc-mytoken/server/shared/model"
+	"github.com/oidc-mytoken/server/internal/model"
 )
 
 type grantTypeReqObj struct {

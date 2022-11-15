@@ -3,15 +3,15 @@ package configuration
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/utils"
 	gossh "golang.org/x/crypto/ssh"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
+	pkgModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/routes"
-	pkgModel "github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 // HandleConfiguration handles calls to the configuration endpoint

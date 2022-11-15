@@ -8,8 +8,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/utils/cryptutils"
 )
 
 // ReencryptEncryptionKey re-encrypts the encryption key for a mytoken. This is needed when the mytoken changes, e.g. on

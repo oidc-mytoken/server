@@ -6,14 +6,14 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/utils/cryptutils"
 )
 
 // GetSSHInfo returns the SSHInfo stored in the database for the passed key and user hashes.

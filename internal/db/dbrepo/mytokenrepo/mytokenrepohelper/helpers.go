@@ -10,8 +10,8 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/utils/hashutils"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
 )
 
 // recursiveRevokeMT revokes the passed mytoken as well as all children

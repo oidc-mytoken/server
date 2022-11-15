@@ -5,9 +5,8 @@ import (
 	"bytes"
 	"io"
 
+	"github.com/oidc-mytoken/utils/httpclient"
 	"github.com/pkg/errors"
-
-	"github.com/oidc-mytoken/server/shared/httpclient"
 )
 
 // DownloadZipped downloads a zip archive and returns all contained files

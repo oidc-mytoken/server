@@ -8,12 +8,12 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
+	pkgModel "github.com/oidc-mytoken/server/internal/model"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	pkgModel "github.com/oidc-mytoken/server/shared/model"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
 // HandleCreateTransferCodeForExistingMytoken handles request to create a transfer code for an existing mytoken

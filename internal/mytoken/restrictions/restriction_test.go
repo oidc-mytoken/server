@@ -4,10 +4,9 @@ import (
 	"testing"
 
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/unixtime"
+	"github.com/oidc-mytoken/utils/utils"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
 func checkRestrictions(t *testing.T, exp, a Restrictions, okExp, ok bool) {

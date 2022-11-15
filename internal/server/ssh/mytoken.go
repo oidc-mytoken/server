@@ -5,13 +5,13 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/utils/ternary"
 
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/model"
+	mytoken2 "github.com/oidc-mytoken/server/internal/mytoken"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	"github.com/oidc-mytoken/server/shared/model"
-	mytoken2 "github.com/oidc-mytoken/server/shared/mytoken"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/utils/ternary"
 )
 
 func handleSSHMytoken(reqData []byte, s ssh.Session) error {

@@ -6,9 +6,9 @@ import (
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
 
-	"github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 )
 
 // MytokenFromMytokenRequest is a request to create a new Mytoken from an existing Mytoken

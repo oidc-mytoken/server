@@ -7,8 +7,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
 // Enable enables a model.GrantType for the user of the passed mtid.MTID

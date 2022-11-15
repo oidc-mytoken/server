@@ -10,12 +10,12 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
+	model2 "github.com/oidc-mytoken/server/internal/model"
+	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
+	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
-	model2 "github.com/oidc-mytoken/server/shared/model"
-	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
-	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
 // HandleTokenInfoIntrospect handles token introspection

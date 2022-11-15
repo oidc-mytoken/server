@@ -13,7 +13,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 )
 
 // AuthFlowInfo holds database information about a started authorization flow

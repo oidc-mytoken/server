@@ -3,8 +3,8 @@ package pkg
 import (
 	"github.com/oidc-mytoken/api/v0"
 
+	"github.com/oidc-mytoken/server/internal/model"
 	model2 "github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/shared/model"
 )
 
 // MytokenConfiguration holds information about a mytoken instance

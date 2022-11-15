@@ -1,9 +1,10 @@
 package routes
 
 import (
+	"github.com/oidc-mytoken/utils/utils"
+
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/apipath"
-	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 var routes *paths

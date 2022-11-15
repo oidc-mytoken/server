@@ -3,12 +3,13 @@ package universalmytoken
 import (
 	"encoding/json"
 
+	"github.com/oidc-mytoken/utils/utils/jwtutils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
-	"github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/utils"
 )
 
 // UniversalMytoken is a type used for Mytokens passed in http requests; these can be normal Mytoken or a short token.
@@ -41,7 +42,7 @@ func Parse(rlog log.Ext1FieldLogger, token string) (UniversalMytoken, error) {
 	if token == "" {
 		return UniversalMytoken{}, errors.New("token not valid")
 	}
-	if utils.IsJWT(token) {
+	if jwtutils.IsJWT(token) {
 		return UniversalMytoken{
 			JWT:               token,
 			OriginalToken:     token,

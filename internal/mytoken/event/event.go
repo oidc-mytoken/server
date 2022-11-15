@@ -7,13 +7,13 @@ import (
 	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/eventrepo"
-	pkg "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
 // MTEvent is type for mytoken events
 type MTEvent struct {
-	*pkg.Event
+	*event.Event
 	MTID mtid.MTID
 }
 

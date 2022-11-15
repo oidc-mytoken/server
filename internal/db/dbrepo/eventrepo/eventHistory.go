@@ -2,14 +2,14 @@ package eventrepo
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/utils/unixtime"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils/unixtime"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
 // EventHistory is type for multiple EventEntry

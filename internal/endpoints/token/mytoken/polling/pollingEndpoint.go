@@ -10,10 +10,10 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
 // HandlePollingCode handles a request on the polling endpoint

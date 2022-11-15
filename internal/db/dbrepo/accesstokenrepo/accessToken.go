@@ -7,9 +7,9 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/utils/cryptutils"
 )
 
 // AccessToken holds database information about an access token

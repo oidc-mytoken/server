@@ -6,20 +6,19 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/oidc-mytoken/utils/httpclient"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/versionrepo"
-	"github.com/oidc-mytoken/server/internal/endpoints/settings"
-	"github.com/oidc-mytoken/server/internal/model/version"
-	"github.com/oidc-mytoken/server/internal/utils/cookies"
-	"github.com/oidc-mytoken/server/shared/httpclient"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/versionrepo"
 	configurationEndpoint "github.com/oidc-mytoken/server/internal/endpoints/configuration"
+	"github.com/oidc-mytoken/server/internal/endpoints/settings"
 	"github.com/oidc-mytoken/server/internal/jws"
+	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
 	"github.com/oidc-mytoken/server/internal/server"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/geoip"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 )

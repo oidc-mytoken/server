@@ -10,13 +10,13 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/settings"
 	request "github.com/oidc-mytoken/server/internal/endpoints/settings/grants/pkg"
 	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/model"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
+	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	"github.com/oidc-mytoken/server/shared/model"
-	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 )
 
 // HandleListGrants handles GET requests to the grants endpoints and returns a list of enabled/disabled grant types for

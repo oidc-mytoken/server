@@ -15,12 +15,12 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	pkg2 "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/server/httpstatus"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/internal/utils/templating"
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo"
@@ -28,9 +28,9 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
+	model2 "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
-	model2 "github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/internal/utils"
 )
 
 // handleConsent displays a consent page

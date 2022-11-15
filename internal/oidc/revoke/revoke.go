@@ -1,13 +1,14 @@
 package revoke
 
 import (
+	"github.com/oidc-mytoken/utils/httpclient"
 	log "github.com/sirupsen/logrus"
+
+	pkgModel "github.com/oidc-mytoken/server/internal/model"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcreqres"
-	"github.com/oidc-mytoken/server/shared/httpclient"
-	pkgModel "github.com/oidc-mytoken/server/shared/model"
 )
 
 // RefreshToken revokes a refresh token

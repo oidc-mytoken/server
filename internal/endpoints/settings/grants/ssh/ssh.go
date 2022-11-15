@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/utils"
 	log "github.com/sirupsen/logrus"
 	gossh "golang.org/x/crypto/ssh"
 
@@ -18,19 +19,18 @@ import (
 	request "github.com/oidc-mytoken/server/internal/endpoints/settings/grants/ssh/pkg"
 	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/polling"
+	"github.com/oidc-mytoken/server/internal/model"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
+	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
 	"github.com/oidc-mytoken/server/internal/server/ssh"
+	"github.com/oidc-mytoken/server/internal/utils/cryptutils"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/hashutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	"github.com/oidc-mytoken/server/shared/model"
-	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
-	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
 )
 
 // HandleGetSSHInfo handles requests to return information about a user's ssh keys

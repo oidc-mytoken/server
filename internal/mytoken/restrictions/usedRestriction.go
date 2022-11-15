@@ -5,7 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
 // UsedRestriction is a type for a restriction that has been used and additionally has information how often is has been

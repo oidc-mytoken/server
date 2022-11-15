@@ -10,11 +10,10 @@ import (
 	mathRand "math/rand"
 	"strings"
 
+	"github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/pbkdf2"
-
-	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 const (
