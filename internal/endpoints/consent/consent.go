@@ -28,7 +28,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
-	model2 "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
 	"github.com/oidc-mytoken/server/internal/utils"
 )
@@ -88,7 +87,7 @@ func HandleCreateConsent(ctx *fiber.Ctx) error {
 	if req.Issuer == "" {
 		return model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model2.BadRequestError("required parameter 'oidc_issuer' missing"),
+			Response: model.BadRequestError("required parameter 'oidc_issuer' missing"),
 		}.Send(ctx)
 	}
 	rlog := logger.GetRequestLogger(ctx)
@@ -160,7 +159,7 @@ func handleConsentAccept(
 		if !api.AllCapabilities.Has(c) {
 			return &model.Response{
 				Status:   fiber.StatusBadRequest,
-				Response: model2.BadRequestError(fmt.Sprintf("unknown capability '%s'", c)),
+				Response: model.BadRequestError(fmt.Sprintf("unknown capability '%s'", c)),
 			}
 		}
 	}

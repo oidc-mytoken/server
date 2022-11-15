@@ -9,7 +9,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
-	pkgModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 )
@@ -64,13 +63,13 @@ func basicConfiguration() *pkg.MytokenConfiguration {
 			ServiceDocumentation: config.Get().ServiceDocumentation,
 			Version:              version.VERSION,
 		},
-		AccessTokenEndpointGrantTypesSupported: []pkgModel.GrantType{pkgModel.GrantTypeMytoken},
-		MytokenEndpointGrantTypesSupported: []pkgModel.GrantType{
-			pkgModel.GrantTypeOIDCFlow,
-			pkgModel.GrantTypeMytoken,
+		AccessTokenEndpointGrantTypesSupported: []model.GrantType{model.GrantTypeMytoken},
+		MytokenEndpointGrantTypesSupported: []model.GrantType{
+			model.GrantTypeOIDCFlow,
+			model.GrantTypeMytoken,
 		},
-		MytokenEndpointOIDCFlowsSupported: []pkgModel.OIDCFlow{pkgModel.OIDCFlowAuthorizationCode},
-		ResponseTypesSupported:            []pkgModel.ResponseType{pkgModel.ResponseTypeToken},
+		MytokenEndpointOIDCFlowsSupported: []model.OIDCFlow{model.OIDCFlowAuthorizationCode},
+		ResponseTypesSupported:            []model.ResponseType{model.ResponseTypeToken},
 		TokenEndpoint: utils.CombineURLPath(
 			config.Get().IssuerURL, apiPaths.AccessTokenEndpoint,
 		),
@@ -88,7 +87,7 @@ func addTokenRevocation(mytokenConfig *pkg.MytokenConfiguration) {
 }
 func addShortTokens(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.ShortTokens.Enabled {
-		pkgModel.ResponseTypeShortToken.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
+		model.ResponseTypeShortToken.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
 	}
 }
 func addTransferCodes(mytokenConfig *pkg.MytokenConfiguration) {
@@ -97,13 +96,13 @@ func addTransferCodes(mytokenConfig *pkg.MytokenConfiguration) {
 			config.Get().IssuerURL,
 			routes.GetCurrentAPIPaths().TokenTransferEndpoint,
 		)
-		pkgModel.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
-		pkgModel.ResponseTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
+		model.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
+		model.ResponseTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
 	}
 }
 func addPollingCodes(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.Polling.Enabled {
-		pkgModel.GrantTypePollingCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
+		model.GrantTypePollingCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 	}
 }
 func addTokenInfo(mytokenConfig *pkg.MytokenConfiguration) {
@@ -111,22 +110,22 @@ func addTokenInfo(mytokenConfig *pkg.MytokenConfiguration) {
 		mytokenConfig.TokeninfoEndpoint = ""
 	} else {
 		if config.Get().Features.TokenInfo.Introspect.Enabled {
-			pkgModel.TokeninfoActionIntrospect.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
+			model.TokeninfoActionIntrospect.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
 		}
 		if config.Get().Features.TokenInfo.History.Enabled {
-			pkgModel.TokeninfoActionEventHistory.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
+			model.TokeninfoActionEventHistory.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
 		}
 		if config.Get().Features.TokenInfo.Tree.Enabled {
-			pkgModel.TokeninfoActionSubtokenTree.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
+			model.TokeninfoActionSubtokenTree.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
 		}
 		if config.Get().Features.TokenInfo.List.Enabled {
-			pkgModel.TokeninfoActionListMytokens.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
+			model.TokeninfoActionListMytokens.AddToSliceIfNotFound(&mytokenConfig.TokenInfoEndpointActionsSupported)
 		}
 	}
 }
 func addSSHGrant(mytokenconfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.SSH.Enabled {
-		pkgModel.GrantTypeSSH.AddToSliceIfNotFound(&mytokenconfig.MytokenEndpointGrantTypesSupported)
+		model.GrantTypeSSH.AddToSliceIfNotFound(&mytokenconfig.MytokenEndpointGrantTypesSupported)
 		mytokenconfig.SSHKeys = createSSHKeyInfos()
 	}
 }

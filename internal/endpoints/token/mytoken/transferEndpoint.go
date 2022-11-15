@@ -8,7 +8,6 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
-	pkgModel "github.com/oidc-mytoken/server/internal/model"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
@@ -23,7 +22,7 @@ func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.BadRequestError(errorfmt.Error(err)),
+			Response: model.BadRequestError(errorfmt.Error(err)),
 		}.Send(ctx)
 	}
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
@@ -41,7 +40,7 @@ func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
 	res := &model.Response{
 		Status: fiber.StatusOK,
 		Response: pkg.TransferCodeResponse{
-			MytokenType: pkgModel.ResponseTypeTransferCode,
+			MytokenType: model.ResponseTypeTransferCode,
 			TransferCodeResponse: api.TransferCodeResponse{
 				TransferCode: transferCode,
 				ExpiresIn:    expiresIn,

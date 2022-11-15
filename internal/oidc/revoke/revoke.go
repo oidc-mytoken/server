@@ -4,8 +4,6 @@ import (
 	"github.com/oidc-mytoken/utils/httpclient"
 	log "github.com/sirupsen/logrus"
 
-	pkgModel "github.com/oidc-mytoken/server/internal/model"
-
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcreqres"
@@ -29,7 +27,7 @@ func RefreshToken(rlog log.Ext1FieldLogger, provider *config.ProviderConf, rt st
 	if errRes, ok := httpRes.Error().(*oidcreqres.OIDCErrorResponse); ok && errRes != nil && errRes.Error != "" {
 		return &model.Response{
 			Status:   httpRes.RawResponse.StatusCode,
-			Response: pkgModel.OIDCError(errRes.Error, errRes.ErrorDescription),
+			Response: model.OIDCError(errRes.Error, errRes.ErrorDescription),
 		}
 	}
 	return nil

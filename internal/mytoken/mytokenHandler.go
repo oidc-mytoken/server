@@ -22,7 +22,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
-	pkgModel "github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
 	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
@@ -229,27 +228,27 @@ func createMytokenEntry(
 	if !rtFound {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.InvalidTokenError(""),
+			Response: model.InvalidTokenError(""),
 		}
 	}
 	if changed := req.Restrictions.EnforceMaxLifetime(parent.OIDCIssuer); changed && req.FailOnRestrictionsNotTighter {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.BadRequestError("requested restrictions do not respect maximum mytoken lifetime"),
+			Response: model.BadRequestError("requested restrictions do not respect maximum mytoken lifetime"),
 		}
 	}
 	r, ok := restrictions.Tighten(rlog, parent.Restrictions, req.Restrictions)
 	if !ok && req.FailOnRestrictionsNotTighter {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.BadRequestError("requested restrictions are not subset of original restrictions"),
+			Response: model.BadRequestError("requested restrictions are not subset of original restrictions"),
 		}
 	}
 	c := api.TightenCapabilities(parent.Capabilities, req.Capabilities)
 	if len(c) == 0 {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.BadRequestError("mytoken to be issued cannot have any of the requested capabilities"),
+			Response: model.BadRequestError("mytoken to be issued cannot have any of the requested capabilities"),
 		}
 	}
 	ste := mytokenrepo.NewMytokenEntry(
@@ -315,7 +314,7 @@ func RevokeMytoken(
 	if strings.HasPrefix(errorfmt.Error(err), "oidc_error") {
 		return &model.Response{
 			Status:   httpstatus.StatusOIDPError,
-			Response: pkgModel.OIDCError(errorfmt.Error(err), ""),
+			Response: model.OIDCError(errorfmt.Error(err), ""),
 		}
 	}
 	rlog.Errorf("%s", errorfmt.Full(err))

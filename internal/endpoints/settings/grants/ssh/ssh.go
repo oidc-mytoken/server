@@ -20,7 +20,6 @@ import (
 	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/polling"
 	"github.com/oidc-mytoken/server/internal/model"
-	serverModel "github.com/oidc-mytoken/server/internal/model"
 	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
@@ -40,16 +39,16 @@ func HandleGetSSHInfo(ctx *fiber.Ctx) error {
 	var reqMytoken universalmytoken.UniversalMytoken
 	return settings.HandleSettingsHelper(
 		ctx, &reqMytoken, api.CapabilitySSHGrantRead, event.FromNumber(event.SSHKeyListed, ""), fiber.StatusOK,
-		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
+		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *model.Response) {
 			info, err := sshrepo.GetAllSSHInfo(rlog, tx, mt.ID)
 			if err != nil {
 				rlog.Errorf("%s", errorfmt.Full(err))
-				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
+				return nil, model.ErrorToInternalServerErrorResponse(err)
 			}
 			grantEnabled, err := grantrepo.GrantEnabled(rlog, tx, mt.ID, model.GrantTypeSSH)
 			if err != nil {
 				rlog.Errorf("%s", errorfmt.Full(err))
-				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
+				return nil, model.ErrorToInternalServerErrorResponse(err)
 			}
 			return &request.SSHInfoResponse{
 				SSHInfoResponse: api.SSHInfoResponse{
@@ -67,19 +66,19 @@ func HandleDeleteSSHKey(ctx *fiber.Ctx) error {
 	rlog.Debug("Handle delete ssh key request")
 	req := request.SSHKeyDeleteRequest{}
 	if err := ctx.BodyParser(&req); err != nil {
-		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	rlog.Trace("Parsed delete ssh key request")
 	if req.SSHKeyFingerprint == "" {
 		if req.SSHKey == "" {
-			return serverModel.Response{
+			return model.Response{
 				Status:   fiber.StatusBadRequest,
 				Response: model.BadRequestError("One of the required parameters 'ssh_key' or 'ssh_key_hash' must be given"),
 			}.Send(ctx)
 		}
 		sshKey, _, _, _, err := gossh.ParseAuthorizedKey([]byte(req.SSHKey))
 		if err != nil {
-			return serverModel.Response{
+			return model.Response{
 				Status:   fiber.StatusBadRequest,
 				Response: model.BadRequestError("could not parse ssh public key"),
 			}.Send(ctx)
@@ -89,10 +88,10 @@ func HandleDeleteSSHKey(ctx *fiber.Ctx) error {
 
 	return settings.HandleSettingsHelper(
 		ctx, &req.Mytoken, api.CapabilitySSHGrant, nil, fiber.StatusNoContent,
-		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
+		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *model.Response) {
 			if err := sshrepo.Delete(rlog, tx, mt.ID, req.SSHKeyFingerprint); err != nil {
 				rlog.Errorf("%s", errorfmt.Full(err))
-				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
+				return nil, model.ErrorToInternalServerErrorResponse(err)
 			}
 			return nil, nil
 		}, true,
@@ -104,7 +103,7 @@ func HandleDeleteSSHKey(ctx *fiber.Ctx) error {
 func HandlePost(ctx *fiber.Ctx) error {
 	grantType, err := ctxutils.GetGrantType(ctx)
 	if err != nil {
-		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	switch grantType {
 	case model.GrantTypeMytoken:
@@ -112,7 +111,7 @@ func HandlePost(ctx *fiber.Ctx) error {
 	case model.GrantTypePollingCode:
 		return handlePollingCode(ctx)
 	default:
-		res := serverModel.Response{
+		res := model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: api.ErrorUnsupportedGrantType,
 		}
@@ -126,18 +125,18 @@ func handleAddSSHKey(ctx *fiber.Ctx) error {
 	rlog.Debug("Handle add ssh key request")
 	req := request.SSHKeyAddRequest{}
 	if err := ctx.BodyParser(&req); err != nil {
-		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	rlog.Trace("Parsed add ssh key request")
 	if req.SSHKey == "" {
-		return serverModel.Response{
+		return model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.BadRequestError("required parameter 'ssh_key' is missing"),
 		}.Send(ctx)
 	}
 	sshKey, _, _, _, err := gossh.ParseAuthorizedKey([]byte(req.SSHKey))
 	if err != nil {
-		return serverModel.Response{
+		return model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.BadRequestError("could not parse ssh public key"),
 		}.Send(ctx)
@@ -149,7 +148,7 @@ func handleAddSSHKey(ctx *fiber.Ctx) error {
 
 	return settings.HandleSettingsHelper(
 		ctx, &req.Mytoken, api.CapabilitySSHGrant, event.FromNumber(event.SSHKeyAdded, ""), fiber.StatusOK,
-		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
+		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *model.Response) {
 			return handleAddSSHSettingsCallback(rlog, ctx, &req, sshKeyFP, tx, mt)
 		}, false,
 	)
@@ -162,15 +161,15 @@ func handleAddSSHSettingsCallback(
 	mt *mytoken.Mytoken,
 ) (
 	my.TokenUpdatableResponse,
-	*serverModel.Response,
+	*model.Response,
 ) {
 	grantEnabled, err := grantrepo.GrantEnabled(rlog, tx, mt.ID, model.GrantTypeSSH)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return nil, serverModel.ErrorToInternalServerErrorResponse(err)
+		return nil, model.ErrorToInternalServerErrorResponse(err)
 	}
 	if !grantEnabled {
-		return nil, &serverModel.Response{
+		return nil, &model.Response{
 			Status: fiber.StatusForbidden,
 			Response: api.Error{
 				Error:            api.ErrorStrAccessDenied,
@@ -181,11 +180,11 @@ func handleAddSSHSettingsCallback(
 	allSSHKeys, err := sshrepo.GetAllSSHInfo(rlog, tx, mt.ID)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return nil, serverModel.ErrorToInternalServerErrorResponse(err)
+		return nil, model.ErrorToInternalServerErrorResponse(err)
 	}
 	for _, k := range allSSHKeys {
 		if k.SSHKeyFingerprint == sshKeyFP {
-			return nil, &serverModel.Response{
+			return nil, &model.Response{
 				Status: fiber.StatusConflict,
 				Response: api.Error{
 					Error:            api.ErrorStrInvalidRequest,
@@ -216,7 +215,7 @@ func handleAddSSHSettingsCallback(
 	authRes := res.Response.(api.AuthCodeFlowResponse)
 	if err = transfercoderepo.LinkPollingCodeToSSHKey(rlog, tx, authRes.PollingCode, sshKeyFP); err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return nil, serverModel.ErrorToInternalServerErrorResponse(err)
+		return nil, model.ErrorToInternalServerErrorResponse(err)
 	}
 	return &request.SSHKeyAddResponse{
 		SSHKeyAddResponse: api.SSHKeyAddResponse{
@@ -247,7 +246,7 @@ func handlePollingCode(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
 	req := my.NewPollingCodeRequest()
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
-		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	clientMetaData := ctxutils.ClientMetaData(ctx)
 	mt, token, status, errRes := polling.CheckPollingCodeReq(rlog, req, *clientMetaData, true)
@@ -259,12 +258,12 @@ func handlePollingCode(ctx *fiber.Ctx) error {
 	encryptedMT, err := cryptutils.AES256Encrypt(token, user)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return serverModel.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
 	mtName, err := mytokenrepohelper.GetMTName(rlog, nil, mt.ID)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return serverModel.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
 	name := extractSSHKeyNameFromMTName(mtName.String)
 	data := sshrepo.SSHInfoIn{
@@ -276,9 +275,9 @@ func handlePollingCode(ctx *fiber.Ctx) error {
 	}
 	if err = sshrepo.Insert(rlog, nil, data); err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return serverModel.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 	}
-	return serverModel.Response{
+	return model.Response{
 		Status: fiber.StatusOK,
 		Response: api.SSHKeyAddFinalResponse{
 			SSHUser:       user,

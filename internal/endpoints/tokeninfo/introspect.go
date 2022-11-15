@@ -10,7 +10,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
-	model2 "github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
 	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
@@ -22,7 +21,7 @@ import (
 func HandleTokenInfoIntrospect(
 	rlog log.Ext1FieldLogger,
 	mt *mytoken.Mytoken,
-	origionalTokenType model2.ResponseType,
+	origionalTokenType model.ResponseType,
 	clientMetadata *api.ClientMetaData,
 ) model.Response {
 	// If we call this function it means the token is valid.
