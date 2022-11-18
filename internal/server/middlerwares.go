@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/basicauth"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
@@ -164,5 +165,32 @@ func addCorsMiddleware(s fiber.Router) {
 				},
 			},
 		),
+	)
+}
+
+func userIsGroupMiddleware(c *fiber.Ctx) error {
+	rlog := loggerUtils.GetRequestLogger(c)
+	rlog.WithFields(
+		log.Fields{
+			"group":         c.Params("group", "_"),
+			"username":      c.Locals(basicauth.ConfigDefault.ContextUsername),
+			"path":          c.Path(),
+			"original_path": c.Route().Path,
+			"params":        c.Route().Params,
+		},
+	).Error()
+	if c.Params("group", "_") != c.Locals(basicauth.ConfigDefault.ContextUsername) {
+		return fiber.ErrForbidden
+	}
+	return c.Next()
+}
+
+func returnGroupBasicMiddleware() fiber.Handler {
+	return basicauth.New(
+		basicauth.Config{
+			Authorizer: func(user string, pw string) bool {
+				return config.Get().Features.ServerProfiles.Groups[user] == pw
+			},
+		},
 	)
 }

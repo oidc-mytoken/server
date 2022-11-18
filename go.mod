@@ -18,7 +18,7 @@ require (
 	github.com/lestrrat-go/jwx v1.2.25
 	github.com/oidc-mytoken/api v0.9.2-0.20221209082828-a2b167ffec41
 	github.com/oidc-mytoken/lib v0.6.2-0.20221125141521-dae7f2a63fc2
-	github.com/oidc-mytoken/utils v0.1.0
+	github.com/oidc-mytoken/utils v0.1.1-0.20221115124432-1265aef71afe
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pires/go-proxyproto v0.6.2
 	github.com/pkg/errors v0.9.1
@@ -39,6 +39,7 @@ require (
 	github.com/cbroglie/mustache v1.4.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
+	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/go-resty/resty/v2 v2.7.0 // indirect
 	github.com/goccy/go-json v0.9.7 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
