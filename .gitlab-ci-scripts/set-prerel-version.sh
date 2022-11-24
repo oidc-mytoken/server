@@ -22,7 +22,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-echo "$CI"
+git config user.email
+
+echo "CI: $CI"
+
 [ "x${CI}" = "xtrue" ] && {
     echo "Setting up git in CI"
     git config --global --add safe.directory "$PWD"
@@ -49,9 +52,7 @@ PR_VERSION="${VERSION}-${DEVSTRING}${PREREL}"
 echo "$PR_VERSION" > "$VERSION_FILE"
 echo "$PR_VERSION"
 
-TILDE_VERSION="$(echo "$PR_VERSION" | sed 's/-/~/g')"
-
 echo "$PR_VERSION" > "$VERSION_FILE"
 git add "$VERSION_FILE"
 git commit -m "dummy prerel version"
-git tag "v${TILDE_VERSION}"
+git tag "v${PR_VERSION}"
