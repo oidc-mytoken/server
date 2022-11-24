@@ -22,7 +22,9 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+echo "$CI"
 [ "x${CI}" = "xtrue" ] && {
+    echo "Setting up git in CI"
     git config --global --add safe.directory "$PWD"
     git config user.email "ci@repo.data.kit.edu"
     git config user.name "cicd"
