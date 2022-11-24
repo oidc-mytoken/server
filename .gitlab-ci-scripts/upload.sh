@@ -1,6 +1,6 @@
 
 REPO_TARGET="/prerel"
-if [ -n "$CI_COMMIT_TAG" ] && echo "$CI_COMMIT_TAG" | grep -qv '-'; then
+if [ -n "$CI_COMMIT_TAG" ] && echo "$CI_COMMIT_TAG" | grep -qv '~'; then
   REPO_TARGET="/preprod"
 fi
 

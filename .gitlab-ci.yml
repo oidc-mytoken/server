@@ -72,7 +72,7 @@ prerelease:
     REPO_HOST: repo.data.kit.edu
     REPO_USER: cicd
   script:
-    - if [ -z "$CI_COMMIT_TAG" ]; then docker run --rm -v $PWD:/tmp/mytoken -w /tmp/mytoken bitnami/git .gitlab-ci-scripts/set-prerel-version; fi;
+    - if [ -z "$CI_COMMIT_TAG" ]; then docker run --rm -v $PWD:/tmp/mytoken -w /tmp/mytoken bitnami/git .gitlab-ci-scripts/set-prerel-version.sh; fi;
     - .gitlab-ci-scripts/goreleaser.sh
     - .gitlab-ci-scripts/upload.sh
   after_script:
