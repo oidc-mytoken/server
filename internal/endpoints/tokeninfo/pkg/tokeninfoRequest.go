@@ -9,7 +9,7 @@ import (
 
 // TokenInfoRequest is a type for holding a request to the tokeninfo endpoint
 type TokenInfoRequest struct {
-	api.TokenInfoRequest `json:",inline"`
-	Action               model.TokeninfoAction             `json:"action"`
-	Mytoken              universalmytoken.UniversalMytoken `json:"mytoken"`
+	api.TokenInfoRequest
+	Action  model.TokeninfoAction             `json:"action"`
+	Mytoken universalmytoken.UniversalMytoken `json:"mytoken"`
 }

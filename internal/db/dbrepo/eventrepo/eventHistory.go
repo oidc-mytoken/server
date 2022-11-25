@@ -12,8 +12,11 @@ import (
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
-// EventHistory is type for multiple EventEntry
-type EventHistory []EventEntry
+// EventHistory is a slice of EventEntry
+type EventHistory struct {
+	api.EventHistory
+	Events []EventEntry `json:"events"`
+}
 
 // EventEntry represents a mytoken event
 type EventEntry struct {
@@ -23,10 +26,10 @@ type EventEntry struct {
 }
 
 // GetEventHistory returns the stored EventHistory for a mytoken
-func GetEventHistory(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID) (history EventHistory, err error) {
+func GetEventHistory(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id interface{}) (history EventHistory, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			return errors.WithStack(tx.Select(&history, `CALL EventHistory_Get(?)`, id))
+			return errors.WithStack(tx.Select(&history.Events, `CALL EventHistory_Get(?)`, id))
 		},
 	)
 	return

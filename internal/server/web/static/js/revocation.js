@@ -21,7 +21,7 @@ function revokeToken(token, recursive, okCallback) {
 
 function revokeTokenID(id, recursive, okCallback) {
     _revoke({
-        "revocation_id": id,
+        "mom_id": id,
         "recursive": recursive,
     }, okCallback);
 }

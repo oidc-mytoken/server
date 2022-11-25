@@ -84,6 +84,8 @@ var AllEvents = [...]string{
 	"settings_grants_listed",
 	"ssh_keys_listed",
 	"ssh_key_added",
+	"revoked_other_token",
+	"tokeninfo_history_other_token",
 }
 
 // Events for Mytokens
@@ -105,5 +107,7 @@ const (
 	GrantsListed
 	SSHKeyListed
 	SSHKeyAdded
+	RevokedOtherToken
+	TokenInfoHistoryOtherToken
 	maxEvent
 )
