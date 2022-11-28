@@ -14,6 +14,10 @@
 
 ## mytoken 0.7.0
 
+### Enhancements
+
+- Improved responsiveness of webinterface
+
 ## mytoken 0.6.1
 
 ### API
