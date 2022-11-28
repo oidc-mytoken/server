@@ -14,12 +14,6 @@
 
 ## mytoken 0.7.0
 
-### API
-
-- Renamed `revocation_id` to `mom_id`
-- Restructured capabilities related to other mytokens
-- Added possibility to obtain history information for children and other tokens (capability)
-
 ### Enhancements
 
 - Improved responsiveness of webinterface
