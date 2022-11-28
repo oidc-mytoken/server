@@ -133,14 +133,14 @@ func RevokeMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id interface{}, recursive b
 	return revokeMT(rlog, tx, id)
 }
 
-// RevocationIDHasParent checks if the token for a revocation id is a child of the (potential) parent mytoken
-func RevocationIDHasParent(rlog log.Ext1FieldLogger, tx *sqlx.Tx, revocationID string, parent mtid.MTID) (
+// MOMIDHasParent checks if the token for a revocation id is a child of the (potential) parent mytoken
+func MOMIDHasParent(rlog log.Ext1FieldLogger, tx *sqlx.Tx, momID string, parent mtid.MTID) (
 	isParent bool, err error,
 ) {
 	var count int
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			return errors.WithStack(tx.Get(&count, `CALL MTokens_IsParentOf(?,?)`, parent, revocationID))
+			return errors.WithStack(tx.Get(&count, `CALL MTokens_IsParentOf(?,?)`, parent, momID))
 		},
 	)
 	isParent = count > 0

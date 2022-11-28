@@ -2,12 +2,15 @@ const $tokenInput = $('#tokeninfo-token');
 
 let tokeninfoEndpointToUse;
 
-function _tokeninfo(action, successFnc, errorFnc, token = undefined) {
+function _tokeninfo(action, successFnc, errorFnc, token = undefined, mom_id = undefined) {
     let data = {
         'action': action
     };
     if (token !== undefined) {
         data['mytoken'] = token;
+    }
+    if (mom_id !== undefined) {
+        data['mom_id'] = mom_id;
     }
     data = JSON.stringify(data);
     $.ajax({
@@ -98,10 +101,10 @@ function historyToHTML(events) {
         let agentIcons = userAgentToHTMLIcons(event['user_agent'] || "");
         let entry = '<tr>' +
             '<td>' + event['event'] + '</td>' +
-            '<td>' + comment + '</td>' +
+            '<td style="word-break: break-all;">' + comment + '</td>' +
             '<td>' + time + '</td>' +
             '<td>' + event['ip'] + '</td>' +
-            '<td class="text-center">' + agentIcons + '</td>' +
+            '<td class="text-center" style="white-space: nowrap;">' + agentIcons + '</td>' +
             '</tr>';
         tableEntries.unshift(entry);
     });
@@ -136,8 +139,9 @@ function _tokenTreeToHTML(tree, deleteClass, depth, parentID = 0) {
             hasChildren = true;
         })
     }
-    let deleteBtn = `<button id="${token['revocation_id']}" class="btn ${deleteClass}" type="button" onclick="startRevocateID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Revoke Token' : 'Sign in to revoke token.'}"><i class="fas fa-trash"></i></button>`;
-    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" class="${depth > 0 ? 'd-none' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${time}</td><td>${token['ip']}</td><td>${deleteBtn}</td></tr>` + tableEntries;
+    let historyBtn = `<button id="history-${token['mom_id']}" class="btn ml-2" type="button" onclick="showHistoryForID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Event History' : 'Sign in to show event history.'}"><i class="fas fa-history"></i></button>`;
+    let deleteBtn = `<button id="revoke-${token['mom_id']}" class="btn ${deleteClass}" type="button" onclick="startRevocateID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Revoke Token' : 'Sign in to revoke token.'}"><i class="fas fa-trash"></i></button>`;
+    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" class="${depth > 0 ? 'd-none' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${time}</td><td>${token['ip']}</td><td>${historyBtn}${deleteBtn}</td></tr>` + tableEntries;
     return tableEntries
 }
 
@@ -191,6 +195,19 @@ function getHistoryTokenInfo(e) {
             copy.removeClass('d-none');
         }, $tokenInput.val())
     return false;
+}
+
+function showHistoryForID() {
+    let id = this.id.replace("history-", "");
+    _tokeninfo('event_history',
+        function (res) {
+            $('#history-modal-msg').html(historyToHTML(res['events']));
+        },
+        function (errRes) {
+            $errorModalMsg.text(getErrorMessage(errRes));
+            $errorModal.modal();
+        }, undefined, id)
+    $('#history-modal').modal();
 }
 
 function getSubtokensInfo(e) {

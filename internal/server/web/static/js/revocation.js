@@ -21,7 +21,7 @@ function revokeToken(token, recursive, okCallback) {
 
 function revokeTokenID(id, recursive, okCallback) {
     _revoke({
-        "revocation_id": id,
+        "mom_id": id,
         "recursive": recursive,
     }, okCallback);
 }
@@ -35,7 +35,7 @@ function revokeTokenFromSubtokens(id, recursive) {
 }
 
 function startRevocateID() {
-    let id = this.id;
+    let id = this.id.replace("revoke-", "");
     $revocationFormID.val(id);
     for (const c of revocationClasses) {
         if ($(this).hasClass(c)) {

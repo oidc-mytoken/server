@@ -1,6 +1,7 @@
 package revocation
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,8 +18,11 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/mytoken"
+	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
+	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytokenPkg "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
+	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
@@ -35,12 +39,12 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 	clearCookie := false
 	if req.Token == "" {
 		req.Token = ctx.Cookies("mytoken")
-		if req.RevocationID == "" {
+		if req.MOMID == "" {
 			clearCookie = true
 		}
 	}
-	if req.RevocationID != "" {
-		errRes := revokeByID(rlog, req)
+	if req.MOMID != "" {
+		errRes := revokeByID(rlog, req, ctxutils.ClientMetaData(ctx))
 		if errRes != nil {
 			return errRes.Send(ctx)
 		}
@@ -69,7 +73,8 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 	return ctx.SendStatus(fiber.StatusNoContent)
 }
 
-func revokeByID(rlog log.Ext1FieldLogger, req api.RevocationRequest) (errRes *model.Response) {
+func revokeByID(rlog log.Ext1FieldLogger, req api.RevocationRequest, clientMetadata *api.ClientMetaData) *model.
+	Response {
 	token, err := universalmytoken.Parse(rlog, req.Token)
 	if err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
@@ -78,7 +83,7 @@ func revokeByID(rlog log.Ext1FieldLogger, req api.RevocationRequest) (errRes *mo
 	if err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
-	isParent, err := helper.RevocationIDHasParent(rlog, nil, req.RevocationID, authToken.ID)
+	isParent, err := helper.MOMIDHasParent(rlog, nil, req.MOMID, authToken.ID)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
@@ -87,12 +92,14 @@ func revokeByID(rlog log.Ext1FieldLogger, req api.RevocationRequest) (errRes *mo
 			Status: fiber.StatusForbidden,
 			Response: api.Error{
 				Error: api.ErrorStrInsufficientCapabilities,
-				ErrorDescription: "The provided token is neither a parent of the the token to be revoked nor does it" +
-					" have the 'revoke_any_token' capability",
+				ErrorDescription: fmt.Sprintf(
+					"The provided token is neither a parent of the the token to be revoked"+
+						" nor does it have the '%s' capability", api.CapabilityRevokeAnyToken.Name,
+				),
 			},
 		}
 	}
-	same, err := helper.CheckMytokensAreForSameUser(rlog, nil, req.RevocationID, authToken.ID)
+	same, err := helper.CheckMytokensAreForSameUser(rlog, nil, req.MOMID, authToken.ID)
 	if err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
@@ -101,14 +108,26 @@ func revokeByID(rlog log.Ext1FieldLogger, req api.RevocationRequest) (errRes *mo
 			Status: fiber.StatusForbidden,
 			Response: api.Error{
 				Error:            api.ErrorStrInvalidGrant,
-				ErrorDescription: "The provided token cannot be used to revoke this revocation_id",
+				ErrorDescription: "The provided token cannot be used to revoke this mom_id",
 			},
 		}
 	}
-	if err = helper.RevokeMT(rlog, nil, req.RevocationID, req.Recursive); err != nil {
+	if err = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			if err = helper.RevokeMT(rlog, tx, req.MOMID, req.Recursive); err != nil {
+				return err
+			}
+			return eventService.LogEvent(
+				rlog, tx, eventService.MTEvent{
+					Event: event.FromNumber(event.RevokedOtherToken, fmt.Sprintf("mom_id: %s", req.MOMID)),
+					MTID:  authToken.ID,
+				}, *clientMetadata,
+			)
+		},
+	); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	return
+	return nil
 }
 
 func revokeAnyToken(

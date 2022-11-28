@@ -16,7 +16,7 @@ $('#login-form').on('submit', function (e) {
         "AT",
         "settings",
         "list_mytokens",
-        "revoke_any_token"
+        "manage_mytokens"
     ]
     data['rotation'] = {
         "on_AT": true,

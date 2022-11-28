@@ -20,7 +20,7 @@ type MytokenEntry struct {
 	ParentID         mtid.MTID         `db:"parent_id" json:"-"`
 	Name             db.NullString     `json:"name,omitempty"`
 	CreatedAt        unixtime.UnixTime `db:"created" json:"created"`
-	RevocationID     string            `db:"revocation_id" json:"revocation_id"`
+	MOMID            string            `db:"mom_id" json:"mom_id"`
 }
 
 // MytokenEntryTree is a tree of MytokenEntry
