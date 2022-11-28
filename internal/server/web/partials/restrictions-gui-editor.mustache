@@ -23,7 +23,7 @@
 
     <div>
         <div class="form-row">
-            <div class="form-group restr-nbf col" style="position:relative;">
+            <div class="form-group restr-nbf col-md" style="position:relative;">
                 <label for="{{prefix}}nbf">Not Before</label>
                 <input type="text" class="form-control nbf datetimepicker-input" id="{{prefix}}nbf"
                        aria-describedby="{{prefix}}nbf_help"
@@ -34,7 +34,7 @@
                     time.</small>
             </div>
 
-            <div class="form-group restr-exp col" style="position:relative;">
+            <div class="form-group restr-exp col-md" style="position:relative;">
                 <label for="{{prefix}}exp">Expires At</label>
                 <input type="text" class="form-control exp datetimepicker-input" id="{{prefix}}exp"
                        aria-describedby="{{prefix}}exp_help"
@@ -165,7 +165,7 @@
         </div>
 
         <div class="form-row">
-            <div class="form-group restr-usages_AT col">
+            <div class="form-group restr-usages_AT col-sm">
                 <label for="{{prefix}}usages_AT">Usages AT</label>
                 <input type="number" class="form-control usages_AT" id="{{prefix}}usages_AT"
                        aria-describedby="{{prefix}}usages_AT_help" min=0 {{#read-only}}disabled{{/read-only}}>
@@ -173,7 +173,7 @@
                     this often to request access tokens.</small>
             </div>
 
-            <div class="form-group restr-usages_other col">
+            <div class="form-group restr-usages_other col-sm">
                 <label for="{{prefix}}usages_other">Usages Other</label>
                 <input type="number" class="form-control usages_other" id="{{prefix}}usages_other"
                        aria-describedby="{{prefix}}usages_other_help" min=0 {{#read-only}}disabled{{/read-only}}>

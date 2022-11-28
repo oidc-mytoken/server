@@ -14,6 +14,10 @@
 
 ## mytoken 0.7.0
 
+### Enhancements
+
+- Improved responsiveness of webinterface
+
 ### API
 
 - Renamed `revocation_id` to `mom_id`

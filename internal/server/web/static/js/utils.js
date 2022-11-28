@@ -44,7 +44,7 @@ function getErrorMessage(e) {
 
 function noLandscape(prefix) {
     let landscaped = $('.' + prefix + '-landscape');
-    landscaped.removeClass('col');
+    landscaped.removeClass('col-md');
     landscaped.removeClass('row');
     landscaped.removeClass('form-row');
 }
