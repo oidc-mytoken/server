@@ -129,7 +129,9 @@ function _tokenTreeToHTML(tree, deleteClass, depth, parentID = 0) {
     let name = token['name'] || 'unnamed token';
     let nameClass = name === 'unnamed token' ? ' text-muted' : '';
     let thisID = `token-tree-el-${tokenTreeIDCounter++}`
-    let time = formatTime(token['created']);
+    let created = formatTime(token['created']);
+    let expires_at = token['expires_at'] || 0;
+    let expires = expires_at === 0 ? `<span class="text-muted">Does not expire</span>` : formatTime(expires_at);
     let tableEntries = "";
     let children = tree['children'];
     let hasChildren = false;
@@ -141,7 +143,11 @@ function _tokenTreeToHTML(tree, deleteClass, depth, parentID = 0) {
     }
     let historyBtn = `<button id="history-${token['mom_id']}" class="btn ml-2" type="button" onclick="showHistoryForID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Event History' : 'Sign in to show event history.'}"><i class="fas fa-history"></i></button>`;
     let deleteBtn = `<button id="revoke-${token['mom_id']}" class="btn ${deleteClass}" type="button" onclick="startRevocateID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Revoke Token' : 'Sign in to revoke token.'}"><i class="fas fa-trash"></i></button>`;
-    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" class="${depth > 0 ? 'd-none' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${time}</td><td>${token['ip']}</td><td>${historyBtn}${deleteBtn}</td></tr>` + tableEntries;
+    let tr_class = depth > 0 ? 'd-none' : '';
+    if (expires_at !== 0 && new Date(expires_at * 1000) < new Date()) {
+        tr_class += " text-muted";
+    }
+    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" class="${tr_class}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td>${historyBtn}${deleteBtn}</td></tr>` + tableEntries;
     return tableEntries
 }
 
@@ -155,9 +161,10 @@ function tokenlistToHTML(tokenTrees, deleteClass) {
     }
     return '<table class="table table-hover table-grey">' +
         '<thead><tr>' +
-        '<th style="min-width: 50%;">Token Name</th>' +
+        '<th style="min-width: 40%;">Token Name</th>' +
         '<th>Created</th>' +
         '<th>Created from IP</th>' +
+        '<th>Expires</th>' +
         '<th></th>' +
         '</tr></thead>' +
         '<tbody>' +

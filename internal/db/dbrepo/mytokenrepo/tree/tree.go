@@ -20,6 +20,7 @@ type MytokenEntry struct {
 	ParentID         mtid.MTID         `db:"parent_id" json:"-"`
 	Name             db.NullString     `json:"name,omitempty"`
 	CreatedAt        unixtime.UnixTime `db:"created" json:"created"`
+	ExpiresAt        unixtime.UnixTime `db:"expires_at" json:"expires_at,omitempty"`
 	MOMID            string            `db:"mom_id" json:"mom_id"`
 }
 
