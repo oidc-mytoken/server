@@ -14,9 +14,19 @@
 
 ## mytoken 0.7.0
 
+### Features
+
+- Webinterface has option to show event history for other mytokens in mytoken list.
+
 ### Enhancements
 
 - Improved responsiveness of webinterface
+- Expired mytokens are now greyed-out in webinterface mytoken list
+- The database auto-cleanup now only removes mytokens expired more than a month ago.
+  - This allows expired tokens to be shown in a mytoken list for extended periods.
+  - This also allows to obtain history for expired tokens (by using a mytoken with the `manage_mytokens:list`
+    capability) for a longer time.
+  - Mytokens are still directly deleted when revoked.
 
 ### API
 
