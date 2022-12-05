@@ -41,7 +41,6 @@ CREATE OR REPLACE PROCEDURE Cleanup_MTokens()
 BEGIN
     DELETE FROM MTokens WHERE DATE_ADD(expires_at, INTERVAL 1 MONTH) < CURRENT_TIMESTAMP();
 END;;
-
 CREATE OR REPLACE PROCEDURE Cleanup_ProxyTokens()
 BEGIN
     DELETE
@@ -57,8 +56,7 @@ BEGIN
         FROM MTokens
         WHERE user_id = UID
         ORDER BY created;
-END;
-
+END;;
 CREATE OR REPLACE PROCEDURE MTokens_GetSubtokens(IN MTID VARCHAR(128))
 BEGIN
     CREATE TEMPORARY TABLE IF NOT EXISTS effected_MTIDs (id VARCHAR(128));
@@ -80,7 +78,7 @@ BEGIN
               (SELECT id
                    FROM effected_MTIDs);
     DROP TABLE effected_MTIDs;
-END;
+END;;
 
 DELIMITER ;
 
