@@ -135,7 +135,7 @@ func revokeAnyToken(
 ) (errRes *model.Response) {
 	if jwtutils.IsJWT(token) { // normal Mytoken
 		return revokeMytoken(rlog, tx, token, issuer, recursive)
-	} else if len(token) == config.Get().Features.Polling.Len { // Transfer Code
+	} else if len(token) < api.MinShortTokenLen { // Transfer Code
 		return revokeTransferCode(rlog, tx, token, issuer)
 	} else { // Short Token
 		shortToken := transfercoderepo.ParseShortToken(token)
