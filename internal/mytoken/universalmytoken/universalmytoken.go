@@ -3,6 +3,7 @@ package universalmytoken
 import (
 	"encoding/json"
 
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/utils/utils/jwtutils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -39,7 +40,7 @@ func (t *UniversalMytoken) UnmarshalJSON(data []byte) (err error) {
 
 // Parse parses a mytoken string (that can be a long or short mytoken) into an UniversalMytoken holding the JWT
 func Parse(rlog log.Ext1FieldLogger, token string) (UniversalMytoken, error) {
-	if token == "" {
+	if len(token) < api.MinShortTokenLen {
 		return UniversalMytoken{}, errors.New("token not valid")
 	}
 	if jwtutils.IsJWT(token) {

@@ -34,6 +34,11 @@
 - Restructured capabilities related to other mytokens
 - Added possibility to obtain history information for children and other tokens (capability)
 
+### Bugfixes
+
+- Fixed a bug where transfer codes could be used just like a short token (but only while the transfer code did not
+  expire)
+
 ## mytoken 0.6.1
 
 ### API
