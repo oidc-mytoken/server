@@ -1,17 +1,16 @@
 package pkg
 
 import (
-	"github.com/oidc-mytoken/api/v0"
-
 	"github.com/oidc-mytoken/server/internal/model/profiled"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 )
 
 // MytokenFromMytokenRequest is a request to create a new Mytoken from an existing Mytoken
+// It is analog to api.MytokenFromMytokenRequest
 type MytokenFromMytokenRequest struct {
-	api.MytokenFromMytokenRequest  `json:",inline"`
 	profiled.GeneralMytokenRequest `json:",inline"`
 	Mytoken                        universalmytoken.UniversalMytoken `json:"mytoken"`
+	FailOnRestrictionsNotTighter   bool                              `json:"error_on_restrictions,omitempty"`
 }
 
 // NewMytokenRequest creates a MytokenFromMytokenRequest with the default values where they can be omitted

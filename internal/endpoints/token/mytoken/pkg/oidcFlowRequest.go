@@ -51,63 +51,6 @@ func NewOIDCFlowRequest() *OIDCFlowRequest {
 	}
 }
 
-/*
-// SetRedirectType sets the (hidden) redirect type
-func (r *OIDCFlowRequest) SetRedirectType(redirect string) {
-	r.clientType = redirect
-}
-
-// SetRedirectURI sets the (hidden) redirect uri
-func (r *OIDCFlowRequest) SetRedirectURI(uri string) {
-	r.redirectURI = uri
-}
-
-// MarshalJSON implements the json.Marshaler interface
-func (r OIDCFlowRequest) MarshalJSON() ([]byte, error) { // skipcq: CRT-P0003
-	type ofr OIDCFlowRequest
-	o := struct {
-		ofr
-		ClientType  string `json:"client_type,omitempty"`
-		RedirectURI string `json:"redirect_uri,omitempty"`
-	}{
-		ofr:         ofr(r),
-		ClientType:  r.clientType,
-		RedirectURI: r.redirectURI,
-	}
-	data, err := json.Marshal(o)
-	return data, errors.WithStack(err)
-}
-
-// UnmarshalJSON implements the json.Unmarshaler interface
-func (r *OIDCFlowRequest) UnmarshalJSON(data []byte) error {
-	type ofr OIDCFlowRequest
-	o := struct {
-		ofr
-		RedirectType string `json:"client_type"`
-		RedirectURI  string `json:"redirect_uri"`
-	}{
-		ofr: ofr(*NewOIDCFlowRequest()),
-	}
-	o.RedirectType = o.clientType
-	o.RedirectURI = o.redirectURI
-	if err := json.Unmarshal(data, &o); err != nil {
-		return errors.WithStack(err)
-	}
-	o.clientType = o.RedirectType
-	o.redirectURI = o.RedirectURI
-	*r = OIDCFlowRequest(o.ofr)
-	return nil
-}
-
-// ToAuthCodeFlowRequest creates a AuthCodeFlowRequest from the OIDCFlowRequest
-func (r OIDCFlowRequest) ToAuthCodeFlowRequest() AuthCodeFlowRequest { // skipcq: CRT-P0003
-	return AuthCodeFlowRequest{
-		OIDCFlowRequest: r,
-		ClientType:      r.clientType,
-		RedirectURI:     r.redirectURI,
-	}
-}
-*/
 // Scan implements the sql.Scanner interface
 func (r *OIDCFlowRequest) Scan(src interface{}) error {
 	v, ok := src.([]byte)
