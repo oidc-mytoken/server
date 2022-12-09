@@ -1,8 +1,8 @@
 #!/bin/bash
 
-MYTOKEN_SERVER:=https://mytoken.data.kit.edu
-GROUP_USER:=_
-DATA_DIR:="$(dirname "$0")"
+MYTOKEN_SERVER=https://mytoken.data.kit.edu
+GROUP_USER=_
+DATA_DIR="$(dirname "$0")"
 
 while [ $# -gt 0 ]; do
     case "$1" in
