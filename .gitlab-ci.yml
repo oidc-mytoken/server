@@ -27,12 +27,12 @@ test_race:
   script:
     - go test -race -v ./...
 
-lint:
+staticcheck:
   stage: lint
   before_script:
-    - go install golang.org/x/lint/golint@latest
+    - go install honnef.co/go/tools/cmd/staticcheck@latest
   script:
-    - golint -set_exit_status ./...
+    - staticcheck ./...
 
 vet:
   stage: lint
