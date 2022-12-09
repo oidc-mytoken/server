@@ -44,6 +44,19 @@ type Restriction struct {
 	api.Restriction `json:",inline"`
 }
 
+func NewRestrictionsFromAPI(apis api.Restrictions) (rs Restrictions) {
+	for _, a := range apis {
+		rs = append(
+			rs, &Restriction{
+				NotBefore:   unixtime.UnixTime(a.NotBefore),
+				ExpiresAt:   unixtime.UnixTime(a.ExpiresAt),
+				Restriction: *a,
+			},
+		)
+	}
+	return
+}
+
 // ClearUnsupportedKeys sets default values for the keys that are not supported by this instance
 func (r *Restrictions) ClearUnsupportedKeys() {
 	for _, rr := range *r {

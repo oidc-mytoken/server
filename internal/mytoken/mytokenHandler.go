@@ -130,7 +130,7 @@ func HandleMytokenFromMytokenReqChecks(
 	if errRes != nil {
 		return nil, nil, errRes
 	}
-	if _, errRes = auth.RequireMatchingIssuer(rlog, mt.OIDCIssuer, &req.Issuer); errRes != nil {
+	if _, errRes = auth.RequireMatchingIssuer(rlog, mt.OIDCIssuer, &req.GeneralMytokenRequest.Issuer); errRes != nil {
 		return nil, nil, errRes
 	}
 	return usedRestriction, mt, nil
@@ -186,7 +186,8 @@ func HandleMytokenFromMytokenReq(
 					},
 					{
 						Event: event.FromNumber(
-							event.SubtokenCreated, strings.TrimSpace(fmt.Sprintf("Created MT %s", req.Name)),
+							event.SubtokenCreated,
+							strings.TrimSpace(fmt.Sprintf("Created MT %s", req.GeneralMytokenRequest.Name)),
 						),
 						MTID: parent.ID,
 					},
@@ -198,7 +199,9 @@ func HandleMytokenFromMytokenReq(
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 
-	res, err := ste.Token.ToTokenResponse(rlog, req.ResponseType, req.MaxTokenLen, *networkData, "")
+	res, err := ste.Token.ToTokenResponse(
+		rlog, req.ResponseType, req.GeneralMytokenRequest.MaxTokenLen, *networkData, "",
+	)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
@@ -237,14 +240,14 @@ func createMytokenEntry(
 			Response: model.BadRequestError("requested restrictions do not respect maximum mytoken lifetime"),
 		}
 	}
-	r, ok := restrictions.Tighten(rlog, parent.Restrictions, req.Restrictions)
+	r, ok := restrictions.Tighten(rlog, parent.Restrictions, req.Restrictions.Restrictions)
 	if !ok && req.FailOnRestrictionsNotTighter {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.BadRequestError("requested restrictions are not subset of original restrictions"),
 		}
 	}
-	c := api.TightenCapabilities(parent.Capabilities, req.Capabilities)
+	c := api.TightenCapabilities(parent.Capabilities, req.Capabilities.Capabilities)
 	if len(c) == 0 {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
@@ -252,8 +255,11 @@ func createMytokenEntry(
 		}
 	}
 	ste := mytokenrepo.NewMytokenEntry(
-		mytoken.NewMytoken(parent.OIDCSubject, parent.OIDCIssuer, req.Name, r, c, req.Rotation, parent.AuthTime),
-		req.Name, networkData,
+		mytoken.NewMytoken(
+			parent.OIDCSubject, parent.OIDCIssuer, req.GeneralMytokenRequest.Name, r, c, &req.Rotation.Rotation,
+			parent.AuthTime,
+		),
+		req.GeneralMytokenRequest.Name, networkData,
 	)
 	encryptionKey, _, err := encryptionkeyrepo.GetEncryptionKey(rlog, nil, parent.ID, req.Mytoken.JWT)
 	if err != nil {

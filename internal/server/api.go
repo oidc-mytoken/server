@@ -5,6 +5,7 @@ import (
 	"github.com/oidc-mytoken/utils/utils"
 
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/endpoints/profiles"
 	"github.com/oidc-mytoken/server/internal/endpoints/revocation"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings/grants"
@@ -46,4 +47,66 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 		s.Post(sshGrantPath, ssh.HandlePost)
 		s.Delete(sshGrantPath, ssh.HandleDeleteSSHKey)
 	}
+	addProfileEndpointRoutes(s, apiPaths)
+}
+
+func addProfileEndpointRoutes(r fiber.Router, apiPaths routes.APIPaths) {
+	if !config.Get().Features.ServerProfiles.Enabled {
+		return
+	}
+	r.Get(apiPaths.ProfilesEndpoint, profiles.HandleGetGroups)
+	addProfileGetRoute(r, apiPaths, "profiles", profiles.HandleGetProfiles)
+	addProfileGetRoute(r, apiPaths, "capabilities", profiles.HandleGetCapabilities)
+	addProfileGetRoute(r, apiPaths, "restrictions", profiles.HandleGetRestrictions)
+	addProfileGetRoute(r, apiPaths, "rotation", profiles.HandleGetRotations)
+	addProfileAddRoute(r, apiPaths, "profiles", profiles.HandleAddProfile)
+	addProfileAddRoute(r, apiPaths, "capabilities", profiles.HandleAddCapabilities)
+	addProfileAddRoute(r, apiPaths, "restrictions", profiles.HandleAddRestrictions)
+	addProfileAddRoute(r, apiPaths, "rotation", profiles.HandleAddRotation)
+	addProfileUpdateRoute(r, apiPaths, "profiles", profiles.HandleUpdateProfile)
+	addProfileUpdateRoute(r, apiPaths, "capabilities", profiles.HandleUpdateCapabilities)
+	addProfileUpdateRoute(r, apiPaths, "restrictions", profiles.HandleUpdateRestrictions)
+	addProfileUpdateRoute(r, apiPaths, "rotation", profiles.HandleUpdateRotation)
+	addProfileDeleteRoute(r, apiPaths, "profiles", profiles.HandleDeleteProfile)
+	addProfileDeleteRoute(r, apiPaths, "capabilities", profiles.HandleDeleteCapabilities)
+	addProfileDeleteRoute(r, apiPaths, "restrictions", profiles.HandleDeleteRestrictions)
+	addProfileDeleteRoute(r, apiPaths, "rotation", profiles.HandleDeleteRotation)
+}
+
+func addProfileGetRoute(r fiber.Router, apiPaths routes.APIPaths, profileTypePath string, handler fiber.Handler) {
+	r.Get(utils.CombineURLPath(apiPaths.ProfilesEndpoint, profileTypePath), handler)
+	r.Get(utils.CombineURLPath(apiPaths.ProfilesEndpoint, ":group", profileTypePath), handler)
+}
+
+func addProfileDeleteRoute(r fiber.Router, apiPaths routes.APIPaths, profileTypePath string, handler fiber.Handler) {
+	r.Delete(
+		utils.CombineURLPath(apiPaths.ProfilesEndpoint, profileTypePath, ":id?"),
+		returnGroupBasicMiddleware(), userIsGroupMiddleware, handler,
+	)
+	r.Delete(
+		utils.CombineURLPath(apiPaths.ProfilesEndpoint, ":group", profileTypePath, ":id?"),
+		returnGroupBasicMiddleware(), userIsGroupMiddleware, handler,
+	)
+}
+
+func addProfileAddRoute(r fiber.Router, apiPaths routes.APIPaths, profileTypePath string, handler fiber.Handler) {
+	r.Post(
+		utils.CombineURLPath(apiPaths.ProfilesEndpoint, profileTypePath),
+		returnGroupBasicMiddleware(), userIsGroupMiddleware, handler,
+	)
+	r.Post(
+		utils.CombineURLPath(apiPaths.ProfilesEndpoint, ":group", profileTypePath),
+		returnGroupBasicMiddleware(), userIsGroupMiddleware, handler,
+	)
+}
+
+func addProfileUpdateRoute(r fiber.Router, apiPaths routes.APIPaths, profileTypePath string, handler fiber.Handler) {
+	r.Put(
+		utils.CombineURLPath(apiPaths.ProfilesEndpoint, profileTypePath, ":id?"),
+		returnGroupBasicMiddleware(), userIsGroupMiddleware, handler,
+	)
+	r.Put(
+		utils.CombineURLPath(apiPaths.ProfilesEndpoint, ":group", profileTypePath, ":id?"),
+		returnGroupBasicMiddleware(), userIsGroupMiddleware, handler,
+	)
 }

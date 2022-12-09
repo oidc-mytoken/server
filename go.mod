@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/Songmu/prompter v0.5.1
 	github.com/coreos/go-oidc/v3 v3.4.0
+	github.com/evanphx/json-patch/v5 v5.6.0
 	github.com/fatih/structs v1.1.0
 	github.com/gliderlabs/ssh v0.3.5
 	github.com/go-sql-driver/mysql v1.6.0
@@ -18,7 +19,7 @@ require (
 	github.com/lestrrat-go/jwx v1.2.25
 	github.com/oidc-mytoken/api v0.9.2-0.20221209082828-a2b167ffec41
 	github.com/oidc-mytoken/lib v0.6.2-0.20221125141521-dae7f2a63fc2
-	github.com/oidc-mytoken/utils v0.1.0
+	github.com/oidc-mytoken/utils v0.1.1-0.20221209120826-9ed1b1501812
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pires/go-proxyproto v0.6.2
 	github.com/pkg/errors v0.9.1

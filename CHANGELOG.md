@@ -17,6 +17,10 @@
 ### Features
 
 - Webinterface has option to show event history for other mytokens in mytoken list.
+- Added server side `profiles` and `templates`
+  - Currently, cannot be used directly (only obtained through API), but the idea is to integrate this into the API
+    requests, i.e. mytoken requests can include profiles, the capability, restrictions, and rotation claims can use
+    templates (directly or included). This would then also be integrated in the webinterface.
 
 ### Enhancements
 
@@ -30,6 +34,11 @@
 
 ### API
 
+- Added profile endpoint:
+  - Any user can get list of groups
+  - Any user can get profiles, and templates (capabilities, restrictions, rotation) for all the groups
+  - Groups credentials are defined in the config file
+    - With Basic authentication profiles and templates for the authenticated group can be created, updated, and deleted.
 - Renamed `revocation_id` to `mom_id`
 - Restructured capabilities related to other mytokens
 - Added possibility to obtain history information for children and other tokens (capability)

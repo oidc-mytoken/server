@@ -111,10 +111,9 @@ func trustedRedirectURI(redirectURI string) bool {
 }
 
 // StartAuthCodeFlow starts an authorization code flow
-func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq *response.OIDCFlowRequest) *model.Response {
+func StartAuthCodeFlow(ctx *fiber.Ctx, req *response.AuthCodeFlowRequest) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle authcode")
-	req := oidcReq.ToAuthCodeFlowRequest()
 	native := req.Native() && config.Get().Features.Polling.Enabled
 	if !native && req.RedirectURI == "" {
 		return &model.Response{
@@ -147,7 +146,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq *response.OIDCFlowRequest) *model
 	authFlowInfo := authcodeinforepo.AuthFlowInfo{
 		AuthFlowInfoOut: authcodeinforepo.AuthFlowInfoOut{
 			State:               oState,
-			AuthCodeFlowRequest: req,
+			AuthCodeFlowRequest: *req,
 		},
 	}
 	res := api.AuthCodeFlowResponse{
@@ -169,7 +168,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq *response.OIDCFlowRequest) *model
 	if !native && trustedRedirectURI(req.RedirectURI) {
 		authURI, err := GetAuthorizationURL(
 			rlog, nil, provider, state.NewState(consentCode.GetState()),
-			req.Restrictions,
+			req.Restrictions.Restrictions,
 		)
 		if err != nil {
 			rlog.Errorf("%s", errorfmt.Full(err))
@@ -331,9 +330,9 @@ func createMytokenEntry(
 			oidcSub,
 			authFlowInfo.Issuer,
 			authFlowInfo.Name,
-			authFlowInfo.Restrictions,
-			authFlowInfo.Capabilities,
-			authFlowInfo.Rotation,
+			authFlowInfo.Restrictions.Restrictions,
+			authFlowInfo.Capabilities.Capabilities,
+			&authFlowInfo.Rotation.Rotation,
 			unixtime.Now(),
 		),
 		authFlowInfo.Name, networkData,

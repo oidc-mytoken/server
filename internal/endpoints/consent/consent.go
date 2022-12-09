@@ -15,6 +15,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	pkg2 "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/model/profiled"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/server/httpstatus"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
@@ -41,7 +42,7 @@ func handleConsent(ctx *fiber.Ctx, info *pkg2.OIDCFlowRequest, includeConsentCal
 		templating.MustacheKeyEmptyNavbar:         true,
 		templating.MustacheKeyRestrictionsGUI:     true,
 		templating.MustacheKeyCollapse:            templating.Collapsable{All: true},
-		templating.MustacheKeyRestrictions:        pkg.WebRestrictions{Restrictions: info.Restrictions},
+		templating.MustacheKeyRestrictions:        pkg.WebRestrictions{Restrictions: info.Restrictions.Restrictions},
 		templating.MustacheKeyCapabilities:        pkg.AllWebCapabilities(),
 		templating.MustacheKeyCheckedCapabilities: c.Strings(),
 		templating.MustacheKeyIss:                 info.Issuer,
@@ -95,16 +96,18 @@ func HandleCreateConsent(ctx *fiber.Ctx) error {
 	r, _ := restrictions.Tighten(rlog, mt.Restrictions, req.Restrictions)
 	c := api.TightenCapabilities(mt.Capabilities, req.Capabilities)
 	info := &pkg2.OIDCFlowRequest{
-		OIDCFlowRequest: api.OIDCFlowRequest{
+		GeneralMytokenRequest: profiled.GeneralMytokenRequest{
 			GeneralMytokenRequest: api.GeneralMytokenRequest{
 				Issuer:          req.Issuer,
-				Capabilities:    c,
 				Name:            req.TokenName,
-				Rotation:        req.Rotation,
 				ApplicationName: req.ApplicationName,
 			},
+			Capabilities: profiled.Capabilities{Capabilities: c},
+			Restrictions: profiled.Restrictions{Restrictions: r},
 		},
-		Restrictions: r,
+	}
+	if req.Rotation != nil {
+		info.Rotation.Rotation = *req.Rotation
 	}
 	return handleConsent(ctx, info, false)
 }

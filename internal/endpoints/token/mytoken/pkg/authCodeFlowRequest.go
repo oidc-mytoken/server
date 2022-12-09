@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
+	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
 )
@@ -11,31 +12,39 @@ import (
 // AuthCodeFlowRequest holds a authorization code flow request
 type AuthCodeFlowRequest struct {
 	OIDCFlowRequest
+	AuthCodeFlowAttrs
+}
+
+// AuthCodeFlowAttrs holds the additional attributes for AuthCodeFlowRequests
+type AuthCodeFlowAttrs struct {
 	ClientType  string `json:"client_type"`
 	RedirectURI string `json:"redirect_uri"`
 }
 
 // Native checks if the request is native
-func (r *AuthCodeFlowRequest) Native() bool {
+func (r AuthCodeFlowRequest) Native() bool {
 	return r.ClientType != api.ClientTypeWeb
 }
 
-// UnmarshalJSON implements the json unmarshaler interface
+// UnmarshalJSON implements the json.Unmarshaler interface
 func (r *AuthCodeFlowRequest) UnmarshalJSON(data []byte) error {
-	var tmp OIDCFlowRequest
-	if err := json.Unmarshal(data, &tmp); err != nil {
-		return errors.WithStack(err)
+	if err := errors.WithStack(json.Unmarshal(data, &r.OIDCFlowRequest)); err != nil {
+		return err
 	}
-	*r = tmp.ToAuthCodeFlowRequest()
-	return nil
+	return errors.WithStack(json.Unmarshal(data, &r.AuthCodeFlowAttrs))
 }
 
-// MarshalJSON implements the json marshaler interface
-func (r *AuthCodeFlowRequest) MarshalJSON() ([]byte, error) {
-	r.clientType = r.ClientType
-	r.redirectURI = r.RedirectURI
-	data, err := json.Marshal(r.OIDCFlow)
-	return data, errors.WithStack(err)
+// MarshalJSON implements the json.Marshaler interface
+func (r AuthCodeFlowRequest) MarshalJSON() ([]byte, error) {
+	base, err := json.Marshal(r.OIDCFlowRequest)
+	if err != nil {
+		return nil, err
+	}
+	attrs, err := json.Marshal(r.AuthCodeFlowAttrs)
+	if err != nil {
+		return nil, err
+	}
+	return jsonpatch.MergePatch(base, attrs)
 }
 
 // Scan implements the sql.Scanner interface

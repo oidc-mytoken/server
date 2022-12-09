@@ -135,6 +135,7 @@ github.com/envoyproxy/go-control-plane v0.10.1/go.mod h1:AY7fTTXNdv/aJ2O5jwpxAPO
 github.com/envoyproxy/go-control-plane v0.10.2-0.20220325020618-49ff273808a1/go.mod h1:KJwIaB5Mv44NWtYuAOFCVOjcI94vtpEz2JU/D2v6IjE=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/envoyproxy/protoc-gen-validate v0.6.2/go.mod h1:2t7qjJNvHPx8IjnBOzl9E9/baC+qXE/TeeyBRzgJDws=
+github.com/evanphx/json-patch/v5 v5.6.0 h1:b91NhWfaz02IuVxO9faSllyAtNXHMPkC5J8sJCLunww=
 github.com/evanphx/json-patch/v5 v5.6.0/go.mod h1:G79N1coSVB93tBe7j6PhzjmR3/2VvlbKOFpnXhI9Bw4=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.9.0/go.mod h1:eQcE1qtQxscV5RaZvpXrrb8Drkc3/DdQ+uUYCNjL+zU=
@@ -376,8 +377,8 @@ github.com/oidc-mytoken/api v0.9.2-0.20221209082828-a2b167ffec41 h1:9YYK5NmynqDo
 github.com/oidc-mytoken/api v0.9.2-0.20221209082828-a2b167ffec41/go.mod h1:DBIlUbaIgGlf607VZx8zFC97VR3WNN0kaMVO1AqyTdE=
 github.com/oidc-mytoken/lib v0.6.2-0.20221125141521-dae7f2a63fc2 h1:ygQMfCtOGnZxsW7cAhBZCSfGgg3qcfvPVkc2Wq+0L4A=
 github.com/oidc-mytoken/lib v0.6.2-0.20221125141521-dae7f2a63fc2/go.mod h1:U0mC1zWdWKYPekoNTYSQZB5SHFk4fPz+JhfPgWs4TTs=
-github.com/oidc-mytoken/utils v0.1.0 h1:Ia60CYjVzs4X35twdAB1NTXDyYjxe/IWDI/MkcvQHnc=
-github.com/oidc-mytoken/utils v0.1.0/go.mod h1:pAUlvF/mYz8CjinCx4iwoWzG514B9EhuCpu7O+afaD8=
+github.com/oidc-mytoken/utils v0.1.1-0.20221209120826-9ed1b1501812 h1:fXzfdjcHFqmtGxFIngdeOu9RoDayi0Kbk02sLtTMt+I=
+github.com/oidc-mytoken/utils v0.1.1-0.20221209120826-9ed1b1501812/go.mod h1:pAUlvF/mYz8CjinCx4iwoWzG514B9EhuCpu7O+afaD8=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
