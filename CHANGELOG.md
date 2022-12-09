@@ -33,6 +33,7 @@
 - Renamed `revocation_id` to `mom_id`
 - Restructured capabilities related to other mytokens
 - Added possibility to obtain history information for children and other tokens (capability)
+- Added a name for OPs in the `supported_providers` of the mytoken configuration endpoint
 
 ### Bugfixes
 
