@@ -2,6 +2,7 @@ package profilerepo
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/utils/utils/profile"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -63,6 +64,11 @@ func newDBProfileReader(rlog log.Ext1FieldLogger) *dbProfileReader {
 	}
 }
 
+// NewDBProfileParser creates a new profile.ProfileParser that can read profiles from the db
+func NewDBProfileParser(rlog log.Ext1FieldLogger) *profile.ProfileParser {
+	return profile.NewProfileParser(newDBProfileReader(rlog))
+}
+
 func read(
 	rlog log.Ext1FieldLogger,
 	nameIncludingGroup string,
@@ -87,7 +93,7 @@ func read(
 
 	data, dataFound := groupData[name]
 	if !dataFound {
-		return nil, errors.New("unknown include name")
+		return nil, errors.Errorf("unknown include name: '%s'", nameIncludingGroup)
 	}
 	dataRead = []byte(data.Payload)
 	return

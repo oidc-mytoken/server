@@ -4,38 +4,54 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/oidc-mytoken/api/v0"
+	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/model/profiled"
 )
 
 // OIDCFlowRequest holds the request for an OIDC Flow request
 type OIDCFlowRequest struct {
-	api.OIDCFlowRequest `json:",inline"`
-	GrantType           model.GrantType           `json:"grant_type"`
-	OIDCFlow            model.OIDCFlow            `json:"oidc_flow"`
-	Restrictions        restrictions.Restrictions `json:"restrictions"`
-	ResponseType        model.ResponseType        `json:"response_type"`
-	clientType          string
-	redirectURI         string
+	profiled.GeneralMytokenRequest
+	OIDCFlowAttrs
+}
+
+// OIDCFlowAttrs holds the additional attributes for OIDCFlowRequests
+type OIDCFlowAttrs struct {
+	OIDCFlow model.OIDCFlow `json:"oidc_flow"`
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface
+func (r *OIDCFlowRequest) UnmarshalJSON(data []byte) error {
+	if err := errors.WithStack(json.Unmarshal(data, &r.GeneralMytokenRequest)); err != nil {
+		return err
+	}
+	return errors.WithStack(json.Unmarshal(data, &r.OIDCFlowAttrs))
+}
+
+// MarshalJSON implements the json.Marshaler interface
+func (r OIDCFlowRequest) MarshalJSON() ([]byte, error) {
+	base, err := json.Marshal(r.GeneralMytokenRequest)
+	if err != nil {
+		return nil, err
+	}
+	attrs, err := json.Marshal(r.OIDCFlowAttrs)
+	if err != nil {
+		return nil, err
+	}
+	return jsonpatch.MergePatch(base, attrs)
 }
 
 // NewOIDCFlowRequest creates a new OIDCFlowRequest with default values where they can be omitted
 func NewOIDCFlowRequest() *OIDCFlowRequest {
 	return &OIDCFlowRequest{
-		OIDCFlowRequest: api.OIDCFlowRequest{
-			GeneralMytokenRequest: api.GeneralMytokenRequest{
-				Capabilities: api.Capabilities{api.CapabilityAT},
-			},
-		},
-		ResponseType: model.ResponseTypeToken,
-		clientType:   api.ClientTypeNative,
-		GrantType:    -1,
+		GeneralMytokenRequest: *profiled.NewGeneralMytokenRequest(),
+		// clientType:            api.ClientTypeNative,
 	}
 }
 
+/*
 // SetRedirectType sets the (hidden) redirect type
 func (r *OIDCFlowRequest) SetRedirectType(redirect string) {
 	r.clientType = redirect
@@ -91,7 +107,7 @@ func (r OIDCFlowRequest) ToAuthCodeFlowRequest() AuthCodeFlowRequest { // skipcq
 		RedirectURI:     r.redirectURI,
 	}
 }
-
+*/
 // Scan implements the sql.Scanner interface
 func (r *OIDCFlowRequest) Scan(src interface{}) error {
 	v, ok := src.([]byte)

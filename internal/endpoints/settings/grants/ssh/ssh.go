@@ -20,6 +20,7 @@ import (
 	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/polling"
 	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/model/profiled"
 	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
@@ -194,21 +195,27 @@ func handleAddSSHSettingsCallback(
 		}
 	}
 
-	mytokenReq := my.OIDCFlowRequest{
-		OIDCFlowRequest: api.OIDCFlowRequest{
-			GeneralMytokenRequest: api.GeneralMytokenRequest{
-				Issuer:       mt.OIDCIssuer,
-				GrantType:    api.GrantTypeOIDCFlow,
-				Capabilities: req.Capabilities,
-				Name:         embedSSHKeyNameInMTName(req.Name),
+	mytokenReq := &my.AuthCodeFlowRequest{
+		OIDCFlowRequest: my.OIDCFlowRequest{
+			GeneralMytokenRequest: profiled.GeneralMytokenRequest{
+				GeneralMytokenRequest: api.GeneralMytokenRequest{
+					Issuer: mt.OIDCIssuer,
+					Name:   embedSSHKeyNameInMTName(req.Name),
+				},
+				Restrictions: profiled.Restrictions{Restrictions: req.Restrictions},
+				Capabilities: profiled.Capabilities{Capabilities: req.Capabilities},
+				GrantType:    model.GrantTypeOIDCFlow,
+				ResponseType: model.ResponseTypeToken,
+			},
+			OIDCFlowAttrs: my.OIDCFlowAttrs{
+				OIDCFlow: model.OIDCFlowAuthorizationCode,
 			},
 		},
-		OIDCFlow:     model.OIDCFlowAuthorizationCode,
-		Restrictions: req.Restrictions,
-		ResponseType: model.ResponseTypeToken,
+		AuthCodeFlowAttrs: my.AuthCodeFlowAttrs{
+			ClientType: api.ClientTypeNative,
+		},
 	}
-	mytokenReq.SetRedirectType(api.ClientTypeNative)
-	res := authcode.StartAuthCodeFlow(ctx, &mytokenReq)
+	res := authcode.StartAuthCodeFlow(ctx, mytokenReq)
 	if res.Status >= 400 {
 		return nil, res
 	}

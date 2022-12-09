@@ -116,9 +116,11 @@ func UpdateTokenInfoByState(
 			if err != nil {
 				return err
 			}
-			info.Restrictions = r
-			info.Capabilities = c
-			info.Rotation = rot
+			info.Restrictions.Restrictions = r
+			info.Capabilities.Capabilities = c
+			if rot != nil {
+				info.Rotation.Rotation = *rot
+			}
 			info.Name = tokenName
 			_, err = tx.Exec(
 				`CALL AuthInfo_Update(?,?)`,

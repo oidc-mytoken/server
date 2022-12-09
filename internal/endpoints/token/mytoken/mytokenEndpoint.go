@@ -16,11 +16,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
 
-var defaultCapabilities = api.Capabilities{
-	api.CapabilityAT,
-	api.CapabilityTokeninfo,
-}
-
 // HandleMytokenEndpoint handles requests on the mytoken endpoint
 func HandleMytokenEndpoint(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
@@ -62,14 +57,16 @@ func handleOIDCFlow(ctx *fiber.Ctx) error {
 			Response: api.ErrorUnknownIssuer,
 		}.Send(ctx)
 	}
-	if len(req.Capabilities) == 0 {
-		req.Capabilities = defaultCapabilities
+	if len(req.Capabilities.Capabilities) == 0 {
+		req.Capabilities.Capabilities = api.DefaultCapabilities
 	}
 	switch req.OIDCFlow {
 	case model.OIDCFlowAuthorizationCode:
-		return authcode.StartAuthCodeFlow(ctx, req).Send(ctx)
-	// case model.OIDCFlowDevice:
-	// 	return serverModel.ResponseNYI.Send(ctx)
+		authCodeReq := &response.AuthCodeFlowRequest{OIDCFlowRequest: *req}
+		if err := json.Unmarshal(ctx.Body(), authCodeReq); err != nil {
+			return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		}
+		return authcode.StartAuthCodeFlow(ctx, authCodeReq).Send(ctx)
 	default:
 		res := model.Response{
 			Status:   fiber.StatusBadRequest,
