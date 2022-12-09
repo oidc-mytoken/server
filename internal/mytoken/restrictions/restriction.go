@@ -523,11 +523,6 @@ func (r *Restrictions) ReplaceThisIP(ip string) {
 	}
 }
 
-func (r *Restrictions) removeIndex(i int) { // skipcq SCC-U1000
-	copy((*r)[i:], (*r)[i+1:]) // Shift r[i+1:] left one index.
-	*r = (*r)[:len(*r)-1]      // Truncate slice.
-}
-
 func (r *Restriction) isTighterThan(b *Restriction) bool {
 	if r.NotBefore < b.NotBefore {
 		return false
