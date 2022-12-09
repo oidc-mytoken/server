@@ -371,12 +371,9 @@ github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRW
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/oidc-mytoken/api v0.9.1/go.mod h1:DBIlUbaIgGlf607VZx8zFC97VR3WNN0kaMVO1AqyTdE=
-github.com/oidc-mytoken/api v0.9.2-0.20221125114557-91c7bae719ca h1:Az8gcUKX98Yh48RSxMHEioy0KdJaOvJVCpTtW+tcLR8=
 github.com/oidc-mytoken/api v0.9.2-0.20221125114557-91c7bae719ca/go.mod h1:DBIlUbaIgGlf607VZx8zFC97VR3WNN0kaMVO1AqyTdE=
-github.com/oidc-mytoken/api v0.9.2-0.20221205154634-0c914eb8569d h1:cAP+SXYJMkiwJhWpj4YCjL5OuJ8+OMaxRW8eDdBh1Cg=
-github.com/oidc-mytoken/api v0.9.2-0.20221205154634-0c914eb8569d/go.mod h1:DBIlUbaIgGlf607VZx8zFC97VR3WNN0kaMVO1AqyTdE=
-github.com/oidc-mytoken/api v0.9.2-0.20221206150536-622279e60417 h1:f3Wb4/6m2TbPq5VEbehpY8NgRWK6Txah0kPAu12VvTs=
-github.com/oidc-mytoken/api v0.9.2-0.20221206150536-622279e60417/go.mod h1:DBIlUbaIgGlf607VZx8zFC97VR3WNN0kaMVO1AqyTdE=
+github.com/oidc-mytoken/api v0.9.2-0.20221209082828-a2b167ffec41 h1:9YYK5NmynqDontawj+GiiNTJ5haT/Z0/ju3ra0LVrWQ=
+github.com/oidc-mytoken/api v0.9.2-0.20221209082828-a2b167ffec41/go.mod h1:DBIlUbaIgGlf607VZx8zFC97VR3WNN0kaMVO1AqyTdE=
 github.com/oidc-mytoken/lib v0.6.2-0.20221125141521-dae7f2a63fc2 h1:ygQMfCtOGnZxsW7cAhBZCSfGgg3qcfvPVkc2Wq+0L4A=
 github.com/oidc-mytoken/lib v0.6.2-0.20221125141521-dae7f2a63fc2/go.mod h1:U0mC1zWdWKYPekoNTYSQZB5SHFk4fPz+JhfPgWs4TTs=
 github.com/oidc-mytoken/utils v0.1.0 h1:Ia60CYjVzs4X35twdAB1NTXDyYjxe/IWDI/MkcvQHnc=

@@ -29,6 +29,7 @@ func getProvidersFromConfig() (providers []api.SupportedProviderConfig) {
 		providers = append(
 			providers, api.SupportedProviderConfig{
 				Issuer:          p.Issuer,
+				Name:            p.Name,
 				ScopesSupported: p.Scopes,
 			},
 		)
