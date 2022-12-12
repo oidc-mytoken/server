@@ -4,6 +4,7 @@ stages:
   - test
   - lint
   - release
+  - deploy
 
 default:
   tags:
@@ -79,7 +80,7 @@ prerelease:
     - docker run --rm curlimages/curl -d "repo=github.com/oidc-mytoken/server" https://goreportcard.com/checks
 
 deploy-dev:
-  stage: release
+  stage: deploy
   before_script:
     - mkdir -p /root/.ssh
     - cp $KNOWN_HOSTS /root/.ssh/known_hosts
