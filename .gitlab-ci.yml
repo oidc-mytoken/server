@@ -77,3 +77,13 @@ prerelease:
     - .gitlab-ci-scripts/upload.sh
   after_script:
     - docker run --rm curlimages/curl -d "repo=github.com/oidc-mytoken/server" https://goreportcard.com/checks
+
+deploy-dev:
+  stage: release
+  before_script:
+    - mkdir -p /root/.ssh
+    - cp $KNOWN_HOSTS /root/.ssh/known_hosts
+    - cp $DEPLOYMENT_SSH_KEY /root/.ssh/id_ed25519 && chmod 0600 /root/.ssh/id_ed25519
+  script:
+    - ssh mytoken-dev.vm.fedcloud.eu
+
