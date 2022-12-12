@@ -22,6 +22,9 @@ type GeneralMytokenRequest struct {
 // NewGeneralMytokenRequest creates a GeneralMytokenRequest with default values
 func NewGeneralMytokenRequest() *GeneralMytokenRequest {
 	return &GeneralMytokenRequest{
+		GeneralMytokenRequest: api.GeneralMytokenRequest{
+			ResponseType: api.ResponseTypeToken,
+		},
 		ResponseType: model.ResponseTypeToken,
 		GrantType:    -1,
 	}
@@ -43,5 +46,7 @@ func (r *GeneralMytokenRequest) UnmarshalJSON(bytes []byte) error {
 	if len(r.Capabilities.Capabilities) == 0 {
 		r.Capabilities.Capabilities = api.DefaultCapabilities
 	}
+	r.ResponseType = model.NewResponseType(p.ResponseType)
+	r.GrantType = model.NewGrantType(p.GrantType)
 	return nil
 }
