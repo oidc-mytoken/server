@@ -31,6 +31,8 @@
   - This also allows to obtain history for expired tokens (by using a mytoken with the `manage_mytokens:list`
     capability) for a longer time.
   - Mytokens are still directly deleted when revoked.
+- Requests from private IPs (e.g. from within the same entwork where the server is located) are now geolocated to
+  the country where the server stands.
 
 ### API
 
