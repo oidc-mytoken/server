@@ -33,6 +33,9 @@
   - Mytokens are still directly deleted when revoked.
 - Requests from private IPs (e.g. from within the same entwork where the server is located) are now geolocated to
   the country where the server stands.
+- The 'Create Mytoken' tab in the webitnerface now supports an `r` query parameter that takes a base64 encoded
+  request from which the form is prefilled.
+  - This allows 'create-a-mytoken-with-these-properties' links.
 
 ### API
 

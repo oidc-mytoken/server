@@ -22,9 +22,46 @@ function initCreateMT(...next) {
     initCapabilities(mtPrefix);
     checkCapability("tokeninfo", mtPrefix);
     checkCapability("AT", mtPrefix);
-    updateRotationIcon(mtPrefix);
     initRestr(mtPrefix);
+    fillPropertiesFromQuery();
+    updateRotationIcon(mtPrefix);
     doNext(...next);
+}
+
+function fillPropertiesFromQuery() {
+    const params = new Proxy(new URLSearchParams(window.location.search), {
+        get: (searchParams, prop) => searchParams.get(prop),
+    });
+    const base64 = params.r;
+    const req_str = window.atob(base64);
+    console.log(req_str);
+    const req = JSON.parse(req_str);
+
+    if (req.name !== undefined) {
+        $('#tokenName').val(req.name);
+    }
+    if (req.oidc_issuer !== undefined) {
+        $mtOIDCIss.val(req.oidc_issuer);
+    }
+    if (req.restrictions !== undefined) {
+        setRestrictionsData(req.restrictions, mtPrefix);
+        RestrToGUI(mtPrefix);
+    }
+    if (req.response_type !== undefined) {
+        $('#select-token-type').val(req.response_type);
+    }
+    if (req.rotation !== undefined) {
+        rotationAT(mtPrefix).prop("checked", req.rotation.on_AT || false);
+        rotationOther(mtPrefix).prop("checked", req.rotation.on_other || false);
+        rotationLifetime(mtPrefix).val(req.rotation.lifetime);
+        rotationAutoRevoke(mtPrefix).prop("checked", req.rotation.auto_revoke || false);
+    }
+    if (req.capabilities !== undefined) {
+        capabilityChecks(mtPrefix).prop("checked", false);
+        req.capabilities.forEach(function (c) {
+            checkCapability(c, mtPrefix);
+        });
+    }
 }
 
 $mtOIDCIss.on('change', function () {
