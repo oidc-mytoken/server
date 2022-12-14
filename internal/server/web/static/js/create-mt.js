@@ -33,6 +33,9 @@ function fillPropertiesFromQuery() {
         get: (searchParams, prop) => searchParams.get(prop),
     });
     const base64 = params.r;
+    if (base64 == undefined) {
+        return;
+    }
     const req_str = window.atob(base64);
     console.log(req_str);
     const req = JSON.parse(req_str);
