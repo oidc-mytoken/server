@@ -1,0 +1,28 @@
+{{#FromUsage}}
+    A mytoken that will expire soon was just used, and you have subscribed to be notified before it expires.
+{{/FromUsage}}
+{{^FromUsage}}
+    One of your mytokens will expire soon, and you have subscribed to be notified before it expires.
+{{/FromUsage}}
+
+Your mytoken with the name '{{Name}}' will expire in {{ExpiresIn}}.
+Here is some data about this mytoken:
+
+{{#Name}}
+    Name: {{Name}}
+{{/Name}}
+Created: {{Created}}
+Expires: {{ExpiresAt}}
+
+If you want to create a new mytoken with the same properties you have the following options:
+{{#FromUsage}}
+    - Create a new mytoken with the same properties at {{RecreateURL}}
+{{/FromUsage}}
+{{^FromUsage}}
+    - Paste the mytoken at {{TokeninfoURL}} and click on the 'Create a mytoken with the same properties' button.
+    - Create a new mytoken at {{CreateMTURL}} and select the properties you want
+{{/FromUsage}}
+Additionaly, you can unsubscribe from further notifications at {{UnsubscribeURL}}.
+
+Kind regards,
+the mytoken notification service.

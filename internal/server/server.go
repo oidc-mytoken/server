@@ -15,6 +15,7 @@ import (
 	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/db/notificationsrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints"
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration"
 	"github.com/oidc-mytoken/server/internal/endpoints/consent"
@@ -123,6 +124,11 @@ func addWebRoutes(s fiber.Router) {
 }
 
 func start(s *fiber.App) {
+	if config.Get().Features.Notifications.SchedulerNeeded {
+		go notificationsrepo.NotificationScheduler()
+		go notificationsrepo.NotificationScheduler()
+		go notificationsrepo.NotificationScheduler()
+	}
 	if config.Get().Features.SSH.Enabled {
 		go ssh.Serve()
 	}

@@ -141,13 +141,20 @@ type featuresConf struct {
 	DisabledRestrictionKeys model2.RestrictionClaims `yaml:"unsupported_restrictions"`
 	SSH                     sshConf                  `yaml:"ssh"`
 	ServerProfiles          serverProfilesConf       `yaml:"server_profiles"`
+	Notifications           notificationConf         `yaml:"notifications"`
 }
 
 func (c *featuresConf) validate() error {
 	if err := c.OIDCFlows.validate(); err != nil {
 		return err
 	}
-	return c.ServerProfiles.validate()
+	if err := c.ServerProfiles.validate(); err != nil {
+		return err
+	}
+	if err := c.Notifications.validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 type oidcFlowsConf struct {
@@ -210,6 +217,46 @@ func (g profileGroupsCredentials) validate() error {
 		}
 	}
 	return nil
+}
+
+type notificationConf struct {
+	AnyEnabled      bool                      `yaml:"-"`
+	SchedulerNeeded bool                      `yaml:"-"`
+	Mail            mailNotificationConf      `yaml:"email"`
+	Websocket       websocketNotificationConf `yaml:"ws"`
+	ICS             icsNotificationConf       `yaml:"ics"`
+	ICAL            icalNotificationConf      `yaml:"ical"`
+}
+
+func (c *notificationConf) validate() error {
+	c.AnyEnabled = true || c.Mail.Enabled || c.Websocket.Enabled || c.ICS.Enabled || c.ICAL.Enabled
+	c.SchedulerNeeded = true || c.Mail.Enabled || c.Websocket.Enabled
+	return nil
+	//TODO
+}
+
+type mailNotificationConf struct {
+	Enabled    bool           `yaml:"enabled"`
+	MailServer mailServerConf `yaml:"mail_server"`
+}
+
+type mailServerConf struct {
+	Host        string `yaml:"host"`
+	Username    string `yaml:"user"`
+	Password    string `yaml:"password"`
+	FromAddress string `yaml:"from_address"`
+}
+
+type websocketNotificationConf struct {
+	onlyEnable
+}
+
+type icsNotificationConf struct {
+	onlyEnable
+}
+
+type icalNotificationConf struct {
+	onlyEnable
 }
 
 type tokeninfoConfig struct {
@@ -304,8 +351,9 @@ type serverConf struct {
 	TLS    tlsConf `yaml:"tls"`
 	Secure bool    `yaml:"-"` // Secure indicates if the connection to the mytoken server is secure. This is
 	// independent of TLS, e.g. a Proxy can be used.
-	ProxyHeader string      `yaml:"proxy_header"`
-	Limiter     limiterConf `yaml:"request_limits"`
+	ProxyHeader  string      `yaml:"proxy_header"`
+	Limiter      limiterConf `yaml:"request_limits"`
+	SingleServer bool        `yaml:"single_server"`
 }
 
 type limiterConf struct {
