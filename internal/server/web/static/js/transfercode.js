@@ -1,3 +1,5 @@
+const $tcInput = $('#tc-input');
+
 function createTransferCode(token, okCallback, errCallback, endpoint = "") {
     let data = {'mytoken': token};
     data = JSON.stringify(data);
@@ -20,7 +22,7 @@ function createTransferCode(token, okCallback, errCallback, endpoint = "") {
 }
 
 function exchangeTransferCode() {
-    let tc = $('#tc-input').val();
+    let tc = $tcInput.val();
     $.ajax({
         type: "POST",
         url: storageGet("mytoken_endpoint"),
@@ -41,3 +43,10 @@ function exchangeTransferCode() {
         contentType: "application/json"
     });
 }
+
+$tcInput.on('keyup', function (e) {
+    if (e.keyCode === 13) { // Enter
+        e.preventDefault();
+        exchangeTransferCode();
+    }
+})
