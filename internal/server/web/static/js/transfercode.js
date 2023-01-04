@@ -30,7 +30,7 @@ function exchangeTransferCode() {
         }),
         success: function (data) {
             let token = data['mytoken'];
-            storageSet("tokeninfo_token", token, true);
+            storageSet("tokeninfo_token", token);
             $('#info-tab').click();
         },
         error: function (errRes) {

@@ -18,12 +18,16 @@ function storageGet(key) {
     return JSON.parse(v);
 }
 
-function storagePop(key, session = false) {
+function storagePop(key) {
     let v = storageGet(key);
-    storageSet(key, "", session);
+    storageSet(key, "");
     return v;
 }
 
-function storageSet(key, value, session = false) {
-    return _storage(session).setItem(key, JSON.stringify(value));
+function storageSet(key, value) {
+    return _storage(true).setItem(key, JSON.stringify(value));
+}
+
+function storageClear() {
+    _storage(true).clear();
 }
