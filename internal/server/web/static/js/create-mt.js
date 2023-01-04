@@ -1,17 +1,47 @@
-const mtResult = $('#mt-result');
-const mtResultColor = $('#mt-result-color');
 const mtConfig = $('#mt-config');
-const mtPendingHeading = $('#mt-result-heading-pending');
-const mtPendingSpinner = $('#mt-pending-spinner');
-const mtSuccessHeading = $('#mt-result-heading-success');
-const mtErrorHeading = $('#mt-result-heading-error');
-const mtResultMsg = $('#mt-result-msg');
-const mtCopyButton = $('#mt-result-copy');
-const authURL = $('#authorization-url');
+const mtResult = $('#mt-result');
 const maxTokenLenDiv = $('#max_token_len_div');
-const tokenTypeBadge = $('#token-badge');
-const $mtInstructions = $('#mt-instructions');
 const $mtOIDCIss = $('#mt-oidc-iss');
+
+function mtResultColor(prefix = "") {
+    return $(prefixId('mt-result-color', prefix));
+}
+
+function mtPendingHeading(prefix = "") {
+    return $(prefixId('mt-result-heading-pending', prefix));
+}
+
+function mtPendingSpinner(prefix = "") {
+    return $(prefixId('mt-pending-spinner', prefix));
+}
+
+function mtSuccessHeading(prefix = "") {
+    return $(prefixId('mt-result-heading-success', prefix));
+}
+
+function mtErrorHeading(prefix = "") {
+    return $(prefixId('mt-result-heading-error', prefix));
+}
+
+function mtResultMsg(prefix = "") {
+    return $(prefixId('mt-result-msg', prefix));
+}
+
+function mtCopyButton(prefix = "") {
+    return $(prefixId('mt-result-copy', prefix));
+}
+
+function authURL(prefix = "") {
+    return $(prefixId('authorization-url', prefix));
+}
+
+function tokenTypeBadge(prefix = "") {
+    return $(prefixId('token-badge', prefix));
+}
+
+function mtInstructions(prefix = "") {
+    return $(prefixId('mt-instructions', prefix));
+}
 
 const mtPrefix = "createMT-";
 
@@ -37,7 +67,6 @@ function fillPropertiesFromQuery() {
         return;
     }
     const req_str = window.atob(base64);
-    console.log(req_str);
     const req = JSON.parse(req_str);
 
     if (req.name !== undefined) {
@@ -115,20 +144,20 @@ function sendCreateMTReq() {
             let url = res['consent_uri'];
             let code = res['polling_code'];
             let interval = res['interval'];
-            authURL.attr("href", url);
-            authURL.text(url);
-            $mtInstructions.showB();
+            authURL(mtPrefix).attr("href", url);
+            authURL(mtPrefix).text(url);
+            mtInstructions(mtPrefix).showB();
             polling(code, interval);
             window.open(url, '_blank');
         },
         error: function (errRes) {
             let errMsg = getErrorMessage(errRes);
-            mtShowError(errMsg);
+            mtShowError(errMsg, mtPrefix);
         },
         dataType: "json",
         contentType: "application/json"
     });
-    mtShowPending();
+    mtShowPending(mtPrefix);
     mtResult.showB();
     mtConfig.hideB();
 }
@@ -155,45 +184,49 @@ $('#get-mt').on('click', function () {
     sendCreateMTReq();
 })
 
-function mtShowPending() {
-    mtPendingHeading.showB();
-    mtPendingSpinner.showB();
-    mtSuccessHeading.hideB();
-    mtErrorHeading.hideB();
-    mtCopyButton.hideB();
-    mtResultMsg.text('');
-    mtResultColor.addClass('alert-warning');
-    mtResultColor.removeClass('alert-success');
-    mtResultColor.removeClass('alert-danger');
+function mtShowPending(prefix = "") {
+    mtPendingHeading(prefix).showB();
+    mtPendingSpinner(prefix).showB();
+    mtSuccessHeading(prefix).hideB();
+    mtErrorHeading(prefix).hideB();
+    mtCopyButton(prefix).hideB();
+    mtResultMsg(prefix).text('');
+    mtResultColor(prefix).addClass('alert-warning');
+    mtResultColor(prefix).removeClass('alert-success');
+    mtResultColor(prefix).removeClass('alert-danger');
 }
 
-function mtShowSuccess(msg) {
-    mtPendingHeading.hideB();
-    mtPendingSpinner.hideB();
-    mtSuccessHeading.showB();
-    mtErrorHeading.hideB();
-    mtCopyButton.showB();
-    mtResultMsg.text(msg);
-    mtResultColor.addClass('alert-success');
-    mtResultColor.removeClass('alert-warning');
-    mtResultColor.removeClass('alert-danger');
+function mtShowSuccess(msg, prefix = "") {
+    mtPendingHeading(prefix).hideB();
+    mtPendingSpinner(prefix).hideB();
+    mtSuccessHeading(prefix).showB();
+    mtErrorHeading(prefix).hideB();
+    if (msg.length > 0) {
+        mtCopyButton(prefix).showB();
+    } else {
+        mtCopyButton(prefix).hideB();
+    }
+    mtResultMsg(prefix).text(msg);
+    mtResultColor(prefix).addClass('alert-success');
+    mtResultColor(prefix).removeClass('alert-warning');
+    mtResultColor(prefix).removeClass('alert-danger');
 }
 
-function mtShowError(msg) {
-    mtPendingHeading.hideB();
-    mtPendingSpinner.hideB();
-    mtSuccessHeading.hideB();
-    mtErrorHeading.showB();
-    mtCopyButton.showB();
-    mtResultMsg.text(msg);
-    mtResultColor.addClass('alert-danger');
-    mtResultColor.removeClass('alert-success');
-    mtResultColor.removeClass('alert-warning');
+function mtShowError(msg, prefix = "") {
+    mtPendingHeading(prefix).hideB();
+    mtPendingSpinner(prefix).hideB();
+    mtSuccessHeading(prefix).hideB();
+    mtErrorHeading(prefix).showB();
+    mtCopyButton(prefix).showB();
+    mtResultMsg(prefix).text(msg);
+    mtResultColor(prefix).addClass('alert-danger');
+    mtResultColor(prefix).removeClass('alert-success');
+    mtResultColor(prefix).removeClass('alert-warning');
 }
 
 let intervalID;
 
-function polling(code, interval) {
+function polling_with_callback(code, interval, okCallback, errCallback) {
     interval = interval ? interval * 1000 : 5000;
     let data = {
         "grant_type": "polling_code",
@@ -206,55 +239,66 @@ function polling(code, interval) {
             url: storageGet("mytoken_endpoint"),
             data: data,
             success: function (res) {
-                let token_type = res['mytoken_type'];
-                let token = res['mytoken'];
-                switch (token_type) {
-                    case "short_token":
-                        tokenTypeBadge.text("Short Token");
-                        break;
-                    case "transfer_code":
-                        tokenTypeBadge.text("Transfer Code");
-                        token = res['transfer_code'];
-                        break;
-                    case "token":
-                    default:
-                        tokenTypeBadge.text("JWT");
-                }
-                storageSet("tokeninfo_token", token, true);
+                okCallback(res);
                 window.clearInterval(intervalID);
-                mtResult.hideB();
-                mtConfig.showB();
-                $('#info-tab').click();
             },
             error: function (errRes) {
-                let error = errRes.responseJSON['error'];
-                let message;
-                switch (error) {
-                    case "authorization_pending":
-                        // message = "Authorization still pending.";
-                        mtShowPending();
-                        return;
-                    case "access_denied":
-                        message = "You denied the authorization request.";
-                        break;
-                    case "expired_token":
-                        message = "Code expired. You might want to restart the flow.";
-                        break;
-                    case "invalid_grant":
-                    case "invalid_token":
-                        message = "Code already used.";
-                        break;
-                    case "undefined":
-                        message = "No response from server";
-                        break;
-                    default:
-                        message = getErrorMessage(errRes);
-                        break;
+                if (!errCallback(errRes)) {
+                    window.clearInterval(intervalID);
                 }
-                window.clearInterval(intervalID);
-                mtShowError(message)
             }
         });
     }, interval);
+}
+
+
+function polling(code, interval) {
+    polling_with_callback(code, interval, function (res) {
+        let token_type = res['mytoken_type'];
+        let token = res['mytoken'];
+        switch (token_type) {
+            case "short_token":
+                tokenTypeBadge(mtPrefix).text("Short Token");
+                break;
+            case "transfer_code":
+                tokenTypeBadge(mtPrefix).text("Transfer Code");
+                token = res['transfer_code'];
+                break;
+            case "token":
+            default:
+                tokenTypeBadge(mtPrefix).text("JWT");
+        }
+        storageSet("tokeninfo_token", token);
+        mtResult.hideB();
+        mtConfig.showB();
+        $('#info-tab').click();
+    }, function (errRes) {
+        let error = errRes.responseJSON['error'];
+        let message;
+        switch (error) {
+            case "authorization_pending":
+                // message = "Authorization still pending.";
+                mtShowPending(mtPrefix);
+                return true;
+            case "access_denied":
+                message = "You denied the authorization request.";
+                break;
+            case "expired_token":
+                message = "Code expired. You might want to restart the flow.";
+                break;
+            case "invalid_grant":
+            case "invalid_token":
+                message = "Code already used.";
+                break;
+            case "undefined":
+                message = "No response from server";
+                break;
+            default:
+                message = getErrorMessage(errRes);
+                break;
+        }
+        mtShowError(message, mtPrefix);
+        return false;
+    });
 }
 
