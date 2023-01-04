@@ -11,47 +11,47 @@ function capRWModes(prefix = "") {
 }
 
 function capabilityCreateMytoken(prefix = "") {
-    return $('#' + prefix + 'cp-create_mytoken');
+    return $(prefixId('cp-create_mytoken', prefix));
 }
 
 function capabilityRevokeAnyToken(prefix = "") {
-    return $('#' + prefix + 'cp-revoke_any_token');
+    return $(prefixId('cp-revoke_any_token', prefix));
 }
 
 function capabilityAT(prefix = "") {
-    return $('#' + prefix + 'cp-AT');
+    return $(prefixId('cp-AT', prefix));
 }
 
 function capSummaryAT(prefix = "") {
-    return $('#' + prefix + 'cap-summary-AT');
+    return $(prefixId('cap-summary-AT', prefix));
 }
 
 function capSummaryMT(prefix = "") {
-    return $('#' + prefix + 'cap-summary-MT');
+    return $(prefixId('cap-summary-MT', prefix));
 }
 
 function capSummaryInfo(prefix = "") {
-    return $('#' + prefix + 'cap-summary-info');
+    return $(prefixId('cap-summary-info', prefix));
 }
 
 function capSummaryMOM(prefix = "") {
-    return $('#' + prefix + 'cap-summary-mom');
+    return $(prefixId('cap-summary-mom', prefix));
 }
 
 function capSummarySettings(prefix = "") {
-    return $('#' + prefix + 'cap-summary-settings');
+    return $(prefixId('cap-summary-settings', prefix));
 }
 
 function capSummaryHowManyGreen(prefix = "") {
-    return $('#' + prefix + 'cap-summary-count-green');
+    return $(prefixId('cap-summary-count-green', prefix));
 }
 
 function capSummaryHowManyYellow(prefix = "") {
-    return $('#' + prefix + 'cap-summary-count-yellow');
+    return $(prefixId('cap-summary-count-yellow', prefix));
 }
 
 function capSummaryHowManyRed(prefix = "") {
-    return $('#' + prefix + 'cap-summary-count-red');
+    return $(prefixId('cap-summary-count-red', prefix));
 }
 
 
