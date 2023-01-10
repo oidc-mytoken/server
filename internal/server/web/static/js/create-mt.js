@@ -53,9 +53,75 @@ function initCreateMT(...next) {
     checkCapability("tokeninfo", mtPrefix);
     checkCapability("AT", mtPrefix);
     initRestr(mtPrefix);
-    fillPropertiesFromQuery();
     updateRotationIcon(mtPrefix);
+    initProfileSupport();
+    fillPropertiesFromQuery();
     doNext(...next);
+}
+
+function fillGUIWithMaybeTemplate(data, template_type, set_in_gui, prefix = "") {
+    if (!is_string(data)) {
+        set_in_gui(data, prefix);
+        return;
+    }
+    data = data.replace(/^@/, '');
+    if (!data.includes('/')) {
+        data = `_/${data}`;
+    }
+    let $select = $(prefixId(`${template_type}-template`, prefix));
+    select_set_value_by_option_name($select, data);
+    $select.trigger('change');
+}
+
+
+function initProfileSupport() {
+    rot_enableProfileSupport(mtPrefix);
+    cap_enableProfileSupport(mtPrefix);
+    restr_enableProfileSupport(mtPrefix);
+
+    let $template_select = $(prefixId(`profile-template`, mtPrefix));
+    $template_select.on('change', function () {
+        const v = $(this).val();
+        if (v === null || v === "") {
+            return;
+        }
+        const payload = JSON.parse(v);
+        fillGUIFromRequestData(payload);
+        $(prefixId('cap-template', mtPrefix)).val("");
+        $(prefixId('rot-template', mtPrefix)).val("");
+        $(prefixId('restr-template', mtPrefix)).val("");
+    });
+    let $checks = $(`.any-profile-input[instance-prefix=${mtPrefix}]`);
+    $checks.add($(`.any-restr-input[instance-prefix=${mtPrefix}]`));
+    $checks.add($(`.any-rot-input[instance-prefix=${mtPrefix}]`));
+    $checks.add(capabilityChecks(mtPrefix));
+    $checks.on('change change.datetimepicker', function (e) {
+        if (e.type === 'change.datetimepicker' && datetimepickerChangeTriggeredFromJS) {
+            return;
+        }
+        $template_select.val(""); // reset template selection to custom if something is changed
+    });
+    select_set_value_by_option_name($template_select, "_/web-default");
+    $template_select.trigger('change');
+}
+
+function fillGUIFromRequestData(req) {
+    if (req === undefined || req === null) {
+        return;
+    }
+    if (req.name !== undefined) {
+        $('#tokenName').val(req.name);
+    }
+    if (req.oidc_issuer !== undefined) {
+        $mtOIDCIss.val(req.oidc_issuer);
+    }
+    if (req.response_type !== undefined) {
+        $('#select-token-type').val(req.response_type);
+    }
+    fillGUIWithMaybeTemplate(req.restrictions, "restr", set_restrictions_in_gui, mtPrefix);
+    fillGUIWithMaybeTemplate(req.rotation, "rot", set_rotation_in_gui, mtPrefix);
+    fillGUIWithMaybeTemplate(req.capabilities, "cap", set_capabilities_in_gui, mtPrefix);
+
 }
 
 function fillPropertiesFromQuery() {
@@ -68,32 +134,7 @@ function fillPropertiesFromQuery() {
     }
     const req_str = window.atob(base64);
     const req = JSON.parse(req_str);
-
-    if (req.name !== undefined) {
-        $('#tokenName').val(req.name);
-    }
-    if (req.oidc_issuer !== undefined) {
-        $mtOIDCIss.val(req.oidc_issuer);
-    }
-    if (req.restrictions !== undefined) {
-        setRestrictionsData(req.restrictions, mtPrefix);
-        RestrToGUI(mtPrefix);
-    }
-    if (req.response_type !== undefined) {
-        $('#select-token-type').val(req.response_type);
-    }
-    if (req.rotation !== undefined) {
-        rotationAT(mtPrefix).prop("checked", req.rotation.on_AT || false);
-        rotationOther(mtPrefix).prop("checked", req.rotation.on_other || false);
-        rotationLifetime(mtPrefix).val(req.rotation.lifetime);
-        rotationAutoRevoke(mtPrefix).prop("checked", req.rotation.auto_revoke || false);
-    }
-    if (req.capabilities !== undefined) {
-        capabilityChecks(mtPrefix).prop("checked", false);
-        req.capabilities.forEach(function (c) {
-            checkCapability(c, mtPrefix);
-        });
-    }
+    fillGUIFromRequestData(req);
 }
 
 $mtOIDCIss.on('change', function () {
