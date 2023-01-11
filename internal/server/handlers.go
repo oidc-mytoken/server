@@ -28,7 +28,7 @@ func handleIndex(ctx *fiber.Ctx) error {
 }
 
 func homeBindingData() map[string]interface{} {
-	providers := []map[string]string{}
+	var providers []map[string]string
 	for _, p := range config.Get().Providers {
 		pp := make(map[string]string, 2)
 		pp["issuer"] = p.Issuer
