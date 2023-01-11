@@ -106,16 +106,16 @@ func profilesBindingData() map[string]interface{} {
 		for _, group := range groups {
 			profilesForGroup, err := dbFunc(log.StandardLogger(), nil, group)
 			if err != nil {
-				log.WithError(err).Error(
-					"error while retrieving profiles of type '%s' for webinterface binding data", pt,
+				log.WithError(err).WithField("profile type", pt).Error(
+					"error while retrieving profiles for webinterface binding data",
 				)
 			}
 			for _, d := range profilesForGroup {
 				payload, err := d.Payload.MarshalJSON()
 				if err != nil {
-					log.WithError(err).Error(
-						"error while marshaling payload while retrieving profiles of type '%s' for webinterface"+
-							" binding data", pt,
+					log.WithError(err).WithField("profile type", pt).Error(
+						"error while marshaling payload while retrieving profiles for webinterface" +
+							" binding data",
 					)
 				}
 				p = append(
