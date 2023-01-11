@@ -86,3 +86,19 @@ function getRotationFromForm(prefix = "") {
         "auto_revoke": rotationAutoRevoke(prefix).prop("checked")
     };
 }
+
+function set_rotation_in_gui(rotation, prefix = "") {
+    if (rotation === undefined) {
+        return;
+    }
+    rotationAT(prefix).prop("checked", rotation.on_AT || false);
+    rotationOther(prefix).prop("checked", rotation.on_other || false);
+    rotationLifetime(prefix).val(rotation.lifetime || 0);
+    rotationAutoRevoke(prefix).prop("checked", rotation.auto_revoke || false);
+    checkRotation(prefix);
+    updateRotationIcon(prefix);
+}
+
+function rot_enableProfileSupport(prefix = "") {
+    _enableProfileSupport("rot", set_rotation_in_gui, prefix);
+}

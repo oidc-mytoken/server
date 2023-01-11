@@ -31,6 +31,9 @@ function getRestrictionsData(prefix = "") {
 }
 
 function setRestrictionsData(data, prefix = "") {
+    if (data.length === 0) {
+        data = [{}];
+    }
     getPrefixData(prefix)['restrictions']['restrictions'] = data;
 }
 

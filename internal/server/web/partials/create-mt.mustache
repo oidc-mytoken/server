@@ -3,10 +3,32 @@
         <div>
             <div class="row">
                 <div class="col-md">
+                    {{#create-with-profiles}}
+                        <div class="alert border border-info">
+                            <h4>Profile</h4>
+                            <label for="{{prefix}}profile-template">Profile</label>
+                            <span class="input-group">
+                                <span class="input-group-prepend">
+                                     <span class="input-group-text bg-my_grey">
+                                             <i class="fas fa-bookmark"></i>
+                                    </span>
+                                </span>
+                                <select id="{{prefix}}profile-template" class="form-control custom-select form-inline">
+                                    <option value="">Custom</option>
+                                    {{#profiles.profile}}
+                                        <option value="{{Payload}}">{{Name}}</option>
+                                    {{/profiles.profile}}
+                                </select>
+                            </span>
+                            <small class="form-text text-muted">Prefill values from a predefined profile.</small>
+                        </div>
+                    {{/create-with-profiles}}
+
                     <div class="alert border border-primary">
                         <h4>OpenID Provider</h4>
                         <label for="mt-oidc-iss">OpenID Provider</label>
-                        <select id="mt-oidc-iss" class="form-control custom-select">
+                        <select id="mt-oidc-iss" class="form-control custom-select any-profile-input"
+                                instance-prefix="{{prefix}}">
                             {{#providers}}
                                 <option value="{{issuer}}">{{name}}</option>
                             {{/providers}}
@@ -19,8 +41,9 @@
                     <div class="form-group alert border">
                         <h4>Token Name</h4>
                         <label for="tokenName">Token Name</label>
-                        <input type="text" class="form-control" id="tokenName" aria-describedby="tokenNameHelp"
-                               placeholder="Name">
+                        <input type="text" class="form-control any-profile-input" id="tokenName"
+                               aria-describedby="tokenNameHelp"
+                               placeholder="Name" instance-prefix="{{prefix}}">
                         <small id="tokenNameHelp" class="form-text text-muted">Give the Mytoken a name, so you can
                             identify it better.</small>
                     </div>
@@ -29,15 +52,16 @@
                         <h4>Token Type</h4>
                         <div>
                             <label for="select-token-type">Mytoken Type</label>
-                            <select id="select-token-type" class="select custom-select" data-live-search="true">
+                            <select id="select-token-type" class="select custom-select any-profile-input"
+                                    data-live-search="true" instance-prefix="{{prefix}}">
                                 <option selected value="token">JWT</option>
                                 <option value="short_token">Short Token</option>
                                 <option value="auto">Depending on size</option>
                             </select>
                             <div id="max_token_len_div" class="d-none">
                                 <label for="max_token_len">Maximum Token Length</label>
-                                <input type="number" class="form-control" id="max_token_len"
-                                       aria-describedby="max_token_len_help" min=0>
+                                <input type="number" class="form-control any-profile-input" id="max_token_len"
+                                       aria-describedby="max_token_len_help" min=0 instance-prefix="{{prefix}}">
                                 <small id="usages_AT_help" class="form-text text-muted">Adapt the mytoken type so that
                                     the returned mytoken is not longer than this value.</small>
                             </div>

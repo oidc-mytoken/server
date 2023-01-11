@@ -57,13 +57,12 @@ function capSummaryHowManyRed(prefix = "") {
 
 function enableCapability(cap, prefix = "") {
     // This function should be called after initCapabilities to preselect / check capabilities
-    // We do it with a click instead of prop("checked", true) because click handles sub-/parent- capabilities correctly.
-    // We first set checked to false ensuring that it was not previously selected
     let $c = $(prefixId(cap, prefix));
     let disabled = $c.prop('disabled');
     $c.prop('disabled', false);
-    $c.prop("checked", false);
-    $c.click();
+    $c.prop("checked", true);
+    checkThisCapability.call($c.get());
+    updateCapSummary(prefix);
     $c.prop('disabled', disabled);
 }
 
@@ -264,4 +263,18 @@ function checkCapability(cap, prefix = "") {
     $mode.prop('disabled', false);
     $mode.bootstrapToggle(rCap ? 'off' : 'on');
     $mode.prop('disabled', disabled);
+}
+
+function set_capabilities_in_gui(capabilities, prefix = "") {
+    if (capabilities === undefined) {
+        return
+    }
+    capabilityChecks(prefix).prop("checked", false);
+    capabilities.forEach(function (c) {
+        checkCapability(c, prefix);
+    });
+}
+
+function cap_enableProfileSupport(prefix = "") {
+    _enableProfileSupport("cap", set_capabilities_in_gui, prefix);
 }

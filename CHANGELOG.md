@@ -19,9 +19,9 @@
 - Webinterface has option to show event history for other mytokens in mytoken list.
 - Webinterface has a new option in the tokeninfo pane to create a new mytoken with the same properties.
 - Added server side `profiles` and `templates`
-  - Currently, cannot be used directly (only obtained through API), but the idea is to integrate this into the API
-    requests, i.e. mytoken requests can include profiles, the capability, restrictions, and rotation claims can use
-    templates (directly or included). This would then also be integrated in the webinterface.
+  - Can be used in the API, i.e. mytoken requests can include profiles, the capability, restrictions, and rotation
+    claims can use templates
+  - Can be used in the webinterface
 
 ### Enhancements
 
