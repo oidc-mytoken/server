@@ -9,7 +9,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/gliderlabs/ssh v0.3.5
 	github.com/go-sql-driver/mysql v1.6.0
-	github.com/gofiber/fiber/v2 v2.39.0
+	github.com/gofiber/fiber/v2 v2.41.0
 	github.com/gofiber/helmet/v2 v2.2.18
 	github.com/gofiber/template v1.7.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -26,7 +26,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
-	github.com/valyala/fasthttp v1.41.0
+	github.com/valyala/fasthttp v1.43.0
 	golang.org/x/crypto v0.5.0
 	golang.org/x/mod v0.7.0
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
@@ -50,7 +50,7 @@ require (
 	github.com/lestrrat-go/iter v1.0.1 // indirect
 	github.com/lestrrat-go/option v1.0.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.16 // indirect
+	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
