@@ -27,10 +27,10 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
 	github.com/valyala/fasthttp v1.41.0
-	golang.org/x/crypto v0.2.0
+	golang.org/x/crypto v0.5.0
 	golang.org/x/mod v0.7.0
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
-	golang.org/x/term v0.2.0
+	golang.org/x/term v0.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -56,8 +56,8 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	golang.org/x/net v0.2.0 // indirect
-	golang.org/x/sys v0.2.0 // indirect
+	golang.org/x/net v0.5.0 // indirect
+	golang.org/x/sys v0.4.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
