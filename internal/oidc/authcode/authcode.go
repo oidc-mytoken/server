@@ -325,6 +325,10 @@ func createMytokenEntry(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut, token *oauth2.Token,
 	oidcSub string, networkData api.ClientMetaData,
 ) (*mytokenrepo.MytokenEntry, error) {
+	var rot *api.Rotation
+	if authFlowInfo.Rotation != nil {
+		rot = &authFlowInfo.Rotation.Rotation
+	}
 	mte := mytokenrepo.NewMytokenEntry(
 		mytoken.NewMytoken(
 			oidcSub,
@@ -332,7 +336,7 @@ func createMytokenEntry(
 			authFlowInfo.Name,
 			authFlowInfo.Restrictions.Restrictions,
 			authFlowInfo.Capabilities.Capabilities,
-			&authFlowInfo.Rotation.Rotation,
+			rot,
 			unixtime.Now(),
 		),
 		authFlowInfo.Name, networkData,

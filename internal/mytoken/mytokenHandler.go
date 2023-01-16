@@ -254,9 +254,13 @@ func createMytokenEntry(
 			Response: model.BadRequestError("mytoken to be issued cannot have any of the requested capabilities"),
 		}
 	}
+	var rot *api.Rotation
+	if req.Rotation != nil {
+		rot = &req.Rotation.Rotation
+	}
 	ste := mytokenrepo.NewMytokenEntry(
 		mytoken.NewMytoken(
-			parent.OIDCSubject, parent.OIDCIssuer, req.GeneralMytokenRequest.Name, r, c, &req.Rotation.Rotation,
+			parent.OIDCSubject, parent.OIDCIssuer, req.GeneralMytokenRequest.Name, r, c, rot,
 			parent.AuthTime,
 		),
 		req.GeneralMytokenRequest.Name, networkData,

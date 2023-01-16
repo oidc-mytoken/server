@@ -23,7 +23,7 @@ func HandleMytokenEndpoint(ctx *fiber.Ctx) error {
 	if err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	rlog.WithField("grant_type", grantType).Trace("Received mytoken request")
+	rlog.WithField("grant_type", grantType.String()).Trace("Received mytoken request")
 	switch grantType {
 	case model.GrantTypeMytoken:
 		return mytoken.HandleMytokenFromMytoken(ctx).Send(ctx)
@@ -47,7 +47,7 @@ func HandleMytokenEndpoint(ctx *fiber.Ctx) error {
 
 func handleOIDCFlow(ctx *fiber.Ctx) error {
 	req := response.NewOIDCFlowRequest()
-	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
+	if err := json.Unmarshal(ctx.Body(), req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	_, ok := config.Get().ProviderByIssuer[req.Issuer]
