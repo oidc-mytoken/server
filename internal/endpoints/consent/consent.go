@@ -81,7 +81,7 @@ func getAuthInfoFromConsentCodeStr(rlog log.Ext1FieldLogger, code string) (
 
 // HandleCreateConsent returns a consent page for the posted parameters
 func HandleCreateConsent(ctx *fiber.Ctx) error {
-	req := pkg.ConsentRequest{}
+	req := pkg2.NewMytokenRequest()
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
@@ -93,22 +93,16 @@ func HandleCreateConsent(ctx *fiber.Ctx) error {
 	}
 	rlog := logger.GetRequestLogger(ctx)
 	mt, _ := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
-	r, _ := restrictions.Tighten(rlog, mt.Restrictions, req.Restrictions)
-	c := api.TightenCapabilities(mt.Capabilities, req.Capabilities)
+	r, _ := restrictions.Tighten(rlog, mt.Restrictions, req.Restrictions.Restrictions)
+	c := api.TightenCapabilities(mt.Capabilities, req.Capabilities.Capabilities)
 	info := &pkg2.OIDCFlowRequest{
 		GeneralMytokenRequest: profiled.GeneralMytokenRequest{
-			GeneralMytokenRequest: api.GeneralMytokenRequest{
-				Issuer:          req.Issuer,
-				Name:            req.TokenName,
-				ApplicationName: req.ApplicationName,
-			},
-			Capabilities: profiled.Capabilities{Capabilities: c},
-			Restrictions: profiled.Restrictions{Restrictions: r},
+			GeneralMytokenRequest: req.GeneralMytokenRequest.GeneralMytokenRequest,
+			Capabilities:          profiled.Capabilities{Capabilities: c},
+			Restrictions:          profiled.Restrictions{Restrictions: r},
 		},
 	}
-	if req.Rotation != nil {
-		info.Rotation.Rotation = *req.Rotation
-	}
+	info.Rotation = req.Rotation
 	return handleConsent(ctx, info, false)
 }
 

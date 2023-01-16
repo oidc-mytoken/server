@@ -14,7 +14,7 @@ type GeneralMytokenRequest struct {
 	api.GeneralMytokenRequest
 	Restrictions Restrictions       `json:"restrictions,omitempty"`
 	Capabilities Capabilities       `json:"capabilities,omitempty"`
-	Rotation     Rotation           `json:"rotation,omitempty"`
+	Rotation     *Rotation          `json:"rotation,omitempty"`
 	GrantType    model.GrantType    `json:"grant_type"`
 	ResponseType model.ResponseType `json:"response_type"`
 }
@@ -41,7 +41,9 @@ func (r *GeneralMytokenRequest) UnmarshalJSON(bytes []byte) error {
 	r.Restrictions.Restrictions = restrictions.NewRestrictionsFromAPI(p.Restrictions)
 	r.Capabilities.Capabilities = p.Capabilities
 	if p.Rotation != nil {
-		r.Rotation.Rotation = *p.Rotation
+		r.Rotation = &Rotation{
+			Rotation: *p.Rotation,
+		}
 	}
 	if len(r.Capabilities.Capabilities) == 0 {
 		r.Capabilities.Capabilities = api.DefaultCapabilities
