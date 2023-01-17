@@ -65,9 +65,7 @@ function fillGUIWithMaybeTemplate(data, template_type, set_in_gui, prefix = "") 
         return;
     }
     data = data.replace(/^@/, '');
-    if (!data.includes('/')) {
-        data = `_/${data}`;
-    }
+    data = data.replace(/^_\//, '');
     let $select = $(prefixId(`${template_type}-template`, prefix));
     select_set_value_by_option_name($select, data);
     $select.trigger('change');
@@ -92,16 +90,17 @@ function initProfileSupport() {
         $(prefixId('restr-template', mtPrefix)).val("");
     });
     let $checks = $(`.any-profile-input[instance-prefix=${mtPrefix}]`);
-    $checks.add($(`.any-restr-input[instance-prefix=${mtPrefix}]`));
-    $checks.add($(`.any-rot-input[instance-prefix=${mtPrefix}]`));
-    $checks.add(capabilityChecks(mtPrefix));
+    $checks = $checks.add($(`.any-restr-input[instance-prefix=${mtPrefix}]`));
+    $checks = $checks.add($(`.any-rot-input[instance-prefix=${mtPrefix}]`));
+    $checks = $checks.add(capabilityChecks(mtPrefix));
+    console.log($checks);
     $checks.on('change change.datetimepicker', function (e) {
-        if (e.type === 'change.datetimepicker' && datetimepickerChangeTriggeredFromJS) {
+        if ($(e.currentTarget).hasClass('datetimepicker-input') && datetimepickerChangeTriggeredFromJS) {
             return;
         }
         $template_select.val(""); // reset template selection to custom if something is changed
     });
-    select_set_value_by_option_name($template_select, "_/web-default");
+    select_set_value_by_option_name($template_select, "web-default");
     $template_select.trigger('change');
 }
 
