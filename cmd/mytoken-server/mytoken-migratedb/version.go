@@ -114,7 +114,7 @@ func updateCallback(
 func waitUntilAllNodesOnVersion(mytokenNodes []string, version string) {
 	allNodesOnVersion := len(mytokenNodes) == 0
 	for !allNodesOnVersion {
-		tmp := []string{}
+		var tmp []string
 		for _, n := range mytokenNodes {
 			v, err := getVersionForNode(n)
 			if err != nil {

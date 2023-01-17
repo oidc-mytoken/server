@@ -116,7 +116,7 @@ var app = &cli.App{
 		},
 	},
 	Action: func(context *cli.Context) error {
-		mytokenNodes := []string{}
+		var mytokenNodes []string
 		if context.Args().Len() > 0 {
 			mytokenNodes = context.Args().Slice()
 		} else if configFile != "" {

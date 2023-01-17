@@ -28,7 +28,7 @@ func GetSSHInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, keyFP, userHash string) (
 
 // GetAllSSHInfo returns the SSHInfo for all ssh keys for a given user
 func GetAllSSHInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID) (info []api.SSHKeyInfo, err error) {
-	dbInfo := []SSHInfo{}
+	var dbInfo []SSHInfo
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			return errors.WithStack(tx.Select(&dbInfo, `CALL SSHInfo_GetAll(?)`, myid))
