@@ -22,6 +22,7 @@ const (
 	IPHostCache Type = iota
 	IPAddrCache
 	IPNetCache
+	WebProfiles
 )
 
 func k(t Type, key string) string {
@@ -48,7 +49,7 @@ func SetIPParseResult(ipStr string, ip net.IP, ipNet *net.IPNet) {
 	Set(IPNetCache, ipStr, ipNet)
 }
 
-// GetIPParseResult returns the caches result of an ip parsing
+// GetIPParseResult returns the cached result of an ip parsing
 func GetIPParseResult(ipStr string) (net.IP, *net.IPNet, bool) {
 	ip, ipFound := Get(IPAddrCache, ipStr)
 	if !ipFound {

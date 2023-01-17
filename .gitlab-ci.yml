@@ -4,6 +4,7 @@ stages:
   - test
   - lint
   - release
+  - deploy
 
 default:
   tags:
@@ -27,12 +28,12 @@ test_race:
   script:
     - go test -race -v ./...
 
-lint:
+staticcheck:
   stage: lint
   before_script:
-    - go install golang.org/x/lint/golint@latest
+    - go install honnef.co/go/tools/cmd/staticcheck@latest
   script:
-    - golint -set_exit_status ./...
+    - staticcheck ./...
 
 vet:
   stage: lint
@@ -72,8 +73,18 @@ prerelease:
     REPO_HOST: repo.data.kit.edu
     REPO_USER: cicd
   script:
-    - if [ -z "$CI_COMMIT_TAG" ]; then docker run --rm -v $PWD:/tmp/mytoken -w /tmp/mytoken bitnami/git .gitlab-ci-scripts/set-prerel-version; fi;
+    - if [ -z "$CI_COMMIT_TAG" ]; then docker run --rm -v $PWD:/tmp/mytoken -w /tmp/mytoken bitnami/git .gitlab-ci-scripts/set-prerel-version.sh; fi;
     - .gitlab-ci-scripts/goreleaser.sh
     - .gitlab-ci-scripts/upload.sh
   after_script:
     - docker run --rm curlimages/curl -d "repo=github.com/oidc-mytoken/server" https://goreportcard.com/checks
+
+deploy-dev:
+  stage: deploy
+  before_script:
+    - mkdir -p /root/.ssh
+    - cp $KNOWN_HOSTS /root/.ssh/known_hosts
+    - cp $DEPLOYMENT_SSH_KEY /root/.ssh/id_ed25519 && chmod 0600 /root/.ssh/id_ed25519
+  script:
+    - ssh mytoken-dev.vm.fedcloud.eu
+

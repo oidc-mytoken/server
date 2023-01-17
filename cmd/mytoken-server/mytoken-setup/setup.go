@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Songmu/prompter"
+	"github.com/oidc-mytoken/utils/utils/fileutil"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/dbcl"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
 	"github.com/oidc-mytoken/server/internal/utils/zipdownload"
-	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 )
 
 type _rootDBCredentials struct {

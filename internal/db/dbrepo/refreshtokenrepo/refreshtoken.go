@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
 // CountRTOccurrences counts how many Mytokens use the passed refresh token

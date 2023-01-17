@@ -5,10 +5,11 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/server/internal/config"
-	"github.com/oidc-mytoken/server/shared/utils"
+	iutils "github.com/oidc-mytoken/server/internal/utils"
 )
 
 // RefreshRequest is the oidc request for an refresh flow
@@ -84,5 +85,5 @@ func NewRTRevokeRequest(rt string) *RevokeRequest {
 
 // ToFormData formats the RevokeRequest as a string map
 func (r *RevokeRequest) ToFormData() map[string]string {
-	return utils.StructToStringMapUsingJSONTags(r)
+	return iutils.StructToStringMapUsingJSONTags(r)
 }

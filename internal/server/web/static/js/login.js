@@ -16,7 +16,7 @@ $('#login-form').on('submit', function (e) {
         "AT",
         "settings",
         "list_mytokens",
-        "revoke_any_token"
+        "manage_mytokens"
     ]
     data['rotation'] = {
         "on_AT": true,
@@ -27,7 +27,7 @@ $('#login-form').on('submit', function (e) {
     data['client_type'] = 'web';
     data['redirect_uri'] = '/home';
     data['name'] = "mytoken-web";
-    storageSet("oidc_issuer", data["oidc_issuer"], true);
+    storageSet("oidc_issuer", data["oidc_issuer"]);
     data = JSON.stringify(data);
     $.ajax({
         type: "POST",

@@ -44,7 +44,7 @@ function getErrorMessage(e) {
 
 function noLandscape(prefix) {
     let landscaped = $('.' + prefix + '-landscape');
-    landscaped.removeClass('col');
+    landscaped.removeClass('col-md');
     landscaped.removeClass('row');
     landscaped.removeClass('form-row');
 }
@@ -117,3 +117,37 @@ clipboard.on('success', function (e) {
     el.attr('data-original-title', 'Copied!').tooltip('show');
     el.attr('data-original-title', originalText);
 });
+
+function _enableProfileSupport(template_prefix, set_payload_in_gui, prefix = "") {
+    let $template_select = $(prefixId(`${template_prefix}-template`, prefix));
+    $template_select.val("");
+    $template_select.on('change', function () {
+        const v = $(this).val();
+        if (v === null || v === "") {
+            return;
+        }
+        const payload = JSON.parse(v);
+        set_payload_in_gui(payload, prefix);
+    });
+    let $checks = $(`.any-${template_prefix}-input[instance-prefix=${prefix}]`);
+    if (template_prefix === "cap") {
+        $checks = capabilityChecks(prefix);
+    }
+    $checks.on('change change.datetimepicker', function (e) {
+        if ($(e.currentTarget).hasClass('datetimepicker-input') && datetimepickerChangeTriggeredFromJS) {
+            return;
+        }
+        $template_select.val(""); // reset template selection to custom if something is changed
+    });
+}
+
+function is_string(str) {
+    return typeof str === 'string' || str instanceof String;
+}
+
+function select_set_value_by_option_name($select, option) {
+    const options = Array.from($select.get()[0].options);
+    const optionToSelect = options.find(item => item.text === option);
+    const value = optionToSelect.value;
+    $select.val(value);
+}

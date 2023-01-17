@@ -3,7 +3,7 @@ package mytokenrepo
 import (
 	"testing"
 
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
 func TestMytokenEntry_Root(t *testing.T) {

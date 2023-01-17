@@ -11,59 +11,58 @@ function capRWModes(prefix = "") {
 }
 
 function capabilityCreateMytoken(prefix = "") {
-    return $('#' + prefix + 'cp-create_mytoken');
+    return $(prefixId('cp-create_mytoken', prefix));
 }
 
 function capabilityRevokeAnyToken(prefix = "") {
-    return $('#' + prefix + 'cp-revoke_any_token');
+    return $(prefixId('cp-revoke_any_token', prefix));
 }
 
 function capabilityAT(prefix = "") {
-    return $('#' + prefix + 'cp-AT');
+    return $(prefixId('cp-AT', prefix));
 }
 
 function capSummaryAT(prefix = "") {
-    return $('#' + prefix + 'cap-summary-AT');
+    return $(prefixId('cap-summary-AT', prefix));
 }
 
 function capSummaryMT(prefix = "") {
-    return $('#' + prefix + 'cap-summary-MT');
+    return $(prefixId('cap-summary-MT', prefix));
 }
 
 function capSummaryInfo(prefix = "") {
-    return $('#' + prefix + 'cap-summary-info');
+    return $(prefixId('cap-summary-info', prefix));
 }
 
-function capSummaryRevoke(prefix = "") {
-    return $('#' + prefix + 'cap-summary-revoke');
+function capSummaryMOM(prefix = "") {
+    return $(prefixId('cap-summary-mom', prefix));
 }
 
 function capSummarySettings(prefix = "") {
-    return $('#' + prefix + 'cap-summary-settings');
+    return $(prefixId('cap-summary-settings', prefix));
 }
 
 function capSummaryHowManyGreen(prefix = "") {
-    return $('#' + prefix + 'cap-summary-count-green');
+    return $(prefixId('cap-summary-count-green', prefix));
 }
 
 function capSummaryHowManyYellow(prefix = "") {
-    return $('#' + prefix + 'cap-summary-count-yellow');
+    return $(prefixId('cap-summary-count-yellow', prefix));
 }
 
 function capSummaryHowManyRed(prefix = "") {
-    return $('#' + prefix + 'cap-summary-count-red');
+    return $(prefixId('cap-summary-count-red', prefix));
 }
 
 
 function enableCapability(cap, prefix = "") {
     // This function should be called after initCapabilities to preselect / check capabilities
-    // We do it with a click instead of prop("checked", true) because click handles sub-/parent- capabilities correctly.
-    // We first set checked to false ensuring that it was not previously selected
     let $c = $(prefixId(cap, prefix));
     let disabled = $c.prop('disabled');
     $c.prop('disabled', false);
-    $c.prop("checked", false);
-    $c.click();
+    $c.prop("checked", true);
+    checkThisCapability.call($c.get());
+    updateCapSummary(prefix);
     $c.prop('disabled', disabled);
 }
 
@@ -157,7 +156,7 @@ function updateCapSummary(prefix = "") {
     let at = capabilityAT(prefix).prop("checked");
     let mt = capabilityCreateMytoken(prefix).prop("checked");
     let info = searchAllChecked("tokeninfo", prefix);
-    let revoke = capabilityRevokeAnyToken(prefix).prop("checked");
+    let mom = searchAllChecked("manage_mytokens", prefix);
     let settings = searchAllChecked("settings", prefix);
 
     let counter = {
@@ -192,7 +191,7 @@ function updateCapSummary(prefix = "") {
     capSummaryAT(prefix).addClass("text-muted");
     capSummaryMT(prefix).addClass("text-muted");
     capSummaryInfo(prefix).addClass("text-muted");
-    capSummaryRevoke(prefix).addClass("text-muted");
+    capSummaryMOM(prefix).addClass("text-muted");
     capSummarySettings(prefix).addClass("text-muted");
     if (at) {
         capSummaryAT(prefix).removeClass("text-muted");
@@ -212,11 +211,11 @@ function updateCapSummary(prefix = "") {
     } else {
         capSummaryInfo(prefix).attr('data-original-title', "This mytoken cannot be used to obtain tokeninfo about itself.");
     }
-    if (revoke) {
-        capSummaryRevoke(prefix).removeClass("text-muted");
-        capSummaryRevoke(prefix).attr('data-original-title', "This mytoken can be used to revoke other mytokens.");
+    if (mom) {
+        capSummaryMOM(prefix).removeClass("text-muted");
+        capSummaryMOM(prefix).attr('data-original-title', "This mytoken can be used to manage other mytokens.");
     } else {
-        capSummaryRevoke(prefix).attr('data-original-title', "This mytoken cannot be used to revoke other mytokens.");
+        capSummaryMOM(prefix).attr('data-original-title', "This mytoken cannot be used to manage other mytokens.");
     }
     if (settings) {
         capSummarySettings(prefix).removeClass("text-muted");
@@ -264,4 +263,18 @@ function checkCapability(cap, prefix = "") {
     $mode.prop('disabled', false);
     $mode.bootstrapToggle(rCap ? 'off' : 'on');
     $mode.prop('disabled', disabled);
+}
+
+function set_capabilities_in_gui(capabilities, prefix = "") {
+    if (capabilities === undefined) {
+        return
+    }
+    capabilityChecks(prefix).prop("checked", false);
+    capabilities.forEach(function (c) {
+        checkCapability(c, prefix);
+    });
+}
+
+function cap_enableProfileSupport(prefix = "") {
+    _enableProfileSupport("cap", set_capabilities_in_gui, prefix);
 }

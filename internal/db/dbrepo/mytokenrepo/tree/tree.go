@@ -2,14 +2,14 @@ package tree
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/utils/unixtime"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils/unixtime"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
 // MytokenEntry holds the information of a MytokenEntry as stored in the
@@ -20,7 +20,8 @@ type MytokenEntry struct {
 	ParentID         mtid.MTID         `db:"parent_id" json:"-"`
 	Name             db.NullString     `json:"name,omitempty"`
 	CreatedAt        unixtime.UnixTime `db:"created" json:"created"`
-	RevocationID     string            `db:"revocation_id" json:"revocation_id"`
+	ExpiresAt        unixtime.UnixTime `db:"expires_at" json:"expires_at,omitempty"`
+	MOMID            string            `db:"mom_id" json:"mom_id"`
 }
 
 // MytokenEntryTree is a tree of MytokenEntry

@@ -5,8 +5,7 @@ import (
 
 	"github.com/jinzhu/copier"
 	"github.com/oidc-mytoken/api/v0"
-
-	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/utils/utils"
 )
 
 // WebCapability is type for representing api.Capability in the consent screen
@@ -137,6 +136,8 @@ var warningCapabilities = []string{
 	api.CapabilitySettingsRead.Name,
 	api.CapabilitySSHGrant.Name,
 	api.CapabilityRevokeAnyToken.Name,
+	api.CapabilityHistoryAnyToken.Name,
+	api.CapabilityManageMTs.Name,
 }
 var dangerCapabilities = []string{
 	api.CapabilitySettings.Name,

@@ -19,10 +19,10 @@ function _checkIfLoggedIn(...next) {
             let token = res['token'];
             let iss = token['oidc_iss'];
             if (iss) {
-                storageSet('oidc_issuer', iss, true);
+                storageSet('oidc_issuer', iss);
             }
             let scopes = extractMaxScopesFromToken(token);
-            storageSet('token_scopes', scopes, true);
+            storageSet('token_scopes', scopes);
             if (window.location.pathname === "/") {
                 window.location.href = "/home";
             }

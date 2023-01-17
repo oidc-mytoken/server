@@ -13,7 +13,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	model2 "github.com/oidc-mytoken/server/shared/model"
 )
 
 // HandleTokenInfo handles requests to the tokeninfo endpoint
@@ -29,18 +28,18 @@ func HandleTokenInfo(ctx *fiber.Ctx) error {
 	}
 	clientMetadata := ctxutils.ClientMetaData(ctx)
 	switch req.Action {
-	case model2.TokeninfoActionIntrospect:
+	case model.TokeninfoActionIntrospect:
 		return HandleTokenInfoIntrospect(rlog, mt, req.Mytoken.OriginalTokenType, clientMetadata).Send(ctx)
-	case model2.TokeninfoActionEventHistory:
+	case model.TokeninfoActionEventHistory:
 		return HandleTokenInfoHistory(rlog, &req, mt, clientMetadata).Send(ctx)
-	case model2.TokeninfoActionSubtokenTree:
+	case model.TokeninfoActionSubtokenTree:
 		return HandleTokenInfoSubtokens(rlog, &req, mt, clientMetadata).Send(ctx)
-	case model2.TokeninfoActionListMytokens:
+	case model.TokeninfoActionListMytokens:
 		return HandleTokenInfoList(rlog, &req, mt, clientMetadata).Send(ctx)
 	default:
 		return model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: model2.BadRequestError(fmt.Sprintf("unknown action '%s'", req.Action.String())),
+			Response: model.BadRequestError(fmt.Sprintf("unknown action '%s'", req.Action.String())),
 		}.Send(ctx)
 	}
 }

@@ -10,13 +10,12 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/settings"
 	request "github.com/oidc-mytoken/server/internal/endpoints/settings/grants/pkg"
 	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
-	serverModel "github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/model"
+	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	"github.com/oidc-mytoken/server/shared/model"
-	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 )
 
 // HandleListGrants handles GET requests to the grants endpoints and returns a list of enabled/disabled grant types for
@@ -28,10 +27,10 @@ func HandleListGrants(ctx *fiber.Ctx) error {
 
 	return settings.HandleSettingsHelper(
 		ctx, &reqMytoken, api.CapabilityGrantsRead, event.FromNumber(event.GrantsListed, ""), fiber.StatusOK,
-		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
+		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *model.Response) {
 			grants, err := grantrepo.Get(rlog, tx, mt.ID)
 			if err != nil {
-				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
+				return nil, model.ErrorToInternalServerErrorResponse(err)
 			}
 			return &request.GrantTypeInfoResponse{
 				GrantTypeInfoResponse: api.GrantTypeInfoResponse{
@@ -63,10 +62,10 @@ func handleEditGrant(
 ) error {
 	req := request.GrantTypeRequest{GrantType: -1}
 	if err := ctx.BodyParser(&req); err != nil {
-		return serverModel.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	if !req.GrantType.Valid() {
-		return serverModel.Response{
+		return model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: model.BadRequestError("no valid 'grant_type' found"),
 		}.Send(ctx)
@@ -75,9 +74,9 @@ func handleEditGrant(
 
 	return settings.HandleSettingsHelper(
 		ctx, &req.Mytoken, api.CapabilityGrants, event.FromNumber(evt, req.GrantType.String()), okStatus,
-		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response) {
+		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *model.Response) {
 			if err := dbCallBack(rlog, tx, mt.ID, req.GrantType); err != nil {
-				return nil, serverModel.ErrorToInternalServerErrorResponse(err)
+				return nil, model.ErrorToInternalServerErrorResponse(err)
 			}
 			return nil, nil
 		}, false,

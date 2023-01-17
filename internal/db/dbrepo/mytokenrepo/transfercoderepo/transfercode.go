@@ -4,14 +4,14 @@ import (
 	"database/sql"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
 // TransferCode is a type used to transfer a token

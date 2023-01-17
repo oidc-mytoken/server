@@ -4,14 +4,14 @@ import (
 	"database/sql"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/utils/cryptutils"
 	"github.com/oidc-mytoken/server/internal/utils/hashutils"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
 )
 
 // proxyToken holds information for proxy tokens, i.e. tokens that proxy another token, e.g. a short token

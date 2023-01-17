@@ -13,7 +13,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 )
 
 // AuthFlowInfo holds database information about a started authorization flow
@@ -116,9 +116,11 @@ func UpdateTokenInfoByState(
 			if err != nil {
 				return err
 			}
-			info.Restrictions = r
-			info.Capabilities = c
-			info.Rotation = rot
+			info.Restrictions.Restrictions = r
+			info.Capabilities.Capabilities = c
+			if rot != nil {
+				info.Rotation.Rotation = *rot
+			}
 			info.Name = tokenName
 			_, err = tx.Exec(
 				`CALL AuthInfo_Update(?,?)`,

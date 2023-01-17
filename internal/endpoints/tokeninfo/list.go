@@ -14,13 +14,13 @@ import (
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
+	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
+	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
-	eventService "github.com/oidc-mytoken/server/shared/mytoken/event"
-	event "github.com/oidc-mytoken/server/shared/mytoken/event/pkg"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/mytoken/rotation"
 )
 
 func doTokenInfoList(

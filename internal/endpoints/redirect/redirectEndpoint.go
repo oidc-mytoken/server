@@ -12,12 +12,12 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
+	pkgModel "github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
 	"github.com/oidc-mytoken/server/internal/server/httpstatus"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	pkgModel "github.com/oidc-mytoken/server/shared/model"
 )
 
 // HandleOIDCRedirect handles redirects from the openid provider after an auth code flow

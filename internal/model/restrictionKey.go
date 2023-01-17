@@ -62,7 +62,7 @@ func (rc *RestrictionClaim) Valid() bool {
 	return *rc < maxRestrictionClaim && *rc >= 0
 }
 
-const valueNotValidFmt = "value '%s' not valid for RestrictionClaim"
+const valueNotValidRestrFmt = "value '%s' not valid for RestrictionClaim"
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface
 func (rc *RestrictionClaim) UnmarshalYAML(value *yaml.Node) error {
@@ -72,7 +72,7 @@ func (rc *RestrictionClaim) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*rc = NewRestrictionClaim(s)
 	if !rc.Valid() {
-		return errors.Errorf(valueNotValidFmt, s)
+		return errors.Errorf(valueNotValidRestrFmt, s)
 	}
 	return nil
 }
@@ -85,7 +85,7 @@ func (rc *RestrictionClaim) UnmarshalJSON(data []byte) error {
 	}
 	*rc = NewRestrictionClaim(s)
 	if !rc.Valid() {
-		return errors.Errorf(valueNotValidFmt, s)
+		return errors.Errorf(valueNotValidRestrFmt, s)
 	}
 	return nil
 }
@@ -95,7 +95,7 @@ func (rc *RestrictionClaim) UnmarshalText(data []byte) error {
 	s := string(data)
 	*rc = NewRestrictionClaim(s)
 	if !rc.Valid() {
-		return errors.Errorf(valueNotValidFmt, s)
+		return errors.Errorf(valueNotValidRestrFmt, s)
 	}
 	return nil
 }

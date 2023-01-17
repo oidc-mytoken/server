@@ -12,6 +12,49 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.7.0
+
+### Features
+
+- Webinterface has option to show event history for other mytokens in mytoken list.
+- Webinterface has a new option in the tokeninfo pane to create a new mytoken with the same properties.
+- Added server side `profiles` and `templates`
+  - Can be used in the API, i.e. mytoken requests can include profiles, the capability, restrictions, and rotation
+    claims can use templates
+  - Can be used in the webinterface
+
+### Enhancements
+
+- Improved responsiveness of webinterface
+- Expired mytokens are now greyed-out in webinterface mytoken list
+- The database auto-cleanup now only removes mytokens expired more than a month ago.
+  - This allows expired tokens to be shown in a mytoken list for extended periods.
+  - This also allows to obtain history for expired tokens (by using a mytoken with the `manage_mytokens:list`
+    capability) for a longer time.
+  - Mytokens are still directly deleted when revoked.
+- Requests from private IPs (e.g. from within the same entwork where the server is located) are now geolocated to
+  the country where the server stands.
+- The 'Create Mytoken' tab in the webitnerface now supports an `r` query parameter that takes a base64 encoded
+  request from which the form is prefilled.
+  - This allows 'create-a-mytoken-with-these-properties' links.
+
+### API
+
+- Added profile endpoint:
+  - Any user can get list of groups
+  - Any user can get profiles, and templates (capabilities, restrictions, rotation) for all the groups
+  - Groups credentials are defined in the config file
+    - With Basic authentication profiles and templates for the authenticated group can be created, updated, and deleted.
+- Renamed `revocation_id` to `mom_id`
+- Restructured capabilities related to other mytokens
+- Added possibility to obtain history information for children and other tokens (capability)
+- Added a name for OPs in the `supported_providers` of the mytoken configuration endpoint
+
+### Bugfixes
+
+- Fixed a bug where transfer codes could be used just like a short token (but only while the transfer code did not
+  expire)
+
 ## mytoken 0.6.1
 
 ### API

@@ -5,8 +5,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
 )
 
 // GetMytokenStr checks a fiber.Ctx for a mytoken and returns the token string as passed to the request

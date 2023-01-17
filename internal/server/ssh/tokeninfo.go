@@ -6,10 +6,10 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
+	"github.com/oidc-mytoken/server/internal/model"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	"github.com/oidc-mytoken/server/shared/model"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
 )
 
 func handleIntrospect(s ssh.Session) error {

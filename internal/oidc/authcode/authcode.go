@@ -9,6 +9,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/context"
+	"github.com/oidc-mytoken/utils/unixtime"
+	"github.com/oidc-mytoken/utils/utils"
+	"github.com/oidc-mytoken/utils/utils/issuerutils"
+	"github.com/oidc-mytoken/utils/utils/jwtutils"
+	"github.com/oidc-mytoken/utils/utils/ternary"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -22,22 +28,16 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/oidc/issuer"
 	"github.com/oidc-mytoken/server/internal/oidc/pkce"
 	"github.com/oidc-mytoken/server/internal/server/httpstatus"
 	"github.com/oidc-mytoken/server/internal/server/routes"
+	iutils "github.com/oidc-mytoken/server/internal/utils"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	"github.com/oidc-mytoken/server/shared/context"
-	pkgModel "github.com/oidc-mytoken/server/shared/model"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/issuerutils"
-	"github.com/oidc-mytoken/server/shared/utils/jwtutils"
-	"github.com/oidc-mytoken/server/shared/utils/ternary"
-	"github.com/oidc-mytoken/server/shared/utils/unixtime"
 )
 
 var redirectURI string
@@ -111,10 +111,9 @@ func trustedRedirectURI(redirectURI string) bool {
 }
 
 // StartAuthCodeFlow starts an authorization code flow
-func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq *response.OIDCFlowRequest) *model.Response {
+func StartAuthCodeFlow(ctx *fiber.Ctx, req *response.AuthCodeFlowRequest) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle authcode")
-	req := oidcReq.ToAuthCodeFlowRequest()
 	native := req.Native() && config.Get().Features.Polling.Enabled
 	if !native && req.RedirectURI == "" {
 		return &model.Response{
@@ -139,7 +138,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq *response.OIDCFlowRequest) *model
 	if exp > 0 && exp < unixtime.Now() {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
-			Response: pkgModel.BadRequestError("token would already be expired"),
+			Response: model.BadRequestError("token would already be expired"),
 		}
 	}
 
@@ -147,7 +146,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq *response.OIDCFlowRequest) *model
 	authFlowInfo := authcodeinforepo.AuthFlowInfo{
 		AuthFlowInfoOut: authcodeinforepo.AuthFlowInfoOut{
 			State:               oState,
-			AuthCodeFlowRequest: req,
+			AuthCodeFlowRequest: *req,
 		},
 	}
 	res := api.AuthCodeFlowResponse{
@@ -169,7 +168,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, oidcReq *response.OIDCFlowRequest) *model
 	if !native && trustedRedirectURI(req.RedirectURI) {
 		authURI, err := GetAuthorizationURL(
 			rlog, nil, provider, state.NewState(consentCode.GetState()),
-			req.Restrictions,
+			req.Restrictions.Restrictions,
 		)
 		if err != nil {
 			rlog.Errorf("%s", errorfmt.Full(err))
@@ -223,9 +222,9 @@ func CodeExchange(
 	if err != nil {
 		var e *oauth2.RetrieveError
 		if errors.As(err, &e) {
-			res, resOK := pkgModel.OIDCErrorFromBody(e.Body)
+			res, resOK := model.OIDCErrorFromBody(e.Body)
 			if !resOK {
-				res = pkgModel.OIDCError(e.Error(), "")
+				res = model.OIDCError(e.Error(), "")
 			}
 			rlog.WithError(e).Error("error in code exchange")
 			return &model.Response{
@@ -245,7 +244,7 @@ func CodeExchange(
 	scopes := authInfo.Restrictions.GetScopes()
 	scopesStr, ok := token.Extra("scope").(string)
 	if ok && scopesStr != "" {
-		scopes = utils.SplitIgnoreEmpty(scopesStr, " ")
+		scopes = iutils.SplitIgnoreEmpty(scopesStr, " ")
 		authInfo.Restrictions.SetMaxScopes(scopes) // Update restrictions with correct scopes
 	}
 	audiences := authInfo.Restrictions.GetAudiences()
@@ -310,7 +309,7 @@ func CodeExchange(
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	var cookie *fiber.Cookie
-	if authInfo.ResponseType == pkgModel.ResponseTypeTransferCode {
+	if authInfo.ResponseType == model.ResponseTypeTransferCode {
 		cookie = cookies.TransferCodeCookie(res.TransferCode, int(res.ExpiresIn))
 	} else {
 		cookie = cookies.MytokenCookie(res.Mytoken)
@@ -326,14 +325,18 @@ func createMytokenEntry(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut, token *oauth2.Token,
 	oidcSub string, networkData api.ClientMetaData,
 ) (*mytokenrepo.MytokenEntry, error) {
+	var rot *api.Rotation
+	if authFlowInfo.Rotation != nil {
+		rot = &authFlowInfo.Rotation.Rotation
+	}
 	mte := mytokenrepo.NewMytokenEntry(
 		mytoken.NewMytoken(
 			oidcSub,
 			authFlowInfo.Issuer,
 			authFlowInfo.Name,
-			authFlowInfo.Restrictions,
-			authFlowInfo.Capabilities,
-			authFlowInfo.Rotation,
+			authFlowInfo.Restrictions.Restrictions,
+			authFlowInfo.Capabilities.Capabilities,
+			rot,
 			unixtime.Now(),
 		),
 		authFlowInfo.Name, networkData,

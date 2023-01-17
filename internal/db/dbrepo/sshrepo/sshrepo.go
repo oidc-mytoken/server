@@ -6,14 +6,14 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/cryptutils"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/utils/cryptutils"
 )
 
 // GetSSHInfo returns the SSHInfo stored in the database for the passed key and user hashes.
@@ -28,7 +28,7 @@ func GetSSHInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, keyFP, userHash string) (
 
 // GetAllSSHInfo returns the SSHInfo for all ssh keys for a given user
 func GetAllSSHInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID) (info []api.SSHKeyInfo, err error) {
-	dbInfo := []SSHInfo{}
+	var dbInfo []SSHInfo
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			return errors.WithStack(tx.Select(&dbInfo, `CALL SSHInfo_GetAll(?)`, myid))

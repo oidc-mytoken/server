@@ -3,8 +3,8 @@ package pkg
 import (
 	"github.com/oidc-mytoken/api/v0"
 
-	"github.com/oidc-mytoken/server/shared/model"
-	mytoken "github.com/oidc-mytoken/server/shared/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/model"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 )
 
 // TokeninfoIntrospectResponse is type for responses to tokeninfo introspect requests

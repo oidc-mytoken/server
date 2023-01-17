@@ -6,7 +6,6 @@ import (
 	"github.com/valyala/fasthttp"
 
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
-	"github.com/oidc-mytoken/server/shared/model"
 )
 
 // Response models a http server response
@@ -34,7 +33,7 @@ func (r Response) Send(ctx *fiber.Ctx) error {
 func ErrorToInternalServerErrorResponse(err error) *Response {
 	return &Response{
 		Status:   fiber.StatusInternalServerError,
-		Response: model.InternalServerError(errorfmt.Error(err)),
+		Response: InternalServerError(errorfmt.Error(err)),
 	}
 }
 
@@ -42,7 +41,7 @@ func ErrorToInternalServerErrorResponse(err error) *Response {
 func ErrorToBadRequestErrorResponse(err error) *Response {
 	return &Response{
 		Status:   fiber.StatusBadRequest,
-		Response: model.BadRequestError(errorfmt.Error(err)),
+		Response: BadRequestError(errorfmt.Error(err)),
 	}
 }
 

@@ -3,11 +3,11 @@ package pkg
 import (
 	"github.com/oidc-mytoken/api/v0"
 
-	"github.com/oidc-mytoken/server/shared/model"
-	"github.com/oidc-mytoken/server/shared/mytoken/universalmytoken"
+	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 )
 
-// AccessTokenRequest holds an request for an access token
+// AccessTokenRequest holds a request for an access token
 type AccessTokenRequest struct {
 	api.AccessTokenRequest `json:",inline"`
 	GrantType              model.GrantType                   `json:"grant_type" xml:"grant_type" form:"grant_type"`

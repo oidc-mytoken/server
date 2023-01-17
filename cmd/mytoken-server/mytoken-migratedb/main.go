@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Songmu/prompter"
+	"github.com/oidc-mytoken/utils/utils/fileutil"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
@@ -14,7 +15,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model/version"
-	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 )
 
 var configFile string
@@ -116,7 +116,7 @@ var app = &cli.App{
 		},
 	},
 	Action: func(context *cli.Context) error {
-		mytokenNodes := []string{}
+		var mytokenNodes []string
 		if context.Args().Len() > 0 {
 			mytokenNodes = context.Args().Slice()
 		} else if configFile != "" {

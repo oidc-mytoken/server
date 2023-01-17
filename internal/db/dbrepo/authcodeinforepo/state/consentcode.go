@@ -1,8 +1,9 @@
 package state
 
 import (
+	"github.com/oidc-mytoken/utils/utils"
+
 	"github.com/oidc-mytoken/server/internal/utils/hashutils"
-	"github.com/oidc-mytoken/server/shared/utils"
 )
 
 const consentCodeLen = 8

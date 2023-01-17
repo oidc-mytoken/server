@@ -1,0 +1,22 @@
+<div id="{{prefix}}mt-instructions">
+    <div class="alert bg-my_blue_dark">
+        <h4>To obtain your Mytoken you have to allow the creation and authenticate at the following link:</h4>
+        <a id="{{prefix}}authorization-url" target="_blank" rel="noopener noreferrer" href=""
+           style="font-size: 2em;"></a>
+    </div>
+</div>
+<div id="{{prefix}}mt-result-color" class="alert" role="alert">
+    <h4 id="{{prefix}}mt-result-heading-success" class="alert-heading d-none">Your Mytoken <span
+            class="ml-3 badge badge-pill bg-my_blue_dark" id="{{prefix}}token-badge"></span></h4>
+    <h4 id="{{prefix}}mt-result-heading-error" class="alert-heading d-none">Error</h4>
+    <h4 id="{{prefix}}mt-result-heading-pending" class="alert-heading d-none">Authorization Pending</h4>
+    <div id="{{prefix}}mt-pending-spinner" class="spinner-border text-primary d-none" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+    <button class="btn btn-copy copier d-none" id="{{prefix}}mt-result-copy" data-toggle="tooltip"
+            data-placement="bottom"
+            title="Copy to clipboard" data-clipboard-target="#mt-result-msg">
+        <i class="far fa-copy"></i>
+    </button>
+    <pre class="card-text" id="{{prefix}}mt-result-msg"></pre>
+</div>

@@ -2,7 +2,7 @@ package transfercoderepo
 
 import (
 	"github.com/oidc-mytoken/server/internal/config"
-	"github.com/oidc-mytoken/server/shared/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
 // ShortToken holds database information of a short token

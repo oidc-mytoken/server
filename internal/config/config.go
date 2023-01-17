@@ -7,19 +7,19 @@ import (
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/oidc-mytoken/utils/context"
+	"github.com/oidc-mytoken/utils/utils/fileutil"
+	"github.com/oidc-mytoken/utils/utils/issuerutils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v3"
 
 	model2 "github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/utils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
-	"github.com/oidc-mytoken/server/shared/utils/issuerutils"
 
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
-	"github.com/oidc-mytoken/server/shared/context"
-	"github.com/oidc-mytoken/server/shared/utils"
-	"github.com/oidc-mytoken/server/shared/utils/fileutil"
 )
 
 var defaultConfig = Config{
@@ -97,6 +97,10 @@ var defaultConfig = Config{
 		SSH: sshConf{
 			Enabled: false,
 		},
+		ServerProfiles: serverProfilesConf{
+			Enabled: true,
+			Groups:  make(map[string]string),
+		},
 	},
 	ProviderByIssuer: make(map[string]*ProviderConf),
 	API: apiConf{
@@ -136,10 +140,14 @@ type featuresConf struct {
 	WebInterface            webConfig                `yaml:"web_interface"`
 	DisabledRestrictionKeys model2.RestrictionClaims `yaml:"unsupported_restrictions"`
 	SSH                     sshConf                  `yaml:"ssh"`
+	ServerProfiles          serverProfilesConf       `yaml:"server_profiles"`
 }
 
 func (c *featuresConf) validate() error {
-	return c.OIDCFlows.validate()
+	if err := c.OIDCFlows.validate(); err != nil {
+		return err
+	}
+	return c.ServerProfiles.validate()
 }
 
 type oidcFlowsConf struct {
@@ -178,6 +186,30 @@ type sshConf struct {
 	UseProxyProtocol bool         `yaml:"use_proxy_protocol"`
 	KeyFiles         []string     `yaml:"keys"`
 	PrivateKeys      []ssh.Signer `yaml:"-"`
+}
+
+type serverProfilesConf struct {
+	Enabled bool                     `yaml:"enabled"`
+	Groups  profileGroupsCredentials `yaml:"groups"`
+}
+
+func (c serverProfilesConf) validate() error {
+	return c.Groups.validate()
+}
+
+// profileGroupsCredentials holds the credentials for a profile groups
+type profileGroupsCredentials map[string]string
+
+func (g profileGroupsCredentials) validate() error {
+	for u, pw := range g {
+		if u == "" {
+			return errors.New("'name' not set in profile group")
+		}
+		if pw == "" {
+			return errors.Errorf("'password' not set in profile group '%s'", u)
+		}
+	}
+	return nil
 }
 
 type tokeninfoConfig struct {
