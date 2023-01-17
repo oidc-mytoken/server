@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	jsonpatch "github.com/evanphx/json-patch/v5"
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/server/internal/model"
@@ -26,6 +27,9 @@ type OIDCFlowAttrs struct {
 func (r *OIDCFlowRequest) UnmarshalJSON(data []byte) error {
 	if err := errors.WithStack(json.Unmarshal(data, &r.GeneralMytokenRequest)); err != nil {
 		return err
+	}
+	if len(r.Capabilities.Capabilities) == 0 {
+		r.Capabilities.Capabilities = api.DefaultCapabilities
 	}
 	return errors.WithStack(json.Unmarshal(data, &r.OIDCFlowAttrs))
 }

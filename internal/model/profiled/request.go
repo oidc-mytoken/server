@@ -45,9 +45,6 @@ func (r *GeneralMytokenRequest) UnmarshalJSON(bytes []byte) error {
 			Rotation: *p.Rotation,
 		}
 	}
-	if len(r.Capabilities.Capabilities) == 0 {
-		r.Capabilities.Capabilities = api.DefaultCapabilities
-	}
 	r.ResponseType = model.NewResponseType(p.ResponseType)
 	r.GrantType = model.NewGrantType(p.GrantType)
 	return nil
