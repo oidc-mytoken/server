@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -125,6 +126,15 @@ func profilesBindingData() map[string]interface{} {
 					},
 				)
 			}
+		}
+		sort.Slice(
+			p, func(i, j int) bool {
+				return p[i].Name < p[j].Name
+			},
+		)
+		for i, pp := range p {
+			pp.Name = strings.TrimPrefix(pp.Name, "_/")
+			p[i] = pp
 		}
 		returnData[pt] = p
 		cache.Set(cache.WebProfiles, pt, p, time.Hour)
