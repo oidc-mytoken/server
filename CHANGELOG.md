@@ -12,6 +12,12 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.7.1
+
+### Bugfixes
+
+- Fixed a bug with the local storage that caused problems with outdated discovery information
+
 ## mytoken 0.7.0
 
 ### Features
