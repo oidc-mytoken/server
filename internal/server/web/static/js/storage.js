@@ -13,7 +13,7 @@ function _storage(session = false) {
 function storageGet(key) {
     let v = _sessionStorage().getItem(key)
     if (!v) {
-        v = _localStorage().getItem(key);
+        return undefined;
     }
     return JSON.parse(v);
 }
