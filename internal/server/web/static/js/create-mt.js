@@ -93,7 +93,6 @@ function initProfileSupport() {
     $checks = $checks.add($(`.any-restr-input[instance-prefix=${mtPrefix}]`));
     $checks = $checks.add($(`.any-rot-input[instance-prefix=${mtPrefix}]`));
     $checks = $checks.add(capabilityChecks(mtPrefix));
-    console.log($checks);
     $checks.on('change change.datetimepicker', function (e) {
         if ($(e.currentTarget).hasClass('datetimepicker-input') && datetimepickerChangeTriggeredFromJS) {
             return;
