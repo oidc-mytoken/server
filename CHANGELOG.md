@@ -12,6 +12,8 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.7.2
+
 ## mytoken 0.7.1
 
 ### Bugfixes
