@@ -18,7 +18,8 @@
 
 ### Bugfixes
 
-- Fixed a bug with the local storage that caused problems with outdated discovery information
+- Fixed a bug in the webinterface with the local storage that caused problems with outdated discovery information
+- Fixed a bug in the webinterface where the `Expand` `Collapse` buttons (e.g. in the consent screen) got the wrong text.
 
 ## mytoken 0.7.0
 
