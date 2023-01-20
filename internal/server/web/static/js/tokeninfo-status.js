@@ -198,7 +198,6 @@ $('#recreate-mt').on('click', function () {
             authURL(tokeninfoPrefix).attr("href", url);
             authURL(tokeninfoPrefix).text(url);
             mtInstructions(tokeninfoPrefix).showB();
-            console.log("foo");
             polling_recreate_mytoken(code, interval);
             window.open(url, '_blank');
         },

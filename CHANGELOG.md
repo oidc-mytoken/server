@@ -12,11 +12,18 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.7.2
+
+### Bugfixes
+
+- Fixed a bug in the webinterface where the metadata discovery was broken.
+
 ## mytoken 0.7.1
 
 ### Bugfixes
 
-- Fixed a bug with the local storage that caused problems with outdated discovery information
+- Fixed a bug in the webinterface with the local storage that caused problems with outdated discovery information
+- Fixed a bug in the webinterface where the `Expand` `Collapse` buttons (e.g. in the consent screen) got the wrong text.
 
 ## mytoken 0.7.0
 

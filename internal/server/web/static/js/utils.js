@@ -24,7 +24,7 @@ $.fn.hideB = function () {
 $('.my-expand').on('click', function () {
     const expand = "Expand";
     const collapse = "Collapse";
-    if ($(this).text() === expand) {
+    if ($(this).text().trim() === expand) {
         $(this).text(collapse);
     } else {
         $(this).text(expand);
