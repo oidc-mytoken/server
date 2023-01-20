@@ -11,7 +11,8 @@ const configElements = [
 
 function discovery(...next) {
     try {
-        if (storageGet('discovery') !== null) {
+        const discovery = storageGet('discovery');
+        if (discovery !== null && discovery !== undefined) {
             doNext(...next);
             return;
         }
