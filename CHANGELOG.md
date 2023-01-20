@@ -14,6 +14,10 @@
 
 ## mytoken 0.7.2
 
+### Bugfixes
+
+- Fixed a bug in the webinterface where the metadata discovery was broken.
+
 ## mytoken 0.7.1
 
 ### Bugfixes
