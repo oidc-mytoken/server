@@ -109,8 +109,15 @@ func GetVersionState(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (state DBVersionStat
 			return errors.WithStack(tx.Select(&state, `SELECT version, bef, aft FROM version`))
 		},
 	)
-	if err != nil && strings.HasPrefix(errorfmt.Error(err), "Error 1146: Table") { // Ignore table does not exist error
-		err = nil
+	if err != nil {
+		errStr := errorfmt.Error(err)
+		if strings.HasPrefix(errStr, "Error 1146") {
+			errStrs := strings.SplitN(errStr, ":", 2)
+			if len(errStrs) == 2 && strings.HasPrefix(strings.TrimSpace(errStrs[1]), "Table") {
+				// Ignore table does not exist error
+				err = nil
+			}
+		}
 	}
 	state.Sort()
 	return

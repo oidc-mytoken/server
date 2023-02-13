@@ -12,6 +12,12 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.7.3
+
+### Bugfixes
+
+- Fixed a bug in `mytoken-migratedb` were empty databases could not be setup.
+
 ## mytoken 0.7.2
 
 ### Bugfixes
