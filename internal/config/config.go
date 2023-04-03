@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/oidc-mytoken/utils/context"
 	"github.com/oidc-mytoken/utils/utils/fileutil"
 	"github.com/oidc-mytoken/utils/utils/issuerutils"
@@ -45,7 +46,7 @@ var defaultConfig = Config{
 		ReconnectInterval: 60,
 	},
 	Signing: signingConf{
-		Alg:       oidc.ES512,
+		Alg:       jwa.ES512,
 		RSAKeyLen: 2048,
 	},
 	Logging: loggingConf{
@@ -101,6 +102,14 @@ var defaultConfig = Config{
 			Enabled: true,
 			Groups:  make(map[string]string),
 		},
+		Federation: federationConf{
+			Enabled:                     false,
+			EntityConfigurationLifetime: 7 * 24 * 60 * 60,
+			Signing: signingConf{
+				Alg:       jwa.ES512,
+				RSAKeyLen: 2048,
+			},
+		},
 	},
 	ProviderByIssuer: make(map[string]*ProviderConf),
 	API: apiConf{
@@ -141,6 +150,7 @@ type featuresConf struct {
 	DisabledRestrictionKeys model2.RestrictionClaims `yaml:"unsupported_restrictions"`
 	SSH                     sshConf                  `yaml:"ssh"`
 	ServerProfiles          serverProfilesConf       `yaml:"server_profiles"`
+	Federation              federationConf           `yaml:"federation"`
 }
 
 func (c *featuresConf) validate() error {
@@ -323,9 +333,9 @@ type tlsConf struct {
 }
 
 type signingConf struct {
-	Alg       string `yaml:"alg"`
-	KeyFile   string `yaml:"key_file"`
-	RSAKeyLen int    `yaml:"rsa_key_len"`
+	Alg       jwa.SignatureAlgorithm `yaml:"alg"`
+	KeyFile   string                 `yaml:"key_file"`
+	RSAKeyLen int                    `yaml:"rsa_key_len"`
 }
 
 // ProviderConf holds information about a provider
@@ -377,6 +387,14 @@ func (so *ServiceOperatorConf) validate() error {
 		so.Privacy = so.Contact
 	}
 	return nil
+}
+
+type federationConf struct {
+	Enabled                     bool        `yaml:"enabled"`
+	TrustAnchors                []string    `yaml:"trust_anchors"`
+	AuthorityHints              []string    `yaml:"authority_hints"`
+	EntityConfigurationLifetime int64       `yaml:"entity_configuration_lifetime"`
+	Signing                     signingConf `yaml:"signing"`
 }
 
 var conf *Config

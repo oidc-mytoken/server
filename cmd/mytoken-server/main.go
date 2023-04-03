@@ -13,6 +13,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/versionrepo"
 	configurationEndpoint "github.com/oidc-mytoken/server/internal/endpoints/configuration"
+	"github.com/oidc-mytoken/server/internal/endpoints/federation"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings"
 	"github.com/oidc-mytoken/server/internal/jws"
 	"github.com/oidc-mytoken/server/internal/model/version"
@@ -29,9 +30,10 @@ func main() {
 	loggerUtils.Init()
 	server.Init()
 	configurationEndpoint.Init()
+	federation.Init()
 	authcode.Init()
 	versionrepo.ConnectToVersion()
-	jws.LoadKey()
+	jws.LoadMytokenSigningKey()
 	httpclient.Init(config.Get().IssuerURL, fmt.Sprintf("mytoken-server %s", version.VERSION))
 	geoip.Init()
 	settings.InitSettings()
@@ -62,8 +64,9 @@ func reload() {
 	loggerUtils.SetOutput()
 	loggerUtils.MustUpdateAccessLogger()
 	db.Connect()
-	jws.LoadKey()
+	jws.LoadMytokenSigningKey()
 	geoip.Init()
+	federation.Init()
 }
 
 func reloadLogFiles() {

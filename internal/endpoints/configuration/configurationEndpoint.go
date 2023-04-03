@@ -61,7 +61,7 @@ func basicConfiguration() *pkg.MytokenConfiguration {
 			ProfilesEndpoint:     utils.CombineURLPath(config.Get().IssuerURL, apiPaths.ProfilesEndpoint),
 			JWKSURI:              utils.CombineURLPath(config.Get().IssuerURL, otherPaths.JWKSEndpoint),
 			ProvidersSupported:   getProvidersFromConfig(),
-			TokenSigningAlgValue: config.Get().Signing.Alg,
+			TokenSigningAlgValue: config.Get().Signing.Alg.String(),
 			ServiceDocumentation: config.Get().ServiceDocumentation,
 			Version:              version.VERSION,
 		},

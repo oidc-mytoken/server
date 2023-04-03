@@ -193,6 +193,21 @@ features:
       - /etc/ssh/ssh_host_ed25519_key
       - /etc/ssh/ssh_host_rsa_key
 
+  # Configuration for usage of OpenID Federations
+  federation:
+    enabled: false
+    trust_anchors:
+    authority_hints:
+    entity_configuration_lifetime: 604800
+    # Configuration for signing federation statements
+    signing:
+      # The used algorithm
+      alg: "ES512"
+      # The file with the signing key
+      key_file: "/federation.ecdsa.key"
+      # If an RSA-based algorithm is used, this is the key len. Only needed when generating a new rsa key.
+      rsa_key_len: 2048
+
 # The list of supported providers
 providers:
   - issuer: "https://example.provider.com/"

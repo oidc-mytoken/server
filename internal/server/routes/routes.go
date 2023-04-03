@@ -15,6 +15,9 @@ const WellknownMytokenConfiguration = "/.well-known/mytoken-configuration"
 // WellknownOpenIDConfiguration is the openid configuration path suffix
 const WellknownOpenIDConfiguration = "/.well-known/openid-configuration"
 
+// WellknownOpenIDFederation is the openid federation path suffix
+const WellknownOpenIDFederation = "/.well-known/openid-federation"
+
 func defaultAPIPaths(api string) APIPaths {
 	return APIPaths{
 		MytokenEndpoint:       utils.CombineURLPath(api, "/token/my"),
@@ -35,6 +38,7 @@ func init() {
 		},
 		other: GeneralPaths{
 			ConfigurationEndpoint: WellknownMytokenConfiguration,
+			FederationEndpoint:    WellknownOpenIDFederation,
 			OIDCRedirectEndpoint:  "/redirect",
 			JWKSEndpoint:          "/jwks",
 			ConsentEndpoint:       "/c",
@@ -51,6 +55,7 @@ type paths struct {
 // GeneralPaths holds all non-api route paths
 type GeneralPaths struct {
 	ConfigurationEndpoint string
+	FederationEndpoint    string
 	OIDCRedirectEndpoint  string
 	JWKSEndpoint          string
 	ConsentEndpoint       string

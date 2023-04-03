@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto"
 	"embed"
 	"fmt"
 	"os"
@@ -122,7 +123,7 @@ var app = &cli.App{
 			},
 			Usage:       "Generates a new signing key",
 			Description: "Generates a new signing key according to the properties specified in the config file and stores it.",
-			Action:      createSigningKey,
+			Action:      createMytokenSigningKey,
 		},
 		&cli.Command{
 			Name:  "install",
@@ -156,6 +157,39 @@ var app = &cli.App{
 				},
 			},
 		},
+		&cli.Command{
+			Name:  "federation",
+			Usage: "Setups for federations",
+			Subcommands: cli.Commands{
+				&cli.Command{
+					Name:    "signing-key",
+					Aliases: []string{"key"},
+					Flags: []cli.Flag{
+						&cli.StringFlag{
+							Name: "key-file",
+							Aliases: []string{
+								"file",
+								"f",
+								"out",
+								"o",
+							},
+							Usage: "Write the signing key to this file, " +
+								"instead of the one configured in the config file",
+							EnvVars: []string{
+								"KEY_FILE",
+								"SIGNING_KEY",
+							},
+							Destination: &sigKeyFile,
+							TakesFile:   true,
+							Placeholder: "FILE",
+						},
+					},
+					Usage:       "Generates a new signing key",
+					Description: "Generates a new signing key according to the properties specified in the config file and stores it.",
+					Action:      createFederationSigningKey,
+				},
+			},
+		},
 	},
 }
 
@@ -181,14 +215,25 @@ func installGEOIPDB(_ *cli.Context) error {
 	return err
 }
 
-func createSigningKey(_ *cli.Context) error {
-	sk, _, err := jws.GenerateKeyPair()
+func createMytokenSigningKey(_ *cli.Context) error {
+	sk, _, err := jws.GenerateMytokenSigningKeyPair()
 	if err != nil {
 		return err
 	}
+	return writeSigningKey(sk, config.Get().Signing.KeyFile)
+}
+func createFederationSigningKey(_ *cli.Context) error {
+	sk, _, err := jws.GenerateFederationSigningKeyPair()
+	if err != nil {
+		return err
+	}
+	return writeSigningKey(sk, config.Get().Features.Federation.Signing.KeyFile)
+}
+
+func writeSigningKey(sk crypto.Signer, keyFileFromConfig string) error {
 	str := jws.ExportPrivateKeyAsPemStr(sk)
 	if sigKeyFile == "" {
-		sigKeyFile = config.Get().Signing.KeyFile
+		sigKeyFile = keyFileFromConfig
 	}
 	if fileutil.FileExists(sigKeyFile) {
 		log.WithField("filepath", sigKeyFile).Debug("File already exists")
@@ -196,7 +241,7 @@ func createSigningKey(_ *cli.Context) error {
 			os.Exit(1)
 		}
 	}
-	if err = os.WriteFile(sigKeyFile, []byte(str), 0600); err != nil {
+	if err := os.WriteFile(sigKeyFile, []byte(str), 0600); err != nil {
 		return err
 	}
 	log.WithField("filepath", sigKeyFile).Debug("Wrote key to file")
