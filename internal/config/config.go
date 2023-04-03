@@ -466,10 +466,8 @@ func validate() error {
 		if p.Audience.RFC8707 {
 			p.Audience.RequestParameter = AudienceParameterResource
 			p.Audience.SpaceSeparateAuds = false
-		} else {
-			if p.Audience.RequestParameter == "" {
-				p.Audience.RequestParameter = AudienceParameterResource
-			}
+		} else if p.Audience.RequestParameter == "" {
+			p.Audience.RequestParameter = AudienceParameterResource
 		}
 	}
 	if conf.IssuerURL == "" {
