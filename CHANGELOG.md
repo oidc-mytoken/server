@@ -12,7 +12,22 @@
 <!-- ### Dependencies -->
 <!--  -->
 
-## mytoken 0.7.3
+## mytoken 0.8.0
+
+### Features
+
+- Added support for RFC8707 for requesting audience restricted ATs
+
+### Changes
+
+- Default behavior for requesting audience restricted ATs is now according to RFC8707; the previous behavor can be
+  configured with these options:
+  ```yaml
+  audience:
+    use_rfc8707: false
+    request_parameter: "audience"
+    space_separate_auds: true
+  ```
 
 ### Bugfixes
 

@@ -92,10 +92,18 @@ func GetAuthorizationURL(
 	}
 	auds := restrictions.GetAudiences()
 	if len(auds) > 0 {
-		additionalParams = append(
-			additionalParams,
-			oauth2.SetAuthURLParam(provider.AudienceRequestParameter, strings.Join(auds, " ")),
-		)
+		if provider.Audience.SpaceSeparateAuds {
+			additionalParams = append(
+				additionalParams,
+				oauth2.SetAuthURLParam(provider.Audience.RequestParameter, strings.Join(auds, " ")),
+			)
+		} else {
+			for _, a := range auds {
+				additionalParams = append(
+					additionalParams, oauth2.SetAuthURLParam(provider.Audience.RequestParameter, a),
+				)
+			}
+		}
 	}
 
 	return oauth2Config.AuthCodeURL(oState.State(), additionalParams...), nil
