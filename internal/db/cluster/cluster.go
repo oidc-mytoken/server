@@ -154,7 +154,8 @@ func connectDSN(dsn string) (*sqlx.DB, error) {
 	db.SetConnMaxLifetime(time.Minute * 4)
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(10)
-	return db, nil
+	_, err = db.Exec(`SET time_zone="+0:00"`)
+	return db, err
 }
 
 // Transact does a database transaction for the passed function
