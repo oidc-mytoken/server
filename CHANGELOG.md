@@ -31,6 +31,7 @@
 
 ### Bugfixes
 
+- Fixed a bug where wrong dates where returned if the database used a different timezone than UTC.
 - Fixed a bug in `mytoken-migratedb` were empty databases could not be setup.
 
 ### Dependencies
