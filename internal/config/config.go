@@ -362,11 +362,8 @@ type ServiceOperatorConf struct {
 
 // GetPassword returns the password for this database config. If necessary it reads it from the password file.
 func (conf *DBConf) GetPassword() string {
-	if conf.Password != "" {
-		return conf.Password
-	}
 	if conf.PasswordFile == "" {
-		return ""
+		return conf.Password
 	}
 	content, err := os.ReadFile(conf.PasswordFile)
 	if err != nil {
