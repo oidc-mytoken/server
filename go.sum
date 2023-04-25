@@ -381,6 +381,8 @@ github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLA
 github.com/oidc-mytoken/api v0.9.1/go.mod h1:DBIlUbaIgGlf607VZx8zFC97VR3WNN0kaMVO1AqyTdE=
 github.com/oidc-mytoken/api v0.10.0 h1:+LCMb7et/roU+Baifho9bcOOAoqDzMSOJt4T1EgI5nk=
 github.com/oidc-mytoken/api v0.10.0/go.mod h1:DS2/0gUjt84jVq/4jqs7mSoUtv1DDEp3xexF7HW1qe4=
+github.com/oidc-mytoken/api v0.10.1-0.20230412103735-ccd26fb9a9ae h1:IJPDSV9qvkjYe78cVcpfupt0nNM3MHH4j6spsUVgZBY=
+github.com/oidc-mytoken/api v0.10.1-0.20230412103735-ccd26fb9a9ae/go.mod h1:DS2/0gUjt84jVq/4jqs7mSoUtv1DDEp3xexF7HW1qe4=
 github.com/oidc-mytoken/lib v0.7.0 h1:/uPQ10ColbCZ79wotV6aa3yfU6Lbaucis2+TrfVIXdQ=
 github.com/oidc-mytoken/lib v0.7.0/go.mod h1:D0vrMn1szss52mJKwI+sTsSakVCP6qCk0l0kAjd4YtA=
 github.com/oidc-mytoken/utils v0.1.2 h1:nmKIw/k4OkQ/9ww06W7krJ4yTwvDbuCRCjjRCmI9gSE=

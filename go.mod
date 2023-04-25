@@ -17,7 +17,7 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lestrrat-go/jwx v1.2.25
-	github.com/oidc-mytoken/api v0.10.0
+	github.com/oidc-mytoken/api v0.10.1-0.20230412103735-ccd26fb9a9ae
 	github.com/oidc-mytoken/lib v0.7.0
 	github.com/oidc-mytoken/utils v0.1.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible

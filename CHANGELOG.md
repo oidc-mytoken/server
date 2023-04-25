@@ -29,6 +29,11 @@
     space_separate_auds: true
   ```
 
+### API
+
+- When creating a mytoken from a mytoken and it is returned as a transfer code the response now contains the
+  `mom_id` of the created mytoken.
+
 ### Bugfixes
 
 - Fixed a bug where wrong dates where returned if the database used a different timezone than UTC.
