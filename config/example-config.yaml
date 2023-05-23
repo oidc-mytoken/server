@@ -193,6 +193,14 @@ features:
       - /etc/ssh/ssh_host_ed25519_key
       - /etc/ssh/ssh_host_rsa_key
 
+  # Settings related to server profiles and templates
+  server_profiles:
+    enabled: true
+    # group names and passwords; those are used by an entity to add, update, delete profiles on this server, the '_'
+    # group is the default group managed by the server admin
+    groups:
+    # _: admin
+
 # The list of supported providers
 providers:
   - issuer: "https://example.provider.com/"
@@ -205,4 +213,12 @@ providers:
     # Maximum lifetime for mytokens for this issuer, given in seconds. On default the lifetime of mytokens is not
     # restricted. Setting this value to 0, means that there is no maximum lifetime.
     mytokens_max_lifetime: 0
+    # Settings related to how the audience(s) of ATs is requested
+    audience:
+      # Unless false audiences are requested according to RFC8707; other options are ignored;
+      use_rfc8707: true
+      # The parameter used in the request, common options are "resource" and "audience"
+      request_parameter: "resource"
+      # Defines how multiple audience values in a request are handled;
+      space_separate_auds: false
 

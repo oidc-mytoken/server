@@ -134,7 +134,10 @@ var app = &cli.App{
 		}
 		dbConfig.ReconnectInterval = 60
 		dbConfig.DBConf.Hosts = dbConfig.Hosts.Value()
+		tmpScheduleEnabled := dbConfig.DBConf.EnableScheduledCleanup
+		dbConfig.DBConf.EnableScheduledCleanup = false
 		db.ConnectConfig(dbConfig.DBConf)
+		dbConfig.DBConf.EnableScheduledCleanup = tmpScheduleEnabled
 		return migrateDB(mytokenNodes)
 	},
 }

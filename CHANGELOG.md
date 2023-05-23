@@ -12,6 +12,54 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.8.0
+
+### Features
+
+- Added support for RFC8707 for requesting audience restricted ATs
+
+### Changes
+
+- Default behavior for requesting audience restricted ATs is now according to RFC8707; the previous behavor can be
+  configured with these options:
+  ```yaml
+  audience:
+    use_rfc8707: false
+    request_parameter: "audience"
+    space_separate_auds: true
+  ```
+
+### API
+
+- When creating a mytoken from a mytoken and it is returned as a transfer code the response now contains the
+  `mom_id` of the created mytoken.
+
+### Bugfixes
+
+- Fixed a bug where wrong dates where returned if the database used a different timezone than UTC.
+- Fixed a bug in `mytoken-migratedb` were empty databases could not be setup.
+
+### Security Fixes
+
+- Replaced the uuid library; the old library had a security flaw CVE-2021-3538
+
+### Dependencies
+
+- Bump golang.org/x/term from 0.5.0 to 0.8.0
+- Bump github.com/valyala/fasthttp from 1.44.0 to 1.47.0
+- Bump golang.org/x/net from 0.6.0 to 0.7.0
+- Bump golang.org/x/crypto from 0.6.0 to 0.9.0
+- Bump golang.org/x/oauth2 from 0.5.0 to 0.8.0
+- Bump golang.org/x/mod from 0.8.0 to 0.9.0
+- Bump github.com/gofiber/helmet/v2 from 2.2.24 to 2.2.25
+- Bump github.com/gofiber/template from 1.7.5 to 1.8.0
+- Bump github.com/gofiber/fiber/v2 from 2.42.0 to 2.46.0
+- Bump github.com/pires/go-proxyproto from 0.6.2 to 0.7.0
+- Bump github.com/go-sql-driver/mysql from 1.7.0 to 1.7.1
+- Bump github.com/sirupsen/logrus from 1.9.0 to 1.9.2
+- Bump github.com/coreos/go-oidc/v3 from 3.5.0 to 3.6.0
+- Replaced github.com/satori/go.uuid with github.com/gofrs/uuid
+
 ## mytoken 0.7.2
 
 ### Bugfixes

@@ -5,6 +5,7 @@ import (
 )
 
 func TestMTID_HashValid(t *testing.T) {
+	id, _ := New()
 	tests := []struct {
 		name     string
 		id       MTID
@@ -17,7 +18,7 @@ func TestMTID_HashValid(t *testing.T) {
 		},
 		{
 			name:     "Valid",
-			id:       New(),
+			id:       id,
 			expected: true,
 		},
 		{
@@ -43,6 +44,7 @@ func TestMTID_HashValid(t *testing.T) {
 	}
 }
 func TestMTID_Valid(t *testing.T) {
+	id, _ := New()
 	tests := []struct {
 		name     string
 		id       MTID
@@ -55,7 +57,7 @@ func TestMTID_Valid(t *testing.T) {
 		},
 		{
 			name:     "Valid",
-			id:       New(),
+			id:       id,
 			expected: true,
 		},
 		{

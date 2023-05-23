@@ -258,24 +258,25 @@ func createMytokenEntry(
 	if req.Rotation != nil {
 		rot = &req.Rotation.Rotation
 	}
-	ste := mytokenrepo.NewMytokenEntry(
-		mytoken.NewMytoken(
-			parent.OIDCSubject, parent.OIDCIssuer, req.GeneralMytokenRequest.Name, r, c, rot,
-			parent.AuthTime,
-		),
-		req.GeneralMytokenRequest.Name, networkData,
+	mt, err := mytoken.NewMytoken(
+		parent.OIDCSubject, parent.OIDCIssuer, req.GeneralMytokenRequest.Name, r, c, rot,
+		parent.AuthTime,
 	)
+	if err != nil {
+		return nil, model.ErrorToInternalServerErrorResponse(err)
+	}
+	mte := mytokenrepo.NewMytokenEntry(mt, req.GeneralMytokenRequest.Name, networkData)
 	encryptionKey, _, err := encryptionkeyrepo.GetEncryptionKey(rlog, nil, parent.ID, req.Mytoken.JWT)
 	if err != nil {
 		rlog.WithError(err).Error()
-		return ste, model.ErrorToInternalServerErrorResponse(err)
+		return mte, model.ErrorToInternalServerErrorResponse(err)
 	}
-	if err = ste.SetRefreshToken(rtID, encryptionKey); err != nil {
+	if err = mte.SetRefreshToken(rtID, encryptionKey); err != nil {
 		rlog.WithError(err).Error()
-		return ste, model.ErrorToInternalServerErrorResponse(err)
+		return mte, model.ErrorToInternalServerErrorResponse(err)
 	}
-	ste.ParentID = parent.ID
-	return ste, nil
+	mte.ParentID = parent.ID
+	return mte, nil
 }
 
 // RevokeMytoken revokes a Mytoken
