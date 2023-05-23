@@ -27,7 +27,7 @@ require (
 	github.com/sirupsen/logrus v1.9.2
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
 	github.com/valyala/fasthttp v1.47.0
-	github.com/zachmann/go-oidcfed v0.0.0-20230307111037-f2d9009739bd
+	github.com/zachmann/go-oidcfed v0.0.0-20230523120400-9535f828a6f3
 	golang.org/x/crypto v0.9.0
 	golang.org/x/mod v0.10.0
 	golang.org/x/oauth2 v0.8.0
@@ -71,4 +71,4 @@ require (
 
 replace github.com/urfave/cli/v2 => github.com/zachmann/cli/v2 v2.3.1-0.20211220102037-d619fd40a704
 
-replace github.com/zachmann/go-oidcfed => ../../go-oidcfed
+//replace github.com/zachmann/go-oidcfed => ../../fed/go-oidcfed
