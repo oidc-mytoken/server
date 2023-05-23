@@ -7,7 +7,8 @@ import (
 )
 
 func TestMytokenEntry_Root(t *testing.T) {
-	parentRoot := mtid.New()
+	parentRoot, _ := mtid.New()
+	parentID, _ := mtid.New()
 	tests := []struct {
 		name     string
 		mt       MytokenEntry
@@ -28,7 +29,7 @@ func TestMytokenEntry_Root(t *testing.T) {
 		{
 			name: "HasParentAndRoot",
 			mt: MytokenEntry{
-				ParentID: mtid.New(),
+				ParentID: parentID,
 			},
 			expected: false,
 		},
