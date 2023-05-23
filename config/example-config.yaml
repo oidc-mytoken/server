@@ -193,6 +193,14 @@ features:
       - /etc/ssh/ssh_host_ed25519_key
       - /etc/ssh/ssh_host_rsa_key
 
+  # Settings related to server profiles and templates
+  server_profiles:
+    enabled: true
+    # group names and passwords; those are used by an entity to add, update, delete profiles on this server, the '_'
+    # group is the default group managed by the server admin
+    groups:
+    # _: admin
+
 # The list of supported providers
 providers:
   - issuer: "https://example.provider.com/"
