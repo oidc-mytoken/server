@@ -337,23 +337,24 @@ func createMytokenEntry(
 	if authFlowInfo.Rotation != nil {
 		rot = &authFlowInfo.Rotation.Rotation
 	}
-	mte := mytokenrepo.NewMytokenEntry(
-		mytoken.NewMytoken(
-			oidcSub,
-			authFlowInfo.Issuer,
-			authFlowInfo.Name,
-			authFlowInfo.Restrictions.Restrictions,
-			authFlowInfo.Capabilities.Capabilities,
-			rot,
-			unixtime.Now(),
-		),
-		authFlowInfo.Name, networkData,
+	mt, err := mytoken.NewMytoken(
+		oidcSub,
+		authFlowInfo.Issuer,
+		authFlowInfo.Name,
+		authFlowInfo.Restrictions.Restrictions,
+		authFlowInfo.Capabilities.Capabilities,
+		rot,
+		unixtime.Now(),
 	)
-	mte.Token.AuthTime = unixtime.Now()
-	if err := mte.InitRefreshToken(token.RefreshToken); err != nil {
+	if err != nil {
 		return nil, err
 	}
-	if err := mte.Store(rlog, tx, "Used grant_type oidc_flow authorization_code"); err != nil {
+	mte := mytokenrepo.NewMytokenEntry(mt, authFlowInfo.Name, networkData)
+	mte.Token.AuthTime = unixtime.Now()
+	if err = mte.InitRefreshToken(token.RefreshToken); err != nil {
+		return nil, err
+	}
+	if err = mte.Store(rlog, tx, "Used grant_type oidc_flow authorization_code"); err != nil {
 		return nil, err
 	}
 	return mte, nil

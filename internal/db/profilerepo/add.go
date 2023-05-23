@@ -3,9 +3,9 @@ package profilerepo
 import (
 	"encoding/json"
 
+	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
@@ -15,10 +15,13 @@ import (
 func AddProfile(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, group, name string, payload json.RawMessage,
 ) error {
-	id := uuid.NewV4()
+	id, err := uuid.NewV4()
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			_, err := tx.Exec(`CALL Profiles_InsertProfiles(?,?,?,?)`, id, group, name, payload)
+			_, err = tx.Exec(`CALL Profiles_InsertProfiles(?,?,?,?)`, id, group, name, payload)
 			return errors.WithStack(err)
 		},
 	)
@@ -28,7 +31,10 @@ func AddProfile(
 func AddCapabilities(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, group, name string, payload json.RawMessage,
 ) error {
-	id := uuid.NewV4()
+	id, err := uuid.NewV4()
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL Profiles_InsertCapabilities(?,?,?,?)`, id, group, name, payload)
@@ -41,7 +47,10 @@ func AddCapabilities(
 func AddRestrictions(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, group, name string, payload json.RawMessage,
 ) error {
-	id := uuid.NewV4()
+	id, err := uuid.NewV4()
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL Profiles_InsertRestrictions(?,?,?,?)`, id, group, name, payload)
@@ -54,7 +63,10 @@ func AddRestrictions(
 func AddRotation(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, group, name string, payload json.RawMessage,
 ) error {
-	id := uuid.NewV4()
+	id, err := uuid.NewV4()
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL Profiles_InsertRotations(?,?,?,?)`, id, group, name, payload)
