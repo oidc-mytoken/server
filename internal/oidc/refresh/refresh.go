@@ -16,7 +16,8 @@ type UpdateChangedRT func(rlog log.Ext1FieldLogger, tokenID mtid.MTID, newRT, my
 
 // DoFlowWithoutUpdate uses a refresh token to obtain a new access token; if the refresh token changes, this is ignored
 func DoFlowWithoutUpdate(
-	rlog log.Ext1FieldLogger, provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes, audiences string,
+	rlog log.Ext1FieldLogger, provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes string,
+	audiences []string,
 ) (*oidcreqres.OIDCTokenResponse, *oidcreqres.OIDCErrorResponse, error) {
 	return DoFlowAndUpdate(rlog, provider, tokenID, mytoken, rt, scopes, audiences, nil)
 }
@@ -24,7 +25,8 @@ func DoFlowWithoutUpdate(
 // DoFlowAndUpdate uses a refresh token to obtain a new access token; if the refresh token changes, the
 // UpdateChangedRT function is used to update the refresh token
 func DoFlowAndUpdate(
-	rlog log.Ext1FieldLogger, provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes, audiences string,
+	rlog log.Ext1FieldLogger, provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes string,
+	audiences []string,
 	updateFnc UpdateChangedRT,
 ) (*oidcreqres.OIDCTokenResponse, *oidcreqres.OIDCErrorResponse, error) {
 	req := oidcreqres.NewRefreshRequest(rt, provider)
@@ -32,7 +34,7 @@ func DoFlowAndUpdate(
 	req.Audiences = audiences
 	httpRes, err := httpclient.Do().R().
 		SetBasicAuth(provider.ClientID, provider.ClientSecret).
-		SetFormData(req.ToFormData()).
+		SetFormDataFromValues(req.ToURLValues()).
 		SetResult(&oidcreqres.OIDCTokenResponse{}).
 		SetError(&oidcreqres.OIDCErrorResponse{}).
 		Post(provider.Endpoints.Token)
@@ -58,7 +60,8 @@ func DoFlowAndUpdate(
 // DoFlowAndUpdateDB uses a refresh token to obtain a new access token; if the refresh token changes, it is
 // updated in the database
 func DoFlowAndUpdateDB(
-	rlog log.Ext1FieldLogger, provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes, audiences string,
+	rlog log.Ext1FieldLogger, provider *config.ProviderConf, tokenID mtid.MTID, mytoken, rt, scopes string,
+	audiences []string,
 ) (*oidcreqres.OIDCTokenResponse, *oidcreqres.OIDCErrorResponse, error) {
 	return DoFlowAndUpdate(rlog, provider, tokenID, mytoken, rt, scopes, audiences, updateChangedRTInDB)
 }

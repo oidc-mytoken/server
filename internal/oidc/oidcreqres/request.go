@@ -1,30 +1,21 @@
 package oidcreqres
 
 import (
-	"encoding/json"
-	"reflect"
+	"net/url"
 	"strings"
-
-	"github.com/oidc-mytoken/utils/utils"
-	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	iutils "github.com/oidc-mytoken/server/internal/utils"
 )
 
-// RefreshRequest is the oidc request for an refresh flow
+// RefreshRequest is the oidc request for a refresh flow
 type RefreshRequest struct {
-	GrantType         string `json:"grant_type"`
-	RefreshToken      string `json:"refresh_token"`
-	Scopes            string `json:"scope,omitempty"`
-	Audiences         string `json:"resource,omitempty"` // The "resource" key will be replaced with the string in resourceParameter
+	GrantType         string
+	RefreshToken      string
+	Scopes            string
+	Audiences         []string
 	resourceParameter string
-}
-
-// MarshalJSON implements the json.Marshaler interface
-func (r *RefreshRequest) MarshalJSON() ([]byte, error) {
-	data, err := json.Marshal(r.ToFormData())
-	return data, errors.WithStack(err)
+	spaceDelimited    bool
 }
 
 // NewRefreshRequest creates a new RefreshRequest for a given refresh token
@@ -32,44 +23,30 @@ func NewRefreshRequest(rt string, conf *config.ProviderConf) *RefreshRequest {
 	return &RefreshRequest{
 		GrantType:         "refresh_token",
 		RefreshToken:      rt,
-		resourceParameter: conf.AudienceRequestParameter,
+		resourceParameter: conf.Audience.RequestParameter,
+		spaceDelimited:    conf.Audience.SpaceSeparateAuds,
 	}
 }
 
-func parseTagValue(tag string) (value string, omitEmpty bool) {
-	tmp := strings.Split(tag, ",")
-	value = tmp[0]
-	if len(tmp) > 1 {
-		rest := tmp[1:]
-		if utils.StringInSlice("omitempty", rest) {
-			omitEmpty = true
-		}
+// ToURLValues formats the RefreshRequest as a url.Values
+func (r *RefreshRequest) ToURLValues() url.Values {
+	m := make(url.Values)
+	m["grant_type"] = []string{r.GrantType}
+	m["refresh_token"] = []string{r.RefreshToken}
+	if r.Scopes != "" {
+		m["scope"] = []string{r.Scopes}
 	}
-	return
-}
-
-// ToFormData formats the RefreshRequest as a string map
-func (r *RefreshRequest) ToFormData() map[string]string {
-	v := reflect.ValueOf(*r)
-	t := v.Type()
-	m := make(map[string]string)
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-		if k := f.Tag.Get("json"); k != "" {
-			key, omitempty := parseTagValue(k)
-			if key == "resource" {
-				key = r.resourceParameter
-			}
-			value := v.Field(i).String()
-			if !omitempty || value != "" {
-				m[key] = value
-			}
+	if len(r.Audiences) > 0 && r.Audiences[0] != "" {
+		if r.spaceDelimited {
+			m[r.resourceParameter] = []string{strings.Join(r.Audiences, " ")}
+		} else {
+			m[r.resourceParameter] = r.Audiences
 		}
 	}
 	return m
 }
 
-// RevokeRequest is a oidc request for revoking tokens
+// RevokeRequest is an oidc request for revoking tokens
 type RevokeRequest struct {
 	Token     string `json:"token"`
 	TokenType string `json:"token_type_hint"`

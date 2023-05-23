@@ -117,6 +117,11 @@ var defaultConfig = Config{
 	},
 }
 
+const (
+	AudienceParameterAudience = "audience"
+	AudienceParameterResource = "resource"
+)
+
 // Config holds the server configuration
 type Config struct {
 	IssuerURL            string                   `yaml:"issuer"`
@@ -340,15 +345,21 @@ type signingConf struct {
 
 // ProviderConf holds information about a provider
 type ProviderConf struct {
-	Issuer                   string             `yaml:"issuer"`
-	ClientID                 string             `yaml:"client_id"`
-	ClientSecret             string             `yaml:"client_secret"`
-	Scopes                   []string           `yaml:"scopes"`
-	MytokensMaxLifetime      int64              `yaml:"mytokens_max_lifetime"`
-	Endpoints                *oauth2x.Endpoints `yaml:"-"`
-	Provider                 *oidc.Provider     `yaml:"-"`
-	Name                     string             `yaml:"name"`
-	AudienceRequestParameter string             `yaml:"audience_request_parameter"`
+	Issuer              string             `yaml:"issuer"`
+	ClientID            string             `yaml:"client_id"`
+	ClientSecret        string             `yaml:"client_secret"`
+	Scopes              []string           `yaml:"scopes"`
+	MytokensMaxLifetime int64              `yaml:"mytokens_max_lifetime"`
+	Endpoints           *oauth2x.Endpoints `yaml:"-"`
+	Provider            *oidc.Provider     `yaml:"-"`
+	Name                string             `yaml:"name"`
+	Audience            audienceConf       `yaml:"audience"`
+}
+
+type audienceConf struct {
+	RFC8707           bool   `yaml:"use_rfc8707"`
+	RequestParameter  string `yaml:"request_parameter"`
+	SpaceSeparateAuds bool   `yaml:"space_separate_auds"`
 }
 
 // ServiceOperatorConf is type holding the configuration for the service operator of this mytoken instance
@@ -361,11 +372,8 @@ type ServiceOperatorConf struct {
 
 // GetPassword returns the password for this database config. If necessary it reads it from the password file.
 func (conf *DBConf) GetPassword() string {
-	if conf.Password != "" {
-		return conf.Password
-	}
 	if conf.PasswordFile == "" {
-		return ""
+		return conf.Password
 	}
 	content, err := os.ReadFile(conf.PasswordFile)
 	if err != nil {
@@ -470,8 +478,11 @@ func validate() error {
 		iss0, iss1 := issuerutils.GetIssuerWithAndWithoutSlash(p.Issuer)
 		conf.ProviderByIssuer[iss0] = p
 		conf.ProviderByIssuer[iss1] = p
-		if p.AudienceRequestParameter == "" {
-			p.AudienceRequestParameter = "resource"
+		if p.Audience.RFC8707 {
+			p.Audience.RequestParameter = AudienceParameterResource
+			p.Audience.SpaceSeparateAuds = false
+		} else if p.Audience.RequestParameter == "" {
+			p.Audience.RequestParameter = AudienceParameterResource
 		}
 	}
 	if conf.IssuerURL == "" {

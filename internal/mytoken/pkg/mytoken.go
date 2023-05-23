@@ -260,6 +260,7 @@ func (mt *Mytoken) ToTokenResponse(
 		res.TransferCode = transferCode
 		res.MytokenType = model.ResponseTypeTransferCode
 		res.ExpiresIn = expiresIn
+		res.MOMID = mt.ID.Hash()
 		return res, err
 	}
 	return mt.toMytokenResponse(jwt), nil
