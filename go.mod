@@ -12,6 +12,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.46.0
 	github.com/gofiber/helmet/v2 v2.2.26
 	github.com/gofiber/template v1.8.1
+	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/ip2location/ip2location-go v8.3.0+incompatible
 	github.com/jinzhu/copier v0.3.5
@@ -23,7 +24,6 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pires/go-proxyproto v0.7.0
 	github.com/pkg/errors v0.9.1
-	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.9.2
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
 	github.com/valyala/fasthttp v1.47.0

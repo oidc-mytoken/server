@@ -92,8 +92,12 @@ func (mt *Mytoken) VerifyCapabilities(required ...api.Capability) bool {
 func NewMytoken(
 	oidcSub, oidcIss, name string, r restrictions.Restrictions, c api.Capabilities, rot *api.Rotation,
 	authTime unixtime.UnixTime,
-) *Mytoken {
+) (*Mytoken, error) {
 	now := unixtime.Now()
+	id, err := mtid.New()
+	if err != nil {
+		return nil, err
+	}
 	mt := &Mytoken{
 		Mytoken: api.Mytoken{
 			Version:      api.TokenVer,
@@ -107,7 +111,7 @@ func NewMytoken(
 			OIDCSubject:  oidcSub,
 			Capabilities: c,
 		},
-		ID:        mtid.New(),
+		ID:        id,
 		IssuedAt:  now,
 		NotBefore: now,
 		AuthTime:  authTime,
@@ -125,7 +129,7 @@ func NewMytoken(
 			mt.NotBefore = nbf
 		}
 	}
-	return mt
+	return mt, nil
 }
 
 // ExpiresIn returns the amount of seconds in which this token expires
