@@ -35,10 +35,18 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 	if err := ctx.BodyParser(&req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	rlog.Trace("Parsed mytoken request")
+	rlog.WithField("parsed request", fmt.Sprintf("%+v", req)).WithField(
+		"body", string(ctx.Body()),
+	).Trace("Parsed revocation request")
 	clearCookie := false
 	if req.Token == "" {
 		req.Token = ctx.Cookies("mytoken")
+		if req.Token == "" {
+			return model.Response{
+				Status:   fiber.StatusBadRequest,
+				Response: model.BadRequestError("no token given"),
+			}.Send(ctx)
+		}
 		if req.MOMID == "" {
 			clearCookie = true
 		}
