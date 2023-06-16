@@ -10,7 +10,7 @@ const consentCodeLen = 8
 
 // NewConsentCode creates a new ConsentCode
 func NewConsentCode() *ConsentCode {
-	return ConsentCodeFromStr(utils.RandASCIIString(consentCodeLen))
+	return ConsentCodeFromStr(utils.RandReadableAlphaString(consentCodeLen))
 }
 
 // ConsentCode is type for the code used for giving consent to mytoken
