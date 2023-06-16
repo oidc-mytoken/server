@@ -26,7 +26,7 @@ type proxyToken struct {
 
 // newProxyToken creates a new proxyToken of the given length
 func newProxyToken(size int) *proxyToken {
-	token := utils.RandASCIIString(size)
+	token := utils.RandReadableAlphaString(size)
 	return createProxyToken(token)
 }
 
