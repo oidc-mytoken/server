@@ -11,7 +11,6 @@ require (
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/gofiber/fiber/v2 v2.46.0
 	github.com/gofiber/helmet/v2 v2.2.26
-	github.com/gofiber/template v1.8.1
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/ip2location/ip2location-go v8.3.0+incompatible
@@ -37,7 +36,6 @@ require (
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
-	github.com/cbroglie/mustache v1.4.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
