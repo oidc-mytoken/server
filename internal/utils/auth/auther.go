@@ -6,12 +6,12 @@ import (
 	"github.com/oidc-mytoken/api/v0"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/oidc-mytoken/server/internal/config"
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/model"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
+	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 )
@@ -96,7 +96,7 @@ func RequireValidMytoken(
 // RequireMatchingIssuer checks that the OIDC issuer from a mytoken is the same as the issuer string in a request (if
 // given). RequireMatchingIssuer also checks that the issuer is valid for this mytoken instance.
 func RequireMatchingIssuer(rlog log.Ext1FieldLogger, mtOIDCIssuer string, requestIssuer *string) (
-	*config.ProviderConf, *model.Response,
+	model.Provider, *model.Response,
 ) {
 	if *requestIssuer == "" {
 		*requestIssuer = mtOIDCIssuer
@@ -108,8 +108,8 @@ func RequireMatchingIssuer(rlog log.Ext1FieldLogger, mtOIDCIssuer string, reques
 			Response: model.BadRequestError("token not for specified issuer"),
 		}
 	}
-	provider, ok := config.Get().ProviderByIssuer[*requestIssuer]
-	if !ok {
+	provider := provider2.GetProvider(*requestIssuer)
+	if provider == nil {
 		return nil, &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: api.ErrorUnknownIssuer,

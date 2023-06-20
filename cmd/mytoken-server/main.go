@@ -13,12 +13,14 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/versionrepo"
 	configurationEndpoint "github.com/oidc-mytoken/server/internal/endpoints/configuration"
-	"github.com/oidc-mytoken/server/internal/endpoints/federation"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings"
 	"github.com/oidc-mytoken/server/internal/jws"
 	"github.com/oidc-mytoken/server/internal/model/version"
-	"github.com/oidc-mytoken/server/internal/oidc/authcode"
+	"github.com/oidc-mytoken/server/internal/oidc/oidcfed"
+	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
 	"github.com/oidc-mytoken/server/internal/server"
+	"github.com/oidc-mytoken/server/internal/server/routes"
+	"github.com/oidc-mytoken/server/internal/utils/cache"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/geoip"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
@@ -28,10 +30,12 @@ func main() {
 	handleSignals()
 	config.Load()
 	loggerUtils.Init()
+	cache.InitCache()
+	routes.Init()
+	provider2.Init()
 	server.Init()
 	configurationEndpoint.Init()
-	federation.Init()
-	authcode.Init()
+	oidcfed.Init()
 	versionrepo.ConnectToVersion()
 	jws.LoadMytokenSigningKey()
 	httpclient.Init(config.Get().IssuerURL, fmt.Sprintf("mytoken-server %s", version.VERSION))
@@ -66,7 +70,7 @@ func reload() {
 	db.Connect()
 	jws.LoadMytokenSigningKey()
 	geoip.Init()
-	federation.Init()
+	oidcfed.Discovery()
 }
 
 func reloadLogFiles() {

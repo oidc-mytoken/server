@@ -67,12 +67,23 @@ database:
 
 # Configuration for token signing
 signing:
-  # The used algorithm
-  alg: "ES512"
-  # The file with the signing key
-  key_file: "/mytoken.key"
-  # If an RSA-based algorithm is used, this is the key len. Only needed when generating a new rsa key.
-  rsa_key_len: 2048
+  # Configuration for mytoken signing
+  mytoken:
+    # The used algorithm
+    alg: "ES512"
+    # The file with the signing key
+    key_file: "/mytoken.key"
+    # If an RSA-based algorithm is used, this is the key len. Only needed when generating a new rsa key.
+    rsa_key_len: 2048
+  # Configuration for signing operations within oidc communication, currently this is only used if federation support
+  #  is enabled; it is recommended to use different signing keys for mytoken signing, oidc communication, and federation
+  oidc:
+    # The used algorithm
+    alg: "ES512"
+    # The file with the signing key
+    # key_file: "/oidc.key"
+    # If an RSA-based algorithm is used, this is the key len. Only needed when generating a new rsa key.
+    rsa_key_len: 2048
 
 # Configuration for logging
 logging:

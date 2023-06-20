@@ -101,7 +101,7 @@ func revokeByID(rlog log.Ext1FieldLogger, req api.RevocationRequest, clientMetad
 			Response: api.Error{
 				Error: api.ErrorStrInsufficientCapabilities,
 				ErrorDescription: fmt.Sprintf(
-					"The provided token is neither a parent of the the token to be revoked"+
+					"The provided token is neither a parent of the token to be revoked"+
 						" nor does it have the '%s' capability", api.CapabilityRevokeAnyToken.Name,
 				),
 			},

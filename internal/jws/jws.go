@@ -22,7 +22,13 @@ import (
 // GenerateMytokenSigningKeyPair generates a cryptographic key pair for mytoken signing with the algorithm specified in
 // the mytoken config.
 func GenerateMytokenSigningKeyPair() (sk crypto.Signer, pk crypto.PublicKey, err error) {
-	return generateKeyPair(config.Get().Signing.Alg, config.Get().Signing.RSAKeyLen)
+	return generateKeyPair(config.Get().Signing.Mytoken.Alg, config.Get().Signing.Mytoken.RSAKeyLen)
+}
+
+// GenerateOIDCSigningKeyPair generates a cryptographic key pair for jwt signing within oidc communication with the
+// algorithm specified in the mytoken config.
+func GenerateOIDCSigningKeyPair() (sk crypto.Signer, pk crypto.PublicKey, err error) {
+	return generateKeyPair(config.Get().Signing.OIDC.Alg, config.Get().Signing.OIDC.RSAKeyLen)
 }
 
 // GenerateFederationSigningKeyPair generates a cryptographic key pair for federation signing with the algorithm
@@ -103,6 +109,7 @@ type KeyUsage string
 const (
 	KeyUsageMytokenSigning = KeyUsage("MT signing")
 	KeyUsageFederation     = KeyUsage("oidcfed")
+	KeyUsageOIDCSigning    = KeyUsage("oidc comm")
 )
 
 type signingKeys map[KeyUsage]signingKeyMaterial
@@ -148,7 +155,14 @@ func GetJWKS(usage KeyUsage) (jwks jwk.Set) {
 
 // LoadMytokenSigningKey loads the private and public key for signing mytokens
 func LoadMytokenSigningKey() {
-	loadKey(config.Get().Signing.KeyFile, KeyUsageMytokenSigning, config.Get().Signing.Alg)
+	loadKey(config.Get().Signing.Mytoken.KeyFile, KeyUsageMytokenSigning, config.Get().Signing.Mytoken.Alg)
+}
+
+// LoadOIDCSigningKey loads the private and public key for signing operations within oidc communcation
+func LoadOIDCSigningKey() {
+	if config.Get().Signing.OIDC.KeyFile != "" {
+		loadKey(config.Get().Signing.OIDC.KeyFile, KeyUsageOIDCSigning, config.Get().Signing.OIDC.Alg)
+	}
 }
 
 // LoadFederationKey loads the private and public key for signing federation statements

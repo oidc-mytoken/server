@@ -12,7 +12,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/hashutils"
 )
 
-const stateLen = 16
+const stateLen = 32
 
 // State is a type for the oidc state
 type State struct {

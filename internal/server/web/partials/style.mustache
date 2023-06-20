@@ -6,8 +6,12 @@
 {{#settings-ssh}}
     <link rel="stylesheet" href="{{instance-url}}/static/css/capabilities.css">
 {{/settings-ssh}}
+{{^logged-in}}
+    <link rel="stylesheet" href="{{instance-url}}/static/css/lib/bootstrap-select.min.css">
+{{/logged-in}}
 {{#home}}
     <link rel="stylesheet" href="{{instance-url}}/static/css/capabilities.css">
+    <link rel="stylesheet" href="{{instance-url}}/static/css/lib/bootstrap-select.min.css">
 {{/home}}
 {{#restr-gui}}
     <link rel="stylesheet" href="{{instance-url}}/static/css/lib/tempusdominus-bootstrap-4.min.css"

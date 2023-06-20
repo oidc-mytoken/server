@@ -2,31 +2,34 @@ $(function () {
     checkIfLoggedIn();
 })
 
-$('#login-form').on('submit', function (e) {
-    e.preventDefault();
-    let data = $(this).serializeObject()
-    data['restrictions'] = [
-        {
-            "exp": Math.floor(Date.now() / 1000) + cookieLifetime,
-            "ip": ["this"]
-        }
-    ]
-    data['capabilities'] = [
-        "tokeninfo",
-        "AT",
-        "settings",
-        "list_mytokens",
-        "manage_mytokens"
-    ]
-    data['rotation'] = {
-        "on_AT": true,
-        "on_other": true,
-        "auto_revoke": true,
-        "lifetime": 3600 * 24,
-    }
-    data['client_type'] = 'web';
-    data['redirect_uri'] = '/home';
-    data['name'] = "mytoken-web";
+$('#login-op-selector').on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
+    let data = {
+        "grant_Type": "oidc_flow",
+        "oidc_flow": "authorization_code",
+        "oidc_issuer": $(this).val(),
+        'restrictions': [
+            {
+                "exp": Math.floor(Date.now() / 1000) + cookieLifetime,
+                "ip": ["this"]
+            }
+        ],
+        'capabilities': [
+            "tokeninfo",
+            "AT",
+            "settings",
+            "list_mytokens",
+            "manage_mytokens"
+        ],
+        'rotation': {
+            "on_AT": true,
+            "on_other": true,
+            "auto_revoke": true,
+            "lifetime": 3600 * 24,
+        },
+        'client_type': 'web',
+        'redirect_uri': '/home',
+        'name': "mytoken-web"
+    };
     storageSet("oidc_issuer", data["oidc_issuer"]);
     data = JSON.stringify(data);
     $.ajax({

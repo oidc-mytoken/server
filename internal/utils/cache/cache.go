@@ -6,12 +6,29 @@ import (
 	"time"
 
 	"github.com/patrickmn/go-cache"
+
+	"github.com/oidc-mytoken/server/internal/config"
 )
 
-var c *cache.Cache
+type Cache interface {
+	Get(key string) (any, bool)
+	Set(key string, value any, expiration time.Duration)
+}
 
-func init() {
-	c = cache.New(5*time.Minute, 10*time.Minute)
+var c Cache
+
+func setCache(cache Cache) {
+	c = cache
+}
+
+func InitCache() {
+	if config.Get().Caching.External != nil {
+		if config.Get().Caching.External.Redis != nil {
+			initRedisCache()
+		}
+	} else {
+		initInternalCache()
+	}
 }
 
 // Type defines the type of cache
@@ -23,6 +40,8 @@ const (
 	IPAddrCache
 	IPNetCache
 	WebProfiles
+	FederationLib
+	FederationOPMetadata
 )
 
 func k(t Type, key string) string {
@@ -41,6 +60,22 @@ func Set(t Type, key string, value interface{}, expiration ...time.Duration) {
 // Get returns the cached value for a given key
 func Get(t Type, key string) (interface{}, bool) {
 	return c.Get(k(t, key))
+}
+
+type subcache struct {
+	t Type
+}
+
+func (sc subcache) Get(key string) (any, bool) {
+	return Get(sc.t, key)
+}
+
+func (sc subcache) Set(key string, value any, expiration time.Duration) {
+	Set(sc.t, key, value, expiration)
+}
+
+func SubCache(t Type) Cache {
+	return subcache{t}
 }
 
 // SetIPParseResult caches the result of an ip parsing
