@@ -124,8 +124,8 @@ github.com/go-sql-driver/mysql v1.7.1 h1:lUIinVbN1DY0xBg0eMOzmmtGoHwWBbvnWubQUrt
 github.com/go-sql-driver/mysql v1.7.1/go.mod h1:OXbVy3sEdcQ2Doequ6Z5BW6fXNQTmx+9S1MCJN5yJMI=
 github.com/goccy/go-json v0.10.2 h1:CrxCmQqYDkv1z7lO7Wbh2HN93uovUHgrECaO5ZrCXAU=
 github.com/goccy/go-json v0.10.2/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
-github.com/gofiber/fiber/v2 v2.46.0 h1:wkkWotblsGVlLjXj2dpgKQAYHtXumsK/HyFugQM68Ns=
-github.com/gofiber/fiber/v2 v2.46.0/go.mod h1:DNl0/c37WLe0g92U6lx1VMQuxGUQY5V7EIaVoEsUffc=
+github.com/gofiber/fiber/v2 v2.47.0 h1:EN5lHVCc+Pyqh5OEsk8fzRiifgwpbrP0rulQ4iNf3fs=
+github.com/gofiber/fiber/v2 v2.47.0/go.mod h1:mbFMVN1lQuzziTkkakgtKKdjfsXSw9BKR5lmcNksUoU=
 github.com/gofiber/helmet/v2 v2.2.26 h1:KreQVUpCIGppPQ6Yt8qQMaIR4fVXMnvBdsda0dJSsO8=
 github.com/gofiber/helmet/v2 v2.2.26/go.mod h1:XE0DF4cgf0M5xIt7qyAK5zOi8jJblhxfSDv9DAmEEQo=
 github.com/gofiber/template v1.8.2 h1:PIv9s/7Uq6m+Fm2MDNd20pAFFKt5wWs7ZBd8iV9pWwk=
@@ -271,8 +271,6 @@ github.com/oidc-mytoken/api v0.10.1-0.20230412103735-ccd26fb9a9ae h1:IJPDSV9qvkj
 github.com/oidc-mytoken/api v0.10.1-0.20230412103735-ccd26fb9a9ae/go.mod h1:DS2/0gUjt84jVq/4jqs7mSoUtv1DDEp3xexF7HW1qe4=
 github.com/oidc-mytoken/lib v0.7.0 h1:/uPQ10ColbCZ79wotV6aa3yfU6Lbaucis2+TrfVIXdQ=
 github.com/oidc-mytoken/lib v0.7.0/go.mod h1:D0vrMn1szss52mJKwI+sTsSakVCP6qCk0l0kAjd4YtA=
-github.com/oidc-mytoken/utils v0.1.3-0.20230616060525-273933b62b4b h1:G1O9ua6Aiqv24r40P/CRwlZrn+EDYYPFbnAXsRdDbSo=
-github.com/oidc-mytoken/utils v0.1.3-0.20230616060525-273933b62b4b/go.mod h1:pAUlvF/mYz8CjinCx4iwoWzG514B9EhuCpu7O+afaD8=
 github.com/oidc-mytoken/utils v0.1.3-0.20230616081854-5012088bac1e h1:lTzc3PKexxaOMoBBYgtOUqEbdVGlVPthBvO0fD4ewTE=
 github.com/oidc-mytoken/utils v0.1.3-0.20230616081854-5012088bac1e/go.mod h1:pAUlvF/mYz8CjinCx4iwoWzG514B9EhuCpu7O+afaD8=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
