@@ -12,6 +12,21 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.8.2
+
+### Bugfixes
+
+- Finally fixed a problem with database times when the database was not set to UTC.
+
+### Dependencies
+
+- Bump github.com/valyala/fasthttp from 1.47.0 to 1.48.0
+- Bump golang.org/x/mod from 0.11.0 to 0.12.0
+- Bump golang.org/x/oauth2 from 0.9.0 to 0.10.0
+- Bump golang.org/x/term from 0.9.0 to 0.10.0
+- Bump golang.org/x/crypto from 0.10.0 to 0.11.0
+- Bump github.com/gofiber/template/mustache/v2 from 2.0.4 to 2.0.5
+
 ## mytoken 0.8.1
 
 ### Enhancements
