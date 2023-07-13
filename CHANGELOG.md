@@ -12,6 +12,43 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.8.2
+
+### Bugfixes
+
+- Finally fixed a problem with database times when the database was not set to UTC.
+
+### Dependencies
+
+- Bump github.com/valyala/fasthttp from 1.47.0 to 1.48.0
+- Bump golang.org/x/mod from 0.11.0 to 0.12.0
+- Bump golang.org/x/oauth2 from 0.9.0 to 0.10.0
+- Bump golang.org/x/term from 0.9.0 to 0.10.0
+- Bump golang.org/x/crypto from 0.10.0 to 0.11.0
+- Bump github.com/gofiber/template/mustache/v2 from 2.0.4 to 2.0.5
+
+## mytoken 0.8.1
+
+### Enhancements
+
+- Improved returned transfercodes (do not include `l` and `I`)
+
+### Bugfixes
+
+- Fixed wrong (negative) `expires_at` time returned in tokeninfo for tokens without expiration
+- Fixed response if token revocation call does not contain token
+
+### Dependencies
+
+- Bump github.com/sirupsen/logrus from 1.9.2 to 1.9.3
+- Bump golang.org/x/term from 0.8.0 to 0.9.0
+- Bump github.com/lestrrat-go/jwx from 1.2.25 to 1.2.26
+- Bump golang.org/x/crypto from 0.9.0 to 0.10.0
+- Bump golang.org/x/mod from 0.10.0 to 0.11.0
+- Bump github.com/gofiber/template from 1.8.1 to 1.8.2
+- Bump golang.org/x/oauth2 from 0.8.0 to 0.9.0
+- Bump github.com/gofiber/fiber/v2 from 2.46.0 to 2.47.0
+
 ## mytoken 0.8.0
 
 ### Features
