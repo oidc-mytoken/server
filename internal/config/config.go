@@ -429,7 +429,7 @@ func (so *ServiceOperatorConf) validate() error {
 
 type federationConf struct {
 	Enabled                     bool                    `yaml:"enabled"`
-	TrustAnchors                []string                `yaml:"trust_anchors"`
+	TrustAnchors                oidcfed.TrustAnchors    `yaml:"trust_anchors"`
 	AuthorityHints              []string                `yaml:"authority_hints"`
 	EntityConfigurationLifetime int64                   `yaml:"entity_configuration_lifetime"`
 	Signing                     signingConf             `yaml:"signing"`
