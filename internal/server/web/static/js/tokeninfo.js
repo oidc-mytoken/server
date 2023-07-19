@@ -10,7 +10,7 @@ function _tokeninfo(action, successFnc, errorFnc, token = undefined, mom_id = un
         data['mytoken'] = token;
     }
     if (mom_id !== undefined) {
-        data['mom_id'] = mom_id;
+        data['mom_ids'] = [mom_id];
     }
     data = JSON.stringify(data);
     $.ajax({

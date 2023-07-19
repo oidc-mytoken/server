@@ -3,6 +3,7 @@ package tokeninfo
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
@@ -31,17 +32,37 @@ func doTokenInfoHistory(
 ) (history eventrepo.EventHistory, tokenUpdate *response.MytokenResponse, err error) {
 	err = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
-			var id interface{}
-			if req.MOMID != "" {
-				id = req.MOMID
+			var ids []any
+			if len(req.MOMIDs) > 0 {
+				for _, id := range req.MOMIDs {
+					switch id {
+					case api.MOMIDValueThis:
+						ids = append(ids, mt.ID)
+					case api.MOMIDValueChildren:
+						history, err = eventrepo.GetEventHistoryChildren(rlog, tx, history, mt.ID)
+						if err != nil && !errors.Is(err, sql.ErrNoRows) {
+							return err
+						}
+					default:
+						if strings.HasPrefix(id, api.MOMIDValueChildren+"@") {
+							history, err = eventrepo.GetEventHistoryChildren(
+								rlog, tx, history, id[len(api.MOMIDValueChildren)+1:],
+							)
+							if err != nil && !errors.Is(err, sql.ErrNoRows) {
+								return err
+							}
+						} else {
+							ids = append(ids, id)
+						}
+					}
+				}
 			} else {
-				id = mt.ID
+				ids = append(ids, mt.ID)
 			}
-			history, err = eventrepo.GetEventHistory(rlog, tx, id)
+			history, err = eventrepo.GetEventHistory(rlog, tx, history, ids...)
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				return err
 			}
-			history.MOMID = req.MOMID
 			if usedRestriction == nil {
 				return nil
 			}
@@ -55,8 +76,8 @@ func doTokenInfoHistory(
 				return err
 			}
 			ev := event.FromNumber(event.TokenInfoHistory, "")
-			if req.MOMID != "" {
-				ev = event.FromNumber(event.TokenInfoHistoryOtherToken, fmt.Sprintf("mom_id: %s", req.MOMID))
+			if len(req.MOMIDs) > 0 {
+				ev = event.FromNumber(event.TokenInfoHistoryOtherToken, "")
 			}
 			return eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{
@@ -93,39 +114,53 @@ func HandleTokenInfoHistory(
 ) model.Response {
 	// If we call this function it means the token is valid.
 
-	if req.MOMID == "" {
+	if len(req.MOMIDs) == 0 {
 		if errRes := auth.RequireCapability(rlog, api.CapabilityTokeninfoHistory, mt); errRes != nil {
 			return *errRes
 		}
 		return handleTokenInfoHistory(rlog, req, mt, clientMetadata)
 	}
-	isParent, err := helper.MOMIDHasParent(rlog, nil, req.MOMID, mt.ID)
-	if err != nil {
-		return *model.ErrorToInternalServerErrorResponse(err)
-	}
-	if !isParent && !mt.Capabilities.Has(api.CapabilityHistoryAnyToken) {
-		return model.Response{
-			Status: fiber.StatusForbidden,
-			Response: api.Error{
-				Error: api.ErrorStrInsufficientCapabilities,
-				ErrorDescription: fmt.Sprintf(
-					"The provided token is neither a parent of the the token with this"+
-						" mom_id nor does it have the '%s' capability", api.CapabilityHistoryAnyToken.Name,
-				),
-			},
-		}
-	}
-	same, err := helper.CheckMytokensAreForSameUser(rlog, nil, req.MOMID, mt.ID)
-	if err != nil {
-		return *model.ErrorToInternalServerErrorResponse(err)
-	}
-	if !same {
-		return model.Response{
-			Status: fiber.StatusForbidden,
-			Response: api.Error{
-				Error:            api.ErrorStrInvalidGrant,
-				ErrorDescription: "The provided token cannot be used to obtain history for this mom_id",
-			},
+	if !mt.Capabilities.Has(api.CapabilityHistoryAnyToken) {
+		for _, momid := range req.MOMIDs {
+			if momid == api.MOMIDValueThis || momid == api.MOMIDValueChildren {
+				continue
+			}
+			if strings.HasPrefix(momid, api.MOMIDValueChildren+"@") {
+				momid = momid[len(api.MOMIDValueChildren)+1:]
+			}
+			isParent, err := helper.MOMIDHasParent(rlog, nil, momid, mt.ID)
+			if err != nil {
+				return *model.ErrorToInternalServerErrorResponse(err)
+			}
+			if !isParent {
+				return model.Response{
+					Status: fiber.StatusForbidden,
+					Response: api.Error{
+						Error: api.ErrorStrInsufficientCapabilities,
+						ErrorDescription: fmt.Sprintf(
+							"The provided token is neither a parent of the the token with "+
+								" mom_id '%s' nor does it have the '%s' capability", momid,
+							api.CapabilityHistoryAnyToken.Name,
+						),
+					},
+				}
+			}
+
+			same, err := helper.CheckMytokensAreForSameUser(rlog, nil, momid, mt.ID)
+			if err != nil {
+				return *model.ErrorToInternalServerErrorResponse(err)
+			}
+			if !same {
+				return model.Response{
+					Status: fiber.StatusForbidden,
+					Response: api.Error{
+						Error: api.ErrorStrInvalidGrant,
+						ErrorDescription: fmt.Sprintf(
+							"The provided token cannot be used to obtain history for mom_id '%s'", momid,
+						),
+					},
+				}
+			}
 		}
 	}
 	return handleTokenInfoHistory(rlog, req, mt, clientMetadata)
