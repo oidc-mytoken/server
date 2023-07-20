@@ -12,7 +12,12 @@
 <!-- ### Dependencies -->
 <!--  -->
 
-## mytoken 0.8.2
+## mytoken 0.9.0
+
+### Changes
+
+- Changed the tokeninfo history api when used with a `mom_id`, now multiple `mom_ids` can be passed in a single
+  request. Also, the response now contains the `mom_id` in the entry object.
 
 ### Bugfixes
 
