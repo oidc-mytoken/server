@@ -249,4 +249,26 @@ BEGIN
     ON DUPLICATE KEY UPDATE bef=CURRENT_TIMESTAMP();
 END;;
 
+CREATE OR REPLACE PROCEDURE EventHistory_GetChildren(IN MTID VARCHAR(128))
+BEGIN
+    CREATE TEMPORARY TABLE IF NOT EXISTS child_MTIDs (id VARCHAR(128));
+    TRUNCATE child_MTIDs;
+    INSERT INTO child_MTIDs
+    WITH RECURSIVE childs AS (SELECT id, parent_id
+                                  FROM MTokens
+                                  WHERE id = MTID
+                              UNION ALL
+                              SELECT mt.id, mt.parent_id
+                                  FROM MTokens mt
+                                           INNER JOIN childs c
+                                  WHERE mt.parent_id = c.id)
+    SELECT id
+        FROM childs;
+    DELETE FROM child_MTIDs WHERE id = MTID;
+    SELECT MT_id, event, time, comment, ip, user_agent
+        FROM EventHistory eh
+        WHERE eh.MT_id IN (SELECT id FROM child_MTIDs);
+    DROP TABLE child_MTIDs;
+END;;
+
 DELIMITER ;
