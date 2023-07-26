@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
-	"github.com/oidc-mytoken/utils/context"
 	"github.com/oidc-mytoken/utils/httpclient"
 	"github.com/oidc-mytoken/utils/unixtime"
 	"github.com/oidc-mytoken/utils/utils"
@@ -17,7 +15,6 @@ import (
 	"github.com/oidc-mytoken/utils/utils/ternary"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/oauth2"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
@@ -317,12 +314,4 @@ func createMytokenEntry(
 		return nil, err
 	}
 	return mte, nil
-}
-
-func getSubjectFromUserinfo(provider *oidc.Provider, token *oauth2.Token) (string, error) {
-	userInfo, err := provider.UserInfo(context.Get(), oauth2.StaticTokenSource(token))
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get userinfo")
-	}
-	return userInfo.Subject, nil
 }
