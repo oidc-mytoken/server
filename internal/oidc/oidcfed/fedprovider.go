@@ -7,9 +7,14 @@ import (
 	log "github.com/sirupsen/logrus"
 	fed "github.com/zachmann/go-oidcfed/pkg"
 
+	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
 )
+
+func fedLeafEntity() *fed.FederationLeaf {
+	return config.Get().Features.Federation.Entity
+}
 
 var defaultOIDCFedAudienceConf = &model.AudienceConf{
 	RFC8707:           true,
@@ -33,7 +38,7 @@ func (p OIDCFedProvider) Issuer() string {
 }
 
 func (p OIDCFedProvider) ClientID() string {
-	return requestObjectProducer.EntityID
+	return fedLeafEntity().EntityID
 }
 
 func (p OIDCFedProvider) Scopes() []string {
@@ -60,7 +65,7 @@ func (p OIDCFedProvider) MaxMytokenLifetime() int64 {
 }
 
 func (p OIDCFedProvider) AddClientAuthentication(r *resty.Request, endpoint string) *resty.Request {
-	clientAssertion, err := requestObjectProducer.ClientAssertion(endpoint)
+	clientAssertion, err := fedLeafEntity().RequestObjectProducer().ClientAssertion(endpoint)
 	if err != nil {
 		log.WithError(err).Error()
 		return r

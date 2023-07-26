@@ -19,7 +19,7 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lestrrat-go/jwx v1.2.26
-	github.com/oidc-mytoken/api v0.11.1
+	github.com/oidc-mytoken/api v0.11.2-0.20230720125206-44af9d98a822
 	github.com/oidc-mytoken/lib v0.7.1
 	github.com/oidc-mytoken/utils v0.1.3-0.20230616081854-5012088bac1e
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -29,7 +29,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
 	github.com/valyala/fasthttp v1.48.0
-	github.com/zachmann/go-oidcfed v0.0.0-20230713072119-25e991128964
+	github.com/zachmann/go-oidcfed v0.0.0-20230725165112-6d27a1323204
 	golang.org/x/crypto v0.11.0
 	golang.org/x/mod v0.12.0
 	golang.org/x/oauth2 v0.10.0
@@ -74,5 +74,3 @@ require (
 )
 
 replace github.com/urfave/cli/v2 => github.com/zachmann/cli/v2 v2.3.1-0.20211220102037-d619fd40a704
-
-replace github.com/oidc-mytoken/api => ../api

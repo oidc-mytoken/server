@@ -61,6 +61,8 @@ func InitEntityConfiguration() {
 		jws.GetSigningKey(jws.KeyUsageFederation),
 		config.Get().Features.Federation.Signing.Alg,
 		config.Get().Features.Federation.EntityConfigurationLifetime,
+		jws.GetSigningKey(jws.KeyUsageOIDCSigning),
+		config.Get().Signing.OIDC.Alg,
 	)
 	if err != nil {
 		log.WithError(err).Fatal("Could not create oidcfed leaf entity configuration")
