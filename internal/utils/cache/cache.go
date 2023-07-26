@@ -22,6 +22,9 @@ func setCache(cache Cache) {
 }
 
 func InitCache() {
+	if c != nil {
+		return
+	}
 	if config.Get().Caching.External != nil {
 		if config.Get().Caching.External.Redis != nil {
 			initRedisCache()
