@@ -84,7 +84,7 @@
                 <label for="{{prefix}}select-ip-based-restr">Restrict request location based on</label>
                 <select id="{{prefix}}select-ip-based-restr" class="select custom-select mb-2"
                         data-live-search="true" onchange="selectIPTable.call(this, '{{prefix}}')">
-                    <option value="hosts">Hostname or IP addresses</option>
+                    <option value="hosts">Hostname, IP addresses, or subnets</option>
                     <option selected value="geoip_allow">Allowed countries</option>
                     <option value="geoip_disallow">Forbidden countries</option>
                 </select>
@@ -97,7 +97,7 @@
                         <thead class="{{#read-only}}d-none{{/read-only}}">
                         <tr>
                             <th><input id="{{prefix}}hostInput" type="text" class="form-control add-list-input" value=""
-                                       placeholder="Hostname or IP" {{#read-only}}disabled{{/read-only}}></th>
+                                       placeholder="Hostname, IP, Subnet" {{#read-only}}disabled{{/read-only}}></th>
                             <th class="align-middle">
                                 <button class="btn btn-small btn-add-list-item any-restr-input"
                                         instance-prefix="{{prefix}}"
