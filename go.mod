@@ -20,7 +20,7 @@ require (
 	github.com/lestrrat-go/jwx v1.2.26
 	github.com/oidc-mytoken/api v0.11.1
 	github.com/oidc-mytoken/lib v0.7.1
-	github.com/oidc-mytoken/utils v0.1.3-0.20230616081854-5012088bac1e
+	github.com/oidc-mytoken/utils v0.1.3-0.20230731143919-ea5b78243e5d
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pires/go-proxyproto v0.7.0
 	github.com/pkg/errors v0.9.1
@@ -69,5 +69,3 @@ require (
 )
 
 replace github.com/urfave/cli/v2 => github.com/zachmann/cli/v2 v2.3.1-0.20211220102037-d619fd40a704
-
-replace github.com/oidc-mytoken/utils => ../utils
