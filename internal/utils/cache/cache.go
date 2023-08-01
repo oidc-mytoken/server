@@ -29,7 +29,8 @@ func InitCache() {
 		if config.Get().Caching.External.Redis != nil {
 			initRedisCache()
 		}
-	} else {
+	}
+	if c == nil {
 		initInternalCache()
 	}
 }

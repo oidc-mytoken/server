@@ -385,7 +385,7 @@ type cacheConf struct {
 }
 
 type internalCacheConf struct {
-	DefaultExpiration int64 `yaml:"default_expiration"`
+	DefaultExpiration int64 `yaml:"default_ttl"`
 	CleanupInterval   int64 `yaml:"cleanup_interval"`
 }
 

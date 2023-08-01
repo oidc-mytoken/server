@@ -40,6 +40,9 @@ func initRedisCache() {
 			DB:       rc.DB,
 		},
 	)
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
+		log.WithError(err).Fatal("could not connect to redis cache")
+	}
 	setCache(
 		redisCache{
 			client: rdb,
