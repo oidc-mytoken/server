@@ -16,7 +16,12 @@ type Restrictions struct {
 
 // MarshalJSON implements the json.Marshaler
 func (p Restrictions) MarshalJSON() ([]byte, error) {
-	return json.Marshal(p.Restrictions)
+	var clearedIncludes restrictions.Restrictions
+	for _, pp := range p.Restrictions {
+		pp.IncludedProfiles = nil
+		clearedIncludes = append(clearedIncludes, pp)
+	}
+	return json.Marshal(clearedIncludes)
 }
 
 // UnmarshalJSON implements the json.Marshaler interface

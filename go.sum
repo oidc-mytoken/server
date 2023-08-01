@@ -281,8 +281,8 @@ github.com/oidc-mytoken/api v0.11.2-0.20230720125206-44af9d98a822 h1:J66u3be2Qc1
 github.com/oidc-mytoken/api v0.11.2-0.20230720125206-44af9d98a822/go.mod h1:bd7obYvztiIQW1PoRVBTOg8/clWlauNGwcZEu5mRbwg=
 github.com/oidc-mytoken/lib v0.7.1 h1:inqnng/iVU42TU8Cuac7wP8I+JraTYmWMKSXdZvShfU=
 github.com/oidc-mytoken/lib v0.7.1/go.mod h1:LLDCpHCFzyodYLWSf69FDI4cvql/8B2sdKhVjmOBPgI=
-github.com/oidc-mytoken/utils v0.1.3-0.20230616081854-5012088bac1e h1:lTzc3PKexxaOMoBBYgtOUqEbdVGlVPthBvO0fD4ewTE=
-github.com/oidc-mytoken/utils v0.1.3-0.20230616081854-5012088bac1e/go.mod h1:pAUlvF/mYz8CjinCx4iwoWzG514B9EhuCpu7O+afaD8=
+github.com/oidc-mytoken/utils v0.1.3-0.20230731143919-ea5b78243e5d h1:6FH7MuDNSDWxhSzdzim7qeM4XASDb8TL4nytZAZLpBc=
+github.com/oidc-mytoken/utils v0.1.3-0.20230731143919-ea5b78243e5d/go.mod h1:pAUlvF/mYz8CjinCx4iwoWzG514B9EhuCpu7O+afaD8=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
 github.com/patrickmn/go-cache v2.1.0+incompatible/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
 github.com/philhofer/fwd v1.1.2 h1:bnDivRJ1EWPjUIRXV5KfORO897HTbpFAQddBdE8t7Gw=

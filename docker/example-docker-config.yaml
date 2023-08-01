@@ -21,11 +21,11 @@ server:
     # Unless false port 80 is redirected to 443
     redirect_http: true
     # The TLS certificate file
-    cert: /mytoken/certchain.pem
+    #cert: /mytoken/certchain.pem
     # The TLS certificate key file
-    key: /run/secrets/cert
+    #key: /run/secrets/cert
   # If behind a load balancer or reverse proxy, set this option. Mytoken will read the client's ip address from this header.
-  #  proxy_header: "X-FORWARDED-FOR"
+  proxy_header: "X-FORWARDED-FOR"
   # Configure the request limits (these are per IP)
   request_limits:
     # Unless false request limits are enabled
@@ -177,7 +177,7 @@ features:
     enabled: true
     # If true the haproxy proxy protocl (https://www.haproxy.org/download/2.3/doc/proxy-protocol.txt) is used to
     # receive client information, i.e. the client's ip from the proxy; the proxy must support this
-    use_proxy_protocol: false
+    use_proxy_protocol: true
     # The ssh private key files of the server
     keys:
       - /run/secrets/ssh_host_ecdsa_key

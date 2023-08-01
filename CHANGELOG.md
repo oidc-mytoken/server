@@ -19,6 +19,12 @@
 - Changed the tokeninfo history api when used with a `mom_id`, now multiple `mom_ids` can be passed in a single
   request. Also, the response now contains the `mom_id` in the entry object.
 
+### Enhancements
+
+- Webinterface: Improved the title / placeholder for the `hosts` restrictions key in the GUI editor to make it more
+  clear that also subnets can be used.
+- Profiles: Improved / Fixed includes in especially restrictions when includes involve arrays.
+
 ### Bugfixes
 
 - Finally fixed a problem with database times when the database was not set to UTC.
