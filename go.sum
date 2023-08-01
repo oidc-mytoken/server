@@ -279,6 +279,8 @@ github.com/oidc-mytoken/api v0.9.1/go.mod h1:DBIlUbaIgGlf607VZx8zFC97VR3WNN0kaMV
 github.com/oidc-mytoken/api v0.11.1/go.mod h1:bd7obYvztiIQW1PoRVBTOg8/clWlauNGwcZEu5mRbwg=
 github.com/oidc-mytoken/api v0.11.2-0.20230720125206-44af9d98a822 h1:J66u3be2Qc1Bo2kMVTp5JIwVFXExM2o6xptl7MDzPWU=
 github.com/oidc-mytoken/api v0.11.2-0.20230720125206-44af9d98a822/go.mod h1:bd7obYvztiIQW1PoRVBTOg8/clWlauNGwcZEu5mRbwg=
+github.com/oidc-mytoken/api v0.11.2-0.20230801100354-7f395a3d0abc h1:SLeBRjVayx3l2TvhM+xB3ezdD3saep8yHVxm2so/kj0=
+github.com/oidc-mytoken/api v0.11.2-0.20230801100354-7f395a3d0abc/go.mod h1:E4nGP5D9575NtqQohVaC41rxRjoXvwtJi72aoIO2uUk=
 github.com/oidc-mytoken/lib v0.7.1 h1:inqnng/iVU42TU8Cuac7wP8I+JraTYmWMKSXdZvShfU=
 github.com/oidc-mytoken/lib v0.7.1/go.mod h1:LLDCpHCFzyodYLWSf69FDI4cvql/8B2sdKhVjmOBPgI=
 github.com/oidc-mytoken/utils v0.1.3-0.20230731143919-ea5b78243e5d h1:6FH7MuDNSDWxhSzdzim7qeM4XASDb8TL4nytZAZLpBc=
