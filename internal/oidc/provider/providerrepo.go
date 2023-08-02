@@ -10,6 +10,7 @@ import (
 
 var fileProviderByIssuer map[string]model.Provider
 
+// Init inits the configured providers
 func Init() {
 	fileProviderByIssuer = make(map[string]model.Provider)
 	for _, p := range config.Get().Providers {
@@ -19,6 +20,7 @@ func Init() {
 	}
 }
 
+// GetProvider returns the model.Provider for a passed issuer
 func GetProvider(issuer string) model.Provider {
 	if p, ok := fileProviderByIssuer[issuer]; ok {
 		return p

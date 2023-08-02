@@ -22,6 +22,7 @@ var oidcfedIssuers []string
 
 var ticker *time.Ticker
 
+// Discovery starts the OP discovery process for OPs below the configured trust anchors and also schedules a rerun
 func Discovery() {
 	if !config.Get().Features.Federation.Enabled {
 		return
@@ -38,6 +39,7 @@ func Discovery() {
 		}
 	}()
 }
+
 func discovery() {
 	log.Debug("Running oidcfed OP discovery")
 	opInfos := discoverer.Discover(config.Get().Features.Federation.TrustAnchors...)
@@ -48,10 +50,12 @@ func discovery() {
 	oidcfedIssuers = tmp
 }
 
+// Issuers returns a slice of issuer urls of OPs discovered in the federation
 func Issuers() []string {
 	return oidcfedIssuers
 }
 
+// SupportedProviders return the api.SupportedProviderConfig for the discovered OPs in the federation
 func SupportedProviders() (providers []api.SupportedProviderConfig) {
 	names := make(map[string][]int)
 	for index, issuer := range oidcfedIssuers {

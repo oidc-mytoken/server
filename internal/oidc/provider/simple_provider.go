@@ -18,38 +18,47 @@ import (
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
 )
 
+// SimpleProvider implements the Provider interface for normal OIDC providers with a registered client
 type SimpleProvider struct {
 	config.ProviderConf
 }
 
+// Name implements the Provider interface
 func (p SimpleProvider) Name() string {
 	return p.ProviderConf.Name
 }
 
+// Issuer implements the Provider interface
 func (p SimpleProvider) Issuer() string {
 	return p.ProviderConf.Issuer
 }
 
+// ClientID implements the Provider interface
 func (p SimpleProvider) ClientID() string {
 	return p.ProviderConf.ClientID
 }
 
+// Scopes implements the Provider interface
 func (p SimpleProvider) Scopes() []string {
 	return p.ProviderConf.Scopes
 }
 
+// Endpoints implements the Provider interface
 func (p SimpleProvider) Endpoints() *oauth2x.Endpoints {
 	return p.ProviderConf.Endpoints
 }
 
+// Audience implements the Provider interface
 func (p SimpleProvider) Audience() *model.AudienceConf {
 	return p.ProviderConf.Audience
 }
 
+// MaxMytokenLifetime implements the Provider interface
 func (p SimpleProvider) MaxMytokenLifetime() int64 {
 	return p.MytokensMaxLifetime
 }
 
+// AddClientAuthentication implements the Provider interface
 func (p SimpleProvider) AddClientAuthentication(r *resty.Request, _ string) *resty.Request {
 	return r.SetBasicAuth(p.ClientID(), p.ClientSecret)
 }

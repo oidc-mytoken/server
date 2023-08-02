@@ -9,6 +9,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/cache"
 )
 
+// Init inits the oidcfed
 func Init() {
 	if !config.Get().Features.Federation.Enabled {
 		return
