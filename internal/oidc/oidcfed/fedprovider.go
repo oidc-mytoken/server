@@ -41,7 +41,7 @@ func (p OIDCFedProvider) Issuer() string {
 }
 
 // ClientID implements the model.Provider interface
-func (p OIDCFedProvider) ClientID() string {
+func (OIDCFedProvider) ClientID() string {
 	return fedLeafEntity().EntityID
 }
 
