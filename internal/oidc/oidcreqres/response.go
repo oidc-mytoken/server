@@ -15,4 +15,5 @@ type OIDCTokenResponse struct {
 	ExpiresIn    int64  `json:"expires_in"`
 	RefreshToken string `json:"refresh_token"`
 	Scopes       string `json:"scope"`
+	IDToken      string `json:"id_token"`
 }

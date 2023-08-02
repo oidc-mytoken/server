@@ -47,7 +47,7 @@ const mtPrefix = "createMT-";
 
 function initCreateMT(...next) {
     if (loggedIn) {
-        $mtOIDCIss.val(storageGet("oidc_issuer"));
+        $mtOIDCIss.selectpicker('val', storageGet("oidc_issuer"));
     }
     initCapabilities(mtPrefix);
     checkCapability("tokeninfo", mtPrefix);
@@ -111,7 +111,7 @@ function fillGUIFromRequestData(req) {
         $('#tokenName').val(req.name);
     }
     if (req.oidc_issuer !== undefined) {
-        $mtOIDCIss.val(req.oidc_issuer);
+        $mtOIDCIss.selectpicker('val', req.oidc_issuer);
     }
     if (req.response_type !== undefined) {
         $('#select-token-type').val(req.response_type);
@@ -135,7 +135,7 @@ function fillPropertiesFromQuery() {
     fillGUIFromRequestData(req);
 }
 
-$mtOIDCIss.on('change', function () {
+$mtOIDCIss.on('changed.bs.select', function () {
     initRestrGUI(mtPrefix);
 });
 

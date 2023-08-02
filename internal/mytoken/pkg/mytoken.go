@@ -277,10 +277,10 @@ func (mt *Mytoken) ToJWT() (string, error) {
 	}
 	var err error
 	j := jwt.NewWithClaims(
-		jwt.GetSigningMethod(config.Get().Signing.Alg), mt,
+		jwt.GetSigningMethod(config.Get().Signing.Mytoken.Alg.String()), mt,
 	)
 	j.Header["typ"] = "MT+JWT"
-	mt.jwt, err = j.SignedString(jws.GetPrivateKey())
+	mt.jwt, err = j.SignedString(jws.GetSigningKey(jws.KeyUsageMytokenSigning))
 	return mt.jwt, errors.WithStack(err)
 }
 
@@ -300,7 +300,7 @@ func parseJWT(token string, skipCalimsValidation bool) (*Mytoken, error) {
 	}
 	tok, err := parser.ParseWithClaims(
 		token, &Mytoken{}, func(t *jwt.Token) (interface{}, error) {
-			return jws.GetPublicKey(), nil
+			return jws.GetPublicKey(jws.KeyUsageMytokenSigning), nil
 		},
 	)
 	if err != nil {

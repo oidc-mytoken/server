@@ -9,7 +9,6 @@ import (
 	"github.com/oidc-mytoken/utils/utils/jwtutils"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/accesstokenrepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/cryptstore"
@@ -94,7 +93,7 @@ func parseScopesAndAudienceToUse(
 // HandleAccessTokenRefresh handles an access token request
 func HandleAccessTokenRefresh(
 	rlog log.Ext1FieldLogger, mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData api.ClientMetaData,
-	provider *config.ProviderConf, usedRestriction *restrictions.Restriction,
+	provider model.Provider, usedRestriction *restrictions.Restriction,
 ) *model.Response {
 	rt, rtFound, dbErr := cryptstore.GetRefreshToken(rlog, nil, mt.ID, req.Mytoken.JWT)
 	if dbErr != nil {
@@ -109,7 +108,7 @@ func HandleAccessTokenRefresh(
 	}
 
 	scopes, auds := parseScopesAndAudienceToUse(
-		req.Scope, strings.Split(req.Audience, " "), usedRestriction, provider.Scopes,
+		req.Scope, strings.Split(req.Audience, " "), usedRestriction, provider.Scopes(),
 	)
 	oidcRes, oidcErrRes, err := refresh.DoFlowAndUpdateDB(rlog, provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds)
 	if err != nil {

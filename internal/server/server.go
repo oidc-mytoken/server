@@ -18,6 +18,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints"
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration"
 	"github.com/oidc-mytoken/server/internal/endpoints/consent"
+	"github.com/oidc-mytoken/server/internal/endpoints/federation"
 	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/server/apipath"
@@ -105,6 +106,9 @@ func addRoutes(s fiber.Router) {
 	addWebRoutes(s)
 	s.Get(routes.GetGeneralPaths().ConfigurationEndpoint, configuration.HandleConfiguration)
 	s.Get(routes.WellknownOpenIDConfiguration, configuration.HandleConfiguration)
+	if config.Get().Features.Federation.Enabled {
+		s.Get(routes.GetGeneralPaths().FederationEndpoint, federation.HandleEntityConfiguration)
+	}
 	s.Get(routes.GetGeneralPaths().JWKSEndpoint, endpoints.HandleJWKS)
 	s.Get(routes.GetGeneralPaths().OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
 	s.Get("/c/:consent_code", consent.HandleConsent)

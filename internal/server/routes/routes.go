@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/oidc-mytoken/utils/utils"
 
+	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/apipath"
 )
@@ -14,6 +15,9 @@ const WellknownMytokenConfiguration = "/.well-known/mytoken-configuration"
 
 // WellknownOpenIDConfiguration is the openid configuration path suffix
 const WellknownOpenIDConfiguration = "/.well-known/openid-configuration"
+
+// WellknownOpenIDFederation is the openid federation path suffix
+const WellknownOpenIDFederation = "/.well-known/openid-federation"
 
 func defaultAPIPaths(api string) APIPaths {
 	return APIPaths{
@@ -35,6 +39,7 @@ func init() {
 		},
 		other: GeneralPaths{
 			ConfigurationEndpoint: WellknownMytokenConfiguration,
+			FederationEndpoint:    WellknownOpenIDFederation,
 			OIDCRedirectEndpoint:  "/redirect",
 			JWKSEndpoint:          "/jwks",
 			ConsentEndpoint:       "/c",
@@ -51,6 +56,7 @@ type paths struct {
 // GeneralPaths holds all non-api route paths
 type GeneralPaths struct {
 	ConfigurationEndpoint string
+	FederationEndpoint    string
 	OIDCRedirectEndpoint  string
 	JWKSEndpoint          string
 	ConsentEndpoint       string
@@ -81,4 +87,14 @@ func GetAPIPaths(apiVersion int) APIPaths {
 // GetGeneralPaths returns the non-API paths
 func GetGeneralPaths() GeneralPaths {
 	return routes.other
+}
+
+var RedirectURI string
+var ConsentEndpoint string
+
+// Init initializes the authcode component
+func Init() {
+	generalPaths := GetGeneralPaths()
+	RedirectURI = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.OIDCRedirectEndpoint)
+	ConsentEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.ConsentEndpoint)
 }

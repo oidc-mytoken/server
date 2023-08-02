@@ -8,6 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	utils2 "github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -17,6 +18,8 @@ import (
 	pkg2 "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model/profiled"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/oidc/oidcfed"
+	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
 	"github.com/oidc-mytoken/server/internal/server/httpstatus"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
@@ -46,13 +49,16 @@ func handleConsent(ctx *fiber.Ctx, info *pkg2.OIDCFlowRequest, includeConsentCal
 		templating.MustacheKeyCapabilities:        pkg.AllWebCapabilities(),
 		templating.MustacheKeyCheckedCapabilities: c.Strings(),
 		templating.MustacheKeyIss:                 info.Issuer,
-		templating.MustacheKeySupportedScopes: strings.Join(
-			config.Get().ProviderByIssuer[info.Issuer].Scopes, " ",
-		),
+
 		templating.MustacheKeyTokenName:   info.Name,
 		templating.MustacheKeyRotation:    info.Rotation,
 		templating.MustacheKeyApplication: info.ApplicationName,
 	}
+	var scopes []string
+	if p := provider2.GetProvider(info.Issuer); p != nil {
+		scopes = p.Scopes()
+	}
+	binding[templating.MustacheKeySupportedScopes] = strings.Join(scopes, " ")
 	if !includeConsentCallbacks {
 		iss := config.Get().IssuerURL
 		if iss[len(iss)-1] == '/' {
@@ -160,11 +166,13 @@ func handleConsentAccept(
 			}
 		}
 	}
-	provider, ok := config.Get().ProviderByIssuer[req.Issuer]
-	if !ok {
-		return &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: api.ErrorUnknownIssuer,
+	p := provider2.GetProvider(req.Issuer)
+	if p == nil {
+		if !utils2.StringInSlice(req.Issuer, oidcfed.Issuers()) {
+			return &model.Response{
+				Status:   fiber.StatusBadRequest,
+				Response: api.ErrorUnknownIssuer,
+			}
 		}
 	}
 	var authURI string
@@ -176,7 +184,7 @@ func handleConsentAccept(
 			); err != nil {
 				return err
 			}
-			authURI, err = authcode.GetAuthorizationURL(rlog, tx, provider, oState, req.Restrictions)
+			authURI, err = authcode.GetAuthorizationURL(rlog, tx, p, oState, req.Restrictions)
 			return err
 		},
 	); err != nil {
