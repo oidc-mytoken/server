@@ -36,19 +36,17 @@ builds:
     mod_timestamp: '{{ .CommitTimestamp }}'
 archives:
   - name_template: >-
-      {{ .ProjectName }}_
-      {{ .Version }}_
+      {{ .ProjectName }}_{{ .Version }}_
       {{ if eq .Os "darwin" }}macOS{{- else }}{{ .Os }}{{ end }}_
       {{- if eq .Arch "386" }}32-bit{{- else if eq .Arch "amd64" }}64-bit{{- else }}{{ .Arch }}{{ end }}
-  format_overrides:
-    - goos: windows
-      format: zip
+    format_overrides:
+      - goos: windows
+        format: zip
 nfpms:
   - id: server-pkg
     package_name: mytoken-server
     file_name_template: >-
-      {{ .PackageName }}_
-      {{ .Version }}_
+      {{ .PackageName }}_{{ .Version }}_
       {{- if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}
     builds:
       - server
@@ -73,14 +71,12 @@ nfpms:
     overrides:
       rpm:
         file_name_template: >-
-          {{ .PackageName }}-
-          {{ .Version }}.
+          {{ .PackageName }}-{{ .Version }}.
           {{- if eq .Arch "386" }}i386{{- else if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
   - id: setup-pkg
     package_name: mytoken-server-setup
     file_name_template: >-
-      {{ .PackageName }}_
-      {{ .Version }}_
+      {{ .PackageName }}_{{ .Version }}_
       {{- if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}
     builds:
       - setup
@@ -97,14 +93,12 @@ nfpms:
     overrides:
       rpm:
         file_name_template: >-
-          {{ .PackageName }}-
-          {{ .Version }}.
+          {{ .PackageName }}-{{ .Version }}.
           {{- if eq .Arch "386" }}i386{{- else if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
   - id: migratedb-pkg
     package_name: mytoken-server-migratedb
     file_name_template: >-
-      {{ .PackageName }}_
-      {{ .Version }}_
+      {{ .PackageName }}_{{ .Version }}_
       {{- if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}
     builds:
       - migratedb
@@ -123,8 +117,7 @@ nfpms:
     overrides:
       rpm:
         file_name_template: >-
-          {{ .PackageName }}-
-          {{ .Version }}.
+          {{ .PackageName }}-{{ .Version }}.
           {{- if eq .Arch "386" }}i386{{- else if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
 dockers:
   - goos: linux
