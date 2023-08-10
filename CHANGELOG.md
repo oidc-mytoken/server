@@ -19,10 +19,15 @@
 - Changed the tokeninfo history api when used with a `mom_id`, now multiple `mom_ids` can be passed in a single
   request. Also, the response now contains the `mom_id` in the entry object.
 
+### Features
+
+- Add experimental support for OpenID Connect federations
+
 ### Enhancements
 
 - Webinterface: Improved the title / placeholder for the `hosts` restrictions key in the GUI editor to make it more
   clear that also subnets can be used.
+- Webinterface: Changed the login provider selector and added search functionality
 - Profiles: Improved / Fixed includes in especially restrictions when includes involve arrays.
 
 ### Bugfixes
