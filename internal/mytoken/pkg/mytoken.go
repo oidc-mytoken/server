@@ -201,6 +201,7 @@ func (mt *Mytoken) toTokenResponse() response.MytokenResponse {
 			ExpiresIn:    mt.ExpiresIn(),
 			Capabilities: mt.Capabilities,
 			Rotation:     mt.Rotation,
+			MOMID:        mt.ID.Hash(),
 		},
 		Restrictions: mt.Restrictions,
 	}

@@ -100,6 +100,7 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 				Mytoken:      token.OriginalToken,
 				ExpiresIn:    mt.ExpiresIn(),
 				Capabilities: mt.Capabilities,
+				MOMID:        mt.ID.Hash(),
 			},
 			MytokenType:  token.OriginalTokenType,
 			Restrictions: mt.Restrictions,

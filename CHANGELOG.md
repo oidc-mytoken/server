@@ -21,7 +21,12 @@
 
 ### Features
 
-- Add experimental support for OpenID Connect federations
+- Added experimental support for OpenID Connect federations
+
+### API
+
+- Added `mom_id` parameter to tokeninfo introspection response
+- Added `mom_id` parameter to mytoken responses
 
 ### Enhancements
 

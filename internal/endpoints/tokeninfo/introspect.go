@@ -53,6 +53,7 @@ func HandleTokenInfoIntrospect(
 		Response: pkg.TokeninfoIntrospectResponse{
 			TokeninfoIntrospectResponse: api.TokeninfoIntrospectResponse{
 				Valid: true,
+				MOMID: mt.ID.Hash(),
 			},
 			Token:     usedToken,
 			TokenType: origionalTokenType,
