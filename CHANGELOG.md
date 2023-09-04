@@ -12,15 +12,137 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.9.0
+
+### Changes
+
+- Changed the tokeninfo history api when used with a `mom_id`, now multiple `mom_ids` can be passed in a single
+  request. Also, the response now contains the `mom_id` in the entry object.
+
+### Features
+
+- Added experimental support for OpenID Connect federations
+
+### API
+
+- Added `mom_id` parameter to tokeninfo introspection response
+- Added `mom_id` parameter to mytoken responses
+
+### Enhancements
+
+- Webinterface: Improved the title / placeholder for the `hosts` restrictions key in the GUI editor to make it more
+  clear that also subnets can be used.
+- Webinterface: Changed the login provider selector and added search functionality
+- Webinterface: Improved (re-)discovery of mytoken configuration
+- Webinterface: Fixed a problem with scope discovery if there was no OP selected.
+- Profiles: Improved / Fixed includes in especially restrictions when includes involve arrays.
+
+### Bugfixes
+
+- Finally fixed a problem with database times when the database was not set to UTC.
+
+### Dependencies
+
+- Bump github.com/valyala/fasthttp from 1.47.0 to 1.48.0
+- Bump golang.org/x/mod from 0.11.0 to 0.12.0
+- Bump golang.org/x/oauth2 from 0.9.0 to 0.10.0
+- Bump golang.org/x/term from 0.9.0 to 0.10.0
+- Bump golang.org/x/crypto from 0.10.0 to 0.11.0
+- Bump github.com/gofiber/template/mustache/v2 from 2.0.4 to 2.0.5
+
+## mytoken 0.8.1
+
+### Enhancements
+
+- Improved returned transfercodes (do not include `l` and `I`)
+
+### Bugfixes
+
+- Fixed wrong (negative) `expires_at` time returned in tokeninfo for tokens without expiration
+- Fixed response if token revocation call does not contain token
+
+### Dependencies
+
+- Bump github.com/sirupsen/logrus from 1.9.2 to 1.9.3
+- Bump golang.org/x/term from 0.8.0 to 0.9.0
+- Bump github.com/lestrrat-go/jwx from 1.2.25 to 1.2.26
+- Bump golang.org/x/crypto from 0.9.0 to 0.10.0
+- Bump golang.org/x/mod from 0.10.0 to 0.11.0
+- Bump github.com/gofiber/template from 1.8.1 to 1.8.2
+- Bump golang.org/x/oauth2 from 0.8.0 to 0.9.0
+- Bump github.com/gofiber/fiber/v2 from 2.46.0 to 2.47.0
+
+## mytoken 0.8.0
+
+### Features
+
+- Added support for RFC8707 for requesting audience restricted ATs
+
+### Changes
+
+- Default behavior for requesting audience restricted ATs is now according to RFC8707; the previous behavor can be
+  configured with these options:
+  ```yaml
+  audience:
+    use_rfc8707: false
+    request_parameter: "audience"
+    space_separate_auds: true
+  ```
+
+### API
+
+- When creating a mytoken from a mytoken and it is returned as a transfer code the response now contains the
+  `mom_id` of the created mytoken.
+
+### Bugfixes
+
+- Fixed a bug where wrong dates where returned if the database used a different timezone than UTC.
+- Fixed a bug in `mytoken-migratedb` were empty databases could not be setup.
+
+### Security Fixes
+
+- Replaced the uuid library; the old library had a security flaw CVE-2021-3538
+
+### Dependencies
+
+- Bump golang.org/x/term from 0.5.0 to 0.8.0
+- Bump github.com/valyala/fasthttp from 1.44.0 to 1.47.0
+- Bump golang.org/x/net from 0.6.0 to 0.7.0
+- Bump golang.org/x/crypto from 0.6.0 to 0.9.0
+- Bump golang.org/x/oauth2 from 0.5.0 to 0.8.0
+- Bump golang.org/x/mod from 0.8.0 to 0.9.0
+- Bump github.com/gofiber/helmet/v2 from 2.2.24 to 2.2.25
+- Bump github.com/gofiber/template from 1.7.5 to 1.8.0
+- Bump github.com/gofiber/fiber/v2 from 2.42.0 to 2.46.0
+- Bump github.com/pires/go-proxyproto from 0.6.2 to 0.7.0
+- Bump github.com/go-sql-driver/mysql from 1.7.0 to 1.7.1
+- Bump github.com/sirupsen/logrus from 1.9.0 to 1.9.2
+- Bump github.com/coreos/go-oidc/v3 from 3.5.0 to 3.6.0
+- Replaced github.com/satori/go.uuid with github.com/gofrs/uuid
+
+## mytoken 0.7.2
+
+### Bugfixes
+
+- Fixed a bug in the webinterface where the metadata discovery was broken.
+
+## mytoken 0.7.1
+
+### Bugfixes
+
+- Fixed a bug in the webinterface with the local storage that caused problems with outdated discovery information
+- Fixed a bug in the webinterface where the `Expand` `Collapse` buttons (e.g. in the consent screen) got the wrong text.
+
 ## mytoken 0.7.0
 
 ### Features
 
 - Webinterface has option to show event history for other mytokens in mytoken list.
+- Webinterface has a new option in the tokeninfo pane to create a new mytoken with the same properties.
 - Added server side `profiles` and `templates`
-  - Currently, cannot be used directly (only obtained through API), but the idea is to integrate this into the API
-    requests, i.e. mytoken requests can include profiles, the capability, restrictions, and rotation claims can use
-    templates (directly or included). This would then also be integrated in the webinterface.
+  - Can be used in the API, i.e. mytoken requests can include profiles, the capability, restrictions, and rotation
+    claims can use templates
+  - Can be used in the webinterface
 
 ### Enhancements
 
@@ -33,6 +155,9 @@
   - Mytokens are still directly deleted when revoked.
 - Requests from private IPs (e.g. from within the same entwork where the server is located) are now geolocated to
   the country where the server stands.
+- The 'Create Mytoken' tab in the webitnerface now supports an `r` query parameter that takes a base64 encoded
+  request from which the form is prefilled.
+  - This allows 'create-a-mytoken-with-these-properties' links.
 
 ### API
 

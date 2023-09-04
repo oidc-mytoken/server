@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/utils"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
@@ -12,6 +13,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/mytoken"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
+	"github.com/oidc-mytoken/server/internal/oidc/oidcfed"
+	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
@@ -23,7 +26,7 @@ func HandleMytokenEndpoint(ctx *fiber.Ctx) error {
 	if err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	rlog.WithField("grant_type", grantType).Trace("Received mytoken request")
+	rlog.WithField("grant_type", grantType.String()).Trace("Received mytoken request")
 	switch grantType {
 	case model.GrantTypeMytoken:
 		return mytoken.HandleMytokenFromMytoken(ctx).Send(ctx)
@@ -47,15 +50,16 @@ func HandleMytokenEndpoint(ctx *fiber.Ctx) error {
 
 func handleOIDCFlow(ctx *fiber.Ctx) error {
 	req := response.NewOIDCFlowRequest()
-	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
+	if err := json.Unmarshal(ctx.Body(), req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
-	_, ok := config.Get().ProviderByIssuer[req.Issuer]
-	if !ok {
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: api.ErrorUnknownIssuer,
-		}.Send(ctx)
+	if p := provider2.GetProvider(req.Issuer); p == nil {
+		if !utils.StringInSlice(req.Issuer, oidcfed.Issuers()) {
+			return model.Response{
+				Status:   fiber.StatusBadRequest,
+				Response: api.ErrorUnknownIssuer,
+			}.Send(ctx)
+		}
 	}
 	if len(req.Capabilities.Capabilities) == 0 {
 		req.Capabilities.Capabilities = api.DefaultCapabilities

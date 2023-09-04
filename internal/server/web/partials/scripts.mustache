@@ -5,6 +5,7 @@
 {{^empty-navbar}}
     <script src="{{instance-url}}/static/js/login-check.js"></script>
     {{^logged-in}}
+        <script src="{{instance-url}}/static/js/lib/bootstrap-select.min.js"></script>
         <script src="{{instance-url}}/static/js/login.js"></script>
         <script src="{{instance-url}}/static/js/home-not-logged-in.js"></script>
     {{/logged-in}}
@@ -15,6 +16,7 @@
     {{#home}}
         <script src="{{instance-url}}/static/js/lib/bootstrap4-toggle.min.js"></script>
         <script src="{{instance-url}}/static/js/lib/user-agent.min.js"></script>
+        <script src="{{instance-url}}/static/js/lib/bootstrap-select.min.js"></script>
         <script src="{{instance-url}}/static/js/mt-helper.js"></script>
         <script src="{{instance-url}}/static/js/home.js"></script>
         <script src="{{instance-url}}/static/js/scope.js"></script>

@@ -1,0 +1,4 @@
+{
+  "restrictions": "web-default",
+  "capabilities": "@default"
+}

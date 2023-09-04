@@ -12,7 +12,6 @@ import (
 
 	"github.com/oidc-mytoken/api/v0"
 
-	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/cryptstore"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
@@ -29,8 +28,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
+	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
 	"github.com/oidc-mytoken/server/internal/oidc/revoke"
-	"github.com/oidc-mytoken/server/internal/server/httpstatus"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
@@ -101,6 +100,7 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 				Mytoken:      token.OriginalToken,
 				ExpiresIn:    mt.ExpiresIn(),
 				Capabilities: mt.Capabilities,
+				MOMID:        mt.ID.Hash(),
 			},
 			MytokenType:  token.OriginalTokenType,
 			Restrictions: mt.Restrictions,
@@ -254,32 +254,37 @@ func createMytokenEntry(
 			Response: model.BadRequestError("mytoken to be issued cannot have any of the requested capabilities"),
 		}
 	}
-	ste := mytokenrepo.NewMytokenEntry(
-		mytoken.NewMytoken(
-			parent.OIDCSubject, parent.OIDCIssuer, req.GeneralMytokenRequest.Name, r, c, &req.Rotation.Rotation,
-			parent.AuthTime,
-		),
-		req.GeneralMytokenRequest.Name, networkData,
+	var rot *api.Rotation
+	if req.Rotation != nil {
+		rot = &req.Rotation.Rotation
+	}
+	mt, err := mytoken.NewMytoken(
+		parent.OIDCSubject, parent.OIDCIssuer, req.GeneralMytokenRequest.Name, r, c, rot,
+		parent.AuthTime,
 	)
+	if err != nil {
+		return nil, model.ErrorToInternalServerErrorResponse(err)
+	}
+	mte := mytokenrepo.NewMytokenEntry(mt, req.GeneralMytokenRequest.Name, networkData)
 	encryptionKey, _, err := encryptionkeyrepo.GetEncryptionKey(rlog, nil, parent.ID, req.Mytoken.JWT)
 	if err != nil {
 		rlog.WithError(err).Error()
-		return ste, model.ErrorToInternalServerErrorResponse(err)
+		return mte, model.ErrorToInternalServerErrorResponse(err)
 	}
-	if err = ste.SetRefreshToken(rtID, encryptionKey); err != nil {
+	if err = mte.SetRefreshToken(rtID, encryptionKey); err != nil {
 		rlog.WithError(err).Error()
-		return ste, model.ErrorToInternalServerErrorResponse(err)
+		return mte, model.ErrorToInternalServerErrorResponse(err)
 	}
-	ste.ParentID = parent.ID
-	return ste, nil
+	mte.ParentID = parent.ID
+	return mte, nil
 }
 
 // RevokeMytoken revokes a Mytoken
 func RevokeMytoken(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID, jwt string, recursive bool, issuer string,
 ) *model.Response {
-	provider, ok := config.Get().ProviderByIssuer[issuer]
-	if !ok {
+	p := provider2.GetProvider(issuer)
+	if p == nil {
 		return &model.Response{
 			Status:   fiber.StatusBadRequest,
 			Response: api.ErrorUnknownIssuer,
@@ -307,21 +312,12 @@ func RevokeMytoken(
 			if count > 0 {
 				return nil
 			}
-			if e := revoke.RefreshToken(rlog, provider, rt); e != nil {
-				apiError := e.Response.(api.Error)
-				return fmt.Errorf("%s: %s", apiError.Error, apiError.ErrorDescription)
-			}
+			revoke.RefreshToken(rlog, p, rt)
 			return cryptstore.DeleteCrypted(rlog, tx, rtID)
 		},
 	)
 	if err == nil {
 		return nil
-	}
-	if strings.HasPrefix(errorfmt.Error(err), "oidc_error") {
-		return &model.Response{
-			Status:   httpstatus.StatusOIDPError,
-			Response: model.OIDCError(errorfmt.Error(err), ""),
-		}
 	}
 	rlog.Errorf("%s", errorfmt.Full(err))
 	return model.ErrorToInternalServerErrorResponse(err)

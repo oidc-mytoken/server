@@ -74,7 +74,7 @@ function _addScopeValueToGUI(scope, $htmlEl, prefix, prefixprefix = "") {
                                 <i class="fas fa-check-circle text-success scope-active"></i>
                                 <i class="fas fa-times-circle text-danger scope-inactive d-none"></i>
                             </td>
-                            <td><input class="form-check-input scope-checkbox" id="${prefixprefix}${prefix}_scope_${scope}" type="checkbox" value="${scope}" instance-prefix="${prefixprefix}"${disabled}></td>
+                            <td><input class="form-check-input scope-checkbox any-restr-input" id="${prefixprefix}${prefix}_scope_${scope}" type="checkbox" value="${scope}" instance-prefix="${prefixprefix}"${disabled}></td>
                         </tr>`;
     $htmlEl.append(html);
 }
@@ -114,7 +114,11 @@ function getSupportedScopesFromStorage(iss = "") {
             iss = storageGet("oidc_issuer");
         }
     }
-    return providers.find(x => x.issuer === iss).scopes_supported;
+    let p = providers.find(x => x.issuer === iss)
+    if (p === undefined) {
+        return [];
+    }
+    return p.scopes_supported;
 }
 
 
@@ -237,7 +241,7 @@ function _addListItem(value, tableBody, prefix = "") {
     }
     let disabled = ro ? " disabled" : "";
     let hide = ro ? " d-none" : "";
-    let html = `<tr><td class="align-middle"><span class="table-item">${value}</span></td><td class="align-middle"><button class="btn btn-small btn-delete-list-item${hide}"${disabled}><i class="fas fa-minus"></i></button></td></tr>`;
+    let html = `<tr><td class="align-middle"><span class="table-item">${value}</span></td><td class="align-middle"><button class="btn btn-small btn-delete-list-item any-restr-input${hide}"${disabled} instance-prefix="${prefix}"><i class="fas fa-minus"></i></button></td></tr>`;
     tableBody.append(html);
     $('.btn-delete-list-item').off("click").on("click", function () {
         let tablebodyId = $(this).parents('.list-table').attr("id");
@@ -245,12 +249,17 @@ function _addListItem(value, tableBody, prefix = "") {
         if (tableBody.hasClass('restr')) {
             _guiToRestr_Table("#" + tablebodyId, tablebodyId.substring(prefix.length).split('TableBody')[0], prefix);
         }
+        if (restrictionProfileSupportEnableForPrefixes.includes(prefix)) {
+            $(prefixId('restr-template', prefix)).val("");
+        }
     })
     let tbodyId = tableBody.attr("id");
     if (tableBody.hasClass('restr')) {
         _guiToRestr_Table("#" + tbodyId, tbodyId.substring(prefix.length).split('TableBody')[0], prefix);
     }
 }
+
+let datetimepickerChangeTriggeredFromJS = false;
 
 function restrClauseToGUI(prefix = "") {
     let restr = getRestrictionsData(prefix)[GUIGetActiveClause(prefix)];
@@ -272,8 +281,10 @@ function restrClauseToGUI(prefix = "") {
     let nbf = restr.nbf;
     let exp = restr.exp;
 
+    datetimepickerChangeTriggeredFromJS = true;
     $(prefixId('nbf', prefix)).datetimepicker('date', nbf ? nbf.toString() : null);
     $(prefixId('exp', prefix)).datetimepicker('date', exp ? exp.toString() : null);
+    datetimepickerChangeTriggeredFromJS = false;
 
     if (restr.scope) {
         for (const s of restr.scope.split(' ')) {
@@ -291,11 +302,11 @@ function restrClauseToGUI(prefix = "") {
     }
     if (restr.hosts) {
         for (const host of restr.hosts) {
-            _addListItem(host, $(prefixId('hostTableBody', prefix)), prefix);
+            _addListItem(host, $(prefixId('hostsTableBody', prefix)), prefix);
         }
     } else if (restr.ip) {
         for (const ip of restr.ip) {
-            _addListItem(ip, $(prefixId('hostTableBody', prefix)), prefix);
+            _addListItem(ip, $(prefixId('hostsTableBody', prefix)), prefix);
         }
     }
 
@@ -369,4 +380,26 @@ function selectIPTable(prefix = "") {
     $(prefixId('restr-geoip_allow', prefix)).hideB();
     $(prefixId('restr-geoip_disallow', prefix)).hideB();
     $(prefixId('restr-' + $(this).val(), prefix)).showB();
+}
+
+function set_restrictions_in_gui(restrictions, prefix = "") {
+    if (restrictions === undefined) {
+        return;
+    }
+    setRestrictionsData(restrictions, prefix);
+    if (editorMode(prefix).prop('checked')) {
+        RestrToGUI(prefix);
+    } else {
+        fillJSONEditor(prefix);
+    }
+}
+
+let restrictionProfileSupportEnableForPrefixes = [];
+
+function restr_enableProfileSupport(prefix = "") {
+    _enableProfileSupport("restr", set_restrictions_in_gui, prefix);
+    restrictionProfileSupportEnableForPrefixes.push(prefix);
+    $(`button.btn.any-restr-input[instance-prefix=${prefix}]`).on('click', function () {
+        $(this).trigger('change');
+    });
 }

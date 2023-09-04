@@ -14,6 +14,7 @@ const $tokeninfoBadgeIatDate = $('#tokeninfo-token-iat-date');
 const $tokeninfoBadgeExpDate = $('#tokeninfo-token-exp-date');
 const $tokeninfoTypeBadges = $('.tokeninfo-token-type');
 const $tokeninfoTokenGoneWarningMsg = $('#token-gone-warning');
+const $tokeninfoActionButtons = $('#token-action-buttons');
 
 $('#tokeninfo-token-copy').on('click', function () {
     if (!$tokeninfoTokenGoneWarningMsg.hasClass('d-none')) {
@@ -41,8 +42,10 @@ async function update_tokeninfo() {
         $tokeninfoBadgeExp.hideB();
         $tokeninfoBadgeIat.hideB();
         fillTokenInfo(payload);
+        $tokeninfoActionButtons.hideB();
         return;
     }
+    $tokeninfoActionButtons.showB();
     tokeninfoEndpointToUse = storageGet('tokeninfo_endpoint');
     let jwksUri = storageGet('jwks_uri');
     transferEndpoint = "";
@@ -143,3 +146,110 @@ async function update_tokeninfo() {
 $tokenInput.on('change', update_tokeninfo);
 $('#info-reload').on('click', update_tokeninfo);
 $('#info-tab').on('shown.bs.tab', update_tokeninfo);
+
+$('#recreate-mt').on('click', function () {
+    const introspect_content = $('#tokeninfo-token-content');
+    const payload = JSON.parse(introspect_content.text());
+
+    const iat = payload['iat'];
+    const now = Math.floor(new Date().getTime() / 1000);
+    const now_iat_diff = now - iat;
+    let restr = payload['restrictions'];
+    if (restr) {
+        restr.forEach(function (r, i, arr) {
+            let nbf = r['nbf'];
+            let exp = r['exp'];
+            if (nbf) {
+                r['nbf'] = now_iat_diff + nbf;
+            }
+            if (exp) {
+                r['exp'] = now_iat_diff + exp;
+            }
+            arr[i] = r;
+        });
+    }
+
+    let data = {
+        "name": payload['name'],
+        "oidc_issuer": payload['oidc_iss'],
+        "grant_type": "oidc_flow",
+        "oidc_flow": "authorization_code",
+        "redirect_type": "native",
+        "restrictions": restr,
+        "capabilities": payload['capabilities'],
+        "application_name": "mytoken webinterface",
+    };
+    if (!$tokeninfoBadgeTypeShort.hasClass('d-none')) {
+        data['response_type'] = 'short_token';
+    }
+    let rot = payload['rotation'];
+    if (rot) {
+        data["rotation"] = rot;
+    }
+    data = JSON.stringify(data);
+    $.ajax({
+        type: "POST",
+        url: storageGet('mytoken_endpoint'),
+        data: data,
+        success: function (res) {
+            let url = res['consent_uri'];
+            let code = res['polling_code'];
+            let interval = res['interval'];
+            authURL(tokeninfoPrefix).attr("href", url);
+            authURL(tokeninfoPrefix).text(url);
+            mtInstructions(tokeninfoPrefix).showB();
+            polling_recreate_mytoken(code, interval);
+            window.open(url, '_blank');
+        },
+        error: function (errRes) {
+            let errMsg = getErrorMessage(errRes);
+            mtShowError(errMsg, tokeninfoPrefix);
+        },
+        dataType: "json",
+        contentType: "application/json"
+    });
+    mtShowPending(tokeninfoPrefix);
+    $('#recreate-mt-modal').modal();
+});
+
+function polling_recreate_mytoken(code, interval) {
+    polling_with_callback(code, interval, function (res) {
+        let token_type = res['mytoken_type'];
+        let token = res['mytoken'];
+        if (token_type === "transfer_code") {
+            token = res['transfer_code'];
+        }
+        storageSet("tokeninfo_token", token);
+        mtInstructions(tokeninfoPrefix).hideB();
+        mtSuccessHeading(tokeninfoPrefix).text("Success! We opened the tokeninfo in a new tab.");
+        mtShowSuccess("", tokeninfoPrefix);
+        window.open(window.location.href, '_blank');
+    }, function (errRes) {
+        let error = errRes.responseJSON['error'];
+        let message;
+        switch (error) {
+            case "authorization_pending":
+                // message = "Authorization still pending.";
+                mtShowPending(tokeninfoPrefix);
+                return true;
+            case "access_denied":
+                message = "You denied the authorization request.";
+                break;
+            case "expired_token":
+                message = "Code expired. You might want to restart the flow.";
+                break;
+            case "invalid_grant":
+            case "invalid_token":
+                message = "Code already used.";
+                break;
+            case "undefined":
+                message = "No response from server";
+                break;
+            default:
+                message = getErrorMessage(errRes);
+                break;
+        }
+        mtShowError(message, tokeninfoPrefix);
+        return false;
+    });
+}

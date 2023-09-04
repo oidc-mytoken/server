@@ -4,8 +4,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
+	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/utils/hashutils"
@@ -18,10 +18,11 @@ type MTID struct {
 }
 
 // New creates a new MTID
-func New() MTID {
+func New() (MTID, error) {
+	uuid, err := uuid.NewV4()
 	return MTID{
-		UUID: uuid.NewV4(),
-	}
+		UUID: uuid,
+	}, errors.WithStack(err)
 }
 
 // Valid checks if the MTID is valid

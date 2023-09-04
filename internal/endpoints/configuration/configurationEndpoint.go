@@ -10,11 +10,24 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/model/version"
+	"github.com/oidc-mytoken/server/internal/oidc/oidcfed"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 )
 
+func SupportedProviders() []api.SupportedProviderConfig {
+	if config.Get().Features.Federation.Enabled {
+		mytokenConfig.ProvidersSupported = append(getProvidersFromConfig(), oidcfed.SupportedProviders()...)
+	} else {
+		mytokenConfig.ProvidersSupported = getProvidersFromConfig()
+	}
+	return mytokenConfig.ProvidersSupported
+}
+
 // HandleConfiguration handles calls to the configuration endpoint
 func HandleConfiguration(ctx *fiber.Ctx) error {
+	if config.Get().Features.Federation.Enabled {
+		mytokenConfig.ProvidersSupported = append(getProvidersFromConfig(), oidcfed.SupportedProviders()...)
+	}
 	res := model.Response{
 		Status:   fiber.StatusOK,
 		Response: mytokenConfig,
@@ -24,17 +37,22 @@ func HandleConfiguration(ctx *fiber.Ctx) error {
 
 var mytokenConfig *pkg.MytokenConfiguration
 
-func getProvidersFromConfig() (providers []api.SupportedProviderConfig) {
+var configProviders []api.SupportedProviderConfig
+
+func getProvidersFromConfig() []api.SupportedProviderConfig {
+	if configProviders != nil {
+		return configProviders
+	}
 	for _, p := range config.Get().Providers {
-		providers = append(
-			providers, api.SupportedProviderConfig{
+		configProviders = append(
+			configProviders, api.SupportedProviderConfig{
 				Issuer:          p.Issuer,
 				Name:            p.Name,
 				ScopesSupported: p.Scopes,
 			},
 		)
 	}
-	return
+	return configProviders
 }
 
 // Init initializes the configuration endpoint
@@ -61,7 +79,7 @@ func basicConfiguration() *pkg.MytokenConfiguration {
 			ProfilesEndpoint:     utils.CombineURLPath(config.Get().IssuerURL, apiPaths.ProfilesEndpoint),
 			JWKSURI:              utils.CombineURLPath(config.Get().IssuerURL, otherPaths.JWKSEndpoint),
 			ProvidersSupported:   getProvidersFromConfig(),
-			TokenSigningAlgValue: config.Get().Signing.Alg,
+			TokenSigningAlgValue: config.Get().Signing.Mytoken.Alg.String(),
 			ServiceDocumentation: config.Get().ServiceDocumentation,
 			Version:              version.VERSION,
 		},

@@ -11,7 +11,8 @@ const configElements = [
 
 function discovery(...next) {
     try {
-        if (storageGet('discovery') !== null) {
+        const discovery = storageGet('discovery');
+        if (discovery !== null && discovery !== undefined && discovery > (Date.now() / 1000 - 3600)) {
             doNext(...next);
             return;
         }
@@ -22,7 +23,7 @@ function discovery(...next) {
                 configElements.forEach(function (el) {
                     storageSet(el, res[el]);
                 })
-                storageSet('discovery', Date.now())
+                storageSet('discovery', Date.now() / 1000)
                 doNext(...next);
             }
         });

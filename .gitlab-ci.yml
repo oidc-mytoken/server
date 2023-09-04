@@ -81,6 +81,9 @@ prerelease:
 
 deploy-dev:
   stage: deploy
+  only:
+    refs:
+      - prerel
   before_script:
     - mkdir -p /root/.ssh
     - cp $KNOWN_HOSTS /root/.ssh/known_hosts

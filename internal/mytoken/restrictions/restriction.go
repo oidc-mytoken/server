@@ -18,6 +18,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
 	iutils "github.com/oidc-mytoken/server/internal/utils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/geoip"
@@ -465,7 +466,11 @@ func (r *Restrictions) SetMaxAudiences(mAud []string) {
 // EnforceMaxLifetime enforces the maximum mytoken lifetime set by server admins. Returns true if the restrictions was
 // changed.
 func (r *Restrictions) EnforceMaxLifetime(issuer string) (changed bool) {
-	maxLifetime := config.Get().ProviderByIssuer[issuer].MytokensMaxLifetime
+	p := provider2.GetProvider(issuer)
+	if p == nil {
+		return
+	}
+	maxLifetime := p.MaxMytokenLifetime()
 	if maxLifetime == 0 {
 		return
 	}

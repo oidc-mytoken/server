@@ -9,7 +9,6 @@ import (
 	"github.com/oidc-mytoken/utils/utils/jwtutils"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/accesstokenrepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/cryptstore"
@@ -68,24 +67,24 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 }
 
 func parseScopesAndAudienceToUse(
-	reqScope, reqAud string, usedRestriction *restrictions.Restriction,
+	reqScope string, reqAud []string, usedRestriction *restrictions.Restriction,
 	providerScopes []string,
 ) (
 	string,
-	string,
+	[]string,
 ) {
 	scopes := strings.Join(providerScopes, " ") // default if no restrictions apply
-	auds := ""                                  // default if no restrictions apply
+	auds := []string{}                          // default if no restrictions apply
 	if usedRestriction != nil {
 		if reqScope != "" {
 			scopes = reqScope
 		} else if usedRestriction.Scope != "" {
 			scopes = usedRestriction.Scope
 		}
-		if reqAud != "" {
+		if len(reqAud) > 0 {
 			auds = reqAud
 		} else if len(usedRestriction.Audiences) > 0 {
-			auds = strings.Join(usedRestriction.Audiences, " ")
+			auds = usedRestriction.Audiences
 		}
 	}
 	return scopes, auds
@@ -94,7 +93,7 @@ func parseScopesAndAudienceToUse(
 // HandleAccessTokenRefresh handles an access token request
 func HandleAccessTokenRefresh(
 	rlog log.Ext1FieldLogger, mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData api.ClientMetaData,
-	provider *config.ProviderConf, usedRestriction *restrictions.Restriction,
+	provider model.Provider, usedRestriction *restrictions.Restriction,
 ) *model.Response {
 	rt, rtFound, dbErr := cryptstore.GetRefreshToken(rlog, nil, mt.ID, req.Mytoken.JWT)
 	if dbErr != nil {
@@ -108,7 +107,9 @@ func HandleAccessTokenRefresh(
 		}
 	}
 
-	scopes, auds := parseScopesAndAudienceToUse(req.Scope, req.Audience, usedRestriction, provider.Scopes)
+	scopes, auds := parseScopesAndAudienceToUse(
+		req.Scope, strings.Split(req.Audience, " "), usedRestriction, provider.Scopes(),
+	)
 	oidcRes, oidcErrRes, err := refresh.DoFlowAndUpdateDB(rlog, provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))

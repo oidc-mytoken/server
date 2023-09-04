@@ -3,9 +3,9 @@ package profilerepo
 import (
 	"encoding/json"
 
+	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"

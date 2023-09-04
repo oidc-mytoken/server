@@ -70,14 +70,43 @@ database:
   # Enable / Disable cleanup of expired db entries once a day
   # schedule_cleanup: true
 
+# Configuration related to caching
+cache:
+  # Configures the internal in-memory cache
+  internal:
+    # The default time-to-live of the cache, i.e. how long values are cached if the server does not set another ttl
+    default_ttl: 300
+    # In which interval the cache is cleaned-up
+    cleanup_interval: 600
+  # Configuration for an external cache, such as redis (currently the only supported one)
+  # If configured the internal cache is not used.
+  external:
+    # Redis configuration
+    redis:
+#      addr: "localhost:6379"
+#      username:
+#      password:
+#      db:
+
 # Configuration for token signing
 signing:
-  # The used algorithm
-  alg: "ES512"
-  # The file with the signing key
-  key_file: "/mytoken.key"
-  # If an RSA-based algorithm is used, this is the key len. Only needed when generating a new rsa key.
-  rsa_key_len: 2048
+  # Configuration for mytoken signing
+  mytoken:
+    # The used algorithm
+    alg: "ES512"
+    # The file with the signing key
+    key_file: "/mytoken.key"
+    # If an RSA-based algorithm is used, this is the key len. Only needed when generating a new rsa key.
+    rsa_key_len: 2048
+  # Configuration for signing operations within oidc communication, currently this is only used if federation support
+  #  is enabled; it is recommended to use different signing keys for mytoken signing, oidc communication, and federation
+  oidc:
+    # The used algorithm
+    alg: "ES512"
+    # The file with the signing key
+    # key_file: "/oidc.key"
+    # If an RSA-based algorithm is used, this is the key len. Only needed when generating a new rsa key.
+    rsa_key_len: 2048
 
 # Configuration for logging
 logging:
@@ -198,6 +227,29 @@ features:
       - /etc/ssh/ssh_host_ed25519_key
       - /etc/ssh/ssh_host_rsa_key
 
+  # Settings related to server profiles and templates
+  server_profiles:
+    enabled: true
+    # group names and passwords; those are used by an entity to add, update, delete profiles on this server, the '_'
+    # group is the default group managed by the server admin
+    groups:
+    # _: admin
+
+  # Configuration for usage of OpenID Federations
+  federation:
+    enabled: false
+    trust_anchors:
+    authority_hints:
+    entity_configuration_lifetime: 604800
+    # Configuration for signing federation statements
+    signing:
+      # The used algorithm
+      alg: "ES512"
+      # The file with the signing key
+      key_file: "/federation.ecdsa.key"
+      # If an RSA-based algorithm is used, this is the key len. Only needed when generating a new rsa key.
+      rsa_key_len: 2048
+
 # The list of supported providers
 providers:
   - issuer: "https://example.provider.com/"
@@ -210,4 +262,12 @@ providers:
     # Maximum lifetime for mytokens for this issuer, given in seconds. On default the lifetime of mytokens is not
     # restricted. Setting this value to 0, means that there is no maximum lifetime.
     mytokens_max_lifetime: 0
+    # Settings related to how the audience(s) of ATs is requested
+    audience:
+      # Unless false audiences are requested according to RFC8707; other options are ignored;
+      use_rfc8707: true
+      # The parameter used in the request, common options are "resource" and "audience"
+      request_parameter: "resource"
+      # Defines how multiple audience values in a request are handled;
+      space_separate_auds: false
 

@@ -6,16 +6,18 @@
                  aria-label="Restriction clauses"></div>
             <div class="btn-group" role="group" aria-label="Add Restriction clause">
                 <button id="{{prefix}}new-restr-clause" type="button" class="btn
-                btn-primary{{#read-only}} d-none{{/read-only}}"
-                        onclick="newRestrClause('{{prefix}}')" {{#read-only}}disabled{{/read-only}}>
+                btn-primary any-restr-input{{#read-only}} d-none{{/read-only}}"
+                        onclick="newRestrClause('{{prefix}}')" {{#read-only}}disabled{{/read-only}}
+                        instance-prefix="{{prefix}}">
                     <i class="fas fa-plus"></i></button>
             </div>
         </div>
         <div>
             <div class="btn-group float-right" role="group" aria-label="Delete Restriction clause">
                 <button id="{{prefix}}del-restr-clause" type="button"
-                        class="btn btn-danger{{#read-only}} d-none{{/read-only}}"
-                        onclick="delRestrClause('{{prefix}}')" {{#read-only}}disabled{{/read-only}}>
+                        class="btn btn-danger any-restr-input{{#read-only}} d-none{{/read-only}}"
+                        onclick="delRestrClause('{{prefix}}')"
+                        {{#read-only}}disabled{{/read-only}} instance-prefix="{{prefix}}">
                     <i class="fas fa-trash"></i></button>
             </div>
         </div>
@@ -25,10 +27,10 @@
         <div class="form-row">
             <div class="form-group restr-nbf col-md" style="position:relative;">
                 <label for="{{prefix}}nbf">Not Before</label>
-                <input type="text" class="form-control nbf datetimepicker-input" id="{{prefix}}nbf"
+                <input type="text" class="form-control nbf datetimepicker-input any-restr-input" id="{{prefix}}nbf"
                        aria-describedby="{{prefix}}nbf_help"
                        data-toggle="datetimepicker" data-target="#{{prefix}}nbf" placeholder="YYYY-MM-DD HH:mm:ss"
-                       {{#read-only}}disabled{{/read-only}}>
+                       {{#read-only}}disabled{{/read-only}} instance-prefix="{{prefix}}">
                 <small id="{{prefix}}nbf_help" class="form-text text-muted">If set, the mytoken cannot be used before
                     this
                     time.</small>
@@ -36,10 +38,10 @@
 
             <div class="form-group restr-exp col-md" style="position:relative;">
                 <label for="{{prefix}}exp">Expires At</label>
-                <input type="text" class="form-control exp datetimepicker-input" id="{{prefix}}exp"
+                <input type="text" class="form-control exp datetimepicker-input any-restr-input" id="{{prefix}}exp"
                        aria-describedby="{{prefix}}exp_help"
                        data-toggle="datetimepicker" data-target="#{{prefix}}exp" placeholder="YYYY-MM-DD HH:mm:ss"
-                       {{#read-only}}disabled{{/read-only}}>
+                       {{#read-only}}disabled{{/read-only}} instance-prefix="{{prefix}}">
                 <small id="{{prefix}}exp_help" class="form-text text-muted">If set, the mytoken cannot be used after
                     this time.</small>
             </div>
@@ -64,7 +66,7 @@
                     <th><input id="{{prefix}}audienceInput" type="text" class="form-control add-list-input" value=""
                                placeholder="https://..." {{#read-only}}disabled{{/read-only}}></th>
                     <th class="align-middle">
-                        <button class="btn btn-small btn-add-list-item" instance-prefix="{{prefix}}"
+                        <button class="btn btn-small btn-add-list-item any-restr-input" instance-prefix="{{prefix}}"
                                 {{#read-only}}disabled{{/read-only}}><i class="fas
                         fa-plus"></i></button>
                     </th>
@@ -82,7 +84,7 @@
                 <label for="{{prefix}}select-ip-based-restr">Restrict request location based on</label>
                 <select id="{{prefix}}select-ip-based-restr" class="select custom-select mb-2"
                         data-live-search="true" onchange="selectIPTable.call(this, '{{prefix}}')">
-                    <option value="hosts">Hostname or IP addresses</option>
+                    <option value="hosts">Hostname, IP addresses, or subnets</option>
                     <option selected value="geoip_allow">Allowed countries</option>
                     <option value="geoip_disallow">Forbidden countries</option>
                 </select>
@@ -95,9 +97,10 @@
                         <thead class="{{#read-only}}d-none{{/read-only}}">
                         <tr>
                             <th><input id="{{prefix}}hostInput" type="text" class="form-control add-list-input" value=""
-                                       placeholder="Hostname or IP" {{#read-only}}disabled{{/read-only}}></th>
+                                       placeholder="Hostname, IP, Subnet" {{#read-only}}disabled{{/read-only}}></th>
                             <th class="align-middle">
-                                <button class="btn btn-small btn-add-list-item" instance-prefix="{{prefix}}"
+                                <button class="btn btn-small btn-add-list-item any-restr-input"
+                                        instance-prefix="{{prefix}}"
                                         {{#read-only}}disabled{{/read-only}}><i
                                         class="fas fa-plus"></i></button>
                             </th>
@@ -122,7 +125,8 @@
                                         data-live-search="true" {{#read-only}}disabled{{/read-only}}></select>
                             </th>
                             <th class="align-middle">
-                                <button class="btn btn-small btn-add-list-item" instance-prefix="{{prefix}}"
+                                <button class="btn btn-small btn-add-list-item any-restr-input"
+                                        instance-prefix="{{prefix}}"
                                         {{#read-only}}disabled{{/read-only}}><i
                                         class="fas fa-plus"></i></button>
                             </th>
@@ -148,7 +152,8 @@
                                         data-live-search="true" {{#read-only}}disabled{{/read-only}}></select>
                             </th>
                             <th class="align-middle">
-                                <button class="btn btn-small btn-add-list-item" instance-prefix="{{prefix}}"
+                                <button class="btn btn-small btn-add-list-item any-restr-input"
+                                        instance-prefix="{{prefix}}"
                                         {{#read-only}}disabled{{/read-only}}><i
                                         class="fas fa-plus"></i></button>
                             </th>
@@ -167,16 +172,18 @@
         <div class="form-row">
             <div class="form-group restr-usages_AT col-sm">
                 <label for="{{prefix}}usages_AT">Usages AT</label>
-                <input type="number" class="form-control usages_AT" id="{{prefix}}usages_AT"
-                       aria-describedby="{{prefix}}usages_AT_help" min=0 {{#read-only}}disabled{{/read-only}}>
+                <input type="number" class="form-control usages_AT any-restr-input" id="{{prefix}}usages_AT"
+                       aria-describedby="{{prefix}}usages_AT_help" min=0
+                       {{#read-only}}disabled{{/read-only}} instance-prefix="{{prefix}}">
                 <small id="{{prefix}}usages_AT_help" class="form-text text-muted">If set, the mytoken can only be used
                     this often to request access tokens.</small>
             </div>
 
             <div class="form-group restr-usages_other col-sm">
                 <label for="{{prefix}}usages_other">Usages Other</label>
-                <input type="number" class="form-control usages_other" id="{{prefix}}usages_other"
-                       aria-describedby="{{prefix}}usages_other_help" min=0 {{#read-only}}disabled{{/read-only}}>
+                <input type="number" class="form-control usages_other any-restr-input" id="{{prefix}}usages_other"
+                       aria-describedby="{{prefix}}usages_other_help" min=0
+                       {{#read-only}}disabled{{/read-only}} instance-prefix="{{prefix}}">
                 <small id="{{prefix}}usages_other_help" class="form-text text-muted">If set, the mytoken can only be
                     used this often for requests other than requesting access tokens.</small>
             </div>

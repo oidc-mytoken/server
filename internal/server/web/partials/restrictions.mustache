@@ -1,5 +1,25 @@
 <div class="pb-3 row">
     <h4 class="col-md">Restrictions</h4>
+    {{#create-with-profiles}}
+        <span class="form-row mr-3 pl-3">
+            <span class="input-group"
+                  data-toggle="tooltip" data-placement="top"
+                  title="Prefill values from a predefined template" data-original-title="">
+                <span class="input-group-prepend">
+                     <span class="input-group-text bg-my_grey">
+                             <i class="fas fa-bookmark"></i>
+                    </span>
+                </span>
+                <select id="{{prefix}}restr-template" class="form-control custom-select form-inline any-profile-input"
+                        instance-prefix="{{prefix}}">
+                    <option value="">Custom</option>
+                    {{#profiles.restrictions}}
+                        <option value="{{Payload}}">{{Name}}</option>
+                    {{/profiles.restrictions}}
+                </select>
+            </span>
+        </span>
+    {{/create-with-profiles}}
     <div>
     <span id="{{prefix}}restr-editor-wrap" class="{{#collapse.Restrictions}} d-none{{/collapse.Restrictions}}">
         <input id="{{prefix}}restr-editor-mode" type="checkbox" checked data-size="sm" data-toggle="toggle"
@@ -38,7 +58,8 @@
     <div id="{{prefix}}restr-json-editor" class="justify-content-center d-none">
         <small class="mt-4">{{#read-only}}
             Read{{/read-only}}{{^read-only}}Write{{/read-only}} restrictions as JSON</small>
-        <textarea class="form-control" id="{{prefix}}restrictionsArea" autocomplete="off" cols=50 rows=20
+        <textarea class="form-control any-restr-input" id="{{prefix}}restrictionsArea" autocomplete="off" cols=50
+                  rows=20
                   onkeyup="updateRestrFromJSONEditor('{{prefix}}')" {{#read-only}}disabled{{/read-only}}></textarea>
     </div>
 </div>

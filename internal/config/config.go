@@ -6,16 +6,16 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/oidc-mytoken/utils/context"
 	"github.com/oidc-mytoken/utils/utils/fileutil"
-	"github.com/oidc-mytoken/utils/utils/issuerutils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	oidcfed "github.com/zachmann/go-oidcfed/pkg"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v3"
 
-	model2 "github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 
@@ -44,9 +44,15 @@ var defaultConfig = Config{
 		DB:                "mytoken",
 		ReconnectInterval: 60,
 	},
-	Signing: signingConf{
-		Alg:       oidc.ES512,
-		RSAKeyLen: 2048,
+	Signing: signingConfs{
+		Mytoken: signingConf{
+			Alg:       jwa.ES512,
+			RSAKeyLen: 2048,
+		},
+		OIDC: signingConf{
+			Alg:       jwa.ES512,
+			RSAKeyLen: 2048,
+		},
 	},
 	Logging: loggingConf{
 		Access: LoggerConf{
@@ -101,28 +107,41 @@ var defaultConfig = Config{
 			Enabled: true,
 			Groups:  make(map[string]string),
 		},
+		Federation: federationConf{
+			Enabled:                     false,
+			EntityConfigurationLifetime: 7 * 24 * 60 * 60,
+			Signing: signingConf{
+				Alg:       jwa.ES512,
+				RSAKeyLen: 2048,
+			},
+		},
 	},
-	ProviderByIssuer: make(map[string]*ProviderConf),
 	API: apiConf{
 		MinVersion: 0,
+	},
+	Caching: cacheConf{
+		Internal: internalCacheConf{
+			DefaultExpiration: 300,
+			CleanupInterval:   600,
+		},
 	},
 }
 
 // Config holds the server configuration
 type Config struct {
-	IssuerURL            string                   `yaml:"issuer"`
-	Host                 string                   // Extracted from the IssuerURL
-	Server               serverConf               `yaml:"server"`
-	GeoIPDBFile          string                   `yaml:"geo_ip_db_file"`
-	API                  apiConf                  `yaml:"api"`
-	DB                   DBConf                   `yaml:"database"`
-	Signing              signingConf              `yaml:"signing"`
-	Logging              loggingConf              `yaml:"logging"`
-	ServiceDocumentation string                   `yaml:"service_documentation"`
-	Features             featuresConf             `yaml:"features"`
-	Providers            []*ProviderConf          `yaml:"providers"`
-	ProviderByIssuer     map[string]*ProviderConf `yaml:"-"`
-	ServiceOperator      ServiceOperatorConf      `yaml:"service_operator"`
+	IssuerURL            string              `yaml:"issuer"`
+	Host                 string              // Extracted from the IssuerURL
+	Server               serverConf          `yaml:"server"`
+	GeoIPDBFile          string              `yaml:"geo_ip_db_file"`
+	API                  apiConf             `yaml:"api"`
+	DB                   DBConf              `yaml:"database"`
+	Signing              signingConfs        `yaml:"signing"`
+	Logging              loggingConf         `yaml:"logging"`
+	ServiceDocumentation string              `yaml:"service_documentation"`
+	Features             featuresConf        `yaml:"features"`
+	Providers            []ProviderConf      `yaml:"providers"`
+	ServiceOperator      ServiceOperatorConf `yaml:"service_operator"`
+	Caching              cacheConf           `yaml:"cache"`
 }
 
 type apiConf struct {
@@ -130,17 +149,18 @@ type apiConf struct {
 }
 
 type featuresConf struct {
-	OIDCFlows               oidcFlowsConf            `yaml:"oidc_flows"`
-	TokenRevocation         onlyEnable               `yaml:"token_revocation"`
-	ShortTokens             shortTokenConfig         `yaml:"short_tokens"`
-	TransferCodes           onlyEnable               `yaml:"transfer_codes"`
-	Polling                 pollingConf              `yaml:"polling_codes"`
-	TokenRotation           onlyEnable               `yaml:"token_rotation"`
-	TokenInfo               tokeninfoConfig          `yaml:"tokeninfo"`
-	WebInterface            webConfig                `yaml:"web_interface"`
-	DisabledRestrictionKeys model2.RestrictionClaims `yaml:"unsupported_restrictions"`
-	SSH                     sshConf                  `yaml:"ssh"`
-	ServerProfiles          serverProfilesConf       `yaml:"server_profiles"`
+	OIDCFlows               oidcFlowsConf           `yaml:"oidc_flows"`
+	TokenRevocation         onlyEnable              `yaml:"token_revocation"`
+	ShortTokens             shortTokenConfig        `yaml:"short_tokens"`
+	TransferCodes           onlyEnable              `yaml:"transfer_codes"`
+	Polling                 pollingConf             `yaml:"polling_codes"`
+	TokenRotation           onlyEnable              `yaml:"token_rotation"`
+	TokenInfo               tokeninfoConfig         `yaml:"tokeninfo"`
+	WebInterface            webConfig               `yaml:"web_interface"`
+	DisabledRestrictionKeys model.RestrictionClaims `yaml:"unsupported_restrictions"`
+	SSH                     sshConf                 `yaml:"ssh"`
+	ServerProfiles          serverProfilesConf      `yaml:"server_profiles"`
+	Federation              federationConf          `yaml:"federation"`
 	Notifications           notificationConf         `yaml:"notifications"`
 }
 
@@ -149,6 +169,9 @@ func (c *featuresConf) validate() error {
 		return err
 	}
 	if err := c.ServerProfiles.validate(); err != nil {
+		return err
+	}
+	if err := c.Federation.validate(); err != nil {
 		return err
 	}
 	if err := c.Notifications.validate(); err != nil {
@@ -370,23 +393,27 @@ type tlsConf struct {
 	Key          string `yaml:"key"`
 }
 
+type signingConfs struct {
+	Mytoken signingConf `yaml:"mytoken"`
+	OIDC    signingConf `yaml:"oidc"`
+}
+
 type signingConf struct {
-	Alg       string `yaml:"alg"`
-	KeyFile   string `yaml:"key_file"`
-	RSAKeyLen int    `yaml:"rsa_key_len"`
+	Alg       jwa.SignatureAlgorithm `yaml:"alg"`
+	KeyFile   string                 `yaml:"key_file"`
+	RSAKeyLen int                    `yaml:"rsa_key_len"`
 }
 
 // ProviderConf holds information about a provider
 type ProviderConf struct {
-	Issuer                   string             `yaml:"issuer"`
-	ClientID                 string             `yaml:"client_id"`
-	ClientSecret             string             `yaml:"client_secret"`
-	Scopes                   []string           `yaml:"scopes"`
-	MytokensMaxLifetime      int64              `yaml:"mytokens_max_lifetime"`
-	Endpoints                *oauth2x.Endpoints `yaml:"-"`
-	Provider                 *oidc.Provider     `yaml:"-"`
-	Name                     string             `yaml:"name"`
-	AudienceRequestParameter string             `yaml:"audience_request_parameter"`
+	Issuer              string              `yaml:"issuer"`
+	ClientID            string              `yaml:"client_id"`
+	ClientSecret        string              `yaml:"client_secret"`
+	Scopes              []string            `yaml:"scopes"`
+	MytokensMaxLifetime int64               `yaml:"mytokens_max_lifetime"`
+	Endpoints           *oauth2x.Endpoints  `yaml:"-"`
+	Name                string              `yaml:"name"`
+	Audience            *model.AudienceConf `yaml:"audience"`
 }
 
 // ServiceOperatorConf is type holding the configuration for the service operator of this mytoken instance
@@ -397,13 +424,31 @@ type ServiceOperatorConf struct {
 	Privacy  string `yaml:"mail_privacy"`
 }
 
+type cacheConf struct {
+	Internal internalCacheConf  `yaml:"internal"`
+	External *externalCacheConf `yaml:"external"`
+}
+
+type internalCacheConf struct {
+	DefaultExpiration int64 `yaml:"default_ttl"`
+	CleanupInterval   int64 `yaml:"cleanup_interval"`
+}
+
+type externalCacheConf struct {
+	Redis *redisCacheConf `yaml:"redis"`
+}
+
+type redisCacheConf struct {
+	Addr     string `yaml:"addr"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	DB       int    `yaml:"db"`
+}
+
 // GetPassword returns the password for this database config. If necessary it reads it from the password file.
 func (conf *DBConf) GetPassword() string {
-	if conf.Password != "" {
-		return conf.Password
-	}
 	if conf.PasswordFile == "" {
-		return ""
+		return conf.Password
 	}
 	content, err := os.ReadFile(conf.PasswordFile)
 	if err != nil {
@@ -425,6 +470,44 @@ func (so *ServiceOperatorConf) validate() error {
 		so.Privacy = so.Contact
 	}
 	return nil
+}
+
+type federationConf struct {
+	Enabled                     bool                    `yaml:"enabled"`
+	TrustAnchors                oidcfed.TrustAnchors    `yaml:"trust_anchors"`
+	AuthorityHints              []string                `yaml:"authority_hints"`
+	EntityConfigurationLifetime int64                   `yaml:"entity_configuration_lifetime"`
+	Signing                     signingConf             `yaml:"signing"`
+	Entity                      *oidcfed.FederationLeaf `yaml:"-"`
+}
+
+func (f *federationConf) validate() (err error) {
+	if !f.Enabled {
+		return nil
+	}
+	if Get().Signing.OIDC.KeyFile == "" {
+		return errors.New("if federation is enabled an OIDC signing key must be set under signing.oidc.key_file")
+	}
+	if Get().Signing.OIDC.Alg == "" {
+		return errors.New("if federation is enabled an OIDC signing alg must be set under signing.oidc.alg")
+	}
+	if len(f.TrustAnchors) == 0 {
+		return errors.New("federation enabled, but no trust anchors specified")
+	}
+	if len(f.AuthorityHints) == 0 {
+		return errors.New("federation enabled, but no authority hints specified")
+	}
+	if f.Signing.KeyFile == "" {
+		return errors.New("federation enabled, but no signing keyfile specified")
+	}
+	if f.Signing.Alg == "" {
+		return errors.New("federation enabled, but no signing alg specified")
+	}
+	if f.EntityConfigurationLifetime == 0 {
+		f.EntityConfigurationLifetime = 7 * 24 * 60 * 60
+	}
+
+	return
 }
 
 var conf *Config
@@ -484,10 +567,6 @@ func validate() error {
 		// Endpoints only returns an error if it does discovery but this was already done in NewConfig, so we can ignore
 		// the error value
 		p.Endpoints, _ = oc.Endpoints()
-		p.Provider, err = oidc.NewProvider(context.Get(), p.Issuer)
-		if err != nil {
-			return errors.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
-		}
 		if p.ClientID == "" {
 			return errors.Errorf("invalid config: provider.clientid not set (Index %d)", i)
 		}
@@ -497,20 +576,24 @@ func validate() error {
 		if len(p.Scopes) <= 0 {
 			return errors.Errorf("invalid config: provider.scopes not set (Index %d)", i)
 		}
-		iss0, iss1 := issuerutils.GetIssuerWithAndWithoutSlash(p.Issuer)
-		conf.ProviderByIssuer[iss0] = p
-		conf.ProviderByIssuer[iss1] = p
-		if p.AudienceRequestParameter == "" {
-			p.AudienceRequestParameter = "resource"
+		if p.Audience == nil {
+			p.Audience = &model.AudienceConf{RFC8707: true}
 		}
+		if p.Audience.RFC8707 {
+			p.Audience.RequestParameter = model.AudienceParameterResource
+			p.Audience.SpaceSeparateAuds = false
+		} else if p.Audience.RequestParameter == "" {
+			p.Audience.RequestParameter = model.AudienceParameterResource
+		}
+		conf.Providers[i] = p
 	}
 	if conf.IssuerURL == "" {
 		return errors.New("invalid config: issuer_url not set")
 	}
-	if conf.Signing.KeyFile == "" {
+	if conf.Signing.Mytoken.KeyFile == "" {
 		return errors.New("invalid config: signing keyfile not set")
 	}
-	if conf.Signing.Alg == "" {
+	if conf.Signing.Mytoken.Alg == "" {
 		return errors.New("invalid config: token signing alg not set")
 	}
 	if conf.Features.SSH.Enabled {

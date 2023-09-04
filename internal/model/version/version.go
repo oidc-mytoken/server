@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// SOFTWAREID is a unique string identifying this software
+const SOFTWAREID = "ZWR1LmtpdC5teXRva2VuLjI5MTI=sm9K4rrvJppPgM"
+
 // VERSION holds the server's version
 //
 //go:embed VERSION

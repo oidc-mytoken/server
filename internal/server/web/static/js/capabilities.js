@@ -11,59 +11,58 @@ function capRWModes(prefix = "") {
 }
 
 function capabilityCreateMytoken(prefix = "") {
-    return $('#' + prefix + 'cp-create_mytoken');
+    return $(prefixId('cp-create_mytoken', prefix));
 }
 
 function capabilityRevokeAnyToken(prefix = "") {
-    return $('#' + prefix + 'cp-revoke_any_token');
+    return $(prefixId('cp-revoke_any_token', prefix));
 }
 
 function capabilityAT(prefix = "") {
-    return $('#' + prefix + 'cp-AT');
+    return $(prefixId('cp-AT', prefix));
 }
 
 function capSummaryAT(prefix = "") {
-    return $('#' + prefix + 'cap-summary-AT');
+    return $(prefixId('cap-summary-AT', prefix));
 }
 
 function capSummaryMT(prefix = "") {
-    return $('#' + prefix + 'cap-summary-MT');
+    return $(prefixId('cap-summary-MT', prefix));
 }
 
 function capSummaryInfo(prefix = "") {
-    return $('#' + prefix + 'cap-summary-info');
+    return $(prefixId('cap-summary-info', prefix));
 }
 
 function capSummaryMOM(prefix = "") {
-    return $('#' + prefix + 'cap-summary-mom');
+    return $(prefixId('cap-summary-mom', prefix));
 }
 
 function capSummarySettings(prefix = "") {
-    return $('#' + prefix + 'cap-summary-settings');
+    return $(prefixId('cap-summary-settings', prefix));
 }
 
 function capSummaryHowManyGreen(prefix = "") {
-    return $('#' + prefix + 'cap-summary-count-green');
+    return $(prefixId('cap-summary-count-green', prefix));
 }
 
 function capSummaryHowManyYellow(prefix = "") {
-    return $('#' + prefix + 'cap-summary-count-yellow');
+    return $(prefixId('cap-summary-count-yellow', prefix));
 }
 
 function capSummaryHowManyRed(prefix = "") {
-    return $('#' + prefix + 'cap-summary-count-red');
+    return $(prefixId('cap-summary-count-red', prefix));
 }
 
 
 function enableCapability(cap, prefix = "") {
     // This function should be called after initCapabilities to preselect / check capabilities
-    // We do it with a click instead of prop("checked", true) because click handles sub-/parent- capabilities correctly.
-    // We first set checked to false ensuring that it was not previously selected
     let $c = $(prefixId(cap, prefix));
     let disabled = $c.prop('disabled');
     $c.prop('disabled', false);
-    $c.prop("checked", false);
-    $c.click();
+    $c.prop("checked", true);
+    checkThisCapability.call($c.get());
+    updateCapSummary(prefix);
     $c.prop('disabled', disabled);
 }
 
@@ -264,4 +263,18 @@ function checkCapability(cap, prefix = "") {
     $mode.prop('disabled', false);
     $mode.bootstrapToggle(rCap ? 'off' : 'on');
     $mode.prop('disabled', disabled);
+}
+
+function set_capabilities_in_gui(capabilities, prefix = "") {
+    if (capabilities === undefined) {
+        return
+    }
+    capabilityChecks(prefix).prop("checked", false);
+    capabilities.forEach(function (c) {
+        checkCapability(c, prefix);
+    });
+}
+
+function cap_enableProfileSupport(prefix = "") {
+    _enableProfileSupport("cap", set_capabilities_in_gui, prefix);
 }

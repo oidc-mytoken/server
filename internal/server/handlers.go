@@ -1,13 +1,23 @@
 package server
 
 import (
+	"fmt"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/db/profilerepo"
+	configurationEndpoint "github.com/oidc-mytoken/server/internal/endpoints/configuration"
 	consent "github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
+	"github.com/oidc-mytoken/server/internal/utils/cache"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/templating"
 )
@@ -20,11 +30,12 @@ func handleIndex(ctx *fiber.Ctx) error {
 }
 
 func homeBindingData() map[string]interface{} {
-	providers := []map[string]string{}
-	for _, p := range config.Get().Providers {
-		pp := make(map[string]string, 2)
+	var providers []map[string]any
+	for _, p := range configurationEndpoint.SupportedProviders() {
+		pp := make(map[string]any, 2)
 		pp["issuer"] = p.Issuer
 		pp["name"] = p.Name
+		pp["fed"] = p.OIDCFed
 		providers = append(providers, pp)
 	}
 	return map[string]interface{}{
@@ -40,10 +51,97 @@ func homeBindingData() map[string]interface{} {
 			templating.MustacheKeyReadOnly: true,
 		},
 		templating.MustacheSubCreateMT: map[string]interface{}{
-			templating.MustacheKeyPrefix: "createMT-",
+			templating.MustacheKeyPrefix:             "createMT-",
+			templating.MustacheKeyCreateWithProfiles: true,
+			templating.MustacheKeyProfiles:           profilesBindingData(),
 		},
 		"providers": providers,
 	}
+}
+
+type templateProfileData struct {
+	Name    string
+	Payload string
+}
+
+// getWebProfileData returns the cached profile data for one of the profile types
+func getWebProfileData(t string) ([]templateProfileData, bool) {
+	data, found := cache.Get(cache.WebProfiles, t)
+	if !found {
+		return nil, found
+	}
+	d, ok := data.([]templateProfileData)
+	return d, ok
+}
+
+func profilesBindingData() map[string]interface{} {
+	var ok bool
+	var err error
+	var groups []string
+
+	g, groupsFound := cache.Get(cache.WebProfiles, "groups")
+	if groupsFound {
+		groups, ok = g.([]string)
+	}
+	if !groupsFound || !ok {
+		groups, err = profilerepo.GetGroups(log.StandardLogger(), nil)
+		if err != nil {
+			log.WithError(err).Error("error while retrieving profile groups for webinterface binding data")
+			return nil
+		}
+		cache.Set(cache.WebProfiles, "groups", groups, time.Hour)
+	}
+
+	profileTypes := map[string]func(log.Ext1FieldLogger, *sqlx.Tx, string) (profiles []api.Profile, err error){
+		templating.MustacheKeyProfilesProfile:      profilerepo.GetProfiles,
+		templating.MustacheKeyProfilesCapabilities: profilerepo.GetCapabilitiesTemplates,
+		templating.MustacheKeyProfilesRestrictions: profilerepo.GetRestrictionsTemplates,
+		templating.MustacheKeyProfilesRotation:     profilerepo.GetRotationTemplates,
+	}
+	returnData := make(map[string]interface{})
+	for pt, dbFunc := range profileTypes {
+		p, ok := getWebProfileData(pt)
+		if ok {
+			returnData[pt] = p
+			continue
+		}
+		p = []templateProfileData{}
+		for _, group := range groups {
+			profilesForGroup, err := dbFunc(log.StandardLogger(), nil, group)
+			if err != nil {
+				log.WithError(err).WithField("profile type", pt).Error(
+					"error while retrieving profiles for webinterface binding data",
+				)
+			}
+			for _, d := range profilesForGroup {
+				payload, err := d.Payload.MarshalJSON()
+				if err != nil {
+					log.WithError(err).WithField("profile type", pt).Error(
+						"error while marshaling payload while retrieving profiles for webinterface" +
+							" binding data",
+					)
+				}
+				p = append(
+					p, templateProfileData{
+						Name:    fmt.Sprintf("%s/%s", group, d.Name),
+						Payload: string(payload),
+					},
+				)
+			}
+		}
+		sort.Slice(
+			p, func(i, j int) bool {
+				return p[i].Name < p[j].Name
+			},
+		)
+		for i, pp := range p {
+			pp.Name = strings.TrimPrefix(pp.Name, "_/")
+			p[i] = pp
+		}
+		returnData[pt] = p
+		cache.Set(cache.WebProfiles, pt, p, time.Hour)
+	}
+	return returnData
 }
 
 func handleHome(ctx *fiber.Ctx) error {

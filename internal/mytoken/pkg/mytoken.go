@@ -92,8 +92,12 @@ func (mt *Mytoken) VerifyCapabilities(required ...api.Capability) bool {
 func NewMytoken(
 	oidcSub, oidcIss, name string, r restrictions.Restrictions, c api.Capabilities, rot *api.Rotation,
 	authTime unixtime.UnixTime,
-) *Mytoken {
+) (*Mytoken, error) {
 	now := unixtime.Now()
+	id, err := mtid.New()
+	if err != nil {
+		return nil, err
+	}
 	mt := &Mytoken{
 		Mytoken: api.Mytoken{
 			Version:      api.TokenVer,
@@ -107,7 +111,7 @@ func NewMytoken(
 			OIDCSubject:  oidcSub,
 			Capabilities: c,
 		},
-		ID:        mtid.New(),
+		ID:        id,
 		IssuedAt:  now,
 		NotBefore: now,
 		AuthTime:  authTime,
@@ -125,7 +129,7 @@ func NewMytoken(
 			mt.NotBefore = nbf
 		}
 	}
-	return mt
+	return mt, nil
 }
 
 // ExpiresIn returns the amount of seconds in which this token expires
@@ -197,6 +201,7 @@ func (mt *Mytoken) toTokenResponse() response.MytokenResponse {
 			ExpiresIn:    mt.ExpiresIn(),
 			Capabilities: mt.Capabilities,
 			Rotation:     mt.Rotation,
+			MOMID:        mt.ID.Hash(),
 		},
 		Restrictions: mt.Restrictions,
 	}
@@ -260,6 +265,7 @@ func (mt *Mytoken) ToTokenResponse(
 		res.TransferCode = transferCode
 		res.MytokenType = model.ResponseTypeTransferCode
 		res.ExpiresIn = expiresIn
+		res.MOMID = mt.ID.Hash()
 		return res, err
 	}
 	return mt.toMytokenResponse(jwt), nil
@@ -272,10 +278,10 @@ func (mt *Mytoken) ToJWT() (string, error) {
 	}
 	var err error
 	j := jwt.NewWithClaims(
-		jwt.GetSigningMethod(config.Get().Signing.Alg), mt,
+		jwt.GetSigningMethod(config.Get().Signing.Mytoken.Alg.String()), mt,
 	)
 	j.Header["typ"] = "MT+JWT"
-	mt.jwt, err = j.SignedString(jws.GetPrivateKey())
+	mt.jwt, err = j.SignedString(jws.GetSigningKey(jws.KeyUsageMytokenSigning))
 	return mt.jwt, errors.WithStack(err)
 }
 
@@ -295,7 +301,7 @@ func parseJWT(token string, skipCalimsValidation bool) (*Mytoken, error) {
 	}
 	tok, err := parser.ParseWithClaims(
 		token, &Mytoken{}, func(t *jwt.Token) (interface{}, error) {
-			return jws.GetPublicKey(), nil
+			return jws.GetPublicKey(jws.KeyUsageMytokenSigning), nil
 		},
 	)
 	if err != nil {

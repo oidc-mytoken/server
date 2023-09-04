@@ -6,12 +6,33 @@ import (
 	"time"
 
 	"github.com/patrickmn/go-cache"
+
+	"github.com/oidc-mytoken/server/internal/config"
 )
 
-var c *cache.Cache
+type Cache interface {
+	Get(key string) (any, bool)
+	Set(key string, value any, expiration time.Duration)
+}
 
-func init() {
-	c = cache.New(5*time.Minute, 10*time.Minute)
+var c Cache
+
+func setCache(cache Cache) {
+	c = cache
+}
+
+func InitCache() {
+	if c != nil {
+		return
+	}
+	if config.Get().Caching.External != nil {
+		if config.Get().Caching.External.Redis != nil {
+			initRedisCache()
+		}
+	}
+	if c == nil {
+		initInternalCache()
+	}
 }
 
 // Type defines the type of cache
@@ -22,6 +43,9 @@ const (
 	IPHostCache Type = iota
 	IPAddrCache
 	IPNetCache
+	WebProfiles
+	FederationLib
+	FederationOPMetadata
 )
 
 func k(t Type, key string) string {
@@ -42,13 +66,29 @@ func Get(t Type, key string) (interface{}, bool) {
 	return c.Get(k(t, key))
 }
 
+type subcache struct {
+	t Type
+}
+
+func (sc subcache) Get(key string) (any, bool) {
+	return Get(sc.t, key)
+}
+
+func (sc subcache) Set(key string, value any, expiration time.Duration) {
+	Set(sc.t, key, value, expiration)
+}
+
+func SubCache(t Type) Cache {
+	return subcache{t}
+}
+
 // SetIPParseResult caches the result of an ip parsing
 func SetIPParseResult(ipStr string, ip net.IP, ipNet *net.IPNet) {
 	Set(IPAddrCache, ipStr, ip)
 	Set(IPNetCache, ipStr, ipNet)
 }
 
-// GetIPParseResult returns the caches result of an ip parsing
+// GetIPParseResult returns the cached result of an ip parsing
 func GetIPParseResult(ipStr string) (net.IP, *net.IPNet, bool) {
 	ip, ipFound := Get(IPAddrCache, ipStr)
 	if !ipFound {

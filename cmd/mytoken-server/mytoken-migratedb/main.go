@@ -36,7 +36,7 @@ var app = &cli.App{
 			Email: "gabriel.zachmann@kit.edu",
 		},
 	},
-	Copyright:              "Karlsruhe Institute of Technology 2020-2022",
+	Copyright:              "Karlsruhe Institute of Technology 2020-2023",
 	UseShortOptionHandling: true,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
@@ -116,7 +116,7 @@ var app = &cli.App{
 		},
 	},
 	Action: func(context *cli.Context) error {
-		mytokenNodes := []string{}
+		var mytokenNodes []string
 		if context.Args().Len() > 0 {
 			mytokenNodes = context.Args().Slice()
 		} else if configFile != "" {
@@ -134,7 +134,10 @@ var app = &cli.App{
 		}
 		dbConfig.ReconnectInterval = 60
 		dbConfig.DBConf.Hosts = dbConfig.Hosts.Value()
+		tmpScheduleEnabled := dbConfig.DBConf.EnableScheduledCleanup
+		dbConfig.DBConf.EnableScheduledCleanup = false
 		db.ConnectConfig(dbConfig.DBConf)
+		dbConfig.DBConf.EnableScheduledCleanup = tmpScheduleEnabled
 		return migrateDB(mytokenNodes)
 	},
 }
