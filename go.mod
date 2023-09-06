@@ -30,7 +30,7 @@ require (
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
 	github.com/valyala/fasthttp v1.49.0
 	github.com/zachmann/go-oidcfed v0.0.0-20230725165112-6d27a1323204
-	golang.org/x/crypto v0.12.0
+	golang.org/x/crypto v0.13.0
 	golang.org/x/mod v0.12.0
 	golang.org/x/oauth2 v0.11.0
 	golang.org/x/term v0.12.0
