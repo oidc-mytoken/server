@@ -74,3 +74,5 @@ require (
 )
 
 replace github.com/urfave/cli/v2 => github.com/zachmann/cli/v2 v2.3.1-0.20211220102037-d619fd40a704
+
+replace github.com/oidc-mytoken/api => ../api

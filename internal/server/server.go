@@ -130,6 +130,7 @@ func addWebRoutes(s fiber.Router) {
 func start(s *fiber.App) {
 	if config.Get().Features.Notifications.SchedulerNeeded {
 		go notificationsrepo.NotificationScheduler()
+		//TODO remove
 		go notificationsrepo.NotificationScheduler()
 		go notificationsrepo.NotificationScheduler()
 	}

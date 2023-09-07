@@ -1,6 +1,7 @@
 package mytoken
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/golang-jwt/jwt"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/jws"
@@ -310,7 +312,57 @@ func parseJWT(token string, skipCalimsValidation bool) (*Mytoken, error) {
 
 	if mt, ok := tok.Claims.(*Mytoken); ok && tok.Valid {
 		mt.jwt = token
-		return mt, nil
+		return mt, specialTokenHandling(mt)
 	}
 	return nil, errors.New("token not valid")
+}
+
+func (mt *Mytoken) DBMetadata() (meta mytokenrepohelper.MytokenDBMetadata, err error) {
+	creator := func(i any) (db.NullString, error) {
+		data := ""
+		if i != nil {
+			dataBytes, err := json.Marshal(i)
+			if err != nil {
+				return db.NullString{}, errors.WithStack(err)
+			}
+			data = string(dataBytes)
+		}
+		return db.NewNullString(data), nil
+	}
+
+	meta.Capabilities, err = creator(mt.Capabilities)
+	if err != nil {
+		return
+	}
+	meta.Rotation, err = creator(mt.Rotation)
+	if err != nil {
+		return
+	}
+	meta.Restrictions, err = creator(mt.Restrictions)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func specialTokenHandling(mt *Mytoken) error {
+	if mt.Version.Before(
+		api.TokenVersion{
+			Major: 0,
+			Minor: 7,
+		},
+	) {
+		_ = db.Transact(
+			log.StandardLogger(), func(tx *sqlx.Tx) error {
+				meta, err := mt.DBMetadata()
+				if err != nil {
+					return err
+				}
+				return mytokenrepohelper.SetMetadata(
+					log.StandardLogger(), tx, mt.ID, meta,
+				)
+			},
+		)
+	}
+	return nil
 }

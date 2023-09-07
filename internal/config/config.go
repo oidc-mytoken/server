@@ -161,7 +161,7 @@ type featuresConf struct {
 	SSH                     sshConf                 `yaml:"ssh"`
 	ServerProfiles          serverProfilesConf      `yaml:"server_profiles"`
 	Federation              federationConf          `yaml:"federation"`
-	Notifications           notificationConf         `yaml:"notifications"`
+	Notifications           notificationConf        `yaml:"notifications"`
 }
 
 func (c *featuresConf) validate() error {
@@ -248,12 +248,11 @@ type notificationConf struct {
 	Mail            mailNotificationConf      `yaml:"email"`
 	Websocket       websocketNotificationConf `yaml:"ws"`
 	ICS             icsNotificationConf       `yaml:"ics"`
-	ICAL            icalNotificationConf      `yaml:"ical"`
 }
 
 func (c *notificationConf) validate() error {
-	c.AnyEnabled = true || c.Mail.Enabled || c.Websocket.Enabled || c.ICS.Enabled || c.ICAL.Enabled
-	c.SchedulerNeeded = true || c.Mail.Enabled || c.Websocket.Enabled
+	c.AnyEnabled = true || c.Mail.Enabled || c.Websocket.Enabled || c.ICS.Enabled //TODO
+	c.SchedulerNeeded = true || c.Mail.Enabled || c.Websocket.Enabled             //TODO
 	return nil
 	//TODO
 }
@@ -275,10 +274,6 @@ type websocketNotificationConf struct {
 }
 
 type icsNotificationConf struct {
-	onlyEnable
-}
-
-type icalNotificationConf struct {
 	onlyEnable
 }
 

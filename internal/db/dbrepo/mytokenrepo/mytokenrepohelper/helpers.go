@@ -112,6 +112,28 @@ func UpdateSeqNo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID, seqno uint
 	)
 }
 
+type MytokenDBMetadata struct {
+	Capabilities db.NullString
+	Rotation     db.NullString
+	Restrictions db.NullString
+}
+
+// SetMetadata adds a mytoken's metadata (capabilities, rotation,
+// restrictions) to the database. This is needed for legacy mytokens where the metadata was not yet stored on
+// creation. token version <0.7
+func SetMetadata(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID, meta MytokenDBMetadata,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(
+				`CALL MTokens_SetMetadata(?,?,?,?)`, id, meta.Capabilities, meta.Rotation, meta.Restrictions,
+			)
+			return errors.WithStack(err)
+		},
+	)
+}
+
 // revokeMT revokes the passed mytoken but no children
 func revokeMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id interface{}) error {
 	return db.RunWithinTransaction(

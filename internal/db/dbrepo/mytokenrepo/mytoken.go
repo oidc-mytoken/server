@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
+	helper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
 	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
@@ -103,6 +104,12 @@ func (mte *MytokenEntry) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx, comment st
 		Sub:       mte.Token.OIDCSubject,
 		ExpiresAt: db.NewNullTime(mte.expiresAt.Time()),
 	}
+	meta, err := mte.Token.DBMetadata()
+	if err != nil {
+		return err
+	}
+	steStore.MytokenDBMetadata = meta
+
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			if mte.rtID == nil {
@@ -148,6 +155,7 @@ type mytokenEntryStore struct {
 	Iss            string
 	Sub            string
 	ExpiresAt      sql.NullTime
+	helper.MytokenDBMetadata
 }
 
 // Store stores the mytokenEntryStore in the database; if this is the first token for this user, the user is also added
@@ -157,7 +165,8 @@ func (e *mytokenEntryStore) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(
 				`CALL MTokens_Insert(?,?,?,?,?,?,?,?,?)`,
-				e.Sub, e.Iss, e.ID, e.SeqNo, e.ParentID, e.RefreshTokenID, e.Name, e.IP, e.ExpiresAt,
+				e.Sub, e.Iss, e.ID, e.SeqNo, e.ParentID, e.RefreshTokenID, e.Name, e.IP, e.ExpiresAt, e.Capabilities,
+				e.Rotation, e.Restrictions,
 			)
 			return errors.WithStack(err)
 		},

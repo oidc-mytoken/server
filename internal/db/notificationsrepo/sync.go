@@ -27,6 +27,7 @@ func NotificationScheduler() {
 		}
 		// do stuff as master
 		fmt.Println("I now would send notifications if there are any")
+		//TODO remove
 		time.Sleep(time.Duration(rand.Float32()*120) * time.Second)
 	}
 }
