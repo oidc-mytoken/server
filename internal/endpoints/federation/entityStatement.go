@@ -12,14 +12,14 @@ import (
 	"github.com/oidc-mytoken/server/internal/jws"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/model/version"
-	"github.com/oidc-mytoken/server/internal/server/routes"
+	"github.com/oidc-mytoken/server/internal/server/paths"
 )
 
 func InitEntityConfiguration() {
 	if config.Get().Features.Federation.Entity != nil {
 		return
 	}
-	otherPaths := routes.GetGeneralPaths()
+	otherPaths := paths.GetGeneralPaths()
 	privacyURI := utils.CombineURLPath(config.Get().IssuerURL, otherPaths.Privacy)
 	var err error
 	config.Get().Features.Federation.Entity, err = oidcfed.NewFederationLeaf(

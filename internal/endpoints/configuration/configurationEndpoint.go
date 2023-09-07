@@ -11,7 +11,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcfed"
-	"github.com/oidc-mytoken/server/internal/server/routes"
+	"github.com/oidc-mytoken/server/internal/server/paths"
 )
 
 func SupportedProviders() []api.SupportedProviderConfig {
@@ -67,8 +67,8 @@ func Init() {
 }
 
 func basicConfiguration() *pkg.MytokenConfiguration {
-	apiPaths := routes.GetCurrentAPIPaths()
-	otherPaths := routes.GetGeneralPaths()
+	apiPaths := paths.GetCurrentAPIPaths()
+	otherPaths := paths.GetGeneralPaths()
 	return &pkg.MytokenConfiguration{
 		MytokenConfiguration: api.MytokenConfiguration{
 			Issuer:               config.Get().IssuerURL,
@@ -101,7 +101,7 @@ func addTokenRevocation(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.TokenRevocation.Enabled {
 		mytokenConfig.RevocationEndpoint = utils.CombineURLPath(
 			config.Get().IssuerURL,
-			routes.GetCurrentAPIPaths().RevocationEndpoint,
+			paths.GetCurrentAPIPaths().RevocationEndpoint,
 		)
 	}
 }
@@ -114,7 +114,7 @@ func addTransferCodes(mytokenConfig *pkg.MytokenConfiguration) {
 	if config.Get().Features.TransferCodes.Enabled {
 		mytokenConfig.TokenTransferEndpoint = utils.CombineURLPath(
 			config.Get().IssuerURL,
-			routes.GetCurrentAPIPaths().TokenTransferEndpoint,
+			paths.GetCurrentAPIPaths().TokenTransferEndpoint,
 		)
 		model.GrantTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.MytokenEndpointGrantTypesSupported)
 		model.ResponseTypeTransferCode.AddToSliceIfNotFound(&mytokenConfig.ResponseTypesSupported)
