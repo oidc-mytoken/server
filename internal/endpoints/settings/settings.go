@@ -17,7 +17,7 @@ import (
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
-	"github.com/oidc-mytoken/server/internal/server/routes"
+	"github.com/oidc-mytoken/server/internal/server/paths"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
@@ -27,7 +27,7 @@ import (
 
 // InitSettings initializes the settings metadata
 func InitSettings() {
-	apiPaths := routes.GetCurrentAPIPaths()
+	apiPaths := paths.GetCurrentAPIPaths()
 	settingsMetadata.GrantTypeEndpoint = utils.CombineURLPath(
 		config.Get().IssuerURL, apiPaths.UserSettingEndpoint, "grants",
 	)

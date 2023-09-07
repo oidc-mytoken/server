@@ -8,6 +8,7 @@ import (
 
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/oidc-mytoken/utils/context"
+	utils2 "github.com/oidc-mytoken/utils/utils"
 	"github.com/oidc-mytoken/utils/utils/fileutil"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -16,6 +17,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/server/paths"
 	"github.com/oidc-mytoken/server/internal/utils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 
@@ -161,6 +163,7 @@ type featuresConf struct {
 	SSH                     sshConf                 `yaml:"ssh"`
 	ServerProfiles          serverProfilesConf      `yaml:"server_profiles"`
 	Federation              federationConf          `yaml:"federation"`
+	GuestMode               onlyEnable              `yaml:"guest_mode"`
 }
 
 func (c *featuresConf) validate() error {
@@ -541,6 +544,18 @@ func validate() error {
 			p.Audience.RequestParameter = model.AudienceParameterResource
 		}
 		conf.Providers[i] = p
+	}
+	if conf.Features.GuestMode.Enabled {
+		iss := utils2.CombineURLPath(conf.IssuerURL, paths.GetCurrentAPIPaths().GuestModeOP)
+		p := ProviderConf{
+			Issuer: iss,
+			Name:   "Guest Mode",
+			Endpoints: &oauth2x.Endpoints{
+				Authorization: utils2.CombineURLPath(iss, "auth"),
+				Token:         utils2.CombineURLPath(iss, "token"),
+			},
+		}
+		conf.Providers = append(conf.Providers, p)
 	}
 	if conf.IssuerURL == "" {
 		return errors.New("invalid config: issuer_url not set")

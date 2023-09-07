@@ -22,7 +22,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/server/apipath"
-	"github.com/oidc-mytoken/server/internal/server/routes"
+	"github.com/oidc-mytoken/server/internal/server/paths"
 	"github.com/oidc-mytoken/server/internal/server/ssh"
 	"github.com/oidc-mytoken/server/internal/utils/fileio"
 )
@@ -104,19 +104,19 @@ func Init() {
 
 func addRoutes(s fiber.Router) {
 	addWebRoutes(s)
-	s.Get(routes.GetGeneralPaths().ConfigurationEndpoint, configuration.HandleConfiguration)
-	s.Get(routes.WellknownOpenIDConfiguration, configuration.HandleConfiguration)
+	s.Get(paths.GetGeneralPaths().ConfigurationEndpoint, configuration.HandleConfiguration)
+	s.Get(paths.WellknownOpenIDConfiguration, configuration.HandleConfiguration)
 	if config.Get().Features.Federation.Enabled {
-		s.Get(routes.GetGeneralPaths().FederationEndpoint, federation.HandleEntityConfiguration)
+		s.Get(paths.GetGeneralPaths().FederationEndpoint, federation.HandleEntityConfiguration)
 	}
-	s.Get(routes.GetGeneralPaths().JWKSEndpoint, endpoints.HandleJWKS)
-	s.Get(routes.GetGeneralPaths().OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
+	s.Get(paths.GetGeneralPaths().JWKSEndpoint, endpoints.HandleJWKS)
+	s.Get(paths.GetGeneralPaths().OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
 	s.Get("/c/:consent_code", consent.HandleConsent)
 	s.Post("/c/:consent_code", consent.HandleConsentPost)
 	s.Post("/c", consent.HandleCreateConsent)
 	s.Get("/native", handleNativeCallback)
 	s.Get("/native/abort", handleNativeConsentAbortCallback)
-	s.Get(routes.GetGeneralPaths().Privacy, handlePrivacy)
+	s.Get(paths.GetGeneralPaths().Privacy, handlePrivacy)
 	s.Get("/settings", handleSettings)
 	addAPIRoutes(s)
 }

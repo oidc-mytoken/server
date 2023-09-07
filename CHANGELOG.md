@@ -22,6 +22,7 @@
 ### Features
 
 - Added experimental support for OpenID Connect federations
+- Added "Guest mode" to try mytoken out without using a real OP
 
 ### API
 

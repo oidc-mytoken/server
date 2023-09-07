@@ -22,7 +22,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/server/apipath"
-	"github.com/oidc-mytoken/server/internal/server/routes"
+	"github.com/oidc-mytoken/server/internal/server/paths"
 	"github.com/oidc-mytoken/server/internal/utils/fileio"
 	"github.com/oidc-mytoken/server/internal/utils/iputils"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
@@ -138,9 +138,9 @@ func addRequestIDMiddleware(s fiber.Router) {
 
 func addCorsMiddleware(s fiber.Router) {
 	allowedPaths := []string{
-		routes.WellknownMytokenConfiguration,
-		routes.WellknownOpenIDConfiguration,
-		routes.GetGeneralPaths().JWKSEndpoint,
+		paths.WellknownMytokenConfiguration,
+		paths.WellknownOpenIDConfiguration,
+		paths.GetGeneralPaths().JWKSEndpoint,
 	}
 	allowedPrefixes := []string{
 		apipath.Prefix,
