@@ -41,6 +41,7 @@
 ### Bugfixes
 
 - Finally fixed a problem with database times when the database was not set to UTC.
+- Fixed a bug where sometimes a 'state mismatch' occured
 
 ### Dependencies
 
