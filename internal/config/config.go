@@ -590,6 +590,7 @@ func validate() error {
 		p := ProviderConf{
 			Issuer: iss,
 			Name:   "Guest Mode",
+			Scopes: []string{"openid"},
 			Endpoints: &oauth2x.Endpoints{
 				Authorization: utils2.CombineURLPath(iss, "auth"),
 				Token:         utils2.CombineURLPath(iss, "token"),
