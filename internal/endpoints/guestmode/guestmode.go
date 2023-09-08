@@ -1,6 +1,8 @@
 package guestmode
 
 import (
+	"encoding/base64"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/oidc-mytoken/utils/utils"
 
@@ -36,13 +38,14 @@ func handleAuth(ctx *fiber.Ctx) error {
 }
 
 func handleToken(ctx *fiber.Ctx) error {
+	sub := "guest-" + utils.RandASCIIString(16)
+	idToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." + base64.URLEncoding.EncodeToString([]byte(sub)) + "."
 	return ctx.JSON(
 		map[string]any{
 			"access_token":  utils.RandASCIIString(64),
 			"refresh_token": utils.RandASCIIString(64),
-			"id_token": `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJndWVzdCJ9.
-OI5skE5VAlQjI4rqAFUjqwGyEnmmQNXBTOvO7pukZoo`,
-			"expires_in": 600,
+			"id_token":      idToken,
+			"expires_in":    600,
 		},
 	)
 }
