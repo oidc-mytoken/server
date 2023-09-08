@@ -164,7 +164,7 @@ func (e *mytokenEntryStore) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(
-				`CALL MTokens_Insert(?,?,?,?,?,?,?,?,?)`,
+				`CALL MTokens_Insert(?,?,?,?,?,?,?,?,?,?,?,?)`,
 				e.Sub, e.Iss, e.ID, e.SeqNo, e.ParentID, e.RefreshTokenID, e.Name, e.IP, e.ExpiresAt, e.Capabilities,
 				e.Rotation, e.Restrictions,
 			)
