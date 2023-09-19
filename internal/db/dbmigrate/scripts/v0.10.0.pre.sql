@@ -17,7 +17,7 @@ CREATE OR REPLACE TABLE Calendars
         PRIMARY KEY,
     name                  VARCHAR(128)    NULL,
     uid                   BIGINT UNSIGNED NOT NULL,
-    ics_path              VARCHAR(128)    NOT NULL,
+    ics_path              VARCHAR(128)    NOT NULL, ics LONGTEXT NOT NULL,
     CONSTRAINT Calendars_UN
         UNIQUE (ics_path),
     CONSTRAINT Calendars_UN_1
@@ -262,6 +262,13 @@ BEGIN
     CALL Cleanup_ProxyTokens();
     CALL Cleanup_ActionCodes();
 END;;
+
+CREATE OR REPLACE PROCEDURE Mtokens_GetInfo(IN MTID VARCHAR(128))
+BEGIN
+    SELECT id, parent_id, id AS mom_id, name, created, expires_at, ip_created AS ip
+        FROM MTokens
+        WHERE id = MTID;
+END;
 
 
 DELIMITER ;

@@ -35,6 +35,16 @@ func (ste *MytokenEntry) Root() bool {
 	return !ste.ParentID.HashValid()
 }
 
+func SingleTokenEntry(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) (m MytokenEntry, err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Get(&m, `CALL MTokens_GetInfo(?)`, tokenID))
+		},
+	)
+	return
+
+}
+
 // AllTokens returns information about all mytokens for the user linked to the passed mytoken
 func AllTokens(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) ([]*MytokenEntryTree, error) {
 	var tokens []*MytokenEntry

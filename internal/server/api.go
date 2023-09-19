@@ -1,11 +1,14 @@
 package server
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/oidc-mytoken/utils/utils"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints/guestmode"
+	"github.com/oidc-mytoken/server/internal/endpoints/notification/calendar"
 	"github.com/oidc-mytoken/server/internal/endpoints/profiles"
 	"github.com/oidc-mytoken/server/internal/endpoints/revocation"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings"
@@ -50,6 +53,16 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 		s.Delete(sshGrantPath, ssh.HandleDeleteSSHKey)
 	}
 	addProfileEndpointRoutes(s, apiPaths)
+	if config.Get().Features.Notifications.AnyEnabled {
+		if config.Get().Features.Notifications.ICS.Enabled {
+			fmt.Println(apiPaths.CalendarEndpoint)
+			s.Get(apiPaths.CalendarEndpoint, calendar.HandleList)
+			s.Post(apiPaths.CalendarEndpoint, calendar.HandleAdd)
+			s.Get(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleGet)
+			s.Post(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleAddMytoken)
+			s.Delete(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleDelete)
+		}
+	}
 }
 
 func addProfileEndpointRoutes(r fiber.Router, apiPaths paths.APIPaths) {

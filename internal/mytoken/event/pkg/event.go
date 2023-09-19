@@ -86,6 +86,16 @@ var AllEvents = [...]string{
 	"ssh_key_added",
 	"revoked_other_token",
 	"tokeninfo_history_other_token",
+	"expired",
+	"revoked",
+	"notification_subscribed",
+	"notification_listed",
+	"notification_unsubscribed",
+	"notification_subscribed_other",
+	"notification_unsubscribed_other",
+	"calendar_created",
+	"calendar_listed",
+	"calendar_deleted",
 }
 
 // Events for Mytokens
@@ -109,5 +119,12 @@ const (
 	SSHKeyAdded
 	RevokedOtherToken
 	TokenInfoHistoryOtherToken
+	Expired
+	Revoked
+	NotificationSubscribed
+	NotificationListed
+	NotificationUnsubscribed
+	NotificationSubscribedOther
+	NotificationUnsubscribedOther
 	maxEvent
 )

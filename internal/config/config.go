@@ -246,16 +246,16 @@ func (g profileGroupsCredentials) validate() error {
 }
 
 type notificationConf struct {
-	AnyEnabled      bool                      `yaml:"-"`
-	SchedulerNeeded bool                      `yaml:"-"`
-	Mail            mailNotificationConf      `yaml:"email"`
-	Websocket       websocketNotificationConf `yaml:"ws"`
-	ICS             icsNotificationConf       `yaml:"ics"`
+	AnyEnabled      bool                 `yaml:"-"`
+	SchedulerNeeded bool                 `yaml:"-"`
+	Mail            mailNotificationConf `yaml:"email"`
+	Websocket       onlyEnable           `yaml:"ws"`
+	ICS             onlyEnable           `yaml:"ics"`
 }
 
 func (c *notificationConf) validate() error {
-	c.AnyEnabled = true || c.Mail.Enabled || c.Websocket.Enabled || c.ICS.Enabled //TODO
-	c.SchedulerNeeded = true || c.Mail.Enabled || c.Websocket.Enabled             //TODO
+	c.AnyEnabled = c.Mail.Enabled || c.Websocket.Enabled || c.ICS.Enabled
+	c.SchedulerNeeded = c.Mail.Enabled || c.Websocket.Enabled
 	return nil
 	//TODO
 }
@@ -270,14 +270,6 @@ type mailServerConf struct {
 	Username    string `yaml:"user"`
 	Password    string `yaml:"password"`
 	FromAddress string `yaml:"from_address"`
-}
-
-type websocketNotificationConf struct {
-	onlyEnable
-}
-
-type icsNotificationConf struct {
-	onlyEnable
 }
 
 type tokeninfoConfig struct {

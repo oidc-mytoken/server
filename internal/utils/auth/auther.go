@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
@@ -9,6 +11,7 @@ import (
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/model"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
@@ -173,9 +176,9 @@ func RequireUsableRestrictionAT(
 
 // RequireUsableRestrictionOther checks that the mytoken.Mytoken's restrictions allow the non-AT usage
 func RequireUsableRestrictionOther(
-	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mt *mytoken.Mytoken, ip string,
 ) (*restrictions.Restriction, *model.Response) {
-	return requireUseableRestriction(rlog, tx, mt, ip, scopes, auds, false)
+	return requireUseableRestriction(rlog, tx, mt, ip, nil, nil, false)
 }
 
 // CheckCapabilityAndRestriction checks the mytoken.Mytoken's capability and restrictions
@@ -187,4 +190,53 @@ func CheckCapabilityAndRestriction(
 		return nil, errRes
 	}
 	return RequireUsableRestriction(rlog, tx, mt, ip, scopes, auds, capability)
+}
+
+// RequireMytokensForSameUser checks that the two passed mtid.MTID are mytokens for the same user and returns an error
+// model.Response if not
+func RequireMytokensForSameUser(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id1, id2 mtid.MTID) *model.Response {
+	same, err := dbhelper.CheckMytokensAreForSameUser(rlog, tx, id1, id2)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	if !same {
+		return &model.Response{
+			Status: fiber.StatusForbidden,
+			Response: api.Error{
+				Error:            api.ErrorStrInvalidGrant,
+				ErrorDescription: "The provided token cannot be used to manage this mom_id",
+			},
+		}
+	}
+	rlog.Trace("Checked mytokens are for same user")
+	return nil
+}
+
+func RequireMytokenIsParentOrCapability(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, capabilityIfParent,
+	capabilityIfNotParent api.Capability,
+	mt *mytoken.Mytoken, momID mtid.MTID,
+) *model.Response {
+	isParent, err := dbhelper.MOMIDHasParent(rlog, tx, momID.Hash(), mt.ID)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	if isParent && mt.Capabilities.Has(capabilityIfParent) {
+		rlog.Trace("Checked mytoken is parent or has capability")
+		return nil
+	}
+	if mt.Capabilities.Has(capabilityIfNotParent) {
+		rlog.Trace("Checked mytoken is parent or has capability")
+		return nil
+	}
+	return &model.Response{
+		Status: fiber.StatusForbidden,
+		Response: api.Error{
+			Error: api.ErrorStrInsufficientCapabilities,
+			ErrorDescription: fmt.Sprintf(
+				"The provided token is neither a parent of the subject token"+
+					" nor does it have the '%s' capability", capabilityIfNotParent.Name,
+			),
+		},
+	}
 }

@@ -93,9 +93,7 @@ func doTokenInfoHistory(
 func handleTokenInfoHistory(
 	rlog log.Ext1FieldLogger, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
 ) model.Response {
-	usedRestriction, errRes := auth.RequireUsableRestrictionOther(
-		rlog, nil, mt, clientMetadata.IP, nil, nil,
-	)
+	usedRestriction, errRes := auth.RequireUsableRestrictionOther(rlog, nil, mt, clientMetadata.IP)
 	if errRes != nil {
 		return *errRes
 	}

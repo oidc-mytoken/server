@@ -9,10 +9,12 @@ import (
 
 var RedirectURI string
 var ConsentEndpoint string
+var CalendarDownloadEndpoint string
 
 // Init initializes the authcode component
 func Init() {
 	generalPaths := paths.GetGeneralPaths()
 	RedirectURI = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.OIDCRedirectEndpoint)
 	ConsentEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.ConsentEndpoint)
+	CalendarDownloadEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.CalendarEndpoint)
 }

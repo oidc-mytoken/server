@@ -28,6 +28,8 @@ func defaultAPIPaths(api string) APIPaths {
 		UserSettingEndpoint:   utils.CombineURLPath(api, "/settings"),
 		ProfilesEndpoint:      utils.CombineURLPath(api, "/pt"),
 		GuestModeOP:           utils.CombineURLPath(api, "/guests"),
+		NotificationEndpoint:  utils.CombineURLPath(api, "/notifications"),
+		CalendarEndpoint:      utils.CombineURLPath(api, "/notifications/calendars"),
 	}
 }
 
@@ -44,6 +46,7 @@ func init() {
 			JWKSEndpoint:          "/jwks",
 			ConsentEndpoint:       "/c",
 			Privacy:               "/privacy",
+			CalendarEndpoint:      "/calendars",
 		},
 	}
 }
@@ -61,6 +64,7 @@ type GeneralPaths struct {
 	JWKSEndpoint          string
 	ConsentEndpoint       string
 	Privacy               string
+	CalendarEndpoint      string
 }
 
 // APIPaths holds all api route paths
@@ -73,6 +77,8 @@ type APIPaths struct {
 	UserSettingEndpoint   string
 	ProfilesEndpoint      string
 	GuestModeOP           string
+	NotificationEndpoint  string
+	CalendarEndpoint      string
 }
 
 // GetCurrentAPIPaths returns the api paths for the most recent major version
