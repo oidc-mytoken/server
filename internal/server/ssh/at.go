@@ -40,7 +40,7 @@ func handleSSHAT(reqData []byte, s ssh.Session) error {
 	if errRes != nil {
 		return writeErrRes(s, errRes)
 	}
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
+	usedRestriction, errRes := auth.RequireCapabilityAndRestriction(
 		rlog, nil, mt, clientMetaData.IP,
 		utils.SplitIgnoreEmpty(req.Scope, " "),
 		utils.SplitIgnoreEmpty(req.Audience, " "),

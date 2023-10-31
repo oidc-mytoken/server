@@ -109,6 +109,15 @@ var defaultConfig = Config{
 			Enabled: true,
 			Groups:  make(map[string]string),
 		},
+		Notifications: notificationConf{
+			Mail: mailNotificationConf{
+				Enabled: false,
+				MailServer: mailServerConf{
+					Port: 587,
+				},
+			},
+			ICS: onlyEnable{true},
+		},
 		Federation: federationConf{
 			Enabled:                     false,
 			EntityConfigurationLifetime: 7 * 24 * 60 * 60,
@@ -267,6 +276,7 @@ type mailNotificationConf struct {
 
 type mailServerConf struct {
 	Host        string `yaml:"host"`
+	Port        int    `yaml:"port"`
 	Username    string `yaml:"user"`
 	Password    string `yaml:"password"`
 	FromAddress string `yaml:"from_address"`

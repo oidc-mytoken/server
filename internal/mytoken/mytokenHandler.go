@@ -124,8 +124,8 @@ func HandleMytokenFromMytokenReqChecks(
 	if errRes != nil {
 		return nil, nil, errRes
 	}
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
-		rlog, nil, mt, ip, nil, nil, api.CapabilityCreateMT,
+	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
+		rlog, nil, mt, ip, api.CapabilityCreateMT,
 	)
 	if errRes != nil {
 		return nil, nil, errRes

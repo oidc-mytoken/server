@@ -61,8 +61,8 @@ func HandleSettingsHelper(
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
-		rlog, nil, mt, ctx.IP(), nil, nil, requiredCapability,
+	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
+		rlog, nil, mt, ctx.IP(), requiredCapability,
 	)
 	if errRes != nil {
 		return errRes.Send(ctx)
@@ -110,7 +110,7 @@ func HandleSettingsHelper(
 	var cake []*fiber.Cookie
 	if tokenUpdate != nil {
 		if rsp == nil {
-			rsp = &onlyTokenUpdateRes{}
+			rsp = &my.OnlyTokenUpdateRes{}
 		}
 		rsp.SetTokenUpdate(tokenUpdate)
 		cake = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
@@ -121,14 +121,4 @@ func HandleSettingsHelper(
 		Response: rsp,
 		Cookies:  cake,
 	}.Send(ctx)
-}
-
-type onlyTokenUpdateRes struct {
-	api.OnlyTokenUpdateResponse
-	TokenUpdate *my.MytokenResponse `json:"token_update,omitempty"`
-}
-
-// SetTokenUpdate implements the pkg.TokenUpdatableResponse interface
-func (res *onlyTokenUpdateRes) SetTokenUpdate(tokenUpdate *my.MytokenResponse) {
-	res.TokenUpdate = tokenUpdate
 }

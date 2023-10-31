@@ -49,7 +49,7 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
+	usedRestriction, errRes := auth.RequireCapabilityAndRestriction(
 		rlog, nil, mt, ctx.IP(),
 		utils.SplitIgnoreEmpty(req.Scope, " "),
 		utils.SplitIgnoreEmpty(req.Audience, " "),

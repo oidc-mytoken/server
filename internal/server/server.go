@@ -18,6 +18,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/notificationsrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints"
+	"github.com/oidc-mytoken/server/internal/endpoints/actions"
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration"
 	"github.com/oidc-mytoken/server/internal/endpoints/consent"
 	"github.com/oidc-mytoken/server/internal/endpoints/federation"
@@ -123,6 +124,7 @@ func addRoutes(s fiber.Router) {
 	s.Get(generalPaths.Privacy, handlePrivacy)
 	s.Get("/settings", handleSettings)
 	s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id"), calendar.HandleGetICS)
+	s.Get(generalPaths.ActionsEndpoint, actions.HandleActions)
 	addAPIRoutes(s)
 }
 

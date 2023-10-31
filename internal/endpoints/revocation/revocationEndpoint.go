@@ -16,12 +16,15 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	helper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
+	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/mytoken"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
 	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytokenPkg "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
@@ -52,9 +55,46 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 		}
 	}
 	if req.MOMID != "" {
-		errRes := revokeByID(rlog, req, ctxutils.ClientMetaData(ctx))
-		if errRes != nil {
-			return errRes.Send(ctx)
+		var res *model.Response
+		_ = db.Transact(
+			rlog, func(tx *sqlx.Tx) error {
+				metadata := ctxutils.ClientMetaData(ctx)
+				token, err := universalmytoken.Parse(rlog, req.Token)
+				if err != nil {
+					res = model.ErrorToBadRequestErrorResponse(err)
+					return err
+				}
+				authToken, err := mytokenPkg.ParseJWT(token.JWT)
+				if err != nil {
+					res = model.ErrorToBadRequestErrorResponse(err)
+					return err
+				}
+				errRes := revokeByID(rlog, tx, req, authToken, metadata)
+				if errRes != nil {
+					res = errRes
+					return errors.New("dummy")
+				}
+				tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
+					rlog, tx, token.JWT, authToken, *metadata, token.OriginalTokenType,
+				)
+				if err != nil {
+					res = model.ErrorToInternalServerErrorResponse(err)
+					return err
+				}
+				if tokenUpdate != nil {
+					res = &model.Response{
+						Status: fiber.StatusOK,
+						Response: pkg.OnlyTokenUpdateRes{
+							TokenUpdate: tokenUpdate,
+						},
+						Cookies: []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)},
+					}
+				}
+				return nil
+			},
+		)
+		if res != nil {
+			return res.Send(ctx)
 		}
 		return ctx.SendStatus(fiber.StatusNoContent)
 	}
@@ -81,61 +121,64 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 	return ctx.SendStatus(fiber.StatusNoContent)
 }
 
-func revokeByID(rlog log.Ext1FieldLogger, req api.RevocationRequest, clientMetadata *api.ClientMetaData) *model.
-	Response {
-	token, err := universalmytoken.Parse(rlog, req.Token)
-	if err != nil {
-		return model.ErrorToBadRequestErrorResponse(err)
-	}
-	authToken, err := mytokenPkg.ParseJWT(token.JWT)
-	if err != nil {
-		return model.ErrorToBadRequestErrorResponse(err)
-	}
-	isParent, err := helper.MOMIDHasParent(rlog, nil, req.MOMID, authToken.ID)
-	if err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
-	}
-	if !isParent && !authToken.Capabilities.Has(api.CapabilityRevokeAnyToken) {
-		return &model.Response{
-			Status: fiber.StatusForbidden,
-			Response: api.Error{
-				Error: api.ErrorStrInsufficientCapabilities,
-				ErrorDescription: fmt.Sprintf(
-					"The provided token is neither a parent of the token to be revoked"+
-						" nor does it have the '%s' capability", api.CapabilityRevokeAnyToken.Name,
-				),
-			},
-		}
-	}
-	same, err := helper.CheckMytokensAreForSameUser(rlog, nil, req.MOMID, authToken.ID)
-	if err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
-	}
-	if !same {
-		return &model.Response{
-			Status: fiber.StatusForbidden,
-			Response: api.Error{
-				Error:            api.ErrorStrInvalidGrant,
-				ErrorDescription: "The provided token cannot be used to revoke this mom_id",
-			},
-		}
-	}
-	if err = db.Transact(
-		rlog, func(tx *sqlx.Tx) error {
-			if err = helper.RevokeMT(rlog, tx, req.MOMID, req.Recursive); err != nil {
+func revokeByID(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req api.RevocationRequest,
+	authToken *mytokenPkg.Mytoken,
+	clientMetadata *api.ClientMetaData,
+) (errRes *model.Response) {
+	dummy := errors.New("dummy")
+	_ = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			isParent, err := helper.MOMIDHasParent(rlog, nil, req.MOMID, authToken.ID)
+			if err != nil {
+				errRes = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
-			return eventService.LogEvent(
+			if !isParent && !authToken.Capabilities.Has(api.CapabilityRevokeAnyToken) {
+				errRes = &model.Response{
+					Status: fiber.StatusForbidden,
+					Response: api.Error{
+						Error: api.ErrorStrInsufficientCapabilities,
+						ErrorDescription: fmt.Sprintf(
+							"The provided token is neither a parent of the token to be revoked"+
+								" nor does it have the '%s' capability", api.CapabilityRevokeAnyToken.Name,
+						),
+					},
+				}
+				return dummy
+			}
+			same, err := helper.CheckMytokensAreForSameUser(rlog, nil, req.MOMID, authToken.ID)
+			if err != nil {
+				errRes = model.ErrorToInternalServerErrorResponse(err)
+				return err
+			}
+			if !same {
+				errRes = &model.Response{
+					Status: fiber.StatusForbidden,
+					Response: api.Error{
+						Error:            api.ErrorStrInvalidGrant,
+						ErrorDescription: "The provided token cannot be used to revoke this mom_id",
+					},
+				}
+				return dummy
+			}
+			if err = helper.RevokeMT(rlog, tx, req.MOMID, req.Recursive); err != nil {
+				errRes = model.ErrorToInternalServerErrorResponse(err)
+				return err
+			}
+			if err = eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{
 					Event: event.FromNumber(event.RevokedOtherToken, fmt.Sprintf("mom_id: %s", req.MOMID)),
 					MTID:  authToken.ID,
 				}, *clientMetadata,
-			)
+			); err != nil {
+				errRes = model.ErrorToInternalServerErrorResponse(err)
+				return err
+			}
+			return nil
 		},
-	); err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
-	}
-	return nil
+	)
+	return
 }
 
 func revokeAnyToken(

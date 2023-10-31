@@ -76,3 +76,13 @@ func List(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID) (infos []Calend
 	)
 	return
 }
+
+// AddMytokenToCalendar associates a mytoken with a calendar in the database; you still have to update the ics
+func AddMytokenToCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarID string) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Calendar_AddMytoken(?, ?)`, mtID, calendarID)
+			return errors.WithStack(err)
+		},
+	)
+}

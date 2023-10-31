@@ -15,6 +15,7 @@ import (
 	configurationEndpoint "github.com/oidc-mytoken/server/internal/endpoints/configuration"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings"
 	"github.com/oidc-mytoken/server/internal/jws"
+	"github.com/oidc-mytoken/server/internal/mailing"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcfed"
 	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
@@ -42,6 +43,7 @@ func main() {
 	geoip.Init()
 	settings.InitSettings()
 	cookies.Init()
+	mailing.Init()
 
 	server.Start()
 }

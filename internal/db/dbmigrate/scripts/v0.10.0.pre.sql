@@ -211,7 +211,7 @@ INSERT IGNORE INTO Actions (action)
 INSERT IGNORE INTO Actions (action)
     VALUES ('unsubscribe_notification');
 INSERT IGNORE INTO Actions (action)
-    VALUES ('token_recreate_unsubscribe');
+    VALUES ('recreate_token');
 
 
 # Procedures

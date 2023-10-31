@@ -47,6 +47,7 @@ func init() {
 			ConsentEndpoint:       "/c",
 			Privacy:               "/privacy",
 			CalendarEndpoint:      "/calendars",
+			ActionsEndpoint:       "/actions",
 		},
 	}
 }
@@ -65,6 +66,7 @@ type GeneralPaths struct {
 	ConsentEndpoint       string
 	Privacy               string
 	CalendarEndpoint      string
+	ActionsEndpoint       string
 }
 
 // APIPaths holds all api route paths

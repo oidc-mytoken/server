@@ -8,6 +8,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints/guestmode"
+	"github.com/oidc-mytoken/server/internal/endpoints/notification"
 	"github.com/oidc-mytoken/server/internal/endpoints/notification/calendar"
 	"github.com/oidc-mytoken/server/internal/endpoints/profiles"
 	"github.com/oidc-mytoken/server/internal/endpoints/revocation"
@@ -54,6 +55,7 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 	}
 	addProfileEndpointRoutes(s, apiPaths)
 	if config.Get().Features.Notifications.AnyEnabled {
+		s.Post(apiPaths.NotificationEndpoint, notification.HandlePost)
 		if config.Get().Features.Notifications.ICS.Enabled {
 			fmt.Println(apiPaths.CalendarEndpoint)
 			s.Get(apiPaths.CalendarEndpoint, calendar.HandleList)

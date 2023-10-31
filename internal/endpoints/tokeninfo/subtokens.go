@@ -60,8 +60,8 @@ func HandleTokenInfoSubtokens(
 	rlog log.Ext1FieldLogger, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
 ) model.Response {
 	// If we call this function it means the token is valid.
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
-		rlog, nil, mt, clientMetadata.IP, nil, nil, api.CapabilityTokeninfoSubtokens,
+	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
+		rlog, nil, mt, clientMetadata.IP, api.CapabilityTokeninfoSubtokens,
 	)
 	if errRes != nil {
 		return *errRes

@@ -181,8 +181,8 @@ func RequireUsableRestrictionOther(
 	return requireUseableRestriction(rlog, tx, mt, ip, nil, nil, false)
 }
 
-// CheckCapabilityAndRestriction checks the mytoken.Mytoken's capability and restrictions
-func CheckCapabilityAndRestriction(
+// RequireCapabilityAndRestriction checks the mytoken.Mytoken's capability and restrictions
+func RequireCapabilityAndRestriction(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, scopes, auds []string,
 	capability api.Capability,
 ) (*restrictions.Restriction, *model.Response) {
@@ -190,6 +190,16 @@ func CheckCapabilityAndRestriction(
 		return nil, errRes
 	}
 	return RequireUsableRestriction(rlog, tx, mt, ip, scopes, auds, capability)
+}
+
+// RequireCapabilityAndRestrictionOther checks the mytoken.Mytoken's capability and restrictions
+func RequireCapabilityAndRestrictionOther(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mt *mytoken.Mytoken, ip string, capability api.Capability,
+) (*restrictions.Restriction, *model.Response) {
+	if errRes := RequireCapability(rlog, capability, mt); errRes != nil {
+		return nil, errRes
+	}
+	return RequireUsableRestrictionOther(rlog, tx, mt, ip)
 }
 
 // RequireMytokensForSameUser checks that the two passed mtid.MTID are mytokens for the same user and returns an error
