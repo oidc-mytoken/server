@@ -37,10 +37,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
 
-//TODO events from eventservice
-
-//TODO not found errors
-
 // HandleGetICS returns a calendar ics by its id
 func HandleGetICS(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
@@ -48,7 +44,11 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 	cid := ctx.Params("id")
 	info, err := calendarrepo.GetByID(rlog, nil, cid)
 	if err != nil {
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		_, e := db.ParseError(err)
+		if e != nil {
+			return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		}
+		return model.NotFoundErrorResponse("calendar not found").Send(ctx)
 	}
 	ctx.Set(fiber.HeaderContentType, "text/calendar")
 	ctx.Set(fiber.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, info.Name))
@@ -115,7 +115,16 @@ func HandleAdd(ctx *fiber.Ctx) error {
 				resData.TokenUpdate = tokenUpdate
 				res.Response = resData
 			}
-			return usedRestriction.UsedOther(rlog, tx, mt.ID)
+			if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
+				return err
+			}
+			return eventService.LogEvent(
+				rlog, tx, eventService.MTEvent{
+					Event: eventpkg.FromNumber(eventpkg.CalendarCreated, calendarInfo.Name),
+					MTID:  mt.ID,
+				},
+				*ctxutils.ClientMetaData(ctx),
+			)
 		},
 	); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
@@ -162,7 +171,16 @@ func HandleDelete(ctx *fiber.Ctx) error {
 					Cookies: []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)},
 				}
 			}
-			return usedRestriction.UsedOther(rlog, tx, mt.ID)
+			if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
+				return err
+			}
+			return eventService.LogEvent(
+				rlog, tx, eventService.MTEvent{
+					Event: eventpkg.FromNumber(eventpkg.CalendarDeleted, name),
+					MTID:  mt.ID,
+				},
+				*ctxutils.ClientMetaData(ctx),
+			)
 		},
 	); err != nil {
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
@@ -187,7 +205,11 @@ func HandleGet(ctx *fiber.Ctx) error {
 	}
 	info, err := calendarrepo.Get(rlog, nil, mt.ID, calendarName)
 	if err != nil {
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		_, e := db.ParseError(err)
+		if e != nil {
+			return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		}
+		return model.NotFoundErrorResponse("calendar not found").Send(ctx)
 	}
 	return ctx.Redirect(info.ICSPath)
 }
@@ -234,7 +256,16 @@ func HandleList(ctx *fiber.Ctx) error {
 				resData.TokenUpdate = tokenUpdate
 				res.Response = resData
 			}
-			return usedRestriction.UsedOther(rlog, tx, mt.ID)
+			if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
+				return err
+			}
+			return eventService.LogEvent(
+				rlog, tx, eventService.MTEvent{
+					Event: eventpkg.FromNumber(eventpkg.CalendarListed, ""),
+					MTID:  mt.ID,
+				},
+				*ctxutils.ClientMetaData(ctx),
+			)
 		},
 	)
 	return res.Send(ctx)
@@ -253,9 +284,7 @@ func HandleCalendarEntryViaMail(ctx *fiber.Ctx) error {
 	}
 
 	var req pkg.AddMytokenToCalendarRequest
-	fmt.Println(string(ctx.Body()))
 	if err := errors.WithStack(ctx.BodyParser(&req)); err != nil {
-		fmt.Println(errorfmt.Full(err))
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 
@@ -412,7 +441,11 @@ func HandleAddMytoken(ctx *fiber.Ctx) error {
 		rlog, func(tx *sqlx.Tx) error {
 			info, err := calendarrepo.Get(rlog, tx, id, calendarName)
 			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
+				_, e := db.ParseError(err)
+				if e != nil {
+					res = model.ErrorToInternalServerErrorResponse(err)
+				}
+				res = model.NotFoundErrorResponse("calendar not found")
 				return err
 			}
 			if err = calendarrepo.AddMytokenToCalendar(rlog, tx, id, info.ID); err != nil {

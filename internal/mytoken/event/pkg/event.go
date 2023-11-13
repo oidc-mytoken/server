@@ -126,5 +126,8 @@ const (
 	NotificationUnsubscribed
 	NotificationSubscribedOther
 	NotificationUnsubscribedOther
+	CalendarCreated
+	CalendarListed
+	CalendarDeleted
 	maxEvent
 )

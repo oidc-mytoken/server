@@ -131,12 +131,13 @@ func RunWithinTransaction(rlog log.Ext1FieldLogger, tx *sqlx.Tx, fn func(*sqlx.T
 }
 
 // ParseError parses the passed error for a sql.ErrNoRows
-func ParseError(err error) (bool, error) {
-	if err == nil {
-		return true, nil
+func ParseError(e error) (found bool, err error) {
+	if e == nil {
+		found = true
+		return
 	}
-	if errors.Is(err, sql.ErrNoRows) {
-		err = nil
+	if !errors.Is(err, sql.ErrNoRows) {
+		err = e
 	}
-	return false, err
+	return
 }
