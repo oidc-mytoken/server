@@ -11,9 +11,11 @@
     {{/logged-in}}
     {{#logged-in}}
         <script src="{{instance-url}}/static/js/logout.js"></script>
-        <script src="{{instance-url}}/static/js/home-logged-in.js"></script>
     {{/logged-in}}
     {{#home}}
+        {{#logged-in}}
+            <script src="{{instance-url}}/static/js/home-logged-in.js"></script>
+        {{/logged-in}}
         <script src="{{instance-url}}/static/js/lib/bootstrap4-toggle.min.js"></script>
         <script src="{{instance-url}}/static/js/lib/user-agent.min.js"></script>
         <script src="{{instance-url}}/static/js/lib/bootstrap-select.min.js"></script>
@@ -38,6 +40,7 @@
         <script src="{{instance-url}}/static/js/settings.js"></script>
     {{/settings}}
     {{#settings-ssh}}
+        <script src="{{instance-url}}/static/js/lib/bootstrap4-toggle.min.js"></script>
         <script src="{{instance-url}}/static/js/lib/clipboard.min.js"></script>
         <script src="{{instance-url}}/static/js/lib/behave.min.js"></script>
         <script src="{{instance-url}}/static/js/ssh.js"></script>
