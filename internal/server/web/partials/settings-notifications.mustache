@@ -1,0 +1,42 @@
+<div id="settings-notifications">
+    <table class="table table-secondary">
+        <tbody>
+
+        <tr>
+            <td style="width: 10%;"><h3 class="d-flex justify-content-between">Email</h3></td>
+            <td class="smaller-lead">Manage settings about your notification email address.</td>
+            <td style="width: 11%;" class="text-right">
+                <button style="width: 100%;" id="email-trigger-btn" class="btn btn-light my-expand" type="button"
+                        data-toggle="collapse"
+                        data-target="#settings-notifications-email-body" aria-expanded="false"
+                        aria-controls="settings-notifications-email-body">Expand
+                </button>
+            </td>
+        </tr>
+        <tr class="collapse no-top-border" id="settings-notifications-email-body">
+            <td class="no-top-border"></td>
+            <td class="no-top-border" colspan="3">
+                <div>{{> settings-notifications-email }}</div>
+            </td>
+        </tr>
+
+        <tr>
+            <td style="width: 10%;"><h3 class="d-flex justify-content-between">Calendars</h3></td>
+            <td class="smaller-lead">Manage your notification calendars.</td>
+            <td style="width: 11%;" class="text-right">
+                <button style="width: 100%;" class="btn btn-light my-expand" type="button" data-toggle="collapse"
+                        data-target="#settings-notifications-calendar-body" aria-expanded="false"
+                        aria-controls="settings-notifications-calendar-body">Expand
+                </button>
+            </td>
+        </tr>
+        <tr class="collapse no-top-border" id="settings-notifications-calendar-body">
+            <td class="no-top-border"></td>
+            <td class="no-top-border" colspan="3">
+                <div>{{> settings-notifications-calendar }}</div>
+            </td>
+        </tr>
+
+        </tbody>
+    </table>
+</div>

@@ -128,8 +128,12 @@ var normalCapabilities = []string{
 	api.CapabilityTokeninfoIntrospect.Name,
 	api.CapabilityTokeninfoHistory.Name,
 	api.CapabilityTokeninfoSubtokens.Name,
+	api.CapabilityTokeninfoNotify.Name,
 	api.CapabilityGrantsRead.Name,
 	api.CapabilitySSHGrantRead.Name,
+	api.CapabilityEmail.Name,
+	api.CapabilityEmailRead.Name,
+	api.CapabilityNotifyAnyTokenRead.Name,
 }
 var warningCapabilities = []string{
 	api.CapabilityListMT.Name,
@@ -138,6 +142,7 @@ var warningCapabilities = []string{
 	api.CapabilityRevokeAnyToken.Name,
 	api.CapabilityHistoryAnyToken.Name,
 	api.CapabilityManageMTs.Name,
+	api.CapabilityNotifyAnyToken.Name,
 }
 var dangerCapabilities = []string{
 	api.CapabilitySettings.Name,

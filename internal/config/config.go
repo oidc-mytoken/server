@@ -270,8 +270,9 @@ func (c *notificationConf) validate() error {
 }
 
 type mailNotificationConf struct {
-	Enabled    bool           `yaml:"enabled"`
-	MailServer mailServerConf `yaml:"mail_server"`
+	Enabled      bool           `yaml:"enabled"`
+	MailServer   mailServerConf `yaml:"mail_server"`
+	OverwriteDir string         `yaml:"overwrite_dir"`
 }
 
 type mailServerConf struct {

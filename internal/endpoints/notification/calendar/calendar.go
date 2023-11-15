@@ -310,7 +310,7 @@ func HandleCalendarEntryViaMail(ctx *fiber.Ctx) error {
 	var res *model.Response
 	_ = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
-			mail, mailVerified, err := userrepo.GetMail(rlog, tx, id)
+			mailInfo, err := userrepo.GetMail(rlog, tx, id)
 			found, err := db.ParseError(err)
 			if err != nil {
 				res = model.ErrorToInternalServerErrorResponse(err)
@@ -323,7 +323,7 @@ func HandleCalendarEntryViaMail(ctx *fiber.Ctx) error {
 				}
 				return errors.New("dummy")
 			}
-			if !mailVerified {
+			if !mailInfo.MailVerified {
 				res = &model.Response{
 					Status:   http.StatusPreconditionRequired,
 					Response: api.ErrorMailNotVerified,
@@ -335,7 +335,7 @@ func HandleCalendarEntryViaMail(ctx *fiber.Ctx) error {
 				res = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
-			calText, err := mailCalendarForMytoken(rlog, tx, id, mtInfo.Name.String, req.Comment, mail)
+			calText, err := mailCalendarForMytoken(rlog, tx, id, mtInfo.Name.String, req.Comment, mailInfo.Mail)
 			if err != nil {
 				res = model.ErrorToInternalServerErrorResponse(err)
 				return err
@@ -346,7 +346,7 @@ func HandleCalendarEntryViaMail(ctx *fiber.Ctx) error {
 				filename = id.Hash()
 			}
 			err = mailing.ICSMailSender.Send(
-				mail,
+				mailInfo.Mail,
 				fmt.Sprintf("Mytoken Expiration Calendar Reminder for '%s'", filename),
 				"You can add the event to your calendar to be notified before the mytoken expires.",
 				mailing.Attachment{

@@ -96,6 +96,9 @@ var AllEvents = [...]string{
 	"calendar_created",
 	"calendar_listed",
 	"calendar_deleted",
+	"email_settings_listed",
+	"email_changed",
+	"email_mimetype_changed",
 }
 
 // Events for Mytokens
@@ -129,5 +132,8 @@ const (
 	CalendarCreated
 	CalendarListed
 	CalendarDeleted
+	EmailSettingsListed
+	EmailChanged
+	EmailMimetypeChanged
 	maxEvent
 )

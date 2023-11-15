@@ -205,6 +205,12 @@ INSERT IGNORE INTO Events (event)
     VALUES ('calendar_listed');
 INSERT IGNORE INTO Events (event)
     VALUES ('calendar_deleted');
+INSERT IGNORE INTO Events (event)
+    VALUES ('email_settings_listed');
+INSERT IGNORE INTO Events (event)
+    VALUES ('email_changed');
+INSERT IGNORE INTO Events (event)
+    VALUES ('email_mimetype_changed');
 
 INSERT IGNORE INTO Actions (action)
     VALUES ('verify_email');

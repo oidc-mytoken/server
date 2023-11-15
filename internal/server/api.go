@@ -13,6 +13,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/profiles"
 	"github.com/oidc-mytoken/server/internal/endpoints/revocation"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings"
+	"github.com/oidc-mytoken/server/internal/endpoints/settings/email"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings/grants"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings/grants/ssh"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/access"
@@ -63,6 +64,10 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 			s.Get(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleGet)
 			s.Post(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleAddMytoken)
 			s.Delete(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleDelete)
+		}
+		if config.Get().Features.Notifications.Mail.Enabled {
+			s.Get(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "email"), email.HandleGet)
+			s.Put(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "email"), email.HandlePut)
 		}
 	}
 }

@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/mailing/mailtemplates"
 )
 
 var mailPool *email.Pool
@@ -35,6 +36,7 @@ func Init() {
 	if err != nil {
 		log.WithError(err).Fatal("could not connect to email server")
 	}
+	mailtemplates.Init()
 }
 
 // SendEMail send the passed email.Email
@@ -54,22 +56,33 @@ type MailSender interface {
 	Send(to, subject, text string, attachments ...Attachment) error
 }
 
+// TemplateMailSender is an interface for types that can send template mails
+type TemplateMailSender interface {
+	SendTemplate(to, subject, template string, binding any) error
+	MailSender
+}
+
 type plainTextMailSender struct{}
 type htmlMailSender struct{}
 type icsMailSender struct{}
 type noopSender struct{}
 
 // PlainTextMailSender is a MailSender that sends plain text mails
-var PlainTextMailSender MailSender = plainTextMailSender{}
+var PlainTextMailSender TemplateMailSender = plainTextMailSender{}
 
 // HTMLMailSender is a MailSender that sends html mails
-var HTMLMailSender MailSender = htmlMailSender{}
+var HTMLMailSender TemplateMailSender = htmlMailSender{}
 
 // ICSMailSender is a MailSender that sends calendar invitations
 var ICSMailSender MailSender = icsMailSender{}
 
 // Send implements the MailSender interface
 func (s noopSender) Send(_, _, _ string, _ ...Attachment) error {
+	return nil
+}
+
+// SendTemplate implements the TemplateMailSender interface
+func (s noopSender) SendTemplate(_, _, _ string, _ any) error {
 	return nil
 }
 
@@ -90,6 +103,15 @@ func (s plainTextMailSender) Send(to, subject, text string, attachments ...Attac
 	return SendEMail(mail)
 }
 
+// SendTemplate implements the TemplateMailSender interface
+func (s plainTextMailSender) SendTemplate(to, subject, template string, binding any) error {
+	text, err := mailtemplates.Text(template, binding)
+	if err != nil {
+		return err
+	}
+	return s.Send(to, subject, text)
+}
+
 // Send implements the MailSender interface
 func (s htmlMailSender) Send(to, subject, text string, attachments ...Attachment) error {
 	mail := &email.Email{
@@ -105,6 +127,15 @@ func (s htmlMailSender) Send(to, subject, text string, attachments ...Attachment
 		}
 	}
 	return SendEMail(mail)
+}
+
+// SendTemplate implements the TemplateMailSender interface
+func (s htmlMailSender) SendTemplate(to, subject, template string, binding any) error {
+	text, err := mailtemplates.HTML(template, binding)
+	if err != nil {
+		return err
+	}
+	return s.Send(to, subject, text)
 }
 
 // Send implements the MailSender interface
