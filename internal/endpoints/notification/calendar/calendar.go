@@ -75,6 +75,12 @@ func HandleAdd(ctx *fiber.Ctx) error {
 	if err := errors.WithStack(ctx.BodyParser(&calendarInfo)); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
+	if calendarInfo.Name == "" {
+		return model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: model.BadRequestError("required parameter 'name' is missing"),
+		}.Send(ctx)
+	}
 
 	id := utils.RandASCIIString(32)
 	cal := ics.NewCalendar()
@@ -100,7 +106,7 @@ func HandleAdd(ctx *fiber.Ctx) error {
 	}
 	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
-			if err := calendarrepo.Insert(rlog, nil, mt.ID, dbInfo); err != nil {
+			if err := calendarrepo.Insert(rlog, tx, mt.ID, dbInfo); err != nil {
 				return err
 			}
 			tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(

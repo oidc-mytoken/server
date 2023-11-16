@@ -1,8 +1,6 @@
 package server
 
 import (
-	"fmt"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/oidc-mytoken/utils/utils"
 
@@ -58,7 +56,6 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 	if config.Get().Features.Notifications.AnyEnabled {
 		s.Post(apiPaths.NotificationEndpoint, notification.HandlePost)
 		if config.Get().Features.Notifications.ICS.Enabled {
-			fmt.Println(apiPaths.CalendarEndpoint)
 			s.Get(apiPaths.CalendarEndpoint, calendar.HandleList)
 			s.Post(apiPaths.CalendarEndpoint, calendar.HandleAdd)
 			s.Get(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleGet)
