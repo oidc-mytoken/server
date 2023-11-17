@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/api/v0"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/actionrepo"
@@ -12,52 +13,51 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/server/routes"
+	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
 
 // HandleActions is the main entry function to handle the different actions of the action endpoint
 func HandleActions(ctx *fiber.Ctx) error {
 	actionInfo := pkg.CtxGetActionInfo(ctx)
-	rlog := logger.GetRequestLogger(ctx)
 	switch actionInfo.Action {
 	case pkg.ActionRecreate:
-		return handleRecreate(rlog, actionInfo.Code).Send(ctx)
+		return handleRecreate(ctx, actionInfo.Code)
 	case pkg.ActionUnsubscribe:
-		return handleUnsubscribe(rlog, actionInfo.Code).Send(ctx)
+		return handleUnsubscribe(ctx, actionInfo.Code)
 	case pkg.ActionVerifyEmail:
-		return handleVerifyEmail(rlog, actionInfo.Code).Send(ctx)
+		return handleVerifyEmail(ctx, actionInfo.Code)
 	case pkg.ActionRemoveFromCalendar:
-		return handleRemoveFromCalendar(rlog, actionInfo.Code).Send(ctx)
+		return handleRemoveFromCalendar(ctx, actionInfo.Code)
 	}
-	return model.Response{
-		Status:   http.StatusBadRequest,
-		Response: model.BadRequestError("unknown action"),
-	}.Send(ctx)
+	return ctxutils.RenderErrorPage(
+		ctx, fiber.StatusBadRequest, model.BadRequestError("unknown action").
+			CombinedMessage(),
+	)
 }
 
-func handleRecreate(rlog log.Ext1FieldLogger, code string) model.Response {
-	return model.ResponseNYI
+func handleRecreate(ctx *fiber.Ctx, code string) error {
+	return ctxutils.RenderErrorPage(ctx, fiber.StatusNotImplemented, api.ErrorNYI.CombinedMessage())
 }
-func handleVerifyEmail(rlog log.Ext1FieldLogger, code string) *model.Response {
+func handleVerifyEmail(ctx *fiber.Ctx, code string) error {
+	rlog := logger.GetRequestLogger(ctx)
 	verified, err := actionrepo.VerifyMail(rlog, nil, code)
 	if err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
+		return ctxutils.RenderInternalServerErrorPage(ctx, err)
 	}
 	if !verified {
-		return &model.Response{
-			Status:   http.StatusBadRequest,
-			Response: model.BadRequestError("code not valid or expired"),
-		}
+		return ctxutils.RenderErrorPage(ctx, http.StatusBadRequest, "code not valid or expired")
 	}
-	return &model.Response{
-		Status: http.StatusOK,
-	}
+	return ctxutils.RenderErrorPage(
+		ctx, http.StatusOK, "The email address was successfully verified.", "Email Verified",
+	)
 }
-func handleUnsubscribe(rlog log.Ext1FieldLogger, code string) model.Response {
-	return model.ResponseNYI
+
+func handleUnsubscribe(ctx *fiber.Ctx, code string) error {
+	return ctxutils.RenderErrorPage(ctx, fiber.StatusNotImplemented, api.ErrorNYI.CombinedMessage())
 }
-func handleRemoveFromCalendar(rlog log.Ext1FieldLogger, code string) model.Response {
-	return model.ResponseNYI
+func handleRemoveFromCalendar(ctx *fiber.Ctx, code string) error {
+	return ctxutils.RenderErrorPage(ctx, fiber.StatusNotImplemented, api.ErrorNYI.CombinedMessage())
 }
 
 // CreateVerifyEmail creates an action url for verifying a mail address
