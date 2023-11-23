@@ -371,10 +371,10 @@ func HandleCalendarEntryViaMail(ctx *fiber.Ctx) error {
 				res = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
-			calText, err := mailCalendarForMytoken(rlog, tx, id, mtInfo.Name.String, req.Comment, mailInfo.Mail)
-			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
+			calText, errRes := mailCalendarForMytoken(rlog, tx, id, mtInfo.Name.String, req.Comment, mailInfo.Mail)
+			if errRes != nil {
+				res = errRes
+				return errors.New("dummy")
 			}
 
 			filename := mtInfo.Name.String
@@ -494,10 +494,10 @@ func HandleAddMytoken(ctx *fiber.Ctx) error {
 				res = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
-			event, err := eventForMytoken(rlog, tx, id, req.Comment, true, calendarName)
-			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
+			event, errRes := eventForMytoken(rlog, tx, id, req.Comment, true, calendarName)
+			if errRes != nil {
+				res = errRes
+				return errors.New("dummy")
 			}
 			cal.AddVEvent(event)
 			info.ICS = cal.Serialize()
@@ -551,15 +551,19 @@ func HandleAddMytoken(ctx *fiber.Ctx) error {
 func eventForMytoken(
 	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID, comment string,
 	unsubscribeOption bool, calendarName string,
-) (*ics.VEvent, error) {
-	var event *ics.VEvent
-	if err := db.RunWithinTransaction(
+) (event *ics.VEvent, errRes *model.Response) {
+	_ = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			mt, err := tree.SingleTokenEntry(rlog, tx, id)
 			if err != nil {
+				errRes = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
 			if mt.ExpiresAt == 0 {
+				errRes = &model.Response{
+					Status:   fiber.StatusBadRequest,
+					Response: model.BadRequestError("cannot create an expiration event for non-expiring mytokens"),
+				}
 				return nil
 			}
 			event = ics.NewEvent(id.Hash())
@@ -580,6 +584,7 @@ func eventForMytoken(
 			}
 			recreateURL, err := actions.CreateRecreateToken(rlog, tx, id)
 			if err != nil {
+				errRes = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
 			description += fmt.Sprintf(
@@ -589,6 +594,7 @@ func eventForMytoken(
 			if unsubscribeOption {
 				unsubscribeURL, err := actions.CreateRemoveFromCalendar(rlog, tx, id, calendarName)
 				if err != nil {
+					errRes = model.ErrorToInternalServerErrorResponse(err)
 					return err
 				}
 				description += fmt.Sprintf(
@@ -601,18 +607,16 @@ func eventForMytoken(
 			createAlarms(event, mt, 30, 14, 7, 3, 1, 0)
 			return nil
 		},
-	); err != nil {
-		return nil, err
-	}
-	return event, nil
+	)
+	return
 }
 func mailCalendarForMytoken(rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID, name, comment, to string) (
 	string,
-	error,
+	*model.Response,
 ) {
-	event, err := eventForMytoken(rlog, tx, id, comment, false, "")
-	if err != nil {
-		return "", err
+	event, errRes := eventForMytoken(rlog, tx, id, comment, false, "")
+	if errRes != nil {
+		return "", errRes
 	}
 	event.AddAttendee(to)
 	cal := ics.NewCalendar()
