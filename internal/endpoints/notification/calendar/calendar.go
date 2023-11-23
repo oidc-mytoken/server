@@ -42,8 +42,38 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle get ics calendar request")
 	cid := ctx.Params("id")
-	info, err := calendarrepo.GetByID(rlog, nil, cid)
-	if err != nil {
+	var info calendarrepo.CalendarInfo
+	if err := db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			var err error
+			info, err = calendarrepo.GetByID(rlog, tx, cid)
+			if err != nil {
+				return err
+			}
+
+			cal, err := ics.ParseCalendar(strings.NewReader(info.ICS))
+			if err != nil {
+				return err
+			}
+			mtids, err := calendarrepo.GetMTsInCalendar(rlog, tx, info.ID)
+			if err != nil {
+				return err
+			}
+			for _, e := range cal.Events() {
+				id := e.Id()
+				if !utils.StringInSlice(id, mtids) {
+					cal.RemoveEvent(id)
+					cal.SetLastModified(time.Now())
+				}
+			}
+			newICS := cal.Serialize()
+			if newICS != info.ICS {
+				info.ICS = newICS
+				return calendarrepo.UpdateInternal(rlog, tx, info)
+			}
+			return nil
+		},
+	); err != nil {
 		_, e := db.ParseError(err)
 		if e != nil {
 			return model.ErrorToInternalServerErrorResponse(err).Send(ctx)

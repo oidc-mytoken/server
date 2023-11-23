@@ -47,6 +47,26 @@ func Update(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, info Calendar
 	)
 }
 
+// UpdateInternal updates a calendar entry in the database and does not require a mtid.MTID
+func UpdateInternal(rlog log.Ext1FieldLogger, tx *sqlx.Tx, info CalendarInfo) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Calendar_UpdateInternal(?,?,?)`, info.ID, info.Name, info.ICS)
+			return errors.WithStack(err)
+		},
+	)
+}
+
+// GetMTsInCalendar returns a list of mytoken ids that are in a certain calendar
+func GetMTsInCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID string) (mtids []string, err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return tx.Select(&mtids, `CALL Calendar_getMTsInCalendar(?)`, calendarID)
+		},
+	)
+	return
+}
+
 // Get returns a calendar entry for a user and name
 func Get(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, name string) (info CalendarInfo, err error) {
 	err = db.RunWithinTransaction(
