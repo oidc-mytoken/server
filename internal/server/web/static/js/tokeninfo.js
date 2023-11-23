@@ -320,9 +320,12 @@ $('#revoke-tokeninfo').on('click', function () {
     $revocationModal.modal();
 })
 
+const $notificationTypeSelector = $('#notification-type-selector');
+
 function notificationModal() {
     let id = this.id.replace("notify-", "");
     $notificationMOMID.val(id);
+    $notificationTypeSelector.trigger('change');
     $notificationsModal.modal();
 }
 
@@ -335,7 +338,7 @@ const $calendarURL = $('#notify-calendar-url');
 
 let calendarURLs = {};
 
-$('#notification-type-selector').on('change', function () {
+$notificationTypeSelector.on('change', function () {
     let t = $(this).val();
     switch (t) {
         case 'email':
