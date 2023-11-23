@@ -1,5 +1,8 @@
 const $tokenInput = $('#tokeninfo-token');
 
+const $notificationsModal = $('#notifications-subscribe-modal');
+const $notificationMOMID = $('#notify-id');
+
 let tokeninfoEndpointToUse;
 
 function _tokeninfo(action, successFnc, errorFnc, token = undefined, mom_id = undefined) {
@@ -141,13 +144,16 @@ function _tokenTreeToHTML(tree, deleteClass, depth, parentID = 0) {
             hasChildren = true;
         })
     }
+    let isExpired = (expires_at !== 0 && new Date(expires_at * 1000) < new Date());
     let historyBtn = `<button id="history-${token['mom_id']}" class="btn ml-2" type="button" onclick="showHistoryForID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Event History' : 'Sign in to show event history.'}"><i class="fas fa-history"></i></button>`;
     let deleteBtn = `<button id="revoke-${token['mom_id']}" class="btn ${deleteClass}" type="button" onclick="startRevocateID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Revoke Token' : 'Sign in to revoke token.'}"><i class="fas fa-trash"></i></button>`;
-    let tr_class = depth > 0 ? 'd-none' : '';
-    if (expires_at !== 0 && new Date(expires_at * 1000) < new Date()) {
-        tr_class += " text-muted";
+    let notificationsBtn = `<button id="notify-${token['mom_id']}" class="btn ${isExpired ? 'text-muted' : ''}" type="button" onclick="notificationModal.call(this)" ${!loggedIn || isExpired ? "disabled" : ""}`;
+    if (!isExpired) {
+        notificationsBtn += ` data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Subscribe to' +
+            ' notifications' : 'Sign in to subscribe to notifications.'}"`;
     }
-    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" class="${tr_class}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td>${historyBtn}${deleteBtn}</td></tr>` + tableEntries;
+    notificationsBtn += `><i class="fas fa-bell"></i></butoton>`;
+    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" class="${depth > 0 ? 'd-none' : ''} ${isExpired ? 'text-muted' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td>${historyBtn}${notificationsBtn}${deleteBtn}</td></tr>` + tableEntries;
     return tableEntries
 }
 
@@ -161,7 +167,7 @@ function tokenlistToHTML(tokenTrees, deleteClass) {
     }
     return '<table class="table table-hover table-grey">' +
         '<thead><tr>' +
-        '<th style="min-width: 40%;">Token Name</th>' +
+        '<th style="min-width: 35%;">Token Name</th>' +
         '<th>Created</th>' +
         '<th>Created from IP</th>' +
         '<th>Expires</th>' +
@@ -312,4 +318,137 @@ $('#revoke-tokeninfo').on('click', function () {
     }
     $revocationFormID.addClass(revocationClassFromTokeninfo);
     $revocationModal.modal();
+})
+
+function notificationModal() {
+    let id = this.id.replace("notify-", "");
+    $notificationMOMID.val(id);
+    $notificationsModal.modal();
+}
+
+const $notificationTypeEmailContent = $('.notify-email-content');
+const $notificationTypeEntryContent = $('.notify-entry-content');
+const $notificationTypeCalendarContent = $('.notify-calendar-content');
+
+const $calendarSelector = $('#notify-calendar-selector');
+const $calendarURL = $('#notify-calendar-url');
+
+let calendarURLs = {};
+
+$('#notification-type-selector').on('change', function () {
+    let t = $(this).val();
+    switch (t) {
+        case 'email':
+            $notificationTypeEntryContent.hideB();
+            $notificationTypeCalendarContent.hideB();
+            $notificationTypeEmailContent.showB();
+            break;
+        case 'entry':
+            $notificationTypeCalendarContent.hideB();
+            $notificationTypeEmailContent.hideB();
+            $notificationTypeEntryContent.showB();
+
+            $('.notify-entry-content-element').hideB();
+            $.ajax({
+                type: "GET",
+                url: storageGet('usersettings_endpoint') + "/email",
+                success: function (res) {
+                    let email = res["email_address"];
+                    let email_verified = res["email_verified"];
+                    if (email === undefined || email === null || email === "") {
+                        $('#email-not-verified-hint').showB();
+                        return;
+                    }
+                    if (email_verified === undefined || !email_verified) {
+                        $('#email-not-set-hint').showB();
+                        return;
+                    }
+                    $('#notify-entry-content-normal').showB();
+                },
+                error: function (errRes) {
+                    $errorModalMsg.text(getErrorMessage(errRes));
+                    $errorModal.modal();
+                },
+            });
+            break;
+        case 'calendar':
+            $notificationTypeEntryContent.hideB();
+            $notificationTypeEmailContent.hideB();
+            $notificationTypeCalendarContent.showB();
+            $.ajax({
+                type: "GET",
+                url: storageGet('notifications_endpoint') + "/calendars",
+                success: function (res) {
+                    let options = "";
+                    let cals = res["calendars"];
+                    if (cals !== undefined && cals !== null) {
+                        cals.forEach(function (cal) {
+                            let name = cal["name"];
+                            calendarURLs[name] = cal["ics_path"];
+                            options += `<option value=${name}>${name}</option>`;
+                        })
+                    }
+                    $calendarSelector.html(options);
+                    $calendarSelector.trigger('change');
+                },
+                error: function (errRes) {
+                    $settingsErrorModalMsg.text(getErrorMessage(errRes));
+                    $settingsErrorModal.modal();
+                },
+            });
+            break;
+    }
+})
+
+$('#sent-entry').on('click', function () {
+    let data = {"mom_id": $notificationMOMID.val()};
+    let comment = $('#notify-entry-comment').val();
+    if (comment !== undefined && comment !== null && comment !== "") {
+        data["comment"] = comment;
+    }
+    data = JSON.stringify(data);
+    $.ajax({
+        type: "POST",
+        data: data,
+        dataType: "json",
+        contentType: "application/json",
+        url: storageGet('notifications_endpoint'),
+        success: function () {
+            $notificationsModal.modal("hide");
+        },
+        error: function (errRes) {
+            $errorModalMsg.text(getErrorMessage(errRes));
+            $errorModal.modal();
+        },
+    });
+})
+
+$calendarSelector.on('change', function () {
+    let url = calendarURLs[$(this).val()];
+    $calendarURL.text(url);
+    $calendarURL.attr("href", url);
+})
+
+$('#sent-calendar-add').on('click', function () {
+    let data = {"mom_id": $notificationMOMID.val()};
+    let comment = $('#notify-calendar-comment').val();
+    if (comment !== undefined && comment !== null && comment !== "") {
+        data["comment"] = comment;
+    }
+    let calendar = $calendarSelector.val();
+    data = JSON.stringify(data);
+    $.ajax({
+        type: "POST",
+        data: data,
+        dataType: "json",
+        contentType: "application/json",
+        url: storageGet('notifications_endpoint') + "/calendars/" + calendar,
+        success: function () {
+            $notificationsModal.modal("hide");
+        },
+        error: function (errRes) {
+            $errorModalMsg.text(getErrorMessage(errRes));
+            $errorModal.modal();
+        },
+    });
 })
