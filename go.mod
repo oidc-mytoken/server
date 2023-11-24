@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/Songmu/prompter v0.5.1
-	github.com/arran4/golang-ical v0.1.0
+	github.com/arran4/golang-ical v0.2.1
 	github.com/coreos/go-oidc/v3 v3.6.0
 	github.com/evanphx/json-patch/v5 v5.6.0
 	github.com/fatih/structs v1.1.0
@@ -76,7 +76,5 @@ require (
 )
 
 replace github.com/urfave/cli/v2 => github.com/zachmann/cli/v2 v2.3.1-0.20211220102037-d619fd40a704
-
-replace github.com/arran4/golang-ical => github.com/zachmann/golang-ical v0.0.0-20231123141307-a0f11e39256c
 
 replace github.com/oidc-mytoken/api => ../api
