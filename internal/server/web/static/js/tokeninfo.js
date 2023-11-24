@@ -344,6 +344,8 @@ const $calendarURL = $('#notify-calendar-url');
 
 let calendarURLs = {};
 
+let cachedNotificationsTypeData = {};
+
 $notificationTypeSelector.on('change', function () {
     let t = $(this).val();
     switch (t) {
@@ -357,6 +359,10 @@ $notificationTypeSelector.on('change', function () {
             $notificationTypeEmailContent.hideB();
             $notificationTypeEntryContent.showB();
 
+            let email_ok = cachedNotificationsTypeData["email_ok"];
+            if (email_ok !== undefined && email_ok !== null && email_ok) {
+                break;
+            }
             $('.notify-entry-content-element').hideB();
             $.ajax({
                 type: "GET",
@@ -366,13 +372,16 @@ $notificationTypeSelector.on('change', function () {
                     let email_verified = res["email_verified"];
                     if (email === undefined || email === null || email === "") {
                         $('#email-not-verified-hint').showB();
+                        cachedNotificationsTypeData["email_ok"] = false;
                         return;
                     }
                     if (email_verified === undefined || !email_verified) {
                         $('#email-not-set-hint').showB();
+                        cachedNotificationsTypeData["email_ok"] = false;
                         return;
                     }
                     $('#notify-entry-content-normal').showB();
+                    cachedNotificationsTypeData["email_ok"] = true;
                 },
                 error: function (errRes) {
                     $errorModalMsg.text(getErrorMessage(errRes));
@@ -384,21 +393,32 @@ $notificationTypeSelector.on('change', function () {
             $notificationTypeEntryContent.hideB();
             $notificationTypeEmailContent.hideB();
             $notificationTypeCalendarContent.showB();
+
+        function fillCals(cals) {
+            let options = "";
+            if (cals !== undefined && cals !== null) {
+                cals.forEach(function (cal) {
+                    let name = cal["name"];
+                    calendarURLs[name] = cal["ics_path"];
+                    options += `<option value=${name}>${name}</option>`;
+                });
+                cachedNotificationsTypeData["calendars"] = cals;
+            }
+            $calendarSelector.html(options);
+            $calendarSelector.trigger('change');
+        }
+
+            let cals = cachedNotificationsTypeData["calendars"];
+            if (cals !== undefined && cals !== null && cals.length > 0) {
+                fillCals(cals);
+                break;
+            }
             $.ajax({
                 type: "GET",
                 url: storageGet('notifications_endpoint') + "/calendars",
                 success: function (res) {
-                    let options = "";
                     let cals = res["calendars"];
-                    if (cals !== undefined && cals !== null) {
-                        cals.forEach(function (cal) {
-                            let name = cal["name"];
-                            calendarURLs[name] = cal["ics_path"];
-                            options += `<option value=${name}>${name}</option>`;
-                        })
-                    }
-                    $calendarSelector.html(options);
-                    $calendarSelector.trigger('change');
+                    fillCals(cals);
                 },
                 error: function (errRes) {
                     $settingsErrorModalMsg.text(getErrorMessage(errRes));
