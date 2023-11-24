@@ -147,7 +147,7 @@ function _tokenTreeToHTML(tree, deleteClass, depth, parentID = 0) {
     let isExpired = (expires_at !== 0 && new Date(expires_at * 1000) < new Date());
     let historyBtn = `<button id="history-${token['mom_id']}" class="btn ml-2" type="button" onclick="showHistoryForID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Event History' : 'Sign in to show event history.'}"><i class="fas fa-history"></i></button>`;
     let deleteBtn = `<button id="revoke-${token['mom_id']}" class="btn ${deleteClass}" type="button" onclick="startRevocateID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Revoke Token' : 'Sign in to revoke token.'}"><i class="fas fa-trash"></i></button>`;
-    let notificationsBtn = `<button id="notify-${token['mom_id']}" class="btn ${isExpired ? 'text-muted' : ''}" type="button" onclick="notificationModal.call(this)" ${!loggedIn || isExpired ? "disabled" : ""}`;
+    let notificationsBtn = `<button id="notify-${token['mom_id']}" class="btn ${isExpired ? 'text-muted' : ''}" type="button" onclick="notificationModal.call(this, ${expires_at !== 0})" ${!loggedIn || isExpired ? "disabled" : ""}`;
     if (!isExpired) {
         notificationsBtn += ` data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Subscribe to' +
             ' notifications' : 'Sign in to subscribe to notifications.'}"`;
@@ -322,9 +322,15 @@ $('#revoke-tokeninfo').on('click', function () {
 
 const $notificationTypeSelector = $('#notification-type-selector');
 
-function notificationModal() {
+function notificationModal(doesExpire) {
     let id = this.id.replace("notify-", "");
     $notificationMOMID.val(id);
+    $('.notification-type-option').attr("disabled", false);
+    if (!doesExpire) {
+        $('#notification-type-option-calendar').attr("disabled", true);
+        $('#notification-type-option-entry').attr("disabled", true);
+        $notificationTypeSelector.val("email");
+    }
     $notificationTypeSelector.trigger('change');
     $notificationsModal.modal();
 }
