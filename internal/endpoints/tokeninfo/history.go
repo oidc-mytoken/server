@@ -18,7 +18,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
@@ -75,9 +74,9 @@ func doTokenInfoHistory(
 			if err != nil {
 				return err
 			}
-			ev := event.FromNumber(event.TokenInfoHistory, "")
+			ev := api.EventTokenInfoHistory
 			if len(req.MOMIDs) > 0 {
-				ev = event.FromNumber(event.TokenInfoHistoryOtherToken, "")
+				ev = api.EventTokenInfoHistoryOtherToken
 			}
 			return eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{

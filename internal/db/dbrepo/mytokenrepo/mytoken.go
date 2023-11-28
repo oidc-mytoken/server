@@ -13,7 +13,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	helper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/utils/cryptutils"
@@ -113,26 +112,27 @@ func (mte *MytokenEntry) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx, comment st
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			if mte.rtID == nil {
-				if _, err := tx.Exec(`CALL CryptStoreRT_Insert(?,@ID)`, mte.rtEncrypted); err != nil {
+				if _, err = tx.Exec(`CALL CryptStoreRT_Insert(?,@ID)`, mte.rtEncrypted); err != nil {
 					return errors.WithStack(err)
 				}
 				var rtID uint64
-				if err := tx.Get(&rtID, `SELECT @ID`); err != nil {
+				if err = tx.Get(&rtID, `SELECT @ID`); err != nil {
 					return errors.WithStack(err)
 				}
 				mte.rtID = &rtID
 			}
 			steStore.RefreshTokenID = *mte.rtID
-			if err := steStore.Store(rlog, tx); err != nil {
+			if err = steStore.Store(rlog, tx); err != nil {
 				return err
 			}
-			if err := storeEncryptionKey(tx, mte.encryptionKeyEncrypted, steStore.RefreshTokenID, mte.ID); err != nil {
+			if err = storeEncryptionKey(tx, mte.encryptionKeyEncrypted, steStore.RefreshTokenID, mte.ID); err != nil {
 				return err
 			}
 			return eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{
-					Event: event.FromNumber(event.MTCreated, comment),
-					MTID:  mte.ID,
+					Event:   api.EventMTCreated,
+					Comment: comment,
+					MTID:    mte.ID,
 				}, mte.networkData,
 			)
 		},

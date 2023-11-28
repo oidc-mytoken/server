@@ -20,7 +20,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/mytoken"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytokenPkg "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
@@ -168,8 +167,9 @@ func revokeByID(
 			}
 			if err = eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{
-					Event: event.FromNumber(event.RevokedOtherToken, fmt.Sprintf("mom_id: %s", req.MOMID)),
-					MTID:  authToken.ID,
+					Event:   api.EventRevokedOtherToken,
+					MTID:    authToken.ID,
+					Comment: fmt.Sprintf("mom_id: %s", req.MOMID),
 				}, *clientMetadata,
 			); err != nil {
 				errRes = model.ErrorToInternalServerErrorResponse(err)

@@ -11,7 +11,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 )
 
@@ -33,7 +32,7 @@ func rotateMytoken(
 			}
 			return eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{
-					Event: event.FromNumber(event.MTRotated, ""),
+					Event: api.EventMTRotated,
 					MTID:  rotated.ID,
 				}, clientMetaData,
 			)

@@ -20,7 +20,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/jws"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
@@ -225,10 +224,9 @@ func CreateTransferCode(
 			}
 			return eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{
-					Event: event.FromNumber(
-						event.TransferCodeCreated, fmt.Sprintf("token type: %s", responseType.String()),
-					),
-					MTID: myID,
+					Event:   api.EventTransferCodeCreated,
+					Comment: fmt.Sprintf("token type: %s", responseType.String()),
+					MTID:    myID,
 				}, clientMetaData,
 			)
 		},

@@ -25,7 +25,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/mailing"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	eventpkg "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
@@ -156,8 +155,9 @@ func HandleAdd(ctx *fiber.Ctx) error {
 			}
 			return eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{
-					Event: eventpkg.FromNumber(eventpkg.CalendarCreated, calendarInfo.Name),
-					MTID:  mt.ID,
+					Event:   api.EventCalendarCreated,
+					MTID:    mt.ID,
+					Comment: calendarInfo.Name,
 				},
 				*ctxutils.ClientMetaData(ctx),
 			)
@@ -212,8 +212,9 @@ func HandleDelete(ctx *fiber.Ctx) error {
 			}
 			return eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{
-					Event: eventpkg.FromNumber(eventpkg.CalendarDeleted, name),
-					MTID:  mt.ID,
+					Event:   api.EventCalendarDeleted,
+					Comment: name,
+					MTID:    mt.ID,
 				},
 				*ctxutils.ClientMetaData(ctx),
 			)
@@ -297,7 +298,7 @@ func HandleList(ctx *fiber.Ctx) error {
 			}
 			return eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{
-					Event: eventpkg.FromNumber(eventpkg.CalendarListed, ""),
+					Event: api.EventCalendarListed,
 					MTID:  mt.ID,
 				},
 				*ctxutils.ClientMetaData(ctx),
@@ -400,14 +401,15 @@ func HandleCalendarEntryViaMail(ctx *fiber.Ctx) error {
 				res = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
-			mytokenEvent := eventpkg.FromNumber(eventpkg.NotificationSubscribed, "email calendar entry")
+			mytokenEvent := api.EventNotificationSubscribed
 			if momMode {
-				mytokenEvent.Type = eventpkg.NotificationSubscribedOther
+				mytokenEvent = api.EventNotificationSubscribedOther
 			}
 			if err = eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{
-					Event: mytokenEvent,
-					MTID:  mt.ID,
+					Event:   mytokenEvent,
+					Comment: "email calendar entry",
+					MTID:    mt.ID,
 				}, *clientMetadata,
 			); err != nil {
 				res = model.ErrorToInternalServerErrorResponse(err)
@@ -510,16 +512,15 @@ func HandleAddMytoken(ctx *fiber.Ctx) error {
 				res = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
-			mytokenEvent := eventpkg.FromNumber(
-				eventpkg.NotificationSubscribed, fmt.Sprintf("calendar '%s'", info.Name),
-			)
+			mytokenEvent := api.EventNotificationSubscribed
 			if momMode {
-				mytokenEvent.Type = eventpkg.NotificationSubscribedOther
+				mytokenEvent = api.EventNotificationSubscribedOther
 			}
 			if err = eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{
-					Event: mytokenEvent,
-					MTID:  mt.ID,
+					Event:   mytokenEvent,
+					MTID:    mt.ID,
+					Comment: fmt.Sprintf("calendar '%s'", info.Name),
 				}, *clientMetadata,
 			); err != nil {
 				res = model.ErrorToInternalServerErrorResponse(err)

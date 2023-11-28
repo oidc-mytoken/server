@@ -16,7 +16,6 @@ import (
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
@@ -144,8 +143,9 @@ func HandleAccessTokenRefresh(
 			}
 			if err = eventService.LogEvent(
 				rlog, tx, eventService.MTEvent{
-					Event: event.FromNumber(event.ATCreated, "Used grant_type mytoken"),
-					MTID:  mt.ID,
+					Event:   api.EventATCreated,
+					Comment: "Used grant_type mytoken",
+					MTID:    mt.ID,
 				}, networkData,
 			); err != nil {
 				return err

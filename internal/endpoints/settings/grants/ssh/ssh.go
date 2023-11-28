@@ -21,7 +21,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/polling"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/model/profiled"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
@@ -39,7 +38,7 @@ func HandleGetSSHInfo(ctx *fiber.Ctx) error {
 	rlog.Debug("Handle get ssh info request")
 	var reqMytoken universalmytoken.UniversalMytoken
 	return settings.HandleSettingsHelper(
-		ctx, &reqMytoken, api.CapabilitySSHGrantRead, event.FromNumber(event.SSHKeyListed, ""), fiber.StatusOK,
+		ctx, &reqMytoken, api.CapabilitySSHGrantRead, &api.EventSSHKeyListed, "", fiber.StatusOK,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *model.Response) {
 			info, err := sshrepo.GetAllSSHInfo(rlog, tx, mt.ID)
 			if err != nil {
@@ -88,7 +87,7 @@ func HandleDeleteSSHKey(ctx *fiber.Ctx) error {
 	}
 
 	return settings.HandleSettingsHelper(
-		ctx, &req.Mytoken, api.CapabilitySSHGrant, nil, fiber.StatusNoContent,
+		ctx, &req.Mytoken, api.CapabilitySSHGrant, nil, "", fiber.StatusNoContent,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *model.Response) {
 			if err := sshrepo.Delete(rlog, tx, mt.ID, req.SSHKeyFingerprint); err != nil {
 				rlog.Errorf("%s", errorfmt.Full(err))
@@ -148,7 +147,7 @@ func handleAddSSHKey(ctx *fiber.Ctx) error {
 	}
 
 	return settings.HandleSettingsHelper(
-		ctx, &req.Mytoken, api.CapabilitySSHGrant, event.FromNumber(event.SSHKeyAdded, ""), fiber.StatusOK,
+		ctx, &req.Mytoken, api.CapabilitySSHGrant, &api.EventSSHKeyAdded, "", fiber.StatusOK,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *model.Response) {
 			return handleAddSSHSettingsCallback(rlog, ctx, &req, sshKeyFP, tx, mt)
 		}, false,

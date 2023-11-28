@@ -22,7 +22,6 @@ import (
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
@@ -181,15 +180,14 @@ func HandleMytokenFromMytokenReq(
 			return eventService.LogEvents(
 				rlog, tx, []eventService.MTEvent{
 					{
-						Event: event.FromNumber(event.InheritedRT, "Got RT from parent"),
-						MTID:  ste.ID,
+						Event:   api.EventInheritedRT,
+						Comment: "Got RT from parent",
+						MTID:    ste.ID,
 					},
 					{
-						Event: event.FromNumber(
-							event.SubtokenCreated,
-							strings.TrimSpace(fmt.Sprintf("Created MT %s", req.GeneralMytokenRequest.Name)),
-						),
-						MTID: parent.ID,
+						Event:   api.EventSubtokenCreated,
+						Comment: strings.TrimSpace(fmt.Sprintf("Created MT %s", req.GeneralMytokenRequest.Name)),
+						MTID:    parent.ID,
 					},
 				}, *networkData,
 			)

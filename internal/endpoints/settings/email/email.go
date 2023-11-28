@@ -14,7 +14,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/mailing/mailtemplates"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
@@ -42,7 +41,7 @@ func HandleGet(ctx *fiber.Ctx) error {
 	var reqMytoken universalmytoken.UniversalMytoken
 
 	return settings.HandleSettingsHelper(
-		ctx, &reqMytoken, api.CapabilityEmailRead, event.FromNumber(event.EmailSettingsListed, ""), fiber.StatusOK,
+		ctx, &reqMytoken, api.CapabilityEmailRead, &api.EventEmailSettingsListed, "", fiber.StatusOK,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *model.Response) {
 			info, err := userrepo.GetMail(rlog, tx, mt.ID)
 			if err != nil {
@@ -97,8 +96,9 @@ func HandlePut(ctx *fiber.Ctx) error {
 				}
 				if err := eventService.LogEvent(
 					rlog, tx, eventService.MTEvent{
-						Event: event.FromNumber(event.EmailMimetypeChanged, eventComment),
-						MTID:  mt.ID,
+						Event:   api.EventEmailMimetypeChanged,
+						Comment: eventComment,
+						MTID:    mt.ID,
 					}, *clientMetaData,
 				); err != nil {
 					return err
@@ -127,8 +127,9 @@ func HandlePut(ctx *fiber.Ctx) error {
 				}
 				if err = eventService.LogEvent(
 					rlog, tx, eventService.MTEvent{
-						Event: event.FromNumber(event.EmailChanged, req.EmailAddress),
-						MTID:  mt.ID,
+						Event:   api.EventEmailChanged,
+						MTID:    mt.ID,
+						Comment: req.EmailAddress,
 					}, *clientMetaData,
 				); err != nil {
 					return err

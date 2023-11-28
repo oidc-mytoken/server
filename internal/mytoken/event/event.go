@@ -7,20 +7,21 @@ import (
 	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/eventrepo"
-	"github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
 // MTEvent is type for mytoken events
 type MTEvent struct {
-	*event.Event
-	MTID mtid.MTID
+	Event   api.Event
+	Comment string
+	MTID    mtid.MTID
 }
 
 // LogEvent logs an event to the database
 func LogEvent(rlog log.Ext1FieldLogger, tx *sqlx.Tx, event MTEvent, clientMetaData api.ClientMetaData) error {
 	return (&eventrepo.EventDBObject{
 		Event:          event.Event,
+		Comment:        event.Comment,
 		MTID:           event.MTID,
 		ClientMetaData: clientMetaData,
 	}).Store(rlog, tx)

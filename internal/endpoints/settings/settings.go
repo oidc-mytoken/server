@@ -13,7 +13,6 @@ import (
 	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
@@ -51,7 +50,8 @@ func HandleSettingsHelper(
 	ctx *fiber.Ctx,
 	reqMytoken *universalmytoken.UniversalMytoken,
 	requiredCapability api.Capability,
-	logEvent *event.Event,
+	logEvent *api.Event,
+	eventComment string,
 	okStatus int,
 	callback func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response),
 	tokenGoneAfterCallback bool,
@@ -82,7 +82,7 @@ func HandleSettingsHelper(
 			if logEvent != nil {
 				if err = eventService.LogEvent(
 					rlog, tx, eventService.MTEvent{
-						Event: logEvent,
+						Event: *logEvent,
 						MTID:  mt.ID,
 					}, *clientMetaData,
 				); err != nil {
