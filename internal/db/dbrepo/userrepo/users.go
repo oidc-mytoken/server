@@ -6,7 +6,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/internal/mailing"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
@@ -24,18 +23,6 @@ func GetMail(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID) (data mailIn
 		},
 	)
 	return
-}
-
-// GetTemplateMailSender returns a mailing.TemplateMailSender depending on the users preferred mime type
-func GetTemplateMailSender(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID) (mailing.TemplateMailSender, error) {
-	info, err := GetMail(rlog, tx, mtID)
-	if err != nil {
-		return nil, err
-	}
-	if info.PreferHTMLMail {
-		return mailing.HTMLMailSender, nil
-	}
-	return mailing.PlainTextMailSender, nil
 }
 
 // ChangeEmail changes the user's email address

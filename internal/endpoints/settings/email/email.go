@@ -11,12 +11,13 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/actions"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings"
 	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
-	"github.com/oidc-mytoken/server/internal/mailing/mailtemplates"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
+	notifier "github.com/oidc-mytoken/server/internal/notifier/client"
+	"github.com/oidc-mytoken/server/internal/notifier/server/mailing/mailtemplates"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
@@ -112,17 +113,8 @@ func HandlePut(ctx *fiber.Ctx) error {
 				if err != nil {
 					return err
 				}
-				sender, err := userrepo.GetTemplateMailSender(rlog, tx, mt.ID)
+				mailInfo, err := userrepo.GetMail(rlog, tx, mt.ID)
 				if err != nil {
-					return err
-				}
-				if err = sender.SendTemplate(
-					req.EmailAddress, mailtemplates.SubjectVerifyMail,
-					mailtemplates.TemplateVerifyMail, map[string]any{
-						"issuer": config.Get().IssuerURL,
-						"link":   verificationURL,
-					},
-				); err != nil {
 					return err
 				}
 				if err = eventService.LogEvent(
@@ -134,7 +126,13 @@ func HandlePut(ctx *fiber.Ctx) error {
 				); err != nil {
 					return err
 				}
-
+				notifier.SendTemplateEmail(
+					req.EmailAddress, mailtemplates.SubjectVerifyMail, mailInfo.PreferHTMLMail,
+					mailtemplates.TemplateVerifyMail, map[string]any{
+						"issuer": config.Get().IssuerURL,
+						"link":   verificationURL,
+					},
+				)
 			}
 			if err := usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
 				return err

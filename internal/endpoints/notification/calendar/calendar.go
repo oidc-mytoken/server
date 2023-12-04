@@ -22,12 +22,13 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/actions"
 	"github.com/oidc-mytoken/server/internal/endpoints/notification/calendar/pkg"
 	pkg2 "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
-	"github.com/oidc-mytoken/server/internal/mailing"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
+	notifier "github.com/oidc-mytoken/server/internal/notifier/client"
+	"github.com/oidc-mytoken/server/internal/notifier/server/mailing"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
@@ -382,7 +383,7 @@ func HandleCalendarEntryViaMail(ctx *fiber.Ctx) error {
 			if filename == "" {
 				filename = id.Hash()
 			}
-			err = mailing.ICSMailSender.Send(
+			notifier.SendICSMail(
 				mailInfo.Mail,
 				fmt.Sprintf("Mytoken Expiration Calendar Reminder for '%s'", filename),
 				"You can add the event to your calendar to be notified before the mytoken expires.",
@@ -392,10 +393,6 @@ func HandleCalendarEntryViaMail(ctx *fiber.Ctx) error {
 					ContentType: "text/calendar",
 				},
 			)
-			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
 
 			if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
 				res = model.ErrorToInternalServerErrorResponse(err)

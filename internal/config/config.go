@@ -110,9 +110,9 @@ var defaultConfig = Config{
 			Groups:  make(map[string]string),
 		},
 		Notifications: notificationConf{
-			Mail: mailNotificationConf{
+			Mail: MailNotificationConf{
 				Enabled: false,
-				MailServer: mailServerConf{
+				MailServer: MailServerConf{
 					Port: 587,
 				},
 			},
@@ -257,7 +257,7 @@ func (g profileGroupsCredentials) validate() error {
 type notificationConf struct {
 	AnyEnabled      bool                 `yaml:"-"`
 	SchedulerNeeded bool                 `yaml:"-"`
-	Mail            mailNotificationConf `yaml:"email"`
+	Mail            MailNotificationConf `yaml:"email"`
 	Websocket       onlyEnable           `yaml:"ws"`
 	ICS             onlyEnable           `yaml:"ics"`
 }
@@ -269,13 +269,13 @@ func (c *notificationConf) validate() error {
 	//TODO
 }
 
-type mailNotificationConf struct {
+type MailNotificationConf struct {
 	Enabled      bool           `yaml:"enabled"`
-	MailServer   mailServerConf `yaml:"mail_server"`
+	MailServer   MailServerConf `yaml:"mail_server"`
 	OverwriteDir string         `yaml:"overwrite_dir"`
 }
 
-type mailServerConf struct {
+type MailServerConf struct {
 	Host        string `yaml:"host"`
 	Port        int    `yaml:"port"`
 	Username    string `yaml:"user"`
@@ -375,9 +375,9 @@ type serverConf struct {
 	TLS    tlsConf `yaml:"tls"`
 	Secure bool    `yaml:"-"` // Secure indicates if the connection to the mytoken server is secure. This is
 	// independent of TLS, e.g. a Proxy can be used.
-	ProxyHeader  string      `yaml:"proxy_header"`
-	Limiter      limiterConf `yaml:"request_limits"`
-	SingleServer bool        `yaml:"single_server"`
+	ProxyHeader        string      `yaml:"proxy_header"`
+	Limiter            limiterConf `yaml:"request_limits"`
+	DistributedServers bool        `yaml:"distributed_servers"`
 }
 
 type limiterConf struct {
