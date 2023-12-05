@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/Songmu/prompter v0.5.1
-	github.com/coreos/go-oidc/v3 v3.6.0
+	github.com/coreos/go-oidc/v3 v3.8.0
 	github.com/evanphx/json-patch/v5 v5.7.0
 	github.com/fatih/structs v1.1.0
 	github.com/gliderlabs/ssh v0.3.5
@@ -69,7 +69,7 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 )
 
