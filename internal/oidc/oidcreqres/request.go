@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/model"
 	iutils "github.com/oidc-mytoken/server/internal/utils"
 )
 
@@ -19,12 +19,19 @@ type RefreshRequest struct {
 }
 
 // NewRefreshRequest creates a new RefreshRequest for a given refresh token
-func NewRefreshRequest(rt string, conf *config.ProviderConf) *RefreshRequest {
+func NewRefreshRequest(rt string, aud *model.AudienceConf) *RefreshRequest {
+	if aud == nil {
+		aud = &model.AudienceConf{
+			RFC8707:           true,
+			RequestParameter:  model.AudienceParameterResource,
+			SpaceSeparateAuds: false,
+		}
+	}
 	return &RefreshRequest{
 		GrantType:         "refresh_token",
 		RefreshToken:      rt,
-		resourceParameter: conf.Audience.RequestParameter,
-		spaceDelimited:    conf.Audience.SpaceSeparateAuds,
+		resourceParameter: aud.RequestParameter,
+		spaceDelimited:    aud.SpaceSeparateAuds,
 	}
 }
 

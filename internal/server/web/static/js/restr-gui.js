@@ -114,7 +114,11 @@ function getSupportedScopesFromStorage(iss = "") {
             iss = storageGet("oidc_issuer");
         }
     }
-    return providers.find(x => x.issuer === iss).scopes_supported;
+    let p = providers.find(x => x.issuer === iss)
+    if (p === undefined) {
+        return [];
+    }
+    return p.scopes_supported;
 }
 
 

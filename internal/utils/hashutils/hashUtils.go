@@ -23,7 +23,7 @@ func SHA512Str(data []byte) string {
 func HMACSHA3Str(data, secret []byte) string {
 	h := hmac.New(sha3.New512, secret)
 	mac := h.Sum(data)
-	return base64.StdEncoding.EncodeToString(mac)
+	return base64.URLEncoding.EncodeToString(mac)
 }
 
 // HMACBasedHash computes a hash-like value using HMAC

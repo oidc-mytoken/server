@@ -21,16 +21,18 @@
             </ul>
         {{/logged-in}}
         {{^logged-in}}
-            <form class="form-inline" id="login-form" method="post" role="form">
-                <input type="hidden" name="grant_type" value="oidc_flow"/>
-                <input type="hidden" name="oidc_flow" value="authorization_code"/>
-                <select class="form-control custom-select" name="oidc_issuer">
-                    {{#providers}}
-                        <option value="{{issuer}}">{{name}}</option>
-                    {{/providers}}
-                </select>
-                <button class="btn btn-secondary" type="submit">Sign in</button>
-            </form>
+            <ul class="navbar-nav justify-content-center">
+                <li class="nav-item">
+                    <select class="form-control fontawesome selectpicker" id="login-op-selector"
+                            data-live-search="true" data-live-search-normalize="true" data-style="btn-secondary"
+                            data-live-search-placeholder="Type to filter" data-title="Choose Provider to Sign in"
+                            data-virtual-scroll="100" data-width="auto">
+                        {{#providers}}
+                            <option value="{{issuer}}">{{name}}{{#fed}} &#xf1e0;{{/fed}}</option>
+                        {{/providers}}
+                    </select>
+                </li>
+            </ul>
 
         {{/logged-in}}
     {{/empty-navbar}}

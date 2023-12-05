@@ -16,6 +16,7 @@ type Rotation struct {
 
 // MarshalJSON implements the json.Marshaler
 func (p Rotation) MarshalJSON() ([]byte, error) {
+	p.IncludedProfiles = nil
 	return json.Marshal(p.Rotation)
 }
 

@@ -2,7 +2,6 @@
 
 [![License](https://img.shields.io/github/license/oidc-mytoken/server.svg)](https://github.com/oidc-mytoken/server/blob/master/LICENSE)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/oidc-mytoken/server)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/oidc-mytoken/server/Go)
 [![Go Report](https://goreportcard.com/badge/github.com/oidc-mytoken/server)](https://goreportcard.com/report/github.com/oidc-mytoken/server)
 [![DeepSource](https://deepsource.io/gh/oidc-mytoken/server.svg/?label=active+issues&show_trend=true)](https://deepsource.io/gh/oidc-mytoken/server/?ref=repository-badge)
 [![Release date](https://img.shields.io/github/release-date/oidc-mytoken/server.svg)](https://github.com/oidc-mytoken/server/releases/latest)

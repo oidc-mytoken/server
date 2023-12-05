@@ -136,3 +136,7 @@ span.user-agent i + i {
 .btn-link {
     padding: 0;
 }
+
+.fontawesome {
+    font-family: 'FontAwesome', Lato, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+}

@@ -24,13 +24,16 @@
                         </div>
                     {{/create-with-profiles}}
 
-                    <div class="alert border border-primary">
+                    <div class="alert border">
                         <h4>OpenID Provider</h4>
                         <label for="mt-oidc-iss">OpenID Provider</label>
-                        <select id="mt-oidc-iss" class="form-control custom-select any-profile-input"
-                                instance-prefix="{{prefix}}">
+                        <select class="form-control fontawesome any-profile-input selectpicker" id="mt-oidc-iss"
+                                instance-prefix="{{prefix}}"
+                                data-live-search="true" data-live-search-normalize="true" data-style="btn-primary"
+                                data-live-search-placeholder="Type to filter" data-title="Choose OpenID Provider"
+                                data-virtual-scroll="100">
                             {{#providers}}
-                                <option value="{{issuer}}">{{name}}</option>
+                                <option value="{{issuer}}">{{name}}{{#fed}} &#xf1e0;{{/fed}}</option>
                             {{/providers}}
                         </select>
                         <small id="mt-oidc-iss-help" class="form-text text-muted">OpenID Provider for which this

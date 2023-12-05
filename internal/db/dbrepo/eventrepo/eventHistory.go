@@ -1,6 +1,8 @@
 package eventrepo
 
 import (
+	"sort"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/utils/unixtime"
 	"github.com/pkg/errors"
@@ -21,16 +23,52 @@ type EventHistory struct {
 // EventEntry represents a mytoken event
 type EventEntry struct {
 	api.EventEntry `json:",inline"`
-	MTID           mtid.MTID         `db:"MT_id" json:"-"`
+	MOMID          mtid.MOMID        `db:"MT_id" json:"mom_id"`
 	Time           unixtime.UnixTime `db:"time" json:"time"`
 }
 
 // GetEventHistory returns the stored EventHistory for a mytoken
-func GetEventHistory(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id interface{}) (history EventHistory, err error) {
+func GetEventHistory(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, incomingEvents EventHistory, ids ...any,
+) (history EventHistory, err error) {
+	history = incomingEvents
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			return errors.WithStack(tx.Select(&history.Events, `CALL EventHistory_Get(?)`, id))
+			for _, id := range ids {
+				var thisHistory EventHistory
+				if err = errors.WithStack(tx.Select(&thisHistory.Events, `CALL EventHistory_Get(?)`, id)); err != nil {
+					return err
+				}
+				history.Events = append(history.Events, thisHistory.Events...)
+			}
+			return nil
 		},
 	)
+	sort.Slice(
+		history.Events, func(i, j int) bool {
+			return history.Events[i].Time > history.Events[j].Time
+		},
+	)
+	return
+}
+
+// GetEventHistoryChildren returns the stored EventHistory for all children of a mytoken (
+// not including the mytoken's own events)
+func GetEventHistoryChildren(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, incomingEvents EventHistory, id any,
+) (history EventHistory, err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Select(&history.Events, `CALL EventHistory_GetChildren(?)`, id))
+		},
+	)
+	if len(incomingEvents.Events) > 0 {
+		history.Events = append(incomingEvents.Events, history.Events...)
+		sort.Slice(
+			history.Events, func(i, j int) bool {
+				return history.Events[i].Time > history.Events[j].Time
+			},
+		)
+	}
 	return
 }

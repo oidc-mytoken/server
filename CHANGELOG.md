@@ -12,6 +12,54 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.9.0
+
+### Changes
+
+- Changed the tokeninfo history api when used with a `mom_id`, now multiple `mom_ids` can be passed in a single
+  request. Also, the response now contains the `mom_id` in the entry object.
+
+### Features
+
+- Added experimental support for OpenID Connect federations
+- Added "Guest mode" to try mytoken out without using a real OP
+
+### API
+
+- Added `mom_id` parameter to tokeninfo introspection response
+- Added `mom_id` parameter to mytoken responses
+
+### Enhancements
+
+- Webinterface: Improved the title / placeholder for the `hosts` restrictions key in the GUI editor to make it more
+  clear that also subnets can be used.
+- Webinterface: Changed the login provider selector and added search functionality
+- Webinterface: Improved (re-)discovery of mytoken configuration
+- Webinterface: Fixed a problem with scope discovery if there was no OP selected.
+- Profiles: Improved / Fixed includes in especially restrictions when includes involve arrays.
+
+### Bugfixes
+
+- Finally fixed a problem with database times when the database was not set to UTC.
+- Fixed a bug where sometimes a 'state mismatch' occured
+
+### Dependencies
+
+- Bump golang.org/x/mod from 0.11.0 to 0.14.0
+- Bump golang.org/x/oauth2 from 0.9.0 to 0.15.0
+- Bump golang.org/x/term from 0.9.0 to 0.15.0
+- Bump golang.org/x/crypto from 0.10.0 to 0.16.0
+- Bump golang.org/x/net from 0.14.0 to 0.17.0
+- Bump github.com/valyala/fasthttp from 1.47.0 to 1.51.0
+- Bump github.com/gofiber/fiber/v2 from 2.49.1 to 2.51.0
+- Bump github.com/gofiber/template/mustache/v2 from 2.0.4 to 2.0.7
+- Bump github.com/lestrrat-go/jwx from 1.2.26 to 1.2.27
+- Bump github.com/redis/go-redis/v9 from 9.1.0 to 9.3.0
+- Bump github.com/evanphx/json-patch/v5 from 5.6.0 to 5.7.0
+- Bump github.com/go-resty/resty/v2 from 2.7.0 to 2.10.0
+- Bump github.com/go-jose/go-jose/v3 from 3.0.0 to 3.0.1
+- Bump github.com/coreos/go-oidc/v3 from 3.6.0 to 3.8.0
+
 ## mytoken 0.8.1
 
 ### Enhancements

@@ -8,5 +8,5 @@ import (
 
 // HandleJWKS handles request for the jwks, returning the jwks
 func HandleJWKS(ctx *fiber.Ctx) error {
-	return ctx.JSON(jws.GetJWKS())
+	return ctx.JSON(jws.GetJWKS(jws.KeyUsageMytokenSigning))
 }

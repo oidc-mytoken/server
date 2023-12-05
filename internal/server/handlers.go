@@ -15,6 +15,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/profilerepo"
+	configurationEndpoint "github.com/oidc-mytoken/server/internal/endpoints/configuration"
 	consent "github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/cache"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
@@ -29,11 +30,12 @@ func handleIndex(ctx *fiber.Ctx) error {
 }
 
 func homeBindingData() map[string]interface{} {
-	var providers []map[string]string
-	for _, p := range config.Get().Providers {
-		pp := make(map[string]string, 2)
+	var providers []map[string]any
+	for _, p := range configurationEndpoint.SupportedProviders() {
+		pp := make(map[string]any, 2)
 		pp["issuer"] = p.Issuer
 		pp["name"] = p.Name
+		pp["fed"] = p.OIDCFed
 		providers = append(providers, pp)
 	}
 	return map[string]interface{}{
