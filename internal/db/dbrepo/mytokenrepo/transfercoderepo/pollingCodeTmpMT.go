@@ -13,6 +13,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
+	"github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
@@ -66,10 +67,11 @@ func PopTokenForTransferCode(
 				return err
 			}
 			return eventService.LogEvent(
-				rlog, tx, eventService.MTEvent{
-					Event: api.EventTransferCodeUsed,
-					MTID:  pt.mtID,
-				}, clientMetadata,
+				rlog, tx, pkg.MTEvent{
+					Event:          api.EventTransferCodeUsed,
+					MTID:           pt.mtID,
+					ClientMetaData: clientMetadata,
+				},
 			)
 		},
 	)

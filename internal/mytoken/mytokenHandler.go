@@ -19,9 +19,11 @@ import (
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
+	"github.com/oidc-mytoken/server/internal/db/notificationsrepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
+	"github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
@@ -177,19 +179,26 @@ func HandleMytokenFromMytokenReq(
 			if err = ste.Store(rlog, tx, "Used grant_type mytoken"); err != nil {
 				return
 			}
+			if err = notificationsrepo.ExpandNotificationsToChildrenIfApplicable(
+				rlog, tx, parent.ID, ste.ID,
+			); err != nil {
+				return err
+			}
 			return eventService.LogEvents(
-				rlog, tx, []eventService.MTEvent{
+				rlog, tx, []pkg.MTEvent{
 					{
-						Event:   api.EventInheritedRT,
-						Comment: "Got RT from parent",
-						MTID:    ste.ID,
+						Event:          api.EventInheritedRT,
+						Comment:        "Got RT from parent",
+						MTID:           ste.ID,
+						ClientMetaData: *networkData,
 					},
 					{
-						Event:   api.EventSubtokenCreated,
-						Comment: strings.TrimSpace(fmt.Sprintf("Created MT %s", req.GeneralMytokenRequest.Name)),
-						MTID:    parent.ID,
+						Event:          api.EventSubtokenCreated,
+						Comment:        strings.TrimSpace(fmt.Sprintf("Created MT %s", req.GeneralMytokenRequest.Name)),
+						MTID:           parent.ID,
+						ClientMetaData: *networkData,
 					},
-				}, *networkData,
+				},
 			)
 		},
 	); err != nil {

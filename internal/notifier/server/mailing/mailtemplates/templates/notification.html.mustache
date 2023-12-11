@@ -1,0 +1,59 @@
+<p>Your mytoken was used for something we should notify you about. Here are the details:</p>
+
+<style>
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+</style>
+
+<table>
+    {{#token-name}}
+        <tr>
+            <td>Mytoken Name</td>
+            <td>{{.}}</td>
+        </tr>
+    {{/token-name}}
+    <tr>
+        <td>Mytoken Mom ID</td>
+        <td>{{mom_id}}</td>
+    </tr>
+    <tr>
+        <td>IP</td>
+        <td>{{ip}}</td>
+    </tr>
+    <tr>
+        <td>User-Agent</td>
+        <td>{{user-agent}}</td>
+    </tr>
+    {{#country}}
+        <tr>
+            <td>Location</td>
+            <td>{{.}}</td>
+        </tr>
+    {{/country}}
+
+    <tr>
+        <td style="font-weight:bold;">Notification Reason</td>
+        <td style="font-weight:bold;">{{notification-class}}</td>
+    </tr>
+    {{#event}}
+        <tr>
+            <td style="font-weight:bold;">Event</td>
+            <td style="font-weight:bold;">{{.}}</td>
+        </tr>
+    {{/event}}
+    {{#comment}}
+        <tr>
+            <td style="font-weight:bold;">Comment</td>
+            <td style="font-weight:bold;">{{.}}</td>
+        </tr>
+    {{/comment}}
+</table>
+
+<p>
+    If you want to manage this notification subscription, you can do so <a href="{{management-url}}">here</a>.
+</p>
+
+Sincerly,<br>
+the mytoken notification bot.

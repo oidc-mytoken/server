@@ -15,6 +15,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
+	pkg2 "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
@@ -45,10 +46,11 @@ func doTokenInfoList(
 				return err
 			}
 			return eventService.LogEvent(
-				rlog, tx, eventService.MTEvent{
-					Event: api.EventTokenInfoListMTs,
-					MTID:  mt.ID,
-				}, *clientMetadata,
+				rlog, tx, pkg2.MTEvent{
+					Event:          api.EventTokenInfoListMTs,
+					MTID:           mt.ID,
+					ClientMetaData: *clientMetadata,
+				},
 			)
 		},
 	)

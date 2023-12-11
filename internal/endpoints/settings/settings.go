@@ -13,6 +13,7 @@ import (
 	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
+	"github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
@@ -81,10 +82,11 @@ func HandleSettingsHelper(
 			clientMetaData := ctxutils.ClientMetaData(ctx)
 			if logEvent != nil {
 				if err = eventService.LogEvent(
-					rlog, tx, eventService.MTEvent{
-						Event: *logEvent,
-						MTID:  mt.ID,
-					}, *clientMetaData,
+					rlog, tx, pkg.MTEvent{
+						Event:          *logEvent,
+						MTID:           mt.ID,
+						ClientMetaData: *clientMetaData,
+					},
 				); err != nil {
 					return
 				}

@@ -23,8 +23,8 @@ func HandleActions(ctx *fiber.Ctx) error {
 	switch actionInfo.Action {
 	case pkg.ActionRecreate:
 		return handleRecreate(ctx, actionInfo.Code)
-	case pkg.ActionUnsubscribe:
-		return handleUnsubscribe(ctx, actionInfo.Code)
+	case pkg.ActionManageNotification:
+		return handleManageNotification(ctx, actionInfo.Code)
 	case pkg.ActionVerifyEmail:
 		return handleVerifyEmail(ctx, actionInfo.Code)
 	case pkg.ActionRemoveFromCalendar:
@@ -53,7 +53,7 @@ func handleVerifyEmail(ctx *fiber.Ctx, code string) error {
 	)
 }
 
-func handleUnsubscribe(ctx *fiber.Ctx, code string) error {
+func handleManageNotification(ctx *fiber.Ctx, code string) error {
 	return ctxutils.RenderErrorPage(ctx, fiber.StatusNotImplemented, api.ErrorNYI.CombinedMessage())
 }
 func handleRemoveFromCalendar(ctx *fiber.Ctx, code string) error {

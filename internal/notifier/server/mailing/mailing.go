@@ -55,12 +55,14 @@ func init() {
 
 func sendEMail(mail *email.Email) error {
 	err := errors.WithStack(mailPool.Send(mail, 10*time.Second))
-	if err != nil {
-		m := err.Error()
-		if strings.Contains(m, "broken pipe") {
-			// retry
-			return errors.WithStack(mailPool.Send(mail, 10*time.Second))
-		}
+	if err == nil {
+		return nil
+	}
+	log.WithError(err).Error("error while sending mail")
+	m := err.Error()
+	if strings.Contains(m, "broken pipe") {
+		// retry
+		return errors.WithStack(mailPool.Send(mail, 10*time.Second))
 	}
 	return err
 }

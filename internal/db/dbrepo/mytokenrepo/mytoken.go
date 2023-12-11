@@ -13,6 +13,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	helper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
+	"github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/utils/cryptutils"
@@ -129,11 +130,12 @@ func (mte *MytokenEntry) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx, comment st
 				return err
 			}
 			return eventService.LogEvent(
-				rlog, tx, eventService.MTEvent{
-					Event:   api.EventMTCreated,
-					Comment: comment,
-					MTID:    mte.ID,
-				}, mte.networkData,
+				rlog, tx, pkg.MTEvent{
+					Event:          api.EventMTCreated,
+					Comment:        comment,
+					MTID:           mte.ID,
+					ClientMetaData: mte.networkData,
+				},
 			)
 		},
 	)

@@ -38,6 +38,7 @@ func HandleEmailRequest(req pkg.EmailNotificationRequest) error {
 			log.WithError(err).Error("error while sending templated mail")
 			return err
 		}
+		return nil
 	}
 	if err := sender.Send(req.To, req.Subject, req.Text, req.Attachments...); err != nil {
 		log.WithError(err).Error("error while sending mail")

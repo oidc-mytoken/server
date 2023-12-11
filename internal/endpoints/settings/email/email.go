@@ -13,6 +13,7 @@ import (
 	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
+	"github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
@@ -96,11 +97,12 @@ func HandlePut(ctx *fiber.Ctx) error {
 					eventComment = "to html"
 				}
 				if err := eventService.LogEvent(
-					rlog, tx, eventService.MTEvent{
-						Event:   api.EventEmailMimetypeChanged,
-						Comment: eventComment,
-						MTID:    mt.ID,
-					}, *clientMetaData,
+					rlog, tx, pkg.MTEvent{
+						Event:          api.EventEmailMimetypeChanged,
+						Comment:        eventComment,
+						MTID:           mt.ID,
+						ClientMetaData: *clientMetaData,
+					},
 				); err != nil {
 					return err
 				}
@@ -118,11 +120,12 @@ func HandlePut(ctx *fiber.Ctx) error {
 					return err
 				}
 				if err = eventService.LogEvent(
-					rlog, tx, eventService.MTEvent{
-						Event:   api.EventEmailChanged,
-						MTID:    mt.ID,
-						Comment: req.EmailAddress,
-					}, *clientMetaData,
+					rlog, tx, pkg.MTEvent{
+						Event:          api.EventEmailChanged,
+						MTID:           mt.ID,
+						Comment:        req.EmailAddress,
+						ClientMetaData: *clientMetaData,
+					},
 				); err != nil {
 					return err
 				}
