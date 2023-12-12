@@ -12,7 +12,9 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/userrepo"
 	"github.com/oidc-mytoken/server/internal/db/notificationsrepo"
+	"github.com/oidc-mytoken/server/internal/model"
 	pkg2 "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/notifier/pkg"
 	server "github.com/oidc-mytoken/server/internal/notifier/server"
 	"github.com/oidc-mytoken/server/internal/notifier/server/mailing"
@@ -87,7 +89,7 @@ func SendICSMail(to, subject, text string, attachments ...mailing.Attachment) {
 	}()
 }
 
-// SendNotifcationsForEvent sends all relevant notifications for a event through the relevant notification server,
+// SendNotificationsForEvent sends all relevant notifications for a event through the relevant notification server,
 // if there are any
 func SendNotificationsForEvent(rlog log.Ext1FieldLogger, tx *sqlx.Tx, e pkg2.MTEvent) error {
 	rlog.WithField("event", e.Event.String()).Debug("checking and sending notification for event")
@@ -101,37 +103,75 @@ func SendNotificationsForEvent(rlog log.Ext1FieldLogger, tx *sqlx.Tx, e pkg2.MTE
 		return err
 	}
 	rlog.WithField("number_notifications", len(notifications)).Trace("found notifications for the class and token")
+	return sendNotificationsForNotificationInfos(rlog, tx, e.MTID, notifications, nc.Name, &e.ClientMetaData, &e, nil)
+}
+
+// SendNotificationsForSubClass sends all relevant notifications for a Notification(
+// sub)class through the relevant notification server, if there are any
+func SendNotificationsForSubClass(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
+	nc *api.NotificationClass, clientData *api.ClientMetaData, additionalData model.KeyValues,
+) error {
+	rlog.WithField("notification_class", nc.Name).Debug("checking and sending notification for (sub)class")
+	allNotifications, err := notificationsrepo.GetNotificationsForMT(rlog, tx, mtID)
+	if err != nil {
+		return err
+	}
+	rlog.WithField("number_all_notifications", len(allNotifications)).Trace("found notifications for token")
+	var notifications []notificationsrepo.NotificationInfo
+	for _, n := range allNotifications {
+		thisNC := api.NewNotificationClass(n.Class)
+		if thisNC.Contains(nc) {
+			notifications = append(notifications, n.NotificationInfo)
+		}
+	}
+	rlog.WithField("number_filtered_notifications", len(notifications)).Trace("found notifications for token and class")
+	return sendNotificationsForNotificationInfos(
+		rlog, tx, mtID, notifications, nc.Name, clientData, nil, additionalData,
+	)
+}
+
+func sendNotificationsForNotificationInfos(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
+	notifications []notificationsrepo.NotificationInfo, notificationClassName string, clientData *api.ClientMetaData,
+	e *pkg2.MTEvent, additionalData model.KeyValues,
+) error {
 	mailAlreadySent := false
 	for _, n := range notifications {
 		switch n.Type {
 		case api.NotificationTypeMail:
 			if !mailAlreadySent {
 				mailAlreadySent = true
-				emailInfo, err := userrepo.GetMail(rlog, tx, e.MTID)
+				emailInfo, err := userrepo.GetMail(rlog, tx, mtID)
 				if err != nil {
 					return err
 				}
 				if !emailInfo.MailVerified {
 					return errors.New("notification email not verified")
 				}
-				tokenName, err := mytokenrepohelper.GetMTName(rlog, tx, e.MTID)
+				tokenName, err := mytokenrepohelper.GetMTName(rlog, tx, mtID)
 				if err != nil {
 					return err
 				}
 				bindingData := map[string]any{
-					"ip":                 e.IP,
-					"user-agent":         e.UserAgent,
-					"country":            geoip.Country(e.IP),
-					"notification-class": nc.Name,
-					"event":              e.Event.String(),
-					"mom_id":             e.MTID.Hash(),
+					"ip":                 clientData.IP,
+					"user-agent":         clientData.UserAgent,
+					"country":            geoip.Country(clientData.IP),
+					"notification-class": notificationClassName,
+					"mom_id":             mtID.Hash(),
 					"token-name":         tokenName.String,
-					"comment":            e.Comment,
 					"management-url":     n.ManagementCode, //TODO
+				}
+				if e != nil {
+					bindingData["event"] = e.Event.String()
+					bindingData["comment"] = e.Comment
+				}
+				if additionalData != nil {
+					bindingData["additional-data"] = additionalData
 				}
 				rlog.Debug("sending notification mail")
 				SendTemplateEmail(
-					emailInfo.Mail, fmt.Sprintf("mytoken notification: %s", nc.Name),
+					emailInfo.Mail, fmt.Sprintf("mytoken notification: %s", notificationClassName),
 					emailInfo.PreferHTMLMail, "notification", bindingData,
 				)
 

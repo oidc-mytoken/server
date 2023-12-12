@@ -97,7 +97,7 @@ func HandleAdd(ctx *fiber.Ctx) error {
 	}
 	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
 		rlog, nil, mt,
-		ctxutils.ClientMetaData(ctx).IP, api.CapabilityNotifyAnyToken,
+		ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyToken,
 	)
 	if errRes != nil {
 		return errRes.Send(ctx)
@@ -182,7 +182,7 @@ func HandleDelete(ctx *fiber.Ctx) error {
 	}
 	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
 		rlog, nil, mt,
-		ctxutils.ClientMetaData(ctx).IP, api.CapabilityNotifyAnyToken,
+		ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyToken,
 	)
 	if errRes != nil {
 		return errRes.Send(ctx)
@@ -264,7 +264,7 @@ func HandleList(ctx *fiber.Ctx) error {
 	}
 	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
 		rlog, nil, mt,
-		ctxutils.ClientMetaData(ctx).IP, api.CapabilityNotifyAnyTokenRead,
+		ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyTokenRead,
 	)
 	if errRes != nil {
 		return errRes.Send(ctx)
@@ -333,7 +333,7 @@ func HandleCalendarEntryViaMail(ctx *fiber.Ctx) error {
 		id = req.MomID.MTID
 		if errRes = auth.RequireMytokenIsParentOrCapability(
 			rlog, nil, api.CapabilityTokeninfoNotify,
-			api.CapabilityNotifyAnyToken, mt, id,
+			api.CapabilityNotifyAnyToken, mt, id, clientMetadata,
 		); errRes != nil {
 			return errRes.Send(ctx)
 		}
@@ -341,7 +341,7 @@ func HandleCalendarEntryViaMail(ctx *fiber.Ctx) error {
 			return errRes.Send(ctx)
 		}
 	}
-	usedRestriction, errRes := auth.RequireUsableRestrictionOther(rlog, nil, mt, clientMetadata.IP)
+	usedRestriction, errRes := auth.RequireUsableRestrictionOther(rlog, nil, mt, clientMetadata)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
@@ -460,7 +460,7 @@ func HandleAddMytoken(ctx *fiber.Ctx) error {
 		id = req.MomID.MTID
 		if errRes = auth.RequireMytokenIsParentOrCapability(
 			rlog, nil, api.CapabilityTokeninfoNotify,
-			api.CapabilityNotifyAnyToken, mt, id,
+			api.CapabilityNotifyAnyToken, mt, id, clientMetadata,
 		); errRes != nil {
 			return errRes.Send(ctx)
 		}
@@ -468,7 +468,7 @@ func HandleAddMytoken(ctx *fiber.Ctx) error {
 			return errRes.Send(ctx)
 		}
 	}
-	usedRestriction, errRes := auth.RequireUsableRestrictionOther(rlog, nil, mt, clientMetadata.IP)
+	usedRestriction, errRes := auth.RequireUsableRestrictionOther(rlog, nil, mt, clientMetadata)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}

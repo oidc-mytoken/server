@@ -27,11 +27,12 @@ import (
 )
 
 func doTokenInfoHistory(
-	rlog log.Ext1FieldLogger, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken,
+	clientMetadata *api.ClientMetaData,
 	usedRestriction *restrictions.Restriction,
 ) (history eventrepo.EventHistory, tokenUpdate *response.MytokenResponse, err error) {
-	err = db.Transact(
-		rlog, func(tx *sqlx.Tx) error {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
 			var ids []any
 			if len(req.MOMIDs) > 0 {
 				for _, id := range req.MOMIDs {
@@ -92,13 +93,14 @@ func doTokenInfoHistory(
 }
 
 func handleTokenInfoHistory(
-	rlog log.Ext1FieldLogger, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken,
+	clientMetadata *api.ClientMetaData,
 ) model.Response {
-	usedRestriction, errRes := auth.RequireUsableRestrictionOther(rlog, nil, mt, clientMetadata.IP)
+	usedRestriction, errRes := auth.RequireUsableRestrictionOther(rlog, nil, mt, clientMetadata)
 	if errRes != nil {
 		return *errRes
 	}
-	history, tokenUpdate, err := doTokenInfoHistory(rlog, req, mt, clientMetadata, usedRestriction)
+	history, tokenUpdate, err := doTokenInfoHistory(rlog, tx, req, mt, clientMetadata, usedRestriction)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
 		return *model.ErrorToInternalServerErrorResponse(err)
@@ -109,15 +111,18 @@ func handleTokenInfoHistory(
 
 // HandleTokenInfoHistory handles a tokeninfo history request
 func HandleTokenInfoHistory(
-	rlog log.Ext1FieldLogger, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken,
+	clientMetadata *api.ClientMetaData,
 ) model.Response {
 	// If we call this function it means the token is valid.
 
 	if len(req.MOMIDs) == 0 {
-		if errRes := auth.RequireCapability(rlog, api.CapabilityTokeninfoHistory, mt); errRes != nil {
+		if errRes := auth.RequireCapability(
+			rlog, tx, api.CapabilityTokeninfoHistory, mt, clientMetadata,
+		); errRes != nil {
 			return *errRes
 		}
-		return handleTokenInfoHistory(rlog, req, mt, clientMetadata)
+		return handleTokenInfoHistory(rlog, tx, req, mt, clientMetadata)
 	}
 	if !mt.Capabilities.Has(api.CapabilityHistoryAnyToken) {
 		for _, momid := range req.MOMIDs {
@@ -127,7 +132,7 @@ func HandleTokenInfoHistory(
 			if strings.HasPrefix(momid, api.MOMIDValueChildren+"@") {
 				momid = momid[len(api.MOMIDValueChildren)+1:]
 			}
-			isParent, err := helper.MOMIDHasParent(rlog, nil, momid, mt.ID)
+			isParent, err := helper.MOMIDHasParent(rlog, tx, momid, mt.ID)
 			if err != nil {
 				return *model.ErrorToInternalServerErrorResponse(err)
 			}
@@ -145,7 +150,7 @@ func HandleTokenInfoHistory(
 				}
 			}
 
-			same, err := helper.CheckMytokensAreForSameUser(rlog, nil, momid, mt.ID)
+			same, err := helper.CheckMytokensAreForSameUser(rlog, tx, momid, mt.ID)
 			if err != nil {
 				return *model.ErrorToInternalServerErrorResponse(err)
 			}
@@ -162,5 +167,5 @@ func HandleTokenInfoHistory(
 			}
 		}
 	}
-	return handleTokenInfoHistory(rlog, req, mt, clientMetadata)
+	return handleTokenInfoHistory(rlog, tx, req, mt, clientMetadata)
 }

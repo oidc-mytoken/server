@@ -20,18 +20,21 @@ import (
 // HandleTokenInfoIntrospect handles token introspection
 func HandleTokenInfoIntrospect(
 	rlog log.Ext1FieldLogger,
+	tx *sqlx.Tx,
 	mt *mytoken.Mytoken,
 	origionalTokenType model.ResponseType,
 	clientMetadata *api.ClientMetaData,
 ) model.Response {
 	// If we call this function it means the token is valid.
-	if errRes := auth.RequireCapability(rlog, api.CapabilityTokeninfoIntrospect, mt); errRes != nil {
+	if errRes := auth.RequireCapability(
+		rlog, tx, api.CapabilityTokeninfoIntrospect, mt, clientMetadata,
+	); errRes != nil {
 		return *errRes
 	}
 
 	var usedToken mytoken.UsedMytoken
 	if err := db.RunWithinTransaction(
-		rlog, nil, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			tmp, err := mt.ToUsedMytoken(rlog, tx)
 			if err != nil {
 				return err

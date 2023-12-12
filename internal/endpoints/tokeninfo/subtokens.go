@@ -23,11 +23,12 @@ import (
 )
 
 func doTokenInfoSubtokens(
-	rlog log.Ext1FieldLogger, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken,
+	clientMetadata *api.ClientMetaData,
 	usedRestriction *restrictions.Restriction,
 ) (tokenTree tree.MytokenEntryTree, tokenUpdate *response.MytokenResponse, err error) {
-	err = db.Transact(
-		rlog, func(tx *sqlx.Tx) error {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
 			tokenTree, err = tree.TokenSubTree(rlog, tx, mt.ID)
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				return err
@@ -58,16 +59,17 @@ func doTokenInfoSubtokens(
 
 // HandleTokenInfoSubtokens handles a tokeninfo list subtokens request
 func HandleTokenInfoSubtokens(
-	rlog log.Ext1FieldLogger, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken,
+	clientMetadata *api.ClientMetaData,
 ) model.Response {
 	// If we call this function it means the token is valid.
 	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
-		rlog, nil, mt, clientMetadata.IP, api.CapabilityTokeninfoSubtokens,
+		rlog, tx, mt, clientMetadata, api.CapabilityTokeninfoSubtokens,
 	)
 	if errRes != nil {
 		return *errRes
 	}
-	tokenTree, tokenUpdate, err := doTokenInfoSubtokens(rlog, req, mt, clientMetadata, usedRestriction)
+	tokenTree, tokenUpdate, err := doTokenInfoSubtokens(rlog, tx, req, mt, clientMetadata, usedRestriction)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
 		return *model.ErrorToInternalServerErrorResponse(err)

@@ -49,6 +49,7 @@ func HandleSettings(ctx *fiber.Ctx) error {
 // HandleSettingsHelper is a helper wrapper function that handles various settings request with the help of a callback
 func HandleSettingsHelper(
 	ctx *fiber.Ctx,
+	tx *sqlx.Tx,
 	reqMytoken *universalmytoken.UniversalMytoken,
 	requiredCapability api.Capability,
 	logEvent *api.Event,
@@ -63,15 +64,15 @@ func HandleSettingsHelper(
 		return errRes.Send(ctx)
 	}
 	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
-		rlog, nil, mt, ctx.IP(), requiredCapability,
+		rlog, tx, mt, ctxutils.ClientMetaData(ctx), requiredCapability,
 	)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
 	var tokenUpdate *my.MytokenResponse
 	var rsp my.TokenUpdatableResponse
-	if err := db.Transact(
-		rlog, func(tx *sqlx.Tx) (err error) {
+	if err := db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) (err error) {
 			rsp, errRes = callback(tx, mt)
 			if errRes != nil {
 				return fmt.Errorf("dummy")

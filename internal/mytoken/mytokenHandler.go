@@ -112,10 +112,10 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 
 // HandleMytokenFromMytokenReqChecks handles the necessary req checks for a pkg.MytokenFromMytokenRequest
 func HandleMytokenFromMytokenReqChecks(
-	rlog log.Ext1FieldLogger, req *response.MytokenFromMytokenRequest, ip string,
+	rlog log.Ext1FieldLogger, req *response.MytokenFromMytokenRequest, clientData *api.ClientMetaData,
 	ctx *fiber.Ctx,
 ) (*restrictions.Restriction, *mytoken.Mytoken, *model.Response) {
-	req.Restrictions.ReplaceThisIP(ip)
+	req.Restrictions.ReplaceThisIP(clientData.IP)
 	req.Restrictions.ClearUnsupportedKeys()
 	rlog.Trace("Parsed mytoken request")
 
@@ -126,7 +126,7 @@ func HandleMytokenFromMytokenReqChecks(
 		return nil, nil, errRes
 	}
 	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
-		rlog, nil, mt, ip, api.CapabilityCreateMT,
+		rlog, nil, mt, clientData, api.CapabilityCreateMT,
 	)
 	if errRes != nil {
 		return nil, nil, errRes
@@ -145,7 +145,7 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	if err := errors.WithStack(json.Unmarshal(ctx.Body(), &req)); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
-	usedRestriction, mt, errRes := HandleMytokenFromMytokenReqChecks(rlog, req, ctx.IP(), ctx)
+	usedRestriction, mt, errRes := HandleMytokenFromMytokenReqChecks(rlog, req, ctxutils.ClientMetaData(ctx), ctx)
 	if errRes != nil {
 		return errRes
 	}

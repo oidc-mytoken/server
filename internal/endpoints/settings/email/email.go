@@ -43,7 +43,7 @@ func HandleGet(ctx *fiber.Ctx) error {
 	var reqMytoken universalmytoken.UniversalMytoken
 
 	return settings.HandleSettingsHelper(
-		ctx, &reqMytoken, api.CapabilityEmailRead, &api.EventEmailSettingsListed, "", fiber.StatusOK,
+		ctx, nil, &reqMytoken, api.CapabilityEmailRead, &api.EventEmailSettingsListed, "", fiber.StatusOK,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *model.Response) {
 			info, err := userrepo.GetMail(rlog, tx, mt.ID)
 			if err != nil {
@@ -79,7 +79,7 @@ func HandlePut(ctx *fiber.Ctx) error {
 		return errRes.Send(ctx)
 	}
 	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
-		rlog, nil, mt, ctx.IP(), api.CapabilityEmail,
+		rlog, nil, mt, ctxutils.ClientMetaData(ctx), api.CapabilityEmail,
 	)
 	if errRes != nil {
 		return errRes.Send(ctx)

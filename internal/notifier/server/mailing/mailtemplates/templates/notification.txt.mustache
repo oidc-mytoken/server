@@ -17,6 +17,9 @@ Notification Reason: {{notification-class}}
 {{#comment}}
     Comment: {{.}}
 {{/comment}}
+{{#additional-data}}
+    {{Key}}: {{Value}}
+{{/additional-data}}
 
 
 If you want to manage this notification subscription, you can do so at: {{management-url}}

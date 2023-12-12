@@ -30,6 +30,12 @@ type NotificationInfo struct {
 	UserWide       bool          `db:"user_wide"`
 }
 
+// NotificationInfo is a type for holding information about a notification including class
+type NotificationInfoWithClass struct {
+	NotificationInfo
+	Class string `db:"class"`
+}
+
 // GetNotificationsForMTAndClass checks for and returns the found notifications for a certain mytoken and
 // notification class
 func GetNotificationsForMTAndClass(
@@ -38,7 +44,25 @@ func GetNotificationsForMTAndClass(
 ) (notifications []NotificationInfo, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			_, err = db.ParseError(tx.Select(&notifications, `CALL Notifications_GetForMT(?,?)`, mtID, class.Name))
+			_, err = db.ParseError(
+				tx.Select(
+					&notifications, `CALL Notifications_GetForMTAndClass(?,?)`, mtID,
+					class.Name,
+				),
+			)
+			return errors.WithStack(err)
+		},
+	)
+	return
+}
+
+// GetNotificationsForMT checks for and returns the found notifications for a certain mytoken
+func GetNotificationsForMT(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
+) (notifications []NotificationInfoWithClass, err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err = db.ParseError(tx.Select(&notifications, `CALL Notifications_GetForMT(?)`, mtID))
 			return errors.WithStack(err)
 		},
 	)

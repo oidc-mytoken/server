@@ -62,6 +62,7 @@ func sendEMail(mail *email.Email) error {
 	m := err.Error()
 	if strings.Contains(m, "broken pipe") {
 		// retry
+		time.Sleep(300 * time.Millisecond)
 		return errors.WithStack(mailPool.Send(mail, 10*time.Second))
 	}
 	return err
