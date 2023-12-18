@@ -21,10 +21,12 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/notificationsrepo/calendarrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/actions"
 	"github.com/oidc-mytoken/server/internal/endpoints/notification/calendar/pkg"
+	pkg4 "github.com/oidc-mytoken/server/internal/endpoints/notification/pkg"
 	pkg2 "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
 	pkg3 "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
@@ -34,7 +36,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
-	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
 
@@ -311,33 +312,24 @@ func HandleList(ctx *fiber.Ctx) error {
 }
 
 // HandleCalendarEntryViaMail creates a calendar entry for a mytoken and sends it via mail
-func HandleCalendarEntryViaMail(ctx *fiber.Ctx) error {
-	rlog := logger.GetRequestLogger(ctx)
+func HandleCalendarEntryViaMail(
+	ctx *fiber.Ctx, rlog logrus.Ext1FieldLogger, mt *mytoken.Mytoken,
+	req pkg4.SubscribeNotificationRequest,
+) error {
 	rlog.Debug("Handle calendar entry via mail request")
 
 	clientMetadata := ctxutils.ClientMetaData(ctx)
-	var umt universalmytoken.UniversalMytoken
-	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
-	if errRes != nil {
-		return errRes.Send(ctx)
-	}
-
-	var req pkg.AddMytokenToCalendarRequest
-	if err := errors.WithStack(ctx.BodyParser(&req)); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
-	}
-
 	id := mt.ID
 	momMode := req.MomID.Hash() != id.Hash()
 	if momMode {
 		id = req.MomID.MTID
-		if errRes = auth.RequireMytokenIsParentOrCapability(
+		if errRes := auth.RequireMytokenIsParentOrCapability(
 			rlog, nil, api.CapabilityTokeninfoNotify,
 			api.CapabilityNotifyAnyToken, mt, id, clientMetadata,
 		); errRes != nil {
 			return errRes.Send(ctx)
 		}
-		if errRes = auth.RequireMytokensForSameUser(rlog, nil, id, mt.ID); errRes != nil {
+		if errRes := auth.RequireMytokensForSameUser(rlog, nil, id, mt.ID); errRes != nil {
 			return errRes.Send(ctx)
 		}
 	}
@@ -418,7 +410,7 @@ func HandleCalendarEntryViaMail(ctx *fiber.Ctx) error {
 				Status: http.StatusNoContent,
 			}
 			tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
-				rlog, tx, umt.JWT, mt, *ctxutils.ClientMetaData(ctx), umt.OriginalTokenType,
+				rlog, tx, req.Mytoken.JWT, mt, *ctxutils.ClientMetaData(ctx), req.Mytoken.OriginalTokenType,
 			)
 			if err != nil {
 				res = model.ErrorToInternalServerErrorResponse(err)
@@ -448,9 +440,7 @@ func HandleAddMytoken(ctx *fiber.Ctx) error {
 	}
 
 	var req pkg.AddMytokenToCalendarRequest
-	fmt.Println(string(ctx.Body()))
 	if err := errors.WithStack(ctx.BodyParser(&req)); err != nil {
-		fmt.Println(errorfmt.Full(err))
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 

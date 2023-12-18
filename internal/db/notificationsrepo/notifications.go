@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/endpoints/notification/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
@@ -67,4 +68,71 @@ func GetNotificationsForMT(
 		},
 	)
 	return
+}
+
+// NewNotification stores a new notification in the database
+func NewNotification(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req pkg.SubscribeNotificationRequest,
+	mtID mtid.MOMID, managementCode, ws string,
+) error {
+	if req.UserWide {
+		return newUserWideNotification(rlog, tx, req, mtID, managementCode, ws)
+	}
+	return newMTNotification(rlog, tx, req, mtID, managementCode, ws)
+}
+
+func newUserWideNotification(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req pkg.SubscribeNotificationRequest,
+	mtID mtid.MOMID, managementCode, ws string,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			var nid uint64
+			if err := errors.WithStack(
+				tx.Get(
+					&nid, `CALL Notifications_CreateUserWide(?,?,?,?)`, mtID, req.NotificationType,
+					managementCode, db.NewNullString(ws),
+				),
+			); err != nil {
+				return err
+			}
+			return linkNotificationClasses(rlog, tx, nid, req.NotificationClasses)
+		},
+	)
+}
+
+func newMTNotification(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req pkg.SubscribeNotificationRequest,
+	mtID mtid.MOMID, managementCode, ws string,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			var nid uint64
+			if err := errors.WithStack(
+				tx.Get(
+					&nid, `CALL Notifications_CreateForMT(?,?,?,?)`, mtID, req.IncludeChildren, req.NotificationType,
+					managementCode, ws,
+				),
+			); err != nil {
+				return err
+			}
+			return linkNotificationClasses(rlog, tx, nid, req.NotificationClasses)
+		},
+	)
+}
+
+func linkNotificationClasses(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, nid uint64, classes []*api.NotificationClass,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			for _, nc := range classes {
+				_, err := tx.Exec(`CALL Notifications_LinkClass(?,?)`, nid, nc.Name)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+			}
+			return nil
+		},
+	)
 }

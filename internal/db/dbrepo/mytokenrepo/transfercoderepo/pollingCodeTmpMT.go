@@ -11,6 +11,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/shorttokenrepo"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
 	"github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
@@ -29,7 +30,7 @@ type TransferCodeStatus struct {
 
 // CheckTransferCode checks the passed polling code in the database
 func CheckTransferCode(rlog log.Ext1FieldLogger, tx *sqlx.Tx, pollingCode string) (TransferCodeStatus, error) {
-	pt := createProxyToken(pollingCode)
+	pt := shorttokenrepo.CreateProxyToken(pollingCode)
 	var p TransferCodeStatus
 	err := db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
@@ -52,7 +53,7 @@ func PopTokenForTransferCode(
 ) (
 	jwt string, err error,
 ) {
-	pt := createProxyToken(pollingCode)
+	pt := shorttokenrepo.CreateProxyToken(pollingCode)
 	var valid bool
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
@@ -69,7 +70,7 @@ func PopTokenForTransferCode(
 			return eventService.LogEvent(
 				rlog, tx, pkg.MTEvent{
 					Event:          api.EventTransferCodeUsed,
-					MTID:           pt.mtID,
+					MTID:           pt.MTID(),
 					ClientMetaData: clientMetadata,
 				},
 			)
@@ -80,7 +81,7 @@ func PopTokenForTransferCode(
 
 // LinkPollingCodeToMT links a pollingCode to a Mytoken
 func LinkPollingCodeToMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, pollingCode, jwt string, mID mtid.MTID) error {
-	pc := createProxyToken(pollingCode)
+	pc := shorttokenrepo.CreateProxyToken(pollingCode)
 	if err := pc.SetJWT(jwt, mID); err != nil {
 		return err
 	}
@@ -89,7 +90,7 @@ func LinkPollingCodeToMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, pollingCode, jwt
 
 // LinkPollingCodeToSSHKey links a pollingCode to an ssh public key
 func LinkPollingCodeToSSHKey(rlog log.Ext1FieldLogger, tx *sqlx.Tx, pollingCode, sshKeyHash string) error {
-	pc := createProxyToken(pollingCode)
+	pc := shorttokenrepo.CreateProxyToken(pollingCode)
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL TransferCodeAttributes_UpdateSSHKey(?,?)`, pc.ID(), sshKeyHash)
@@ -100,7 +101,7 @@ func LinkPollingCodeToSSHKey(rlog log.Ext1FieldLogger, tx *sqlx.Tx, pollingCode,
 
 // DeleteTransferCodeByState deletes a polling code
 func DeleteTransferCodeByState(rlog log.Ext1FieldLogger, tx *sqlx.Tx, state *state.State) error {
-	pc := createProxyToken(state.PollingCode(rlog))
+	pc := shorttokenrepo.CreateProxyToken(state.PollingCode(rlog))
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL ProxyTokens_Delete(?)`, pc.ID())
@@ -111,7 +112,7 @@ func DeleteTransferCodeByState(rlog log.Ext1FieldLogger, tx *sqlx.Tx, state *sta
 
 // DeclineConsentByState updates the polling code attribute after the consent has been declined
 func DeclineConsentByState(rlog log.Ext1FieldLogger, tx *sqlx.Tx, state *state.State) error {
-	pc := createProxyToken(state.PollingCode(rlog))
+	pc := shorttokenrepo.CreateProxyToken(state.PollingCode(rlog))
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL TransferCodeAttributes_DeclineConsent(?)`, pc.ID())

@@ -10,13 +10,14 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/shorttokenrepo"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
 // TransferCode is a type used to transfer a token
 type TransferCode struct {
-	proxyToken
+	shorttokenrepo.ProxyToken
 	Attributes transferCodeAttributes
 }
 
@@ -29,12 +30,12 @@ type transferCodeAttributes struct {
 
 // NewTransferCode creates a new TransferCode for the passed jwt
 func NewTransferCode(jwt string, mID mtid.MTID, newMT bool, responseType model.ResponseType) (*TransferCode, error) {
-	pt := newProxyToken(config.Get().Features.Polling.Len)
+	pt := shorttokenrepo.NewProxyToken(config.Get().Features.Polling.Len)
 	if err := pt.SetJWT(jwt, mID); err != nil {
 		return nil, err
 	}
 	transferCode := &TransferCode{
-		proxyToken: *pt,
+		ProxyToken: *pt,
 		Attributes: transferCodeAttributes{
 			NewMT:        db.BitBool(newMT),
 			ResponseType: responseType,
@@ -45,14 +46,14 @@ func NewTransferCode(jwt string, mID mtid.MTID, newMT bool, responseType model.R
 
 // ParseTransferCode creates a new transfer code from a transfer code string
 func ParseTransferCode(token string) *TransferCode {
-	return &TransferCode{proxyToken: *parseProxyToken(token)}
+	return &TransferCode{ProxyToken: *shorttokenrepo.ParseProxyToken(token)}
 }
 
 // CreatePollingCode creates a polling code
 func CreatePollingCode(pollingCode string, responseType model.ResponseType, maxTokenLen int) *TransferCode {
-	pt := createProxyToken(pollingCode)
+	pt := shorttokenrepo.CreateProxyToken(pollingCode)
 	return &TransferCode{
-		proxyToken: *pt,
+		ProxyToken: *pt,
 		Attributes: transferCodeAttributes{
 			NewMT:        true,
 			ResponseType: responseType,
@@ -66,12 +67,12 @@ func (tc TransferCode) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	rlog.Debug("Storing transfer code")
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			if err := tc.proxyToken.Store(rlog, tx); err != nil {
+			if err := tc.ProxyToken.Store(rlog, tx); err != nil {
 				return err
 			}
 			_, err := tx.Exec(
 				`CALL TransferCodeAttributes_Insert(?,?,?,?,?)`,
-				tc.id, config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewMT,
+				tc.ID(), config.Get().Features.Polling.PollingCodeExpiresAfter, tc.Attributes.NewMT,
 				tc.Attributes.ResponseType, tc.Attributes.MaxTokenLen,
 			)
 			return errors.WithStack(err)
@@ -85,7 +86,7 @@ func (tc TransferCode) GetRevokeJWT(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (bool
 	var revokeMT db.BitBool
 	err := db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			if err := tx.Get(&revokeMT, `CALL TransferCodeAttributes_GetRevokeJWT(?)`, tc.id); err != nil {
+			if err := tx.Get(&revokeMT, `CALL TransferCodeAttributes_GetRevokeJWT(?)`, tc.ID()); err != nil {
 				if errors.Is(err, sql.ErrNoRows) {
 					return nil
 				}

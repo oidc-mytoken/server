@@ -1,4 +1,4 @@
-package transfercoderepo
+package shorttokenrepo
 
 import (
 	"database/sql"
@@ -14,8 +14,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/hashutils"
 )
 
-// proxyToken holds information for proxy tokens, i.e. tokens that proxy another token, e.g. a short token
-type proxyToken struct {
+// ProxyToken holds information for proxy tokens, i.e. tokens that proxy another token, e.g. a short token
+type ProxyToken struct {
 	id    string
 	token string
 	mtID  mtid.MTID
@@ -24,43 +24,48 @@ type proxyToken struct {
 	decryptedJWT string
 }
 
-// newProxyToken creates a new proxyToken of the given length
-func newProxyToken(size int) *proxyToken {
+// NewProxyToken creates a new ProxyToken of the given length
+func NewProxyToken(size int) *ProxyToken {
 	token := utils.RandReadableAlphaString(size)
-	return createProxyToken(token)
+	return CreateProxyToken(token)
 }
 
-func createProxyToken(token string) *proxyToken {
+func CreateProxyToken(token string) *ProxyToken {
 	id := hashutils.SHA512Str([]byte(token))
-	return &proxyToken{
+	return &ProxyToken{
 		id:    id,
 		token: token,
 	}
 }
 
-// parseProxyToken parses the proxy token string into a proxyToken
-func parseProxyToken(token string) *proxyToken {
+// ParseProxyToken parses the proxy token string into a proxyToken
+func ParseProxyToken(token string) *ProxyToken {
 	var id string
 	if token != "" {
 		id = hashutils.SHA512Str([]byte(token))
 	}
-	return &proxyToken{
+	return &ProxyToken{
 		id:    id,
 		token: token,
 	}
 }
 
-func (pt proxyToken) String() string {
+func (pt ProxyToken) String() string {
 	return pt.Token()
 }
 
-// Token returns the token of this proxyToken
-func (pt proxyToken) Token() string {
+// Token returns the token of this ProxyToken
+func (pt ProxyToken) Token() string {
 	return pt.token
 }
 
+// MTID returns the mtid.MTID of this ProxyToken
+func (pt ProxyToken) MTID() mtid.MTID {
+	return pt.mtID
+}
+
 // ID returns the id of this token
-func (pt *proxyToken) ID() string {
+func (pt *ProxyToken) ID() string {
 	if pt.id == "" {
 		pt.id = hashutils.SHA512Str([]byte(pt.token))
 	}
@@ -68,7 +73,7 @@ func (pt *proxyToken) ID() string {
 }
 
 // SetJWT sets the jwt for this proxyToken
-func (pt *proxyToken) SetJWT(jwt string, mID mtid.MTID) (err error) {
+func (pt *ProxyToken) SetJWT(jwt string, mID mtid.MTID) (err error) {
 	pt.mtID = mID
 	pt.decryptedJWT = jwt
 	pt.encryptedJWT, err = cryptutils.AES256Encrypt(jwt, pt.token)
@@ -76,7 +81,7 @@ func (pt *proxyToken) SetJWT(jwt string, mID mtid.MTID) (err error) {
 }
 
 // JWT returns the decrypted jwt that is linked to this proxyToken
-func (pt *proxyToken) JWT(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (jwt string, valid bool, err error) {
+func (pt *ProxyToken) JWT(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (jwt string, valid bool, err error) {
 	jwt = pt.decryptedJWT
 	if jwt != "" {
 		valid = true
@@ -114,7 +119,7 @@ func (pt *proxyToken) JWT(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (jwt string, va
 }
 
 // Store stores the proxyToken
-func (pt proxyToken) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
+func (pt ProxyToken) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL ProxyTokens_Insert(?,?,?)`, pt.id, pt.encryptedJWT, pt.mtID)
@@ -124,7 +129,7 @@ func (pt proxyToken) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 }
 
 // Update updates the jwt of the proxyToken
-func (pt proxyToken) Update(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
+func (pt ProxyToken) Update(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL ProxyTokens_Update(?,?,?)`, pt.ID(), pt.encryptedJWT, pt.mtID)
@@ -135,7 +140,7 @@ func (pt proxyToken) Update(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 
 // Delete deletes the proxyToken from the database, it does not delete the linked Mytoken, the jwt should have been
 // retrieved earlier and the Mytoken if desired be revoked separately
-func (pt proxyToken) Delete(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
+func (pt ProxyToken) Delete(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL ProxyTokens_Delete(?)`, pt.id)

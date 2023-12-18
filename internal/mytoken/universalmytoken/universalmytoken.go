@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/shorttokenrepo"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils"
 )
@@ -50,7 +50,7 @@ func Parse(rlog log.Ext1FieldLogger, token string) (UniversalMytoken, error) {
 			OriginalTokenType: model.ResponseTypeToken,
 		}, nil
 	}
-	shortToken := transfercoderepo.ParseShortToken(token)
+	shortToken := shorttokenrepo.ParseShortToken(token)
 	jwt, valid, dbErr := shortToken.JWT(rlog, nil)
 	var validErr error
 	if !valid {

@@ -1,4 +1,4 @@
-package transfercoderepo
+package shorttokenrepo
 
 import (
 	"github.com/oidc-mytoken/server/internal/config"
@@ -7,22 +7,22 @@ import (
 
 // ShortToken holds database information of a short token
 type ShortToken struct {
-	proxyToken
+	ProxyToken
 }
 
 // NewShortToken creates a new short token from the given jwt of a normal Mytoken
 func NewShortToken(jwt string, mID mtid.MTID) (*ShortToken, error) {
-	pt := newProxyToken(config.Get().Features.ShortTokens.Len)
+	pt := NewProxyToken(config.Get().Features.ShortTokens.Len)
 	if err := pt.SetJWT(jwt, mID); err != nil {
 		return nil, err
 	}
 	shortToken := &ShortToken{
-		proxyToken: *pt,
+		ProxyToken: *pt,
 	}
 	return shortToken, nil
 }
 
 // ParseShortToken creates a new short token from a short token string
 func ParseShortToken(token string) *ShortToken {
-	return &ShortToken{proxyToken: *parseProxyToken(token)}
+	return &ShortToken{ProxyToken: *ParseProxyToken(token)}
 }

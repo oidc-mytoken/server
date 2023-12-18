@@ -15,6 +15,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/shorttokenrepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/jws"
@@ -184,7 +185,7 @@ func (mt *Mytoken) toMytokenResponse(jwt string) response.MytokenResponse {
 }
 
 func (mt *Mytoken) toShortMytokenResponse(rlog log.Ext1FieldLogger, jwt string) (response.MytokenResponse, error) {
-	shortToken, err := transfercoderepo.NewShortToken(jwt, mt.ID)
+	shortToken, err := shorttokenrepo.NewShortToken(jwt, mt.ID)
 	if err != nil {
 		return response.MytokenResponse{}, err
 	}

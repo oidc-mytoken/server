@@ -15,6 +15,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	helper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/shorttokenrepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
@@ -191,7 +192,7 @@ func revokeAnyToken(
 	} else if len(token) < api.MinShortTokenLen { // Transfer Code
 		return revokeTransferCode(rlog, tx, token, issuer)
 	} else { // Short Token
-		shortToken := transfercoderepo.ParseShortToken(token)
+		shortToken := shorttokenrepo.ParseShortToken(token)
 		var valid bool
 		if err := db.RunWithinTransaction(
 			rlog, tx, func(tx *sqlx.Tx) error {
