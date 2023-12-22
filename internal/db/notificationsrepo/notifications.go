@@ -110,7 +110,7 @@ func newMTNotification(
 			var nid uint64
 			if err := errors.WithStack(
 				tx.Get(
-					&nid, `CALL Notifications_CreateForMT(?,?,?,?)`, mtID, req.IncludeChildren, req.NotificationType,
+					&nid, `CALL Notifications_CreateForMT(?,?,?,?,?)`, mtID, req.IncludeChildren, req.NotificationType,
 					managementCode, ws,
 				),
 			); err != nil {

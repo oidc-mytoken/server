@@ -16,6 +16,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	pkg2 "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/endpoints/webentities"
 	"github.com/oidc-mytoken/server/internal/model/profiled"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcfed"
@@ -45,8 +46,8 @@ func handleConsent(ctx *fiber.Ctx, info *pkg2.OIDCFlowRequest, includeConsentCal
 		templating.MustacheKeyEmptyNavbar:         true,
 		templating.MustacheKeyRestrictionsGUI:     true,
 		templating.MustacheKeyCollapse:            templating.Collapsable{All: true},
-		templating.MustacheKeyRestrictions:        pkg.WebRestrictions{Restrictions: info.Restrictions.Restrictions},
-		templating.MustacheKeyCapabilities:        pkg.AllWebCapabilities(),
+		templating.MustacheKeyRestrictions:        webentities.WebRestrictions{Restrictions: info.Restrictions.Restrictions},
+		templating.MustacheKeyCapabilities:        webentities.AllWebCapabilities(),
 		templating.MustacheKeyCheckedCapabilities: c.Strings(),
 		templating.MustacheKeyIss:                 info.Issuer,
 

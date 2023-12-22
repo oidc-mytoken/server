@@ -481,3 +481,27 @@ $('#sent-calendar-add').on('click', function () {
         },
     });
 })
+
+$('#sent-create-mail-notification').on('click', function () {
+    let data = {
+        "mom_id": $notificationMOMID.val(),
+        "notification_type": "mail",
+        "notification_classes": getCheckedCapabilities("notifications-"),
+        "include_children": $('#notification-req-include-children').prop("checked")
+    };
+    data = JSON.stringify(data);
+    $.ajax({
+        type: "POST",
+        data: data,
+        dataType: "json",
+        contentType: "application/json",
+        url: storageGet('notifications_endpoint'),
+        success: function () {
+            $notificationsModal.modal("hide");
+        },
+        error: function (errRes) {
+            $errorModalMsg.text(getErrorMessage(errRes));
+            $errorModal.modal();
+        },
+    });
+})

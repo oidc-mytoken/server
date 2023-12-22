@@ -37,10 +37,12 @@ const (
 	MustacheKeyProfilesCapabilities = "capabilities"
 	MustacheKeyProfilesRestrictions = "restrictions"
 	MustacheKeyProfilesRotation     = "rotation"
+	MustacheKeyNotificationClasses  = "notification-classes"
 )
 
 // Keys for sub configs
 const (
-	MustacheSubTokeninfo = "tokeninfo"
-	MustacheSubCreateMT  = "create-mt"
+	MustacheSubTokeninfo     = "tokeninfo"
+	MustacheSubCreateMT      = "create-mt"
+	MustacheSubNotifications = "notifications"
 )

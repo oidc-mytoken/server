@@ -1,7 +1,8 @@
+{{#notifications}}
 <div class="modal fade" id="notifications-subscribe-modal" tabindex="-1" role="dialog"
      aria-labelledby="notifications-modal-title"
      aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+    <div class="modal-dialog modal-dialog-centered modal" role="document">
         <div class="modal-content bg-my_grey">
             <div class="modal-header">
                 <h5 class="modal-title" id="notifications-modal-title">Notifications</h5>
@@ -52,7 +53,7 @@
                         </p>
                         <textarea class="form-control" id="notify-entry-comment"></textarea>
 
-                        <button class="btn btn-primary" id="sent-entry">
+                        <button class="btn btn-primary mt-2" id="sent-entry">
                             <i class="fas fa-paper-plane"></i>
                             <i class="fas fa-calendar-alt"></i>
                             Sent
@@ -61,7 +62,34 @@
                 </div>
 
                 <div class="notify-email-content d-none">
-                    Not yet implemented.
+                    <div class="form-group">
+
+                        <div>
+                            <ul class="list-group bg-my_grey list-group-striped">
+                                {{#notification-classes}}
+                                    {{> capabilities-part}}
+                                {{/notification-classes}}
+                            </ul>
+                        </div>
+
+
+                        <div class="form-group">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input"
+                                       aria-describedby="{{prefix}}rotationATHelp"
+                                       id="notification-req-include-children" checked>
+                                <label class="custom-control-label" for="notification-req-include-children">Include
+                                    children</label>
+                            </div>
+                            <small class="form-text text-muted">If enabled, you will also receive notifications for all
+                                future children (and their children and so on).</small>
+                        </div>
+
+                        <button class="btn btn-primary mt-2" id="sent-create-mail-notification">
+                            <i class="fas fa-envelope"></i>
+                            Subscribe to email notifications
+                        </button>
+                    </div>
                 </div>
 
                 <div class="notify-calendar-content d-none">
@@ -78,7 +106,7 @@
                     </p>
                     <textarea class="form-control" id="notify-calendar-comment"></textarea>
 
-                    <button class="btn btn-primary" id="sent-calendar-add">
+                    <button class="btn btn-primary mt-2" id="sent-calendar-add">
                         <i class="fas fa-calendar-alt"></i>
                         Add to calendar
                     </button>
@@ -87,3 +115,4 @@
         </div>
     </div>
 </div>
+{{/notifications}}

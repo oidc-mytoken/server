@@ -1,4 +1,4 @@
-package pkg
+package webentities
 
 // Bootstrap text color classes
 const (

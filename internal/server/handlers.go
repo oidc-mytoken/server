@@ -16,7 +16,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/profilerepo"
 	configurationEndpoint "github.com/oidc-mytoken/server/internal/endpoints/configuration"
-	consent "github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
+	"github.com/oidc-mytoken/server/internal/endpoints/webentities"
 	"github.com/oidc-mytoken/server/internal/utils/cache"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/templating"
@@ -42,7 +42,7 @@ func homeBindingData() map[string]interface{} {
 		templating.MustacheKeyLoggedIn:        true,
 		templating.MustacheKeyRestrictionsGUI: true,
 		templating.MustacheKeyHome:            true,
-		templating.MustacheKeyCapabilities:    consent.AllWebCapabilities(),
+		templating.MustacheKeyCapabilities:    webentities.AllWebCapabilities(),
 		templating.MustacheSubTokeninfo: map[string]interface{}{
 			templating.MustacheKeyCollapse: templating.Collapsable{
 				CollapseRestr: true,
@@ -54,6 +54,10 @@ func homeBindingData() map[string]interface{} {
 			templating.MustacheKeyPrefix:             "createMT-",
 			templating.MustacheKeyCreateWithProfiles: true,
 			templating.MustacheKeyProfiles:           profilesBindingData(),
+		},
+		templating.MustacheSubNotifications: map[string]interface{}{
+			templating.MustacheKeyPrefix:              "notifications-",
+			templating.MustacheKeyNotificationClasses: webentities.AllWebNotificationClass(),
 		},
 		"providers": providers,
 	}
@@ -167,8 +171,8 @@ func handleSettings(ctx *fiber.Ctx) error {
 			partialName: "sites/settings-ssh",
 			bindingData: map[string]interface{}{
 				templating.MustacheKeyRestrictionsGUI: true,
-				templating.MustacheKeyRestrictions:    consent.WebRestrictions{},
-				templating.MustacheKeyCapabilities:    consent.AllWebCapabilities(),
+				templating.MustacheKeyRestrictions:    webentities.WebRestrictions{},
+				templating.MustacheKeyCapabilities:    webentities.AllWebCapabilities(),
 			},
 		},
 	}
@@ -185,8 +189,8 @@ func handleSettings(ctx *fiber.Ctx) error {
 		templating.MustacheKeySettings:        true,
 		templating.MustacheKeySettingsSSH:     true,
 		templating.MustacheKeyRestrictionsGUI: true,
-		templating.MustacheKeyRestrictions:    consent.WebRestrictions{},
-		templating.MustacheKeyCapabilities:    consent.AllWebCapabilities(),
+		templating.MustacheKeyRestrictions:    webentities.WebRestrictions{},
+		templating.MustacheKeyCapabilities:    webentities.AllWebCapabilities(),
 	}
 	return ctx.Render("sites/settings", binding, templating.LayoutMain)
 }
