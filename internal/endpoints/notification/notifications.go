@@ -8,7 +8,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/userrepo"
 	"github.com/oidc-mytoken/server/internal/db/notificationsrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/notification/calendar"
 	"github.com/oidc-mytoken/server/internal/endpoints/notification/pkg"
@@ -16,6 +19,7 @@ import (
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
+	notifier "github.com/oidc-mytoken/server/internal/notifier/client"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
@@ -59,8 +63,19 @@ func handleNewMailNotification(
 		rlog, func(tx *sqlx.Tx) error {
 			mtID := mtid.MOMID{MTID: mt.ID}
 			var usedRestriction *restrictions.Restriction
-			if req.MomID.Valid() {
+			welcomeData := map[string]any{
+				"management-url":       managementCode, //TODO
+				"token-name":           mt.Name,        // in case of momid req we will replace it later
+				"issuer-url":           config.Get().IssuerURL,
+				"notification_classes": req.NotificationClasses,
+			}
+			if req.MomID.HashValid() {
 				mtID = req.MomID
+				name, err := mytokenrepohelper.GetMTName(rlog, tx, mtID.MTID)
+				if err != nil {
+					return err
+				}
+				welcomeData["token-name"] = name.String
 				usedRestriction, res = auth.RequireCapabilityAndRestrictionOther(
 					rlog, nil, mt, ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyToken,
 				)
@@ -75,12 +90,23 @@ func handleNewMailNotification(
 					return errors.New("dummy")
 				}
 			}
-			if err := notificationsrepo.NewNotification(rlog, nil, req, mtID, managementCode, ""); err != nil {
+			if !req.UserWide {
+				welcomeData["mtid"] = mtID.Hash()
+			}
+			if err := notificationsrepo.NewNotification(rlog, tx, req, mtID, managementCode, ""); err != nil {
 				return err
 			}
 			if err := usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
 				return err
 			}
+			emailInfo, err := userrepo.GetMail(rlog, tx, mt.ID)
+			if err != nil {
+				return err
+			}
+			notifier.SendTemplateEmail(
+				emailInfo.Mail, "New Mytoken Notification Subscription",
+				emailInfo.PreferHTMLMail, "notification-welcome", welcomeData,
+			)
 			res = &model.Response{
 				Status:   fiber.StatusCreated,
 				Response: managementCode, //TODO
