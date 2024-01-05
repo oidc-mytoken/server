@@ -1,3 +1,9 @@
+include:
+  - 'https://codebase.helmholtz.cloud/m-team/tools/ci-voodoo/-/raw/master/ci-include/github-status-sync.yml'
+
+variables:
+  UPSTREAM_PROJECT: oidc-mytoken/server
+
 image: golang:1.19
 stages:
   - build
@@ -90,4 +96,3 @@ deploy-dev:
     - cp $DEPLOYMENT_SSH_KEY /root/.ssh/id_ed25519 && chmod 0600 /root/.ssh/id_ed25519
   script:
     - ssh mytoken-dev.vm.fedcloud.eu
-
