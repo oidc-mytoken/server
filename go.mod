@@ -7,7 +7,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.8.0
 	github.com/evanphx/json-patch/v5 v5.7.0
 	github.com/fatih/structs v1.1.0
-	github.com/gliderlabs/ssh v0.3.5
+	github.com/gliderlabs/ssh v0.3.6
 	github.com/go-resty/resty/v2 v2.11.0
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/gofiber/fiber/v2 v2.51.0
@@ -30,7 +30,7 @@ require (
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
 	github.com/valyala/fasthttp v1.51.0
 	github.com/zachmann/go-oidcfed v0.1.0
-	golang.org/x/crypto v0.16.0
+	golang.org/x/crypto v0.17.0
 	golang.org/x/mod v0.14.0
 	golang.org/x/oauth2 v0.15.0
 	golang.org/x/term v0.16.0
