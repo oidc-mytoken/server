@@ -55,6 +55,8 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 	addProfileEndpointRoutes(s, apiPaths)
 	if config.Get().Features.Notifications.AnyEnabled {
 		s.Post(apiPaths.NotificationEndpoint, notification.HandlePost)
+		s.Get(apiPaths.NotificationEndpoint, notification.HandleGet)
+		s.Get(utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code"), notification.HandleGetByManagementCode)
 		if config.Get().Features.Notifications.ICS.Enabled {
 			s.Get(apiPaths.CalendarEndpoint, calendar.HandleList)
 			s.Post(apiPaths.CalendarEndpoint, calendar.HandleAdd)

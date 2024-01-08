@@ -93,10 +93,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, req *response.AuthCodeFlowRequest) *model
 	req.Issuer = p.Issuer()
 	exp := req.Restrictions.GetExpires()
 	if exp > 0 && exp < unixtime.Now() {
-		return &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("token would already be expired"),
-		}
+		return model.BadRequestErrorResponse("token would already be expired")
 	}
 
 	oState, consentCode := state.CreateState()

@@ -46,10 +46,7 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 	if req.Token == "" {
 		req.Token = ctx.Cookies("mytoken")
 		if req.Token == "" {
-			return model.Response{
-				Status:   fiber.StatusBadRequest,
-				Response: model.BadRequestError("no token given"),
-			}.Send(ctx)
+			return model.BadRequestErrorResponse("no token given").Send(ctx)
 		}
 		if req.MOMID == "" {
 			clearCookie = true
@@ -221,10 +218,7 @@ func revokeMytoken(rlog log.Ext1FieldLogger, tx *sqlx.Tx, jwt, issuer string, re
 		return nil
 	}
 	if issuer != "" && mt.OIDCIssuer != issuer {
-		return &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("token not for specified issuer"),
-		}
+		return model.BadRequestErrorResponse("token not for specified issuer")
 	}
 	return mytoken.RevokeMytoken(rlog, tx, mt.ID, jwt, recursive, mt.OIDCIssuer)
 }

@@ -118,11 +118,11 @@ func SendNotificationsForSubClass(
 		return err
 	}
 	rlog.WithField("number_all_notifications", len(allNotifications)).Trace("found notifications for token")
-	var notifications []notificationsrepo.NotificationInfo
+	var notifications []api.NotificationInfoBase
 	for _, n := range allNotifications {
 		thisNC := api.NewNotificationClass(n.Class)
 		if thisNC.Contains(nc) {
-			notifications = append(notifications, n.NotificationInfo)
+			notifications = append(notifications, n.NotificationInfoBase)
 		}
 	}
 	rlog.WithField("number_filtered_notifications", len(notifications)).Trace("found notifications for token and class")
@@ -133,7 +133,8 @@ func SendNotificationsForSubClass(
 
 func sendNotificationsForNotificationInfos(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
-	notifications []notificationsrepo.NotificationInfo, notificationClassName string, clientData *api.ClientMetaData,
+	notifications []api.NotificationInfoBase, notificationClassName string,
+	clientData *api.ClientMetaData,
 	e *pkg2.MTEvent, additionalData model.KeyValues,
 ) error {
 	mailAlreadySent := false

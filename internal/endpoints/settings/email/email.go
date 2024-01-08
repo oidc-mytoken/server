@@ -68,10 +68,7 @@ func HandlePut(ctx *fiber.Ctx) error {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	if req.PreferHTMLMail == nil && req.EmailAddress == "" {
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("no request parameter given"),
-		}.Send(ctx)
+		return model.BadRequestErrorResponse("no request parameter given").Send(ctx)
 	}
 	var reqMytoken universalmytoken.UniversalMytoken
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &reqMytoken, ctx)

@@ -56,6 +56,14 @@ func NotFoundErrorResponse(msg string) *Response {
 	}
 }
 
+// BadRequestErrorResponse returns a error response for a not found error
+func BadRequestErrorResponse(msg string) *Response {
+	return &Response{
+		Status:   fiber.StatusBadRequest,
+		Response: BadRequestError(msg),
+	}
+}
+
 // ResponseNYI is the server response when something is not yet implemented
 var ResponseNYI = Response{
 	Status:   fiber.StatusNotImplemented,

@@ -108,10 +108,7 @@ func HandleAdd(ctx *fiber.Ctx) error {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	if calendarInfo.Name == "" {
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("required parameter 'name' is missing"),
-		}.Send(ctx)
+		return model.BadRequestErrorResponse("required parameter 'name' is missing").Send(ctx)
 	}
 
 	id := utils.RandASCIIString(32)
@@ -551,10 +548,7 @@ func eventForMytoken(
 				return err
 			}
 			if mt.ExpiresAt == 0 {
-				errRes = &model.Response{
-					Status:   fiber.StatusBadRequest,
-					Response: model.BadRequestError("cannot create an expiration event for non-expiring mytokens"),
-				}
+				errRes = model.BadRequestErrorResponse("cannot create an expiration event for non-expiring mytokens")
 				return nil
 			}
 			event = ics.NewEvent(id.Hash())

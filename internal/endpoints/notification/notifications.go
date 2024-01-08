@@ -16,14 +16,111 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/notification/calendar"
 	"github.com/oidc-mytoken/server/internal/endpoints/notification/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
+	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
+	pkg3 "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	notifier "github.com/oidc-mytoken/server/internal/notifier/client"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
+	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
+
+// HandleGetByManagementCode returns the api.NotificationInfo for the notification linked to a management code
+func HandleGetByManagementCode(ctx *fiber.Ctx) error {
+	rlog := logger.GetRequestLogger(ctx)
+	rlog.Debug("Handle notification get request for management code")
+	managementCode := ctx.Params("code")
+	if managementCode == "" {
+		return model.BadRequestErrorResponse("missing management_code").Send(ctx)
+	}
+
+	var res *model.Response
+	_ = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			info, err := notificationsrepo.GetNotificationForManagementCode(rlog, tx, managementCode)
+			if err != nil {
+				res = model.ErrorToInternalServerErrorResponse(err)
+				return err
+			}
+			if info == nil {
+				res = model.NotFoundErrorResponse("management_code not valid")
+				return errors.New("dummy")
+			}
+			res = &model.Response{
+				Status:   fiber.StatusOK,
+				Response: info,
+			}
+			return nil
+		},
+	)
+	return res.Send(ctx)
+}
+
+// HandleGet handles get requests and returns a list of all notifications for a user
+func HandleGet(ctx *fiber.Ctx) error {
+	rlog := logger.GetRequestLogger(ctx)
+	rlog.Debug("Handle notification get request")
+	var umt universalmytoken.UniversalMytoken
+	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
+	if errRes != nil {
+		return errRes.Send(ctx)
+	}
+	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
+		rlog, nil, mt,
+		ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyTokenRead,
+	)
+	if errRes != nil {
+		return errRes.Send(ctx)
+	}
+	var res *model.Response
+	_ = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			infos, err := notificationsrepo.GetNotificationsForUser(rlog, tx, mt.ID)
+			if err != nil {
+				res = model.ErrorToInternalServerErrorResponse(err)
+				return err
+			}
+			resData := pkg.NotificationsListResponse{
+				NotificationsListResponse: api.NotificationsListResponse{
+					Notifications: infos,
+				},
+			}
+			res = &model.Response{
+				Status:   fiber.StatusOK,
+				Response: resData,
+			}
+
+			tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
+				rlog, tx, umt.JWT, mt, *ctxutils.ClientMetaData(ctx), umt.OriginalTokenType,
+			)
+			if err != nil {
+				res = model.ErrorToInternalServerErrorResponse(err)
+				return err
+			}
+			if tokenUpdate != nil {
+				res.Cookies = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
+				resData.TokenUpdate = tokenUpdate
+				res.Response = resData
+			}
+			if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
+				return err
+			}
+			return eventService.LogEvent(
+				rlog, tx, pkg3.MTEvent{
+					Event:          api.EventNotificationListed,
+					MTID:           mt.ID,
+					ClientMetaData: *ctxutils.ClientMetaData(ctx),
+				},
+			)
+		},
+	)
+	return res.Send(ctx)
+}
 
 // HandlePost is the main entry function for handling notification creation requests
 func HandlePost(ctx *fiber.Ctx) error {
@@ -46,12 +143,8 @@ func HandlePost(ctx *fiber.Ctx) error {
 	case api.NotificationTypeWebsocket:
 		return model.ResponseNYI.Send(ctx)
 	default:
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("unknown notification_type"),
-		}.Send(ctx)
+		return model.BadRequestErrorResponse("unknown notification_type").Send(ctx)
 	}
-
 }
 
 func handleNewMailNotification(

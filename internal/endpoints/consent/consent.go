@@ -93,10 +93,7 @@ func HandleCreateConsent(ctx *fiber.Ctx) error {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	if req.Issuer == "" {
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("required parameter 'oidc_issuer' missing"),
-		}.Send(ctx)
+		return model.BadRequestErrorResponse("required parameter 'oidc_issuer' missing").Send(ctx)
 	}
 	rlog := logger.GetRequestLogger(ctx)
 	mt, _ := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
@@ -161,10 +158,7 @@ func handleConsentAccept(
 ) *model.Response {
 	for _, c := range req.Capabilities {
 		if !api.AllCapabilities.Has(c) {
-			return &model.Response{
-				Status:   fiber.StatusBadRequest,
-				Response: model.BadRequestError(fmt.Sprintf("unknown capability '%s'", c)),
-			}
+			return model.BadRequestErrorResponse(fmt.Sprintf("unknown capability '%s'", c))
 		}
 	}
 	p := provider2.GetProvider(req.Issuer)

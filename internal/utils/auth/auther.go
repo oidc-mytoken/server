@@ -111,10 +111,7 @@ func RequireMatchingIssuer(rlog log.Ext1FieldLogger, mtOIDCIssuer string, reques
 		rlog.Trace("Checked issuer (was not given)")
 	}
 	if *requestIssuer != mtOIDCIssuer {
-		return nil, &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("token not for specified issuer"),
-		}
+		return nil, model.BadRequestErrorResponse("token not for specified issuer")
 	}
 	provider := provider2.GetProvider(*requestIssuer)
 	if provider == nil {

@@ -64,10 +64,7 @@ func handleEditGrant(
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	if !req.GrantType.Valid() {
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("no valid 'grant_type' found"),
-		}.Send(ctx)
+		return model.BadRequestErrorResponse("no valid 'grant_type' found").Send(ctx)
 	}
 	rlog.Trace("Parsed grant type request")
 

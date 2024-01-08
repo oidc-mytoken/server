@@ -242,24 +242,15 @@ func createMytokenEntry(
 		}
 	}
 	if changed := req.Restrictions.EnforceMaxLifetime(parent.OIDCIssuer); changed && req.FailOnRestrictionsNotTighter {
-		return nil, &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("requested restrictions do not respect maximum mytoken lifetime"),
-		}
+		return nil, model.BadRequestErrorResponse("requested restrictions do not respect maximum mytoken lifetime")
 	}
 	r, ok := restrictions.Tighten(rlog, parent.Restrictions, req.Restrictions.Restrictions)
 	if !ok && req.FailOnRestrictionsNotTighter {
-		return nil, &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("requested restrictions are not subset of original restrictions"),
-		}
+		return nil, model.BadRequestErrorResponse("requested restrictions are not subset of original restrictions")
 	}
 	c := api.TightenCapabilities(parent.Capabilities, req.Capabilities.Capabilities)
 	if len(c) == 0 {
-		return nil, &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("mytoken to be issued cannot have any of the requested capabilities"),
-		}
+		return nil, model.BadRequestErrorResponse("mytoken to be issued cannot have any of the requested capabilities")
 	}
 	var rot *api.Rotation
 	if req.Rotation != nil {

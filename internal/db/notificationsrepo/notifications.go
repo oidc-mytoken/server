@@ -22,19 +22,14 @@ func ExpandNotificationsToChildrenIfApplicable(rlog log.Ext1FieldLogger, tx *sql
 	)
 }
 
-// NotificationInfo is a type for holding information about a notification
-type NotificationInfo struct {
-	NotificationID uint64        `db:"id"`
-	Type           string        `db:"type"`
-	ManagementCode string        `db:"management_code"`
-	WebSocketPath  db.NullString `db:"ws"`
-	UserWide       bool          `db:"user_wide"`
-}
-
-// NotificationInfo is a type for holding information about a notification including class
-type NotificationInfoWithClass struct {
-	NotificationInfo
+// notificationInfoBaseWithClass is a type for holding information about a notification including class
+type notificationInfoBaseWithClass struct {
+	notificationInfoBase
 	Class string `db:"class"`
+}
+type notificationInfoBase struct {
+	api.NotificationInfoBase
+	WebSocketPath db.NullString `db:"ws" json:"ws,omitempty"`
 }
 
 // GetNotificationsForMTAndClass checks for and returns the found notifications for a certain mytoken and
@@ -42,16 +37,24 @@ type NotificationInfoWithClass struct {
 func GetNotificationsForMTAndClass(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
 	class api.NotificationClass,
-) (notifications []NotificationInfo, err error) {
+) (notifications []api.NotificationInfoBase, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
+			var dbNotifications []notificationInfoBase
 			_, err = db.ParseError(
 				tx.Select(
-					&notifications, `CALL Notifications_GetForMTAndClass(?,?)`, mtID,
+					&dbNotifications, `CALL Notifications_GetForMTAndClass(?,?)`, mtID,
 					class.Name,
 				),
 			)
-			return errors.WithStack(err)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			for _, n := range dbNotifications {
+				n.NotificationInfoBase.WebSocketPath = n.WebSocketPath.String
+				notifications = append(notifications, n.NotificationInfoBase)
+			}
+			return nil
 		},
 	)
 	return
@@ -60,11 +63,92 @@ func GetNotificationsForMTAndClass(
 // GetNotificationsForMT checks for and returns the found notifications for a certain mytoken
 func GetNotificationsForMT(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
-) (notifications []NotificationInfoWithClass, err error) {
+) (notifications []notificationInfoBaseWithClass, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err = db.ParseError(tx.Select(&notifications, `CALL Notifications_GetForMT(?)`, mtID))
 			return errors.WithStack(err)
+		},
+	)
+	return
+}
+
+// GetNotificationsForUser returns all found notifications for a user
+func GetNotificationsForUser(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
+) (notifications []api.NotificationInfo, err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			var withClass []notificationInfoBaseWithClass
+			_, err = db.ParseError(tx.Select(&withClass, `CALL Notifications_GetForUser(?)`, mtID))
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			notificationMap := make(map[uint64]api.NotificationInfo)
+			for _, n := range withClass {
+				nie, ok := notificationMap[n.NotificationID]
+				if ok {
+					nie.Classes = append(nie.Classes, api.NewNotificationClass(n.Class))
+				} else {
+					n.NotificationInfoBase.WebSocketPath = n.WebSocketPath.String
+					nie = api.NotificationInfo{
+						NotificationInfoBase: n.NotificationInfoBase,
+						Classes:              []*api.NotificationClass{api.NewNotificationClass(n.Class)},
+					}
+					if !n.UserWide {
+						if err = tx.Select(
+							&nie.SubscribedTokens, `CALL Notifications_GetMTsForNotification(?)`,
+							n.NotificationID,
+						); err != nil {
+							return err
+						}
+					}
+				}
+				notificationMap[nie.NotificationID] = nie
+			}
+			for _, n := range notificationMap {
+				notifications = append(notifications, n)
+			}
+			return nil
+		},
+	)
+	return
+}
+
+// GetNotificationForManagementCode returns the notification for a management code
+func GetNotificationForManagementCode(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, managementCode string,
+) (info *api.NotificationInfo, err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			var withClass []notificationInfoBaseWithClass
+			found, err := db.ParseError(
+				tx.Select(
+					&withClass, `CALL Notifications_GetForManagementCode(?)`,
+					managementCode,
+				),
+			)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			if !found || len(withClass) == 0 {
+				info = nil
+				return nil
+			}
+			// we can have multiple entries for the different classes, but they will all be for the same notification id
+			info = &api.NotificationInfo{NotificationInfoBase: withClass[0].NotificationInfoBase}
+			for _, n := range withClass {
+				info.Classes = append(info.Classes, api.NewNotificationClass(n.Class))
+			}
+			if !info.UserWide {
+				if err = tx.Select(
+					&info.SubscribedTokens, `CALL Notifications_GetMTsForNotification(?)`,
+					info.NotificationID,
+				); err != nil {
+					return err
+				}
+			}
+			return nil
 		},
 	)
 	return
@@ -111,7 +195,7 @@ func newMTNotification(
 			if err := errors.WithStack(
 				tx.Get(
 					&nid, `CALL Notifications_CreateForMT(?,?,?,?,?)`, mtID, req.IncludeChildren, req.NotificationType,
-					managementCode, ws,
+					managementCode, db.NewNullString(ws),
 				),
 			); err != nil {
 				return err

@@ -37,10 +37,7 @@ func HandleTokenInfo(ctx *fiber.Ctx) error {
 	case model.TokeninfoActionListMytokens:
 		return HandleTokenInfoList(rlog, nil, &req, mt, clientMetadata).Send(ctx)
 	default:
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError(fmt.Sprintf("unknown action '%s'", req.Action.String())),
-		}.Send(ctx)
+		return model.BadRequestErrorResponse(fmt.Sprintf("unknown action '%s'", req.Action.String())).Send(ctx)
 	}
 }
 

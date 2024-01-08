@@ -20,10 +20,7 @@ func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
 	var req pkg.CreateTransferCodeRequest
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError(errorfmt.Error(err)),
-		}.Send(ctx)
+		return model.BadRequestErrorResponse(errorfmt.Error(err)).Send(ctx)
 	}
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
 	if errRes != nil {

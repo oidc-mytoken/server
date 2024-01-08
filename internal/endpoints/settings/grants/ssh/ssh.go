@@ -71,17 +71,11 @@ func HandleDeleteSSHKey(ctx *fiber.Ctx) error {
 	rlog.Trace("Parsed delete ssh key request")
 	if req.SSHKeyFingerprint == "" {
 		if req.SSHKey == "" {
-			return model.Response{
-				Status:   fiber.StatusBadRequest,
-				Response: model.BadRequestError("One of the required parameters 'ssh_key' or 'ssh_key_hash' must be given"),
-			}.Send(ctx)
+			return model.BadRequestErrorResponse("One of the required parameters 'ssh_key' or 'ssh_key_hash' must be given").Send(ctx)
 		}
 		sshKey, _, _, _, err := gossh.ParseAuthorizedKey([]byte(req.SSHKey))
 		if err != nil {
-			return model.Response{
-				Status:   fiber.StatusBadRequest,
-				Response: model.BadRequestError("could not parse ssh public key"),
-			}.Send(ctx)
+			return model.BadRequestErrorResponse("could not parse ssh public key").Send(ctx)
 		}
 		req.SSHKeyFingerprint = gossh.FingerprintSHA256(sshKey)
 	}
@@ -129,17 +123,11 @@ func handleAddSSHKey(ctx *fiber.Ctx) error {
 	}
 	rlog.Trace("Parsed add ssh key request")
 	if req.SSHKey == "" {
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("required parameter 'ssh_key' is missing"),
-		}.Send(ctx)
+		return model.BadRequestErrorResponse("required parameter 'ssh_key' is missing").Send(ctx)
 	}
 	sshKey, _, _, _, err := gossh.ParseAuthorizedKey([]byte(req.SSHKey))
 	if err != nil {
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("could not parse ssh public key"),
-		}.Send(ctx)
+		return model.BadRequestErrorResponse("could not parse ssh public key").Send(ctx)
 	}
 	sshKeyFP := gossh.FingerprintSHA256(sshKey)
 	if len(req.Capabilities) == 0 {
