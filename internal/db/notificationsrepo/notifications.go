@@ -220,3 +220,60 @@ func linkNotificationClasses(
 		},
 	)
 }
+
+// AddTokenToNotification subscribes an additional token (and possibly its children) to a notification
+func AddTokenToNotification(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, notificationID uint64, mtID mtid.MOMID, includeChildren bool,
+) (err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			if includeChildren {
+				_, err = tx.Exec(`CALL Notifications_LinkMTWithChildren(?,?)`, mtID, notificationID)
+			} else {
+				_, err = tx.Exec(`CALL Notifications_LinkMT(?,?,?)`, mtID, notificationID, 0)
+			}
+			return errors.WithStack(err)
+
+		},
+	)
+	return
+}
+
+// RemoveTokenFromNotification unsubscribes a token (and possibly its children) from a notification
+func RemoveTokenFromNotification(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, notificationID uint64, mtID mtid.MOMID,
+) (err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err = tx.Exec(`CALL Notifications_UnlinkMT(?,?)`, mtID, notificationID)
+			return errors.WithStack(err)
+		},
+	)
+	return
+}
+
+// UpdateNotificationClasses updates the notification classes for a notification
+func UpdateNotificationClasses(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, notificationID uint64, newClasses []*api.NotificationClass,
+) (err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err = tx.Exec(`CALL Notifications_ClearNotificationClasses(?)`, notificationID)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			return linkNotificationClasses(rlog, tx, notificationID, newClasses)
+		},
+	)
+	return
+}
+
+// Delete deletes the notification for a managementCode
+func Delete(rlog log.Ext1FieldLogger, tx *sqlx.Tx, managementCode string) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Notifications_DeleteByManagementCode(?)`, managementCode)
+			return errors.WithStack(err)
+		},
+	)
+}

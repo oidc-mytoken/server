@@ -57,6 +57,25 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 		s.Post(apiPaths.NotificationEndpoint, notification.HandlePost)
 		s.Get(apiPaths.NotificationEndpoint, notification.HandleGet)
 		s.Get(utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code"), notification.HandleGetByManagementCode)
+		s.Delete(
+			utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code"), notification.HandleDeleteByManagementCode,
+		)
+		s.Post(
+			utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code", "nc"),
+			notification.HandleNotificationUpdateClasses,
+		)
+		s.Put(
+			utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code", "nc"),
+			notification.HandleNotificationUpdateClasses,
+		)
+		s.Post(
+			utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code", "token"),
+			notification.HandleNotificationAddToken,
+		)
+		s.Delete(
+			utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code", "token"),
+			notification.HandleNotificationRemoveToken,
+		)
 		if config.Get().Features.Notifications.ICS.Enabled {
 			s.Get(apiPaths.CalendarEndpoint, calendar.HandleList)
 			s.Post(apiPaths.CalendarEndpoint, calendar.HandleAdd)

@@ -20,3 +20,17 @@ type NotificationsListResponse struct {
 	api.NotificationsListResponse
 	TokenUpdate *pkg.MytokenResponse `json:"token_update,omitempty"`
 }
+
+// NotificationAddTokenRequest is a request object for adding a mytoken to an existing notification
+type NotificationAddTokenRequest struct {
+	api.NotificationAddTokenRequest
+	Mytoken universalmytoken.UniversalMytoken `json:"mytoken" xml:"mytoken" form:"mytoken"`
+	MomID   mtid.MOMID                        `json:"mom_id" xml:"mom_id" form:"mom_id"`
+}
+
+// NotificationRemoveTokenRequest is a request object for removing a mytoken from a notification
+type NotificationRemoveTokenRequest struct {
+	api.NotificationRemoveTokenRequest
+	Mytoken universalmytoken.UniversalMytoken `json:"mytoken" xml:"mytoken" form:"mytoken"`
+	MomID   mtid.MOMID                        `json:"mom_id" xml:"mom_id" form:"mom_id"`
+}
