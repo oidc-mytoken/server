@@ -60,7 +60,9 @@
             Read{{/read-only}}{{^read-only}}Write{{/read-only}} restrictions as JSON</small>
         <textarea class="form-control any-restr-input" id="{{prefix}}restrictionsArea" autocomplete="off" cols=50
                   rows=20
-                  onkeyup="updateRestrFromJSONEditor('{{prefix}}')" {{#read-only}}disabled{{/read-only}}></textarea>
+                  onkeyup="updateRestrFromJSONEditor('{{prefix}}')"
+                  onauxclick="triggerUpdateRestrFromJSONEditorAuxclick(event, '{{prefix}}')"
+                  {{#read-only}}disabled{{/read-only}}></textarea>
     </div>
 </div>
 
