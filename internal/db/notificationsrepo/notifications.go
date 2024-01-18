@@ -85,11 +85,13 @@ func GetNotificationsForUser(
 				return errors.WithStack(err)
 			}
 			notificationMap := make(map[uint64]api.NotificationInfo)
+			var ids []uint64
 			for _, n := range withClass {
 				nie, ok := notificationMap[n.NotificationID]
 				if ok {
 					nie.Classes = append(nie.Classes, api.NewNotificationClass(n.Class))
 				} else {
+					ids = append(ids, n.NotificationID)
 					n.NotificationInfoBase.WebSocketPath = n.WebSocketPath.String
 					nie = api.NotificationInfo{
 						NotificationInfoBase: n.NotificationInfoBase,
@@ -106,8 +108,8 @@ func GetNotificationsForUser(
 				}
 				notificationMap[nie.NotificationID] = nie
 			}
-			for _, n := range notificationMap {
-				notifications = append(notifications, n)
+			for _, id := range ids {
+				notifications = append(notifications, notificationMap[id])
 			}
 			return nil
 		},

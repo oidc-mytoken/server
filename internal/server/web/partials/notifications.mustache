@@ -1,0 +1,18 @@
+{{#notifications}}
+    <h4>Notifications</h4>
+    <p>
+        Settings related to notifications can be changed under <a href="/settings#notifications">Settings</a>.
+    </p>
+
+    <button class="btn btn-reload" id="notifications-reload" data-toggle="tooltip" data-placement="bottom"
+            title="Reload data">
+        <i class="fas fa-sync"></i>
+    </button>
+    <button class="btn btn-copy copier d-none" id="list-copy" data-toggle="tooltip" data-placement="bottom"
+            title="Copy to clipboard" data-clipboard-target="#notifications-msg">
+        <i class="far fa-copy"></i>
+    </button>
+    <p class="card-text" id="notifications-msg"></p>
+
+    {{>notification-modify}}
+{{/notifications}}

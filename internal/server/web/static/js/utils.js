@@ -14,6 +14,19 @@ $.fn.serializeObject = function () {
     return o;
 };
 
+Object.defineProperty(Array.prototype, "includesPrefix", {
+    value: function (prefix) {
+        let found = false;
+        this.forEach(function (v) {
+            if (v.startsWith(prefix)) {
+                found = true
+                return found;
+            }
+        });
+        return found;
+    }
+})
+
 $.fn.showB = function () {
     this.removeClass('d-none');
 }

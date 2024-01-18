@@ -58,6 +58,9 @@ func homeBindingData() map[string]interface{} {
 		templating.MustacheSubNotifications: map[string]interface{}{
 			templating.MustacheKeyPrefix:              "notifications-",
 			templating.MustacheKeyNotificationClasses: webentities.AllWebNotificationClass(),
+			"modify": map[string]any{
+				templating.MustacheKeyPrefix: "notifications-modify-",
+			},
 		},
 		"providers": providers,
 	}

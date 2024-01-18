@@ -29,6 +29,12 @@
                        aria-controls="list-mts" aria-selected="false">My Mytokens</a>
                 </li>
             {{/logged-in}}
+            {{#logged-in}}
+                <li class="nav-item">
+                    <a class="nav-link" id="notifications-tab" data-toggle="tab" href="#notifications" role="tab"
+                       aria-controls="notifications" aria-selected="false">Notifications</a>
+                </li>
+            {{/logged-in}}
         </ul>
     </div>
     <div class="card-body tab-content">
@@ -56,11 +62,18 @@
                 {{> list-mts}}
             </div>
         {{/logged-in}}
+        {{#logged-in}}
+            <div class="tab-pane" id="notifications" role="tabpanel" aria-labelledby="notifications-tab">
+                {{> notifications}}
+            </div>
+        {{/logged-in}}
     </div>
 </div>
 
 
 {{>revocation-modal}}
+{{>history-modal}}
+{{> error-message }}
 
 {{^logged-in}}
     <script>

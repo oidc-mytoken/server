@@ -109,7 +109,7 @@ function historyToHTML(events) {
             '<td>' + event['ip'] + '</td>' +
             '<td class="text-center" style="white-space: nowrap;">' + agentIcons + '</td>' +
             '</tr>';
-        tableEntries.unshift(entry);
+        tableEntries.push(entry);
     });
     return '<table class="table table-hover table-grey">' +
         '<thead><tr>' +
@@ -153,7 +153,7 @@ function _tokenTreeToHTML(tree, deleteClass, depth, parentID = 0) {
             ' notifications' : 'Sign in to subscribe to notifications.'}"`;
     }
     notificationsBtn += `><i class="fas fa-bell"></i></butoton>`;
-    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" class="${depth > 0 ? 'd-none' : ''} ${isExpired ? 'text-muted' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td>${historyBtn}${notificationsBtn}${deleteBtn}</td></tr>` + tableEntries;
+    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" mom-id="${token['mom_id']}" class="${depth > 0 ? 'd-none' : ''} ${isExpired ? 'text-muted' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td>${historyBtn}${notificationsBtn}${deleteBtn}</td></tr>` + tableEntries;
     return tableEntries
 }
 
@@ -270,9 +270,12 @@ function _getListTokenInfo(token) {
         }, token);
 }
 
+let loadedTokenList = false;
+
 function getListTokenInfo(e) {
     e.preventDefault();
     _getListTokenInfo();
+    loadedTokenList = true;
     return false;
 }
 

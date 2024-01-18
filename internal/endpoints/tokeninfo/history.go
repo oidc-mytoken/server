@@ -116,6 +116,7 @@ func HandleTokenInfoHistory(
 ) model.Response {
 	// If we call this function it means the token is valid.
 
+	rlog.Debug("Handle tokeninfo history request")
 	if len(req.MOMIDs) == 0 {
 		if errRes := auth.RequireCapability(
 			rlog, tx, api.CapabilityTokeninfoHistory, mt, clientMetadata,
