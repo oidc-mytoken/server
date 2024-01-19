@@ -1,5 +1,5 @@
 {{#modify}}
-    <div>
+    <div class="d-none" id="notifications-modify">
         <input id="management-code" type="hidden">
 
         <div class="alert border">
@@ -9,9 +9,12 @@
                     {{> capabilities-part}}
                 {{/notification-classes}}
             </ul>
+            <button role="button" class="btn btn-primary" id="btn-save-notification-classes"><i class="fas fa-save"></i>
+            </button>
         </div>
 
         <div class="alert border">
+            <div id="subscribed-tokens-details">
             <h5>Subscribed Tokens</h5>
             <table class="table table-hover table-grey">
                 <thead>
@@ -26,8 +29,12 @@
                 <tbody id="notifications-tokens-table">
                 </tbody>
             </table>
+            </div>
+            <div id="subscribed-tokens-details-user-wide" class="d-none">
+                <h5>User Wide Notification</h5>
+                <p>This notification is user-wide and applies to all mytokens.</p>
+            </div>
         </div>
 
-        <button role="button" class="btn btn-primary" id="btn-save-notification"><i class="fas fa-save"></i></button>
     </div>
 {{/modify}}

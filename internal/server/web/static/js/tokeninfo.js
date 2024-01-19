@@ -254,7 +254,7 @@ function _getSubtokensInfo() {
 const listMsg = $('#list-msg');
 const listCopy = $('#list-copy');
 
-function _getListTokenInfo(token) {
+function _getListTokenInfo(token, ...next) {
     tokeninfoEndpointToUse = storageGet("tokeninfo_endpoint");
     _tokeninfo('list_mytokens',
         function (infoRes) {
@@ -262,6 +262,7 @@ function _getListTokenInfo(token) {
             activateTokenList();
             listMsg.removeClass('text-danger');
             listCopy.addClass('d-none');
+            doNext(...next);
         },
         function (errRes) {
             listMsg.text(getErrorMessage(errRes));

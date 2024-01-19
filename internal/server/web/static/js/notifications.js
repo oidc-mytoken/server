@@ -73,6 +73,7 @@ function notificationsToTable(notifications) {
         if (!n["user_wide"]) {
             tokens = `<span class="badge badge-pill badge-primary">${n["subscribed_tokens"].length}</span>`;
         }
+        let management_code = n["management_code"];
         let notification_classes_icons = getNotificationClassIcon(n, "AT_creations") +
             getNotificationClassIcon(n, "subtoken_creations") +
             getNotificationClassIcon(n, "setting_changes") +
@@ -81,7 +82,8 @@ function notificationsToTable(notifications) {
         let notification_classes_html = `<span data-toggle="tooltip"
               data-placement="bottom" title=""
               data-original-title="${notification_classes_str}">${notification_classes_icons}</span>`
-        tableEntries += `<tr management-code="${n["management_code"]}"><td>${typeIcon}</td><td>${notification_classes_html}</td><td>${tokens}</td></tr>`;
+        tableEntries += `<tr management-code="${management_code}" role="button" onclick="toggleSubscriptionDetails('${management_code}')"><td>${typeIcon}</td><td>${notification_classes_html}</td><td>${tokens}</td></tr>`;
+        tableEntries += `<tr><td colspan="4" management-code="${management_code}" class="notification-details-container d-none pl-5"></td></tr>`
     });
     if (tableEntries === "") {
         tableEntries = `<tr><td colSpan="4" class="text-muted text-center">No notifications created yet</td></tr>`;
@@ -100,12 +102,35 @@ function notificationsToTable(notifications) {
 
 const $managementCodeInput = $('#management-code');
 const $notificationsTokenTable = $('#notifications-tokens-table');
+const $notificationsModifyDiv = $('#notifications-modify');
+const $notificationSubscribedTokensDetails = $('#subscribed-tokens-details');
+const $notificationSubscribedTokensDetailsUserWide = $('#subscribed-tokens-details-user-wide');
+
+function toggleSubscriptionDetails(managementCode) {
+    let $container = $(`td.notification-details-container[management-code="${managementCode}"`);
+    let washidden = $container.hasClass("d-none");
+    $('td.notification-details-container').hideB();
+    if (!washidden) {
+        return;
+    }
+    fillModifyNotification(managementCode);
+    $container.append($notificationsModifyDiv);
+    $notificationsModifyDiv.showB();
+    $container.showB();
+}
 
 function fillModifyNotification(managementCode) {
-    if (!loadedTokenList) {
-        _getListTokenInfo();
-        loadedTokenList = true;
+    if (loadedTokenList) {
+        _fillModifyNotification(managementCode);
+        return;
     }
+    _getListTokenInfo(undefined, function () {
+        loadedTokenList = true;
+        _fillModifyNotification(managementCode);
+    });
+}
+
+function _fillModifyNotification(managementCode) {
     $managementCodeInput.val(managementCode);
     $notificationsTokenTable.html("");
     let n = notificationsMap[managementCode];
@@ -113,11 +138,46 @@ function fillModifyNotification(managementCode) {
     n["notification_classes"].forEach(function (nc) {
         checkCapability(nc, "notifications-modify-");
     });
-    n["subscribed_tokens"].forEach(function (momid) {
-        let $tokenListingTr = $(`tr[mom-id="${momid}"]`).clone();
-        $tokenListingTr.attr("id", "");
-        $tokenListingTr.find('i.fa-bell').parent().remove();
-        $tokenListingTr.find('i.fa-trash').parent().remove();
-        $notificationsTokenTable.append($tokenListingTr);
-    });
+    let tokens = n["subscribed_tokens"];
+    if (tokens === undefined) {
+        $notificationSubscribedTokensDetailsUserWide.showB();
+        $notificationSubscribedTokensDetails.hideB();
+    } else {
+        tokens.forEach(function (momid) {
+            copyTokenTr($(`tr[mom-id="${momid}"]`).clone(true), false, tokens);
+        });
+        $notificationSubscribedTokensDetailsUserWide.hideB();
+        $notificationSubscribedTokensDetails.showB();
+    }
+}
+
+function copyTokenTr($tr, force, tokens) {
+    let old_id = $tr.attr("id");
+    let new_id = 'notifications-' + old_id;
+    $tr.attr("id", new_id);
+    let old_parent = $tr.attr("parent-id");
+    if (old_parent !== undefined && old_parent !== null && old_parent !== "" && old_parent !== "0") {
+        let parent_momid = $('#' + old_parent).attr("mom-id");
+        if (!force && tokens.includes(parent_momid)) {
+            // if we are a child of a token that is also in the list of subscribed tokens we don't add the tr here,
+            // it will be added later or was already added
+            // Reasoning for this overly-complicated approach is to ensure that we have a correct order in the table,
+            // i.e. childs are actually under the parent
+            return;
+        }
+    }
+    $tr.find('i.fa-bell').parent().remove();
+    $tr.find('i.fa-trash').parent().remove();
+    $notificationsTokenTable.append($tr);
+    let $childs = $(`tr[parent-id="${old_id}"`);
+    $childs.each(function () {
+        if (!tokens.includes($(this).attr("mom-id"))) {
+            // only add childs that are also subscribed
+            return;
+        }
+        let $child = $(this).clone(true);
+        $child.attr("parent-id", new_id);
+        copyTokenTr($child, true, tokens);
+    })
+
 }
