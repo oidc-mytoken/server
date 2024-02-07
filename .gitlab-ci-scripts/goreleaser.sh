@@ -6,5 +6,5 @@ GORELEASER_CONFIG=".goreleaser.yml"
 if [ -n "$CI_COMMIT_TAG" ] && echo "$CI_COMMIT_TAG" | grep -qv '~'; then
 GORELEASER_CONFIG=".goreleaser-release.yml"
 fi
-goreleaser release -f $GORELEASER_CONFIG --release-notes /tmp/shared/release.md
+goreleaser release -f $GORELEASER_CONFIG --release-notes ../shared/release.md
 ls -l results
