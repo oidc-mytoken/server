@@ -81,16 +81,16 @@ prerelease:
     DOCKER_REGISTRY: https://index.docker.io/v1/
     GODIR: /go/src/github.com/oidc-mytoken/server
   script:
-    - docker run --rm --privileged \
-      -v $PWD:/$GODIR \
+    - docker run --rm --privileged
+      -v $PWD:/$GODIR
       -w $GODIR
-      -v "${PWD}/../shared":/tmp/shared \
-      -v /var/run/docker.sock:/var/run/docker.sock \
-      -e DOCKER_USERNAME \
-      -e DOCKER_PASSWORD \
-      -e DOCKER_REGISTRY \
-      -e GITHUB_TOKEN \
-      --entry-point=.gitlab-ci-scripts/release.sh  \
+      -v "${PWD}/../shared":/tmp/shared
+      -v /var/run/docker.sock:/var/run/docker.sock
+      -e DOCKER_USERNAME
+      -e DOCKER_PASSWORD
+      -e DOCKER_REGISTRY
+      -e GITHUB_TOKEN
+      --entrypoint=.gitlab-ci-scripts/release.sh
       goreleaser/goreleaser
 
 deploy-dev:
