@@ -65,6 +65,7 @@ prerelease:
   stage: release
   image:
     name: goreleaser/goreleaser
+    entrypoint: [ "" ]
   #  services:
   #    - docker:dind
   only:
