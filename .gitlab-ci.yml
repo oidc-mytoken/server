@@ -65,7 +65,6 @@ prerelease:
   stage: release
   image:
     name: docker:stable
-    entrypoint: [ "" ]
   services:
     - docker:dind
   only:
