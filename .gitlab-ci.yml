@@ -66,8 +66,8 @@ prerelease:
   image:
     name: goreleaser/goreleaser
     entrypoint: [ "" ]
-    services:
-      - docker:dind
+  services:
+    - docker:dind
   only:
     refs:
       - tags
