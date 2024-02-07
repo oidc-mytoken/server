@@ -79,8 +79,7 @@ prerelease:
     GIT_DEPTH: 0
     REPO_HOST: repo.data.kit.edu
     REPO_USER: cicd
-  before_script:
-    - docker login
+    DOCKER_REGISTRY: https://index.docker.io/v1/
   script:
     - |
       set -e
