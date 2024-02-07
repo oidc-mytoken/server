@@ -90,7 +90,7 @@ prerelease:
       -e DOCKER_PASSWORD
       -e DOCKER_REGISTRY
       -e GITHUB_TOKEN
-      --entrypoint=.gitlab-ci-scripts/release.sh
+      --entrypoint=$GODIR/.gitlab-ci-scripts/release.sh
       goreleaser/goreleaser
 
 deploy-dev:
