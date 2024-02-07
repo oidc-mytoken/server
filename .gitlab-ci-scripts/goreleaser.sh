@@ -7,6 +7,7 @@ if [ -n "$CI_COMMIT_TAG" ] && echo "$CI_COMMIT_TAG" | grep -qv '~'; then
 GORELEASER_CONFIG=".goreleaser-release.yml"
 fi
 BASEDIR=/go/src/github.com/oidc-mytoken/server
+tree
 docker run --rm --privileged \
   -v "$PWD":"$BASEDIR" \
   -w "$BASEDIR" \
