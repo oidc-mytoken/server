@@ -64,7 +64,8 @@ build_migratedb:
 prerelease:
   stage: release
   image:
-    name: docker:stable
+    name: goreleaser/goreleaser
+    entrypoint: [ "" ]
   services:
     - docker:dind
   only:
@@ -78,12 +79,15 @@ prerelease:
     GIT_DEPTH: 0
     REPO_HOST: repo.data.kit.edu
     REPO_USER: cicd
+    DOCKER_REGISTRY: https://index.docker.io/v1/
+  before_script:
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin "$DOCKER_REGISTRY"
   script:
-    - if [ -z "$CI_COMMIT_TAG" ]; then docker run --rm -v $PWD:/tmp/mytoken -w /tmp/mytoken bitnami/git .gitlab-ci-scripts/set-prerel-version.sh; fi;
+    - if [ -z "$CI_COMMIT_TAG" ]; then .gitlab-ci-scripts/set-prerel-version.sh; fi;
     - .gitlab-ci-scripts/goreleaser.sh
     - .gitlab-ci-scripts/upload.sh
   after_script:
-    - docker run --rm curlimages/curl -d "repo=github.com/oidc-mytoken/server" https://goreportcard.com/checks
+    - curl -d "repo=github.com/oidc-mytoken/server" https://goreportcard.com/checks
 
 deploy-dev:
   stage: deploy
