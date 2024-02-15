@@ -251,6 +251,7 @@ function _addListItem(value, tableBody, prefix = "") {
         }
         if (restrictionProfileSupportEnableForPrefixes.includes(prefix)) {
             $(prefixId('restr-template', prefix)).val("");
+            $(prefixId(`profile-template`, prefix)).val("");
         }
     })
     let tbodyId = tableBody.attr("id");
@@ -386,6 +387,12 @@ function set_restrictions_in_gui(restrictions, prefix = "") {
     if (restrictions === undefined) {
         return;
     }
+    restrictions.forEach(function (r, i, restrs) {
+        // we delete the includes because they were already applied and keeping it can lead to confusion, especially
+        // when restrictions should be removed, but then they are re-added because of the include
+        delete r.include;
+        restrs[i] = r;
+    });
     setRestrictionsData(restrictions, prefix);
     if (editorMode(prefix).prop('checked')) {
         RestrToGUI(prefix);
@@ -399,7 +406,4 @@ let restrictionProfileSupportEnableForPrefixes = [];
 function restr_enableProfileSupport(prefix = "") {
     _enableProfileSupport("restr", set_restrictions_in_gui, prefix);
     restrictionProfileSupportEnableForPrefixes.push(prefix);
-    $(`button.btn.any-restr-input[instance-prefix=${prefix}]`).on('click', function () {
-        $(this).trigger('change');
-    });
 }

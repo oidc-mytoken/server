@@ -12,6 +12,28 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.9.1
+
+### Enhancements
+
+- Improfile includes handling in the webitnerface restrictions editor.
+
+### Dependencies
+
+- Bump golang.org/x/oauth2 from 0.15.0 to 0.17.0
+- Bump golang.org/x/crypto from 0.17.0 to 0.19.0
+- Bump golang.org/x/mod from 0.14.0 to 0.15.0
+- Bump github.com/evanphx/json-patch/v5 from 5.7.0 to 5.9.0
+- Bump github.com/gofiber/template/mustache/v2 from 2.0.7 to 2.0.8
+- Bump github.com/lestrrat-go/jwx from 1.2.27 to 1.2.28
+- Bump github.com/gofiber/fiber/v2 from 2.51.0 to 2.52.0
+- Bump github.com/redis/go-redis/v9 from 9.3.1 to 9.4.0
+- Bump github.com/valyala/fasthttp from 1.51.0 to 1.52.0
+- Bump github.com/coreos/go-oidc/v3 from 3.8.0 to 3.9.0
+- Bump github.com/gliderlabs/ssh from 0.3.5 to 0.3.6
+- Bump github.com/go-resty/resty/v2 from 2.10.0 to 2.11.0
+- Bump golang.org/x/term from 0.15.0 to 0.17.0
+
 ## mytoken 0.9.0
 
 ### Changes
