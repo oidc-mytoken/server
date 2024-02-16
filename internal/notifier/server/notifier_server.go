@@ -28,6 +28,7 @@ func HandleEmailRequest(req pkg.EmailNotificationRequest) error {
 			log.WithError(err).Error("error while sending ics mail invite")
 			return err
 		}
+		return nil
 	}
 	sender := mailing.PlainTextMailSender
 	if req.PreferHTML {
