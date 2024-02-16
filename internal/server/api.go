@@ -54,6 +54,13 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 	}
 	addProfileEndpointRoutes(s, apiPaths)
 	if config.Get().Features.Notifications.AnyEnabled {
+		if config.Get().Features.Notifications.ICS.Enabled {
+			s.Get(apiPaths.CalendarEndpoint, calendar.HandleList)
+			s.Post(apiPaths.CalendarEndpoint, calendar.HandleAdd)
+			s.Get(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleGet)
+			s.Post(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleAddMytoken)
+			s.Delete(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleDelete)
+		}
 		s.Post(apiPaths.NotificationEndpoint, notification.HandlePost)
 		s.Get(apiPaths.NotificationEndpoint, notification.HandleGet)
 		s.Get(utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code"), notification.HandleGetByManagementCode)
@@ -76,13 +83,6 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 			utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code", "token"),
 			notification.HandleNotificationRemoveToken,
 		)
-		if config.Get().Features.Notifications.ICS.Enabled {
-			s.Get(apiPaths.CalendarEndpoint, calendar.HandleList)
-			s.Post(apiPaths.CalendarEndpoint, calendar.HandleAdd)
-			s.Get(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleGet)
-			s.Post(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleAddMytoken)
-			s.Delete(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleDelete)
-		}
 		if config.Get().Features.Notifications.Mail.Enabled {
 			s.Get(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "email"), email.HandleGet)
 			s.Put(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "email"), email.HandlePut)
