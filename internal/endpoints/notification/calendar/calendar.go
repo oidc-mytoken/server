@@ -617,8 +617,8 @@ func createAlarms(event *ics.VEvent, info tree.MytokenEntry, triggerDaysBeforeEx
 			event.Components = append(event.Components, a)
 		}
 	}
-	return
 }
+
 func createAlarm(daysBeforeExpiration int, info tree.MytokenEntry) *ics.VAlarm {
 	now := time.Now()
 	expiresAt := info.ExpiresAt.Time()
