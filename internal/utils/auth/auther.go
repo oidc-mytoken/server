@@ -135,8 +135,8 @@ func RequireCapability(
 			rlog, tx, mt.ID, api.NotificationClassInsufficientCapabilities, clientData,
 			model.KeyValues{
 				{
-					"Needed Capability",
-					capability.Name,
+					Key:   "Needed Capability",
+					Value: capability.Name,
 				},
 			},
 		)
@@ -264,8 +264,8 @@ func RequireMytokenIsParentOrCapability(
 		rlog, tx, mt.ID, api.NotificationClassInsufficientCapabilities, clientData,
 		model.KeyValues{
 			{
-				"Needed Capability",
-				capabilityIfNotParent.Name,
+				Key:   "Needed Capability",
+				Value: capabilityIfNotParent.Name,
 			},
 		},
 	)
