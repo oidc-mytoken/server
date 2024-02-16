@@ -21,7 +21,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/lestrrat-go/jwx v1.2.28
-	github.com/oidc-mytoken/api v0.11.2-0.20230810083726-bf164306e5b2
+	github.com/oidc-mytoken/api v0.11.2-0.20240216084138-64e62e6e58c1
 	github.com/oidc-mytoken/lib v0.7.1
 	github.com/oidc-mytoken/utils v0.1.3-0.20230731143919-ea5b78243e5d
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -77,5 +77,3 @@ require (
 )
 
 replace github.com/urfave/cli/v2 => github.com/zachmann/cli/v2 v2.3.1-0.20211220102037-d619fd40a704
-
-replace github.com/oidc-mytoken/api => ../api
