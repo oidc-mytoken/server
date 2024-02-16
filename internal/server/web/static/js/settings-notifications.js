@@ -24,7 +24,6 @@ function getEmailInfo() {
         type: "GET",
         url: storageGet('usersettings_endpoint') + "/email",
         success: function (res) {
-            console.log(res);
             $emailInput.val(res["email_address"]);
             if (res["email_verified"]) {
                 $emailUnverifiedIcon.hideB();
