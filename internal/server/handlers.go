@@ -155,6 +155,15 @@ func handleHome(ctx *fiber.Ctx) error {
 	return ctx.Render("sites/home", homeBindingData(), templating.LayoutMain)
 }
 
+func handleViewCalendar(ctx *fiber.Ctx) error {
+	return ctx.Render(
+		"sites/calendar", map[string]any{
+			"calendar-view":                   true,
+			templating.MustacheKeyEmptyNavbar: true,
+		}, templating.LayoutMain,
+	)
+}
+
 func handleSettings(ctx *fiber.Ctx) error {
 	type bindData struct {
 		DisplayName string

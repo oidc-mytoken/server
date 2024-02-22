@@ -145,7 +145,8 @@ function addCalendarToTable(cal) {
     $noCalendarsEntry.hideB();
     let name = cal['name'];
     let ics_path = cal['ics_path'];
-    const html = `<tr class="calendar-entry"><td>${name}</td><td><a href="${ics_path}" target="_blank" rel="noopener noreferrer">${ics_path}</a></td>${deleteCalendarHtml}</tr>`;
+    let viewCalendarHtml = `<td><a href="${ics_path}/view"><i class="fas fa-calendar-alt"></i></a></td>`;
+    const html = `<tr class="calendar-entry"><td>${name}</td>${viewCalendarHtml}<td><a href="${ics_path}" target="_blank" rel="noopener noreferrer">${ics_path}</a></td>${deleteCalendarHtml}</tr>`;
     $calendarTable.prepend(html);
 }
 

@@ -123,6 +123,7 @@ func addRoutes(s fiber.Router) {
 	s.Get(generalPaths.Privacy, handlePrivacy)
 	s.Get("/settings", handleSettings)
 	s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id"), calendar.HandleGetICS)
+	s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id", "view"), handleViewCalendar)
 	s.Get(generalPaths.ActionsEndpoint, actions.HandleActions)
 	addAPIRoutes(s)
 }

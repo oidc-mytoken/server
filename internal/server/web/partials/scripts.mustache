@@ -77,3 +77,13 @@
     {{/home}}
     <script src="{{instance-url}}/static/js/restr-gui.js"></script>
 {{/restr-gui}}
+{{#calendar-view}}
+    <script>
+        window.process = {env: {NODE_ENV: 'production'}};
+    </script>
+    <script src='{{instance-url}}/static/js/lib/ical/ical.min.js'></script>
+    <script src='{{instance-url}}/static/js/lib/fullcalendar-6.1.10/dist/index.global.min.js'></script>
+    <script src='{{instance-url}}/static/js/lib/fullcalendar-6.1.10/packages/bootstrap4/index.global.min.js'></script>
+    <script src='{{instance-url}}/static/js/lib/fullcalendar-6.1.10/packages/icalendar/index.global.min.js'></script>
+    <script type="module" src="{{instance-url}}/static/js/calendar.js"></script>
+{{/calendar-view}}
