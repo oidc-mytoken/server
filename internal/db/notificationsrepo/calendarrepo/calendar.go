@@ -2,6 +2,7 @@ package calendarrepo
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -68,7 +69,7 @@ func GetMTsInCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID string) 
 }
 
 // Get returns a calendar entry for a user and name
-func Get(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, name string) (info CalendarInfo, err error) {
+func Get(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID any, name string) (info CalendarInfo, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			return errors.WithStack(tx.Get(&info, `CALL Calendar_Get(?,?)`, mtID, name))
@@ -88,12 +89,40 @@ func GetByID(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id string) (info CalendarInf
 }
 
 // List returns a list of all calendar entries for a user
-func List(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID) (infos []CalendarInfo, err error) {
+func List(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID) (cals []api.NotificationCalendar, err error) {
+	var infos []CalendarInfo
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			return errors.WithStack(tx.Select(&infos, `CALL Calendar_List(?)`, mtID))
 		},
 	)
+	for _, i := range infos {
+		cals = append(
+			cals, api.NotificationCalendar{
+				Name:    i.Name,
+				ICSPath: i.ICSPath,
+			},
+		)
+	}
+	return
+}
+
+// ListCalendarsForMT returns a list of calendars where the passed token is used in
+func ListCalendarsForMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID any) (cals []api.NotificationCalendar, err error) {
+	var infos []CalendarInfo
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Select(&infos, `CALL Calendar_ListForMT(?)`, mtID))
+		},
+	)
+	for _, i := range infos {
+		cals = append(
+			cals, api.NotificationCalendar{
+				Name:    i.Name,
+				ICSPath: i.ICSPath,
+			},
+		)
+	}
 	return
 }
 

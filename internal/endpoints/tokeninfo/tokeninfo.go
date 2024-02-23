@@ -30,6 +30,8 @@ func HandleTokenInfo(ctx *fiber.Ctx) error {
 	switch req.Action {
 	case model.TokeninfoActionIntrospect:
 		return HandleTokenInfoIntrospect(rlog, nil, mt, req.Mytoken.OriginalTokenType, clientMetadata).Send(ctx)
+	case model.TokeninfoActionNotifications:
+		return HandleTokenInfoNotifications(rlog, nil, &req, mt, clientMetadata).Send(ctx)
 	case model.TokeninfoActionEventHistory:
 		return HandleTokenInfoHistory(rlog, nil, &req, mt, clientMetadata).Send(ctx)
 	case model.TokeninfoActionSubtokenTree:

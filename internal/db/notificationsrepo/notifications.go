@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/notificationsrepo/calendarrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/notification/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
@@ -62,7 +63,7 @@ func GetNotificationsForMTAndClass(
 
 // GetNotificationsForMT checks for and returns the found notifications for a certain mytoken
 func GetNotificationsForMT(
-	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID any,
 ) (notifications []notificationInfoBaseWithClass, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
@@ -73,20 +74,39 @@ func GetNotificationsForMT(
 	return
 }
 
-// GetNotificationsForUser returns all found notifications for a user
-func GetNotificationsForUser(
-	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
-) (notifications []api.NotificationInfo, err error) {
+func GetNotificationsAndCalendarsForMT(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID any,
+) (notifications []api.NotificationInfo, calendars []api.NotificationCalendar, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			var withClass []notificationInfoBaseWithClass
-			_, err = db.ParseError(tx.Select(&withClass, `CALL Notifications_GetForUser(?)`, mtID))
+			calendars, err = calendarrepo.ListCalendarsForMT(rlog, tx, mtID)
 			if err != nil {
-				return errors.WithStack(err)
+				return err
 			}
-			notificationMap := make(map[uint64]api.NotificationInfo)
-			var ids []uint64
-			for _, n := range withClass {
+			ns, err := GetNotificationsForMT(rlog, tx, mtID)
+			if err != nil {
+				return err
+			}
+			notifications, err = notificationInfoBaseWithClassToNotificationInfo(rlog, tx, ns)
+			return err
+		},
+	)
+	return
+}
+
+func notificationInfoBaseWithClassToNotificationInfo(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx,
+	in []notificationInfoBaseWithClass,
+) (
+	out []api.
+		NotificationInfo,
+	err error,
+) {
+	notificationMap := make(map[uint64]api.NotificationInfo)
+	var ids []uint64
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			for _, n := range in {
 				nie, ok := notificationMap[n.NotificationID]
 				if ok {
 					nie.Classes = append(nie.Classes, api.NewNotificationClass(n.Class))
@@ -108,10 +128,31 @@ func GetNotificationsForUser(
 				}
 				notificationMap[nie.NotificationID] = nie
 			}
-			for _, id := range ids {
-				notifications = append(notifications, notificationMap[id])
-			}
 			return nil
+		},
+	)
+	if err != nil {
+		return
+	}
+	for _, id := range ids {
+		out = append(out, notificationMap[id])
+	}
+	return
+}
+
+// GetNotificationsForUser returns all found notifications for a user
+func GetNotificationsForUser(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
+) (notifications []api.NotificationInfo, err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			var withClass []notificationInfoBaseWithClass
+			_, err = db.ParseError(tx.Select(&withClass, `CALL Notifications_GetForUser(?)`, mtID))
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			notifications, err = notificationInfoBaseWithClassToNotificationInfo(rlog, tx, withClass)
+			return err
 		},
 	)
 	return

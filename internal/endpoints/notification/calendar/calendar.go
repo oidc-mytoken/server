@@ -123,6 +123,7 @@ func HandleAdd(ctx *fiber.Ctx) error {
 	)
 	icsPath := utils.CombineURLPath(routes.CalendarDownloadEndpoint, id)
 	cal.SetUrl(icsPath)
+	calendarInfo.ICSPath = icsPath
 	dbInfo := calendarrepo.CalendarInfo{
 		ID:      id,
 		Name:    calendarInfo.Name,
@@ -131,7 +132,7 @@ func HandleAdd(ctx *fiber.Ctx) error {
 	}
 	res := model.Response{
 		Status:   http.StatusCreated,
-		Response: pkg.CreateCalendarResponse{CalendarInfo: dbInfo},
+		Response: pkg.CreateCalendarResponse{NotificationCalendar: calendarInfo},
 	}
 	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {

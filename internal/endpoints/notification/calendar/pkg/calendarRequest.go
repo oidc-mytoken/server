@@ -3,7 +3,6 @@ package pkg
 import (
 	"github.com/oidc-mytoken/api/v0"
 
-	"github.com/oidc-mytoken/server/internal/db/notificationsrepo/calendarrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
@@ -16,12 +15,12 @@ type AddMytokenToCalendarRequest struct {
 
 // CreateCalendarResponse is the response returned when a new calendar is created
 type CreateCalendarResponse struct {
-	calendarrepo.CalendarInfo
+	api.NotificationCalendar
 	TokenUpdate *pkg.MytokenResponse `json:"token_update,omitempty"`
 }
 
 // CalendarListResponse is the response returned to list all calendars of a user
 type CalendarListResponse struct {
-	Calendars   []calendarrepo.CalendarInfo `json:"calendars"`
-	TokenUpdate *pkg.MytokenResponse        `json:"token_update,omitempty"`
+	Calendars   []api.NotificationCalendar `json:"calendars"`
+	TokenUpdate *pkg.MytokenResponse       `json:"token_update,omitempty"`
 }

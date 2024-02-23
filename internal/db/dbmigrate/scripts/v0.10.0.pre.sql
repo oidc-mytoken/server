@@ -278,3 +278,9 @@ END;
 
 
 DELIMITER ;
+
+# Table Data
+INSERT IGNORE INTO Events (event)
+    VALUES ('tokeninfo_notifications');
+INSERT IGNORE INTO Events (event)
+    VALUES ('tokeninfo_notifications_other_token');
