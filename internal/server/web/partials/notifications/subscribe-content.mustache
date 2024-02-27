@@ -1,0 +1,100 @@
+<div class="form-group">
+    <input id="notify-id" type="text" hidden>
+    <span class="input-group">
+               <select id="notification-type-selector" class="form-control custom-select form-inline">
+                    <option value="entry" id="notification-type-option-entry" class="notification-type-option">Single
+                        Calendar Invite</option>
+                    <option value="email" id="notification-type-option-email"
+                            class="notification-type-option">Email</option>
+                    <option value="calendar" id="notification-type-option-calendar" class="notification-type-option">Calendar</option>
+                </select>
+       <span id="input-group-append">
+                    <span class="input-group-text"><i class="fas fa-paper-plane
+                    notify-entry-content"></i></span>
+                    <span class="input-group-text d-none notify-email-content"><i class="fas fa-envelope"></i></span>
+                    <span class="input-group-text d-none notify-calendar-content"><i
+                            class="fas fa-calendar-alt"></i></span>
+                </span>
+
+                </span>
+</div>
+<div class="notify-entry-content">
+    <div class="alert alert-danger border notify-entry-content-element d-none"
+         id="email-not-verified-hint">
+        Your email address is not yet verified. Please verify it with the verification link we sent
+        you or request a new verification code from <a href="/settings">Settings -> Notifications ->
+        Email</a>.
+    </div>
+    <div class="alert alert-danger border notify-entry-content-element d-none" id="email-not-set-hint">
+        We currently do not have an email address linked to your identity. Please set an email
+        address under <a href="/settings">Settings -> Notifications -> Email</a>.
+    </div>
+    <div class="notify-entry-content-element" id="notify-entry-content-normal">
+        <p>
+            You can send a calendar invite to your email address with an event for the token's
+            expiration.
+            This will remind in advance, so you can create a new token timely.
+        </p>
+        <p>
+            If you want, you can add a comment:
+        </p>
+        <textarea class="form-control" id="notify-entry-comment"></textarea>
+
+        <button class="btn btn-primary mt-2" id="sent-entry">
+            <i class="fas fa-paper-plane"></i>
+            <i class="fas fa-calendar-alt"></i>
+            Sent
+        </button>
+    </div>
+</div>
+
+<div class="notify-email-content d-none">
+    <div class="form-group">
+
+        <div>
+            <ul class="list-group bg-my_grey list-group-striped">
+                {{#notification-classes}}
+                    {{> capabilities/part}}
+                {{/notification-classes}}
+            </ul>
+        </div>
+
+
+        <div class="form-group">
+            <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input"
+                       aria-describedby="{{prefix}}rotationATHelp"
+                       id="notification-req-include-children" checked>
+                <label class="custom-control-label" for="notification-req-include-children">Include
+                    children</label>
+            </div>
+            <small class="form-text text-muted">If enabled, you will also receive notifications for all
+                future children (and their children and so on).</small>
+        </div>
+
+        <button class="btn btn-primary mt-2" id="sent-create-mail-notification">
+            <i class="fas fa-envelope"></i>
+            Subscribe to email notifications
+        </button>
+    </div>
+</div>
+
+<div class="notify-calendar-content d-none">
+    <p>
+        You can add this mytoken to one of your calendars. If you have subscribed to the calendar, it
+        will automatically be added, and you will be reminded that the token expires in advance, so you
+        can create a new token timely.
+    </p>
+    <select class="form-control custom-select form-inline" id="notify-calendar-selector"></select>
+    <p>You can subscribe to this calendar using the following url: <a href="#"
+                                                                      id="notify-calendar-url"></a></p>
+    <p>
+        You can add a comment to the event entry:
+    </p>
+    <textarea class="form-control" id="notify-calendar-comment"></textarea>
+
+    <button class="btn btn-primary mt-2" id="sent-calendar-add">
+        <i class="fas fa-calendar-alt"></i>
+        Add to calendar
+    </button>
+</div>
