@@ -4,6 +4,7 @@ const $tokeninfoBadgeName = $('#tokeninfo-token-name');
 const $tokeninfoBadgeTypeShort = $('#tokeninfo-token-type-short');
 const $tokeninfoBadgeTypeJWTValid = $('#tokeninfo-token-type-JWT-valid');
 const $tokeninfoBadgeTypeJWTInvalid = $('#tokeninfo-token-type-JWT-invalid');
+const $tokeninfoBadgeTypeJWTExpired = $('#tokeninfo-token-type-JWT-exp');
 const $tokeninfoBadgeValid = $('#tokeninfo-token-valid');
 const $tokeninfoBadgeInvalid = $('#tokeninfo-token-invalid');
 const $tokeninfoBadgeMytokenIss = $('#tokeninfo-token-mytoken-iss');
@@ -54,6 +55,7 @@ async function update_tokeninfo() {
         let mytokenIss = payload['iss'];
         $tokeninfoTypeBadges.hideB();
         $tokeninfoBadgeTypeJWTInvalid.showB();
+        $tokeninfoBadgeTypeJWTExpired.hideB();
         if (mytokenIss.endsWith("/")) {
             mytokenIss = mytokenIss.substring(0, mytokenIss.length - 1);
         }
@@ -80,6 +82,10 @@ async function update_tokeninfo() {
             if (e instanceof jose.errors.JWTInvalid) {
                 $tokeninfoTypeBadges.hideB();
                 $tokeninfoBadgeTypeShort.showB();
+            }
+            if (e instanceof jose.errors.JWTExpired) {
+                $tokeninfoBadgeTypeJWTInvalid.hideB();
+                $tokeninfoBadgeTypeJWTExpired.showB();
             } else {
                 console.error(e);
             }

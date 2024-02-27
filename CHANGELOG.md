@@ -12,6 +12,12 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.10.0
+
+### Enhancements
+
+- In the tokeninfo pane in the webinterface expires JWTs now get a more precise badge.
+
 ## mytoken 0.9.1
 
 ### Enhancements
