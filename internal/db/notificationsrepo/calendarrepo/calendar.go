@@ -88,41 +88,57 @@ func GetByID(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id string) (info CalendarInf
 	return
 }
 
+func calendarInfosToAPICalendarInfos(rlog log.Ext1FieldLogger, tx *sqlx.Tx, in []CalendarInfo) (
+	out []api.CalendarInfo, err error,
+) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			for _, i := range in {
+				info := api.CalendarInfo{
+					NotificationCalendar: api.NotificationCalendar{
+						Name:    i.Name,
+						ICSPath: i.ICSPath,
+					},
+				}
+				info.SubscribedTokens, err = GetMTsInCalendar(rlog, tx, i.ID)
+				if err != nil {
+					return err
+				}
+				out = append(out, info)
+			}
+			return nil
+		},
+	)
+	return
+}
+
 // List returns a list of all calendar entries for a user
-func List(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID) (cals []api.NotificationCalendar, err error) {
+func List(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID) (cals []api.CalendarInfo, err error) {
 	var infos []CalendarInfo
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			return errors.WithStack(tx.Select(&infos, `CALL Calendar_List(?)`, mtID))
+			if err = errors.WithStack(tx.Select(&infos, `CALL Calendar_List(?)`, mtID)); err != nil {
+				return err
+			}
+			cals, err = calendarInfosToAPICalendarInfos(rlog, tx, infos)
+			return err
 		},
 	)
-	for _, i := range infos {
-		cals = append(
-			cals, api.NotificationCalendar{
-				Name:    i.Name,
-				ICSPath: i.ICSPath,
-			},
-		)
-	}
 	return
 }
 
 // ListCalendarsForMT returns a list of calendars where the passed token is used in
-func ListCalendarsForMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID any) (cals []api.NotificationCalendar, err error) {
+func ListCalendarsForMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID any) (cals []api.CalendarInfo, err error) {
 	var infos []CalendarInfo
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			return errors.WithStack(tx.Select(&infos, `CALL Calendar_ListForMT(?)`, mtID))
+			if err = errors.WithStack(tx.Select(&infos, `CALL Calendar_ListForMT(?)`, mtID)); err != nil {
+				return err
+			}
+			cals, err = calendarInfosToAPICalendarInfos(rlog, tx, infos)
+			return err
 		},
 	)
-	for _, i := range infos {
-		cals = append(
-			cals, api.NotificationCalendar{
-				Name:    i.Name,
-				ICSPath: i.ICSPath,
-			},
-		)
-	}
 	return
 }
 

@@ -76,7 +76,7 @@ func GetNotificationsForMT(
 
 func GetNotificationsAndCalendarsForMT(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID any,
-) (notifications []api.NotificationInfo, calendars []api.NotificationCalendar, err error) {
+) (notifications []api.NotificationInfo, calendars []api.CalendarInfo, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			calendars, err = calendarrepo.ListCalendarsForMT(rlog, tx, mtID)

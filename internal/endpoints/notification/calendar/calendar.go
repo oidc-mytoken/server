@@ -276,7 +276,7 @@ func HandleList(ctx *fiber.Ctx) error {
 				res = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
-			resData := pkg.CalendarListResponse{Calendars: infos}
+			resData := pkg.CalendarListResponse{CalendarListResponse: api.CalendarListResponse{Calendars: infos}}
 			res = &model.Response{
 				Status:   fiber.StatusOK,
 				Response: resData,

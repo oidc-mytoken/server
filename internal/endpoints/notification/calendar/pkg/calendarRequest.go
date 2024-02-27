@@ -21,6 +21,6 @@ type CreateCalendarResponse struct {
 
 // CalendarListResponse is the response returned to list all calendars of a user
 type CalendarListResponse struct {
-	Calendars   []api.NotificationCalendar `json:"calendars"`
-	TokenUpdate *pkg.MytokenResponse       `json:"token_update,omitempty"`
+	api.CalendarListResponse
+	TokenUpdate *pkg.MytokenResponse `json:"token_update,omitempty"`
 }
