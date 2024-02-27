@@ -47,8 +47,9 @@ func homeBindingData() map[string]interface{} {
 			templating.MustacheKeyCollapse: templating.Collapsable{
 				CollapseRestr: true,
 			},
-			templating.MustacheKeyPrefix:   "tokeninfo-",
-			templating.MustacheKeyReadOnly: true,
+			templating.MustacheKeyPrefix:            "tokeninfo-",
+			templating.MustacheKeyReadOnly:          true,
+			templating.MustacheKeyCalendarsEditable: false,
 		},
 		templating.MustacheSubCreateMT: map[string]interface{}{
 			templating.MustacheKeyPrefix:             "createMT-",
@@ -196,13 +197,15 @@ func handleSettings(ctx *fiber.Ctx) error {
 		g.EmbedBody = embed.String()
 	}
 	binding := map[string]interface{}{
-		templating.MustacheKeyGrants:          grants,
-		templating.MustacheKeyLoggedIn:        true,
-		templating.MustacheKeySettings:        true,
-		templating.MustacheKeySettingsSSH:     true,
-		templating.MustacheKeyRestrictionsGUI: true,
-		templating.MustacheKeyRestrictions:    webentities.WebRestrictions{},
-		templating.MustacheKeyCapabilities:    webentities.AllWebCapabilities(),
+		templating.MustacheKeyGrants:            grants,
+		templating.MustacheKeyLoggedIn:          true,
+		templating.MustacheKeySettings:          true,
+		templating.MustacheKeySettingsSSH:       true,
+		templating.MustacheKeyRestrictionsGUI:   true,
+		templating.MustacheKeyCalendarsEditable: true,
+		templating.MustacheKeyRestrictions:      webentities.WebRestrictions{},
+		templating.MustacheKeyCapabilities:      webentities.AllWebCapabilities(),
+		templating.MustacheKeyPrefix:            "settings-",
 	}
 	return ctx.Render("sites/settings", binding, templating.LayoutMain)
 }

@@ -50,7 +50,7 @@ function getNotificationClassIcon(notificationInfo, class_name) {
     }
 }
 
-function notificationsToTable(notifications) {
+function notificationsToTable(notifications, details = true) {
     let tableEntries = "";
     const websocketIcon = `<i class="fas fa-rss"></i>`;
     const mailIcon = `<i class="fas fa-envelope"></i>`;
@@ -82,7 +82,8 @@ function notificationsToTable(notifications) {
         let notification_classes_html = `<span data-toggle="tooltip"
               data-placement="bottom" title=""
               data-original-title="${notification_classes_str}">${notification_classes_icons}</span>`
-        tableEntries += `<tr management-code="${management_code}" role="button" onclick="toggleSubscriptionDetails('${management_code}')"><td>${typeIcon}</td><td>${notification_classes_html}</td><td>${tokens}</td></tr>`;
+        let details_html = details ? `role="button" onclick="toggleSubscriptionDetails('${management_code}')"` : '';
+        tableEntries += `<tr management-code="${management_code}" ${details_html}><td>${typeIcon}</td><td>${notification_classes_html}</td><td>${tokens}</td></tr>`;
         tableEntries += `<tr><td colspan="4" management-code="${management_code}" class="notification-details-container d-none pl-5"></td></tr>`
     });
     if (tableEntries === "") {

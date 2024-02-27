@@ -38,6 +38,7 @@ const (
 	MustacheKeyProfilesRestrictions = "restrictions"
 	MustacheKeyProfilesRotation     = "rotation"
 	MustacheKeyNotificationClasses  = "notification-classes"
+	MustacheKeyCalendarsEditable    = "calendar-editable"
 )
 
 // Keys for sub configs

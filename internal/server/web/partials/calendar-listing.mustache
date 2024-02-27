@@ -1,0 +1,27 @@
+<table class="table table-striped bg-my_grey">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th></th>
+        <th>ICS Link</th>
+        {{#calendar-editable}}
+            <th></th>
+        {{/calendar-editable}}
+    </tr>
+    </thead>
+    <tbody id="{{prefix}}calendars">
+    <tr id="{{prefix}}noCalendars">
+        <td colspan="{{#calendar-editable}}{{/calendar-editable}}4{{^calendar-editable}}3{{/calendar-editable}}"
+            class="text-muted text-center">No calendar created.
+        </td>
+    </tr>
+    {{#calendar-editable}}
+        <tr>
+            <td colspan="4" class="text-center">
+                <button class="btn btn-success new-calendar-btn" role="button" id="{{prefix}}new-calendar-btn"><i
+                        class="fas fa-plus-circle"> New Calendar</i></button>
+            </td>
+        </tr>
+    {{/calendar-editable}}
+    </tbody>
+</table>

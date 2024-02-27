@@ -6,9 +6,14 @@ const $preferredMimeTypeText = $('#preferred_mimetype_txt');
 const $editMailBtn = $('#edit-mail-btn');
 const $saveMailBtn = $('#save-mail-btn');
 
-const $calendarTable = $('#calendars');
-const $noCalendarsEntry = $('#noCalendars');
-const $addCalendarButton = $('#new-calendar-btn');
+
+function $calendarTable(prefix = "") {
+    return $(prefixId('calendars', prefix));
+}
+
+function $noCalendarsEntry(prefix = "") {
+    return $(prefixId('noCalendars', prefix));
+}
 
 let settingsStatus = {"email_data_obtained": false, "calendars_loaded": false};
 
@@ -108,22 +113,22 @@ $emailInput.on('keyup', function (e) {
 
 $('#calendar-trigger-btn').on('click', function () {
     if (!settingsStatus["calendars_loaded"]) {
-        loadCalendars();
+        loadCalendars(settingsPrefix);
     }
 })
 
-function loadCalendars() {
-    clearCalendarTable();
+function loadCalendars(prefix = "") {
+    clearCalendarTable(prefix);
     $.ajax({
         type: "GET",
         url: storageGet('notifications_endpoint') + "/calendars",
         success: function (res) {
             let cals = res["calendars"];
             if (cals === undefined || cals === null) {
-                $noCalendarsEntry.showB();
+                $noCalendarsEntry(prefix).showB();
             } else {
                 cals.forEach(function (cal) {
-                    addCalendarToTable(cal);
+                    addCalendarToTable(cal, prefix);
                 })
                 settingsStatus["calendars_loaded"] = true;
             }
@@ -135,22 +140,24 @@ function loadCalendars() {
     });
 }
 
-const deleteCalendarHtml = `<td><a href="#" role="button" onclick="deleteCalendar(this)"><i class="fas fa-trash-alt text-danger"></i></a></td>`;
-
-function clearCalendarTable() {
-    $calendarTable.find('tr.calendar-entry').remove();
+function deleteCalendarHtml(prefix = "") {
+    return `<td><a href="#" role="button" onclick="deleteCalendar(this, '${prefix}')"><i class="fas fa-trash-alt text-danger"></i></a></td>`;
 }
 
-function addCalendarToTable(cal) {
-    $noCalendarsEntry.hideB();
+function clearCalendarTable(prefix = "") {
+    $calendarTable(prefix).find('tr.calendar-entry').remove();
+}
+
+function addCalendarToTable(cal, prefix = "", with_delete = true) {
+    $noCalendarsEntry(prefix).hideB();
     let name = cal['name'];
     let ics_path = cal['ics_path'];
     let viewCalendarHtml = `<td><a href="${ics_path}/view"><i class="fas fa-calendar-alt"></i></a></td>`;
-    const html = `<tr class="calendar-entry"><td>${name}</td>${viewCalendarHtml}<td><a href="${ics_path}" target="_blank" rel="noopener noreferrer">${ics_path}</a></td>${deleteCalendarHtml}</tr>`;
-    $calendarTable.prepend(html);
+    const html = `<tr class="calendar-entry"><td>${name}</td>${viewCalendarHtml}<td><a href="${ics_path}" target="_blank" rel="noopener noreferrer">${ics_path}</a></td>${with_delete ? deleteCalendarHtml(prefix) : ""}</tr>`;
+    $calendarTable(prefix).prepend(html);
 }
 
-function deleteCalendar(el) {
+function deleteCalendar(el, prefix = "") {
     const name = $(el).parent().siblings()[0].innerHTML;
     $(`
         <div class="modal fade" tabindex="-1" role="dialog">
@@ -165,7 +172,7 @@ function deleteCalendar(el) {
                     <div class="modal-body">Confirm to delete the calendar '${name}'.</div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-danger" data-dismiss="modal" onclick="sendDeleteCalendarRequest('${name}')">Delete</button>
+                        <button type="button" class="btn btn-danger" data-dismiss="modal" onclick="sendDeleteCalendarRequest('${name}', '${prefix}')">Delete</button>
                     </div>
                 </div>
             </div>
@@ -173,12 +180,12 @@ function deleteCalendar(el) {
    `).modal();
 }
 
-function sendDeleteCalendarRequest(name) {
+function sendDeleteCalendarRequest(name, prefix = "") {
     $.ajax({
         type: "DELETE",
         url: storageGet('notifications_endpoint') + "/calendars/" + name,
         success: function () {
-            loadCalendars();
+            loadCalendars(prefix);
         },
         error: function (errRes) {
             $settingsErrorModalMsg.text(getErrorMessage(errRes));
@@ -187,9 +194,11 @@ function sendDeleteCalendarRequest(name) {
     });
 }
 
-$addCalendarButton.on('click', addCalendar);
+$('.new-calendar-btn').on('click', function () {
+    addCalendar(extractPrefix('new-calendar-btn', $(this).attr('id')));
+});
 
-function addCalendar() {
+function addCalendar(prefix = "") {
     $(`
         <div class="modal fade" tabindex="-1" role="dialog">
             <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
@@ -206,7 +215,7 @@ function addCalendar() {
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-success" data-dismiss="modal" onclick="sendCreateCalendarRequest()">Create <i class="fas fa-calendar-alt"></i></button>
+                        <button type="button" class="btn btn-success" data-dismiss="modal" onclick="sendCreateCalendarRequest('${prefix}')">Create <i class="fas fa-calendar-alt"></i></button>
                     </div>
                 </div>
             </div>
@@ -214,9 +223,8 @@ function addCalendar() {
    `).modal();
 }
 
-function sendCreateCalendarRequest() {
+function sendCreateCalendarRequest(prefix = "") {
     let data = JSON.stringify({"name": $('#calendar-name-input').val()});
-    console.log(data);
     $.ajax({
         type: "POST",
         data: data,
@@ -224,7 +232,7 @@ function sendCreateCalendarRequest() {
         contentType: "application/json",
         url: storageGet('notifications_endpoint') + "/calendars",
         success: function () {
-            loadCalendars();
+            loadCalendars(prefix);
         },
         error: function (errRes) {
             $settingsErrorModalMsg.text(getErrorMessage(errRes));

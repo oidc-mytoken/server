@@ -1,0 +1,31 @@
+<h4>Notifications</h4>
+{{#collapse.Notifications}}
+    <button class="btn btn-info my-expand" type="button" data-toggle="collapse"
+            data-target="#{{prefix}}not-info-body"
+            aria-expanded="false" aria-controls="{{prefix}}not-info-body" id="{{prefix}}not-info-expand">Expand
+    </button>
+{{/collapse.Notifications}}
+
+
+<div id="{{prefix}}not-info-body" class="{{#collapse.Notifications}}collapse{{/collapse.Notifications}}">
+
+    <div>
+        <p id="{{prefix}}tokeninfo-notifications-no" class="d-none">
+            This mytoken does not have anay active notifications.
+        </p>
+        <div id="{{prefix}}tokeninfo-notifications-listing">
+            <p>The following notifications are defined for this mytoken:</p>
+            <div id="{{prefix}}tokeninfo-notifications-listing-table-container"></div>
+        </div>
+    </div>
+
+
+    <h5>Calendars</h5>
+    <div id="{{prefix}}tokeninfo-calendar-listing">
+        <p>This mytoken is included in the following calendars:</p>
+        {{>calendar-listing}}
+    </div>
+    <div id="{{prefix}}tokeninfo-calendar-no" class="d-none">
+        <p>This mytoken is not included in any calendars</p>
+    </div>
+</div>

@@ -7,6 +7,8 @@ $(function () {
     openCorrectTab();
 })
 
+const settingsPrefix = "settings-";
+
 function initGrants(...next) {
     $.ajax({
         type: "GET",
