@@ -164,3 +164,15 @@ function select_set_value_by_option_name($select, option) {
     const value = optionToSelect.value;
     $select.val(value);
 }
+
+function addToArrayMap(map, key, value, equals = (a, b) => a === b) {
+    let arr = map[key];
+    if (arr === undefined) {
+        arr = [];
+    }
+    if (!arr.some(a => equals(a, value))) {
+        arr.push(value)
+    }
+    map[key] = arr
+    return map
+}

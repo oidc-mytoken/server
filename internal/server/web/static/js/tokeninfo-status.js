@@ -18,25 +18,6 @@ const $tokeninfoTokenGoneWarningMsg = $('#token-gone-warning');
 const $tokeninfoActionButtons = $('#token-action-buttons');
 const $tokeninfoNotificationsInfo = $('#tokeninfo-notifications-display');
 
-function $tokeninfoCalendarListing(prefix = "") {
-    return $(prefixId('tokeninfo-calendar-listing', prefix));
-}
-
-function $tokeninfoNoCalendars(prefix = "") {
-    return $(prefixId('tokeninfo-calendar-no', prefix));
-}
-
-function $tokeninfoNotificationsListing(prefix = "") {
-    return $(prefixId('tokeninfo-notifications-listing', prefix));
-}
-
-function $tokeninfoNoNotifications(prefix = "") {
-    return $(prefixId('tokeninfo-notifications-no', prefix));
-}
-
-function $tokeninfoNotificationsListingTableContainer(prefix = "") {
-    return $(prefixId('tokeninfo-notifications-listing-table-container', prefix));
-}
 
 $('#tokeninfo-token-copy').on('click', function () {
     if (!$tokeninfoTokenGoneWarningMsg.hasClass('d-none')) {
@@ -185,32 +166,7 @@ function notificationsInfo(token) {
             clearCalendarTable(tokeninfoPrefix);
             let cals = res["calendars"];
             let notifications = res["notifications"];
-            let calsSet = cals !== undefined && cals.length > 0;
-            let notificationsSet = notifications !== undefined && notifications.length > 0;
-            if (!calsSet && !notificationsSet) {
-                $tokeninfoNotificationsInfo.hideB();
-                return;
-            }
-            $tokeninfoNotificationsInfo.showB();
-            if (!calsSet) {
-                $tokeninfoCalendarListing(tokeninfoPrefix).hideB();
-                $tokeninfoNoCalendars(tokeninfoPrefix).showB();
-            } else {
-                $tokeninfoNoCalendars(tokeninfoPrefix).hideB();
-                $tokeninfoCalendarListing(tokeninfoPrefix).showB();
-                cals.forEach(function (cal) {
-                    addCalendarToTable(cal, tokeninfoPrefix, false);
-                })
-            }
-            if (!notificationsSet) {
-                $tokeninfoNotificationsListing(tokeninfoPrefix).hideB();
-                $tokeninfoNoNotifications(tokeninfoPrefix).showB();
-            } else {
-                $tokeninfoNoNotifications(tokeninfoPrefix).hideB();
-                $tokeninfoNotificationsListing(tokeninfoPrefix).showB();
-                $tokeninfoNotificationsListingTableContainer(tokeninfoPrefix).html(notificationsToTable(notifications, false));
-                $('[data-toggle="tooltip"]').tooltip();
-            }
+            fillNotificationAndCalendarInfo(cals, notifications, $tokeninfoNotificationsInfo, tokeninfoPrefix);
         },
         error: function (errRes) {
             console.error(getErrorMessage(errRes));

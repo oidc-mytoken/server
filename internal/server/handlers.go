@@ -51,6 +51,9 @@ func homeBindingData() map[string]interface{} {
 			templating.MustacheKeyReadOnly:          true,
 			templating.MustacheKeyCalendarsEditable: false,
 		},
+		templating.MustacheSubMTListing: map[string]interface{}{
+			templating.MustacheKeySubscribeNotifications: true,
+		},
 		templating.MustacheSubCreateMT: map[string]interface{}{
 			templating.MustacheKeyPrefix:             "createMT-",
 			templating.MustacheKeyCreateWithProfiles: true,

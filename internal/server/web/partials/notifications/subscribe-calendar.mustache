@@ -1,0 +1,72 @@
+<div class="row mb-2">
+    <button class="btn btn-success col ml-3 mr-2 collapsed" data-toggle="collapse"
+            data-target="#{{prefix}}subscribe-calendar-content"
+            aria-expanded="false" aria-controls="{{prefix}}subscribe-calendar-content">
+        <i class="fas fa-calendar-alt"></i> Add to calendar
+    </button>
+    <button class="btn btn-info col mr-3 collapsed" data-toggle="collapse"
+            data-target="#{{prefix}}subscribe-entry-content"
+            aria-expanded="false" aria-controls="{{prefix}}subscribe-entry-content">
+        <i class="fas fa-paper-plane"></i>
+        <i class="fas fa-calendar-alt"></i>
+        Send Calendar invitation
+    </button>
+</div>
+
+<div id="{{prefix}}subscribe-contents">
+    <div class="subscribe-calendar-content collapse alert border border-success"
+         id="{{prefix}}subscribe-calendar-content" data-parent="#{{prefix}}subscribe-contents">
+        <p>
+            You can add this mytoken to one of your calendars. If you have subscribed to the calendar, the token entry
+            will automatically appear after synchronisation, and you will be reminded in advance that the token expires,
+            so you can create a new token timely.
+        </p>
+        <select class="form-control custom-select form-inline" id="notify-calendar-selector"></select>
+        <div id="{{prefix}}new-calendar-content" class="input-group d-none mt-1">
+            <input class="form-control" type="text" placeholder="Calendarname"
+                   id="{{prefix}}new-calendar-input">
+            <button class="btn btn-success" role="button" onclick="createCalendarFromNotifications()">Create <i
+                    class="fas fa-calendar-alt"></i></button>
+        </div>
+        <div id="{{prefix}}calendar-url-container">
+            <p>You can subscribe to this calendar using the following url: <a href="#" id="notify-calendar-url"></a></p>
+        </div>
+        <p>
+            You can add a comment to the event entry:
+        </p>
+        <textarea class="form-control" id="notify-calendar-comment"></textarea>
+
+        <button class="btn btn-primary mt-2" id="sent-calendar-add">
+            <i class="fas fa-calendar-alt"></i>
+            Add to calendar
+        </button>
+    </div>
+
+    <div class="subscribe-entry-content collapse alert border border-info" id="{{prefix}}subscribe-entry-content"
+         data-parent="#{{prefix}}subscribe-contents">
+        {{>notifications/email-not-verified}}
+        {{>notifications/email-not-provided}}
+        <div class="alert alert-success border d-none notify-entry-content-element"
+             id="{{prefix}}calendar-invite-successfully-sent">
+            <p>The calendar invite has been sent to your email address.</p>
+        </div>
+        <div class="notify-entry-content-normal notify-entry-content-element"
+             id="{{prefix}}notify-entry-content-normal">
+            <p>
+                You can send a calendar invite to your email address with an event for the token's
+                expiration.
+                This will remind you in advance, so you can create a new token timely.
+            </p>
+            <p>
+                You can add a comment to the event entry:
+            </p>
+            <textarea class="form-control" id="{{prefix}}notify-entry-comment"></textarea>
+
+            <button class="btn btn-primary mt-2" onclick="sendCalendarInviteFromModal('{{prefix}}')">
+                <i class="fas fa-paper-plane"></i>
+                <i class="fas fa-calendar-alt"></i>
+                Sent
+            </button>
+        </div>
+    </div>
+</div>

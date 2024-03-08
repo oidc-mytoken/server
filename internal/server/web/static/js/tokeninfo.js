@@ -149,8 +149,7 @@ function _tokenTreeToHTML(tree, deleteClass, depth, parentID = 0) {
     let deleteBtn = `<button id="revoke-${token['mom_id']}" class="btn ${deleteClass}" type="button" onclick="startRevocateID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Revoke Token' : 'Sign in to revoke token.'}"><i class="fas fa-trash"></i></button>`;
     let notificationsBtn = `<button id="notify-${token['mom_id']}" class="btn ${isExpired ? 'text-muted' : ''}" type="button" onclick="notificationModal.call(this, ${expires_at !== 0})" ${!loggedIn || isExpired ? "disabled" : ""}`;
     if (!isExpired) {
-        notificationsBtn += ` data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Subscribe to' +
-            ' notifications' : 'Sign in to subscribe to notifications.'}"`;
+        notificationsBtn += ` data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Manage notifications' : 'Sign in to manage notifications.'}"`;
     }
     notificationsBtn += `><i class="fas fa-bell"></i></butoton>`;
     tableEntries = `<tr id="${thisID}" parent-id="${parentID}" mom-id="${token['mom_id']}" class="${depth > 0 ? 'd-none' : ''} ${isExpired ? 'text-muted' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td>${historyBtn}${notificationsBtn}${deleteBtn}</td></tr>` + tableEntries;
@@ -262,7 +261,11 @@ function _getListTokenInfo(token, ...next) {
             activateTokenList();
             listMsg.removeClass('text-danger');
             listCopy.addClass('d-none');
-            doNext(...next);
+            doNext(...next, function (...next) {
+                getCalendars(function (_) {
+                    listNotifications();
+                }, ...next)
+            });
         },
         function (errRes) {
             listMsg.text(getErrorMessage(errRes));

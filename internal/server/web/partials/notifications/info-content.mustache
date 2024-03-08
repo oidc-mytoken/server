@@ -1,23 +1,9 @@
-
 <div id="{{prefix}}not-info-body" class="{{#collapse.Notifications}}collapse{{/collapse.Notifications}}">
 
     <div>
-        <p id="{{prefix}}tokeninfo-notifications-no" class="d-none">
-            This mytoken does not have anay active notifications.
-        </p>
-        <div id="{{prefix}}tokeninfo-notifications-listing">
-            <p>The following notifications are defined for this mytoken:</p>
-            <div id="{{prefix}}tokeninfo-notifications-listing-table-container"></div>
-        </div>
+        {{>notifications/info-content-notifications}}
     </div>
-
-
-    <h5>Calendars</h5>
-    <div id="{{prefix}}tokeninfo-calendar-listing">
-        <p>This mytoken is included in the following calendars:</p>
-        {{>notifications/calendar-listing}}
-    </div>
-    <div id="{{prefix}}tokeninfo-calendar-no" class="d-none">
-        <p>This mytoken is not included in any calendars</p>
+    <div>
+        {{>notifications/info-content-calendars}}
     </div>
 </div>

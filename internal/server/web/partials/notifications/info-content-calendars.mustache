@@ -1,0 +1,12 @@
+<h5>Calendars</h5>
+<div id="{{prefix}}tokeninfo-calendar-listing">
+    <p>This mytoken is included in the following calendars:</p>
+    {{>notifications/calendar-listing}}
+</div>
+<div id="{{prefix}}tokeninfo-calendar-no" class="d-none">
+    <p>This mytoken is not included in any calendars</p>
+</div>
+
+{{#subscribe-notifications}}
+    {{>notifications/subscribe-calendar}}
+{{/subscribe-notifications}}
