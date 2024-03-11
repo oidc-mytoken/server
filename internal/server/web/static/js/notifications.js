@@ -5,6 +5,7 @@ let momIDCalendarsMap = {};
 
 const notificationPrefix = "notifications-";
 
+
 function listNotifications(...next) {
     $.ajax({
         type: "GET",
@@ -69,7 +70,7 @@ function getNotificationClassIcon(notificationInfo, class_name) {
     }
 }
 
-function notificationsToTable(notifications, details = true) {
+function notificationsToTable(notifications, details = true, last_td = (n => "")) {
     let tableEntries = "";
     const websocketIcon = `<i class="fas fa-rss"></i>`;
     const mailIcon = `<i class="fas fa-envelope"></i>`;
@@ -100,8 +101,10 @@ function notificationsToTable(notifications, details = true) {
               data-placement="bottom" title=""
               data-original-title="${notification_classes_str}">${notification_classes_icons}</span>`
         let details_html = details ? `role="button" onclick="toggleSubscriptionDetails('${management_code}')"` : '';
-        tableEntries += `<tr management-code="${management_code}" ${details_html}><td>${typeIcon}</td><td>${notification_classes_html}</td><td>${tokens}</td></tr>`;
-        tableEntries += `<tr><td colspan="4" management-code="${management_code}" class="notification-details-container d-none pl-5"></td></tr>`
+        tableEntries += `<tr management-code="${management_code}" ${details_html}><td>${typeIcon}</td><td>${notification_classes_html}</td><td>${tokens}</td><td>${last_td(n)}</td></tr>`;
+        if (details) {
+            tableEntries += `<tr><td colspan="4" management-code="${management_code}" class="notification-details-container d-none pl-5"></td></tr>`;
+        }
     });
     if (tableEntries === "") {
         tableEntries = `<tr><td colSpan="4" class="text-muted text-center">No notifications created yet</td></tr>`;
@@ -250,12 +253,81 @@ function fillNotificationInfo(notifications, notificationsSet, prefix = "") {
     if (!notificationsSet) {
         $tokeninfoNotificationsListing(prefix).hideB();
         $tokeninfoNoNotifications(prefix).showB();
+        notifications = [];
     } else {
         $tokeninfoNoNotifications(prefix).hideB();
         $tokeninfoNotificationsListing(prefix).showB();
-        $tokeninfoNotificationsListingTableContainer(prefix).html(notificationsToTable(notifications, false));
-        $('[data-toggle="tooltip"]').tooltip();
+        $tokeninfoNotificationsListingTableContainer(prefix).html(notificationsToTable(notifications, false, n => n["user_wide"] ? `` : `<button class="btn" onclick="removeTokenFromNotificationFromModal('${n['management_code']}', '${prefix}')"><i class="fas fa-minus"></i></button>`));
     }
+    $(prefixId("subscribe-mail-new", prefix)).hideB();
+    let otherNots = Object.values(notificationsMap).filter(n => n["user_wide"] !== true).filter(n => n["notification_type"] === "mail").filter(n => !notifications.some(v => v["management_code"] === n["management_code"]))
+    let tableEntries = ``;
+    otherNots.forEach(function (n) {
+        let management_code = n["management_code"];
+        let tokens = `<span class="badge badge-pill badge-primary">${n["subscribed_tokens"].length}</span>`;
+        let notification_classes_icons = getNotificationClassIcon(n, "AT_creations") +
+            getNotificationClassIcon(n, "subtoken_creations") +
+            getNotificationClassIcon(n, "setting_changes") +
+            getNotificationClassIcon(n, "security");
+        let notification_classes_str = n["notification_classes"].join(", ");
+        let notification_classes_html = `<span data-toggle="tooltip"
+              data-placement="bottom" title=""
+              data-original-title="${notification_classes_str}">${notification_classes_icons}</span>`
+        let checker = `<input class="form-check-input notifications-checkbox ml-0" type="checkbox" value="${management_code}" instance-prefix="${prefix}">`;
+        tableEntries += `<tr management-code="${management_code}"><td>${checker}</td><td>${notification_classes_html}</td><td>${tokens}</td></tr>`;
+    })
+    $(prefixId("subscribe-mail-existing-notifications", prefix)).html(tableEntries);
+
+    $('[data-toggle="tooltip"]').tooltip();
+}
+
+function addToExistingNotifications(prefix = "") {
+    let selected_codes = $(prefixId("subscribe-mail-existing-notifications", prefix)).find(".notifications-checkbox:checked").map((_, v) => $(v).val()).get();
+    let ajax_promises = [];
+    let mom_id = $notificationMOMID.val();
+    let data = {
+        "mom_id": mom_id,
+        "include_children": $(prefixId("subscribe-mail-include-children", prefix)).prop("checked")
+    };
+    data = JSON.stringify(data);
+    selected_codes.forEach(function (mc) {
+        ajax_promises.push(
+            $.ajax({
+                type: "POST",
+                data: data,
+                dataType: "json",
+                contentType: "application/json",
+                url: `${storageGet('notifications_endpoint')}/${mc}/token`
+            }));
+    })
+    $.when(...ajax_promises).then(function () {
+        updateNotificationsInfoPartInModal(mom_id, prefix);
+    }, function (errRes) {
+        $errorModalMsg.text(getErrorMessage(errRes));
+        $errorModal.modal();
+    })
+}
+
+function removeTokenFromNotificationFromModal(management_code, prefix = "") {
+    let mom_id = $notificationMOMID.val();
+    let data = {
+        "mom_id": mom_id
+    };
+    data = JSON.stringify(data);
+    $.ajax({
+        type: "DELETE",
+        data: data,
+        dataType: "json",
+        contentType: "application/json",
+        url: `${storageGet('notifications_endpoint')}/${management_code}/token`,
+        success: function () {
+            updateNotificationsInfoPartInModal(mom_id, prefix);
+        },
+        error: function (errRes) {
+            $errorModalMsg.text(getErrorMessage(errRes));
+            $errorModal.modal();
+        }
+    });
 }
 
 function fillNotificationAndCalendarInfo(cals, notifications, $container, prefix = "") {
@@ -472,6 +544,16 @@ $('#sent-calendar-add').on('click', function () {
     });
 })
 
+function updateNotificationsInfoPartInModal(mom_id, prefix = "") {
+    listNotifications(function () {
+        let nots = momIDNotificationsMap[mom_id];
+        let user_nots = momIDNotificationsMap["user"] || [];
+        nots = nots.concat(user_nots);
+        fillNotificationInfo(nots, true, prefix);
+        $(prefixId("subscribe-mail-content", prefix)).collapse('hide');
+    });
+}
+
 function sendNewEmailNotificationFromModal(prefix = "") {
     let mom_id = $notificationMOMID.val();
     let data = {
@@ -488,17 +570,22 @@ function sendNewEmailNotificationFromModal(prefix = "") {
         contentType: "application/json",
         url: storageGet('notifications_endpoint'),
         success: function () {
-            listNotifications(function () {
-                let nots = momIDNotificationsMap[mom_id];
-                let user_nots = momIDNotificationsMap["user"] || [];
-                nots = nots.concat(user_nots);
-                fillNotificationInfo(nots, true, prefix);
-                $(prefixId("subscribe-mail-content", prefix)).collapse('hide');
-            });
+            updateNotificationsInfoPartInModal(mom_id, prefix);
         },
         error: function (errRes) {
             $errorModalMsg.text(getErrorMessage(errRes));
             $errorModal.modal();
         },
     });
+}
+
+function toggle_subscribe_notification_content(prefix = "") {
+    let selectors = [
+        prefixId('send-new-mail-notification-btn', prefix),
+        prefixId('send-existing-mail-notification-btn', prefix),
+        prefixId('subscribe-mail-new', prefix),
+        prefixId('subscribe-mail-existing', prefix),
+        `.${prefix}toggle-subscribe-notification-content-btn`
+    ];
+    $(selectors.join(",")).toggleClass('d-none');
 }

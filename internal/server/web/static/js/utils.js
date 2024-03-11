@@ -67,15 +67,18 @@ function escapeSelector(s) {
 }
 
 function doNext(...next) {
-    switch (next.length) {
-        case 0:
-            return;
-        case 1:
-            return next[0]();
-        default:
-            let other = next.splice(1);
-            return next[0](...other);
+    if (next.length === 0) {
+        return;
     }
+    let n = next[0];
+    if (typeof n !== 'function') {
+        return;
+    }
+    if (next.length === 1) {
+        return n();
+    }
+    let other = next.splice(1);
+    return n(...other);
 }
 
 function chainFunctions(...fncs) {
