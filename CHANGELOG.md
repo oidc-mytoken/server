@@ -12,6 +12,23 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.9.2
+
+### Packaging
+
+- Fixed `mariadb-client` dependecy for `mytoken-server-migratedb` on rpm based distros
+
+### Dependencies
+- Bump github.com/go-sql-driver/mysql from 1.7.1 to 1.8.0
+- Bump github.com/gofiber/fiber/v2 from to 2.52.0 2.52.2
+- Bump github.com/gofiber/template/mustache/v2 from 2.0.8 to 2.0.9
+- Bump github.com/lestrrat-go/jwx from 1.2.28 to 1.2.29
+- Bump github.com/redis/go-redis/v9 from 9.4.0 to 9.5.1
+- Bump golang.org/x/crypto from 0.19.0 to 0.21.0
+- Bump golang.org/x/mod from 0.15.0 to 0.16.0
+- Bump golang.org/x/oauth2 from 0.17.0 to 0.18.0
+- Bump golang.org/x/term from 0.17.0 to 0.18.0
+
 ## mytoken 0.9.1
 
 ### Enhancements
