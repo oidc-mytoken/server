@@ -9,7 +9,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/gliderlabs/ssh v0.3.6
 	github.com/go-resty/resty/v2 v2.11.0
-	github.com/go-sql-driver/mysql v1.7.1
+	github.com/go-sql-driver/mysql v1.8.0
 	github.com/gofiber/fiber/v2 v2.52.2
 	github.com/gofiber/helmet/v2 v2.2.26
 	github.com/gofiber/template/mustache/v2 v2.0.9
@@ -38,6 +38,7 @@ require (
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/adam-hanna/arrayOperations v1.0.1 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
