@@ -115,9 +115,9 @@ nfpms:
     section: misc
     bindir: /usr/bin
     overrides:
-      dependencies:
-        - MariaDB-client
       rpm:
+        dependencies:
+          - MariaDB-client
         file_name_template: >-
           {{ .PackageName }}-{{ .Version }}.
           {{- if eq .Arch "386" }}i386{{- else if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
