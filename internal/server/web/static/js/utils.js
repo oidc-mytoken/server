@@ -179,3 +179,8 @@ function addToArrayMap(map, key, value, equals = (a, b) => a === b) {
     map[key] = arr
     return map
 }
+
+function standardErrorHandler(errRes) {
+    $errorModalMsg.text(getErrorMessage(errRes));
+    $errorModal.modal();
+}

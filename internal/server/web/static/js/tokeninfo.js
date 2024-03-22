@@ -172,9 +172,17 @@ function tokenlistToHTML(tokenTrees, deleteClass) {
         '<th>Expires</th>' +
         '<th></th>' +
         '</tr></thead>' +
-        '<tbody>' +
+        '<tbody id="token-list-table">' +
         tableEntries +
         '</tbody></table>';
+}
+
+function tokenFoldCollapse() {
+    let $tokenfolds = $('.token-fold');
+    $tokenfolds.find('i').removeClass('fa-caret-down').addClass('fa-caret-right');
+    $tokenfolds.parent().each(function (_, tr) {
+        $(tr).parent().find(`tr[parent-id="${tr.id}"]`).hideB();
+    });
 }
 
 function activateTokenList() {

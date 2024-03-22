@@ -1,8 +1,15 @@
 {{#notifications}}
+    {{#notification-listing}}
     <h4>Notifications</h4>
     <p>
-        Settings related to notifications can be changed under <a href="/settings#notifications">Settings</a>.
+        Settings related to email notifications can be changed under <a href="/settings#notifications">Settings</a>.
     </p>
+
+    <button class="btn btn-success" onclick="newNotificationModal()"><i class="fas fa-plus"></i> Create
+        new Notification
+    </button>
+    {{>notifications/new-notification-modal}}
+    {{>notifications/delete-notification-modal}}
 
     <button class="btn btn-reload" id="notifications-reload" data-toggle="tooltip" data-placement="bottom"
             title="Reload data">
@@ -14,5 +21,50 @@
     </button>
     <p class="card-text" id="notifications-msg"></p>
 
-    {{>notifications/modify-container}}
+
+    <div class="d-none" id="notifications-modify">
+        <input id="management-code" type="hidden">
+
+        <div class="alert border">
+            <h5>Subscribed Notification Classes</h5>
+            <ul class="list-group bg-my_grey list-group-striped">
+                {{#notification-classes}}
+                    {{> capabilities/part}}
+                {{/notification-classes}}
+            </ul>
+            <button role="button" class="btn btn-primary mt-2" id="btn-save-notification-classes"><i class="fas
+            fa-save"></i>
+            </button>
+        </div>
+
+        <div class="alert border">
+            <div id="subscribed-tokens-details">
+                <h5>Subscribed Tokens</h5>
+                <table class="table table-hover table-grey">
+                    <thead>
+                    <tr>
+                        <th style="min-width: 35%;">Token Name</th>
+                        <th>Created</th>
+                        <th>Created from IP</th>
+                        <th>Expires</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody id="notifications-tokens-table">
+                    </tbody>
+                </table>
+                <button class="btn btn-success" id="btn-add-token-to-notification"><i class="fa fa-plus-circle"></i>
+                    Add
+                    token
+                </button>
+            </div>
+            <div id="subscribed-tokens-details-user-wide" class="d-none">
+                <h5>User Wide Notification</h5>
+                <p>This notification is user-wide and applies to all mytokens.</p>
+            </div>
+        </div>
+
+    </div>
+
+    {{/notification-listing}}
 {{/notifications}}

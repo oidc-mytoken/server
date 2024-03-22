@@ -4,7 +4,19 @@ let momIDNotificationsMap = {};
 let momIDCalendarsMap = {};
 
 const notificationPrefix = "notifications-";
+const notificationListPrefix = "notification-listing-";
 
+const $deleteNotificationModal = $('#delete-notification-modal');
+const $lastTokenInNotificationHint = $('#last-token-hint');
+
+const $newNotificationModal = $('#new-notification-modal');
+const $newNotificationContent = $('.new-notification-content');
+const $onlyAddTokensContent = $('.only-add-tokens-content');
+const $newNotificationUserWideInput = $('#new-notification-user-wide-input');
+
+$(function () {
+    $newNotificationUserWideInput.prop("checked", false);
+})
 
 function listNotifications(...next) {
     $.ajax({
@@ -19,12 +31,15 @@ function listNotifications(...next) {
                 if (n["user_wide"]) {
                     addToArrayMap(momIDNotificationsMap, "user", n, (a, b) => a["notification_id"] === b["notification_id"])
                 } else {
-                    n["subscribed_tokens"].forEach(function (momid) {
-                        addToArrayMap(momIDNotificationsMap, momid, n, (a, b) => a["notification_id"] === b["notification_id"])
-                    });
+                    let tokens = n["subscribed_tokens"];
+                    if (tokens !== undefined) {
+                        tokens.forEach(function (momid) {
+                            addToArrayMap(momIDNotificationsMap, momid, n, (a, b) => a["notification_id"] === b["notification_id"])
+                        });
+                    }
                 }
             })
-            $('#notifications-msg').html(notificationsToTable(notifications));
+            $('#notifications-msg').html(notificationsToTable(notifications, true, n => `<button class="btn" type="button" onclick="showDeleteNotificationModal('${n["management_code"]}')" data-toggle="tooltip" data-placement="right" data-original-title="Delete Notification"><i class="fas fa-trash"></i></button>`));
             $('[data-toggle="tooltip"]').tooltip();
             doNext(...next);
         },
@@ -89,7 +104,7 @@ function notificationsToTable(notifications, details = true, last_td = (n => "")
         }
         let tokens = userwideIcon;
         if (!n["user_wide"]) {
-            tokens = `<span class="badge badge-pill badge-primary">${n["subscribed_tokens"].length}</span>`;
+            tokens = `<span class="badge badge-pill badge-primary">${(n["subscribed_tokens"] || []).length}</span>`;
         }
         let management_code = n["management_code"];
         let notification_classes_icons = getNotificationClassIcon(n, "AT_creations") +
@@ -101,7 +116,7 @@ function notificationsToTable(notifications, details = true, last_td = (n => "")
               data-placement="bottom" title=""
               data-original-title="${notification_classes_str}">${notification_classes_icons}</span>`
         let details_html = details ? `role="button" onclick="toggleSubscriptionDetails('${management_code}')"` : '';
-        tableEntries += `<tr management-code="${management_code}" ${details_html}><td>${typeIcon}</td><td>${notification_classes_html}</td><td>${tokens}</td><td>${last_td(n)}</td></tr>`;
+        tableEntries += `<tr management-code="${management_code}"><td ${details_html}>${typeIcon}</td><td ${details_html}>${notification_classes_html}</td><td ${details_html}>${tokens}</td><td>${last_td(n)}</td></tr>`;
         if (details) {
             tableEntries += `<tr><td colspan="4" management-code="${management_code}" class="notification-details-container d-none pl-5"></td></tr>`;
         }
@@ -155,26 +170,130 @@ function _fillModifyNotification(managementCode) {
     $managementCodeInput.val(managementCode);
     $notificationsTokenTable.html("");
     let n = notificationsMap[managementCode];
-    capabilityChecks("notifications-modify-").prop("checked", false);
+    capabilityChecks(notificationListPrefix).prop("checked", false);
     n["notification_classes"].forEach(function (nc) {
-        checkCapability(nc, "notifications-modify-");
+        checkCapability(nc, notificationListPrefix);
     });
-    let tokens = n["subscribed_tokens"];
-    if (tokens === undefined) {
+    if (n["user_wide"]) {
         $notificationSubscribedTokensDetailsUserWide.showB();
         $notificationSubscribedTokensDetails.hideB();
     } else {
+        let tokens = n["subscribed_tokens"] || [];
         tokens.forEach(function (momid) {
-            copyTokenTr($(`tr[mom-id="${momid}"]`).clone(true), false, tokens);
+            copyTokenTr($('#token-list-table').find(`tr[mom-id="${momid}"]`).clone(true), false, tokens);
         });
         $notificationSubscribedTokensDetailsUserWide.hideB();
         $notificationSubscribedTokensDetails.showB();
     }
 }
 
+
+function notificationAddAllTokenList($container, hide_tokens = undefined) {
+    if (loadedTokenList) {
+        _notificationAddAllTokenList($container, hide_tokens);
+    } else {
+        _getListTokenInfo(undefined, function () {
+            loadedTokenList = true;
+            _notificationAddAllTokenList($container, hide_tokens);
+        });
+    }
+}
+
+function _notificationAddAllTokenList($container, hide_tokens = undefined) {
+    let $original_trs = $('#token-list-table').find('tr');
+    if ($original_trs.length === $container.find('tr').length) {
+        $container.find('tr').showB();
+        if (hide_tokens !== undefined) {
+            hide_tokens.forEach(function (mom_id) {
+                $container.find(`tr[mom-id=${escapeSelector(mom_id)}]`).hideB();
+            });
+        }
+        tokenFoldCollapse();
+        $('.notification-token-select').prop("checked", false);
+        $('.include-children-switch').prop("disabled", true).prop("checked", true);
+        return;
+    }
+    let $all_trs = $original_trs.clone(true);
+    $container.html();
+    $all_trs.each(function (_, tr) {
+        let $tr = $(tr);
+        let old_id = $tr.attr("id");
+        let new_id = 'notifications-all-token-list-to-add-' + old_id;
+        $tr.attr("id", new_id);
+        let old_parent = $tr.attr("parent-id");
+        if (old_parent !== undefined && old_parent !== null && old_parent !== "" && old_parent !== "0") {
+            let new_parent = 'notifications-all-token-list-to-add-' + old_parent;
+            $tr.attr("parent-id", new_parent);
+        }
+        let mom_id = $tr.find('i.fa-trash').parent().attr("id").replace("revoke-", "");
+        if (hide_tokens !== undefined && hide_tokens.includes(mom_id)) {
+            $tr.hideB();
+        }
+        $tr.find('i.fa-bell').parent().remove();
+        $tr.find('i.fa-trash').parent().remove();
+        $tr = $tr.prepend(`
+            <td class="d-inline-flex">
+                <input type="checkbox" class="notification-token-select" onclick="toggleNotificationTokenSelect.call(this)" value="${mom_id}" data-toggle="tooltip" data-original-title="Select Token">
+                <div class="ml-1 custom-control custom-switch" data-toggle="tooltip" data-original-title="Include Children" onclick="toggleIncludeChildren.call(this)">
+                  <input type="checkbox" class="custom-control-input include-children-switch" disabled checked>
+                  <label class="custom-control-label"></label>
+                </div>
+            </td>`);
+        $container.append($tr);
+    });
+    tokenFoldCollapse();
+    $('.notification-token-select').prop("checked", false);
+    $('.include-children-switch').prop("disabled", true).prop("checked", true);
+    $('[data-toggle="tooltip"]').tooltip();
+}
+
+function toggleIncludeChildren() {
+    $input = $(this).find('input.include-children-switch');
+    if ($input.prop("disabled")) {
+        return;
+    }
+    $input.prop("checked", !$input.prop("checked"));
+    let $tr = $(this).parent().parent();
+
+    let $child_trs = findTrTokenChilds($tr.prop("id"));
+    $child_trs.find('.notification-token-select').prop("checked", $input.prop("checked"));
+    $child_trs.find('.include-children-switch').prop("disabled", !$input.prop("checked"));
+}
+
+function findTrTokenChilds(parent_id) {
+    let $all_childs = $();
+    let $childs = $('#notifications-all-tokens-to-subscribe-table').find(`tr[parent-id="${parent_id}"`);
+    $childs.each(function (_, c) {
+        let $c = $(c);
+        $all_childs = $all_childs.add($c)
+        $all_childs = $all_childs.add(findTrTokenChilds($c.prop("id")));
+    });
+    return $all_childs;
+}
+
+function toggleNotificationTokenSelect() {
+    let checked = $(this).prop("checked");
+    let $childSwitch = $(this).siblings().find('.include-children-switch');
+    $childSwitch.prop('disabled', !checked);
+    if ($childSwitch.prop("checked")) {
+        let $child_trs = findTrTokenChilds($(this).parent().parent().prop("id"));
+        $child_trs.find('.notification-token-select').prop("checked", checked);
+        $child_trs.find('.include-children-switch').prop("disabled", !checked);
+    }
+}
+
+function getSelectedTokensForNotification() {
+    return $('.notification-token-select:checked').map((_, v) => {
+        return {
+            "mom_id": $(v).val(),
+            "include_children": $(v).siblings().find('.include-children-switch').prop("checked")
+        }
+    }).get()
+}
+
 function copyTokenTr($tr, force, tokens) {
     let old_id = $tr.attr("id");
-    let new_id = 'notifications-' + old_id;
+    let new_id = notificationPrefix + old_id;
     $tr.attr("id", new_id);
     let old_parent = $tr.attr("parent-id");
     if (old_parent !== undefined && old_parent !== null && old_parent !== "" && old_parent !== "0") {
@@ -187,8 +306,14 @@ function copyTokenTr($tr, force, tokens) {
             return;
         }
     }
+    let $btntd = $tr.find('i.fa-bell').parent().parent();
+    let mom_id = $tr.find('i.fa-trash').parent().attr("id").replace("revoke-", "");
     $tr.find('i.fa-bell').parent().remove();
     $tr.find('i.fa-trash').parent().remove();
+    $btntd.append(`<button class="btn" onclick="removeTokenFromNotificationFromMangement('${mom_id}')" data-toggle="tooltip" data-placement="right" data-original-title="Remove token from notification"><i class="fas fa-minus"</button>`);
+    if (!force) {
+        $tr.showB();
+    }
     $notificationsTokenTable.append($tr);
     let $childs = $(`tr[parent-id="${old_id}"`);
     $childs.each(function () {
@@ -200,7 +325,58 @@ function copyTokenTr($tr, force, tokens) {
         $child.attr("parent-id", new_id);
         copyTokenTr($child, true, tokens);
     })
+    $('[data-toggle="tooltip"]').tooltip();
+}
 
+function showDeleteNotificationModal(management_code) {
+    $managementCodeInput.val(management_code);
+    $lastTokenInNotificationHint.hideB();
+    $deleteNotificationModal.modal();
+}
+
+function deleteNotification() {
+    $.ajax({
+        type: "DELETE",
+        dataType: "json",
+        contentType: "application/json",
+        url: `${storageGet('notifications_endpoint')}/${$managementCodeInput.val()}`,
+        success: function () {
+            listNotifications();
+        },
+        error: function (errRes) {
+            $errorModalMsg.text(getErrorMessage(errRes));
+            $errorModal.modal();
+        }
+    });
+}
+
+function removeTokenFromNotificationFromMangement(mom_id) {
+    let mc = $managementCodeInput.val();
+    if ($notificationsTokenTable.find('tr').length === 1) {
+        $lastTokenInNotificationHint.showB();
+        $deleteNotificationModal.modal();
+        return;
+    }
+    let data = {
+        "mom_id": mom_id
+    };
+    data = JSON.stringify(data);
+    $.ajax({
+        type: "DELETE",
+        data: data,
+        dataType: "json",
+        contentType: "application/json",
+        url: `${storageGet('notifications_endpoint')}/${mc}/token`,
+        success: function () {
+            listNotifications(function () {
+                $('#notifications-msg').find(`tr[management-code=${mc}] td[role=button]`)[0].click();
+            });
+        },
+        error: function (errRes) {
+            $errorModalMsg.text(getErrorMessage(errRes));
+            $errorModal.modal();
+        }
+    });
 }
 
 function $tokeninfoCalendarListing(prefix = "") {
@@ -264,7 +440,7 @@ function fillNotificationInfo(notifications, notificationsSet, prefix = "") {
     let tableEntries = ``;
     otherNots.forEach(function (n) {
         let management_code = n["management_code"];
-        let tokens = `<span class="badge badge-pill badge-primary">${n["subscribed_tokens"].length}</span>`;
+        let tokens = `<span class="badge badge-pill badge-primary">${(n["subscribed_tokens"] || []).length}</span>`;
         let notification_classes_icons = getNotificationClassIcon(n, "AT_creations") +
             getNotificationClassIcon(n, "subtoken_creations") +
             getNotificationClassIcon(n, "setting_changes") +
@@ -589,3 +765,126 @@ function toggle_subscribe_notification_content(prefix = "") {
     ];
     $(selectors.join(",")).toggleClass('d-none');
 }
+
+$('#btn-save-notification-classes').on('click', function () {
+    let mc = $managementCodeInput.val();
+    let data = {"notification_classes": getCheckedCapabilities(notificationListPrefix)};
+    data = JSON.stringify(data);
+    $.ajax({
+        type: "PUT",
+        data: data,
+        dataType: "json",
+        contentType: "application/json",
+        url: `${storageGet('notifications_endpoint')}/${mc}/nc`,
+        success: function () {
+            listNotifications();
+        },
+        error: function (errRes) {
+            $errorModalMsg.text(getErrorMessage(errRes));
+            $errorModal.modal();
+        }
+    });
+})
+
+function newNotificationModal() {
+    notificationAddAllTokenList($('#notifications-all-tokens-to-subscribe-table'));
+    $onlyAddTokensContent.hideB();
+    $newNotificationContent.showB();
+    $newNotificationModal.modal()
+}
+
+
+$('#btn-add-token-to-notification').on('click', function () {
+    let tokens = $(this).closest('div').find('tbody tr').map((_, v) => $(v).attr('mom-id')).get();
+    notificationAddAllTokenList($('#notifications-all-tokens-to-subscribe-table'), tokens);
+    $onlyAddTokensContent.showB();
+    $newNotificationContent.hideB();
+    $newNotificationModal.modal()
+});
+
+$('.new-notification-save-btn').on('click', function () {
+    if (!$onlyAddTokensContent.hasClass('d-none')) {
+        addTokensToNotification();
+    } else {
+        saveNewNotification();
+    }
+})
+
+function saveNewNotification() {
+    let user_wide = $newNotificationUserWideInput.prop("checked");
+    let data = {
+        "user_wide": user_wide,
+        "notification_type": "mail",
+        "notification_classes": getCheckedCapabilities("new-notification-modal-"),
+    };
+    let token_data = getSelectedTokensForNotification();
+    if (!user_wide && token_data.length > 0) {
+        Object.assign(data, token_data[0]);
+    }
+    data = JSON.stringify(data);
+
+    function end() {
+        listNotifications(function () {
+            $newNotificationModal.modal('hide');
+        })
+    }
+
+    $.ajax({
+        type: "POST",
+        data: data,
+        dataType: "json",
+        contentType: "application/json",
+        url: storageGet('notifications_endpoint'),
+        success: function (res) {
+            if (user_wide || token_data.length <= 1) {
+                end();
+                return;
+            }
+            let ajax_promises = [];
+            let mc = res["management_code"];
+            token_data.slice(1).forEach(function (data) {
+                data = JSON.stringify(data);
+                ajax_promises.push(
+                    $.ajax({
+                        type: "POST",
+                        data: data,
+                        dataType: "json",
+                        contentType: "application/json",
+                        url: `${storageGet('notifications_endpoint')}/${mc}/token`
+                    }));
+            })
+            $.when(...ajax_promises).then(end, standardErrorHandler)
+        },
+        error: standardErrorHandler,
+    });
+}
+
+function addTokensToNotification() {
+    let datas = getSelectedTokensForNotification();
+    let ajax_promises = [];
+    let mc = $managementCodeInput.val();
+    datas.forEach(function (data) {
+        data = JSON.stringify(data);
+        ajax_promises.push(
+            $.ajax({
+                type: "POST",
+                data: data,
+                dataType: "json",
+                contentType: "application/json",
+                url: `${storageGet('notifications_endpoint')}/${mc}/token`
+            }));
+    })
+    $.when(...ajax_promises).then(function () {
+        listNotifications(function () {
+            $('#notifications-msg').find(`tr[management-code=${mc}] td[role=button]`)[0].click();
+            $newNotificationModal.modal('hide');
+        });
+    }, function (errRes) {
+        $errorModalMsg.text(getErrorMessage(errRes));
+        $errorModal.modal();
+    })
+}
+
+$('#new-notification-user-wide-input').on('change', function () {
+    $('.user-wide-toggle-effected').toggleClass('d-none');
+})

@@ -216,9 +216,41 @@ func handleNewMailNotification(
 				emailInfo.Mail, "New Mytoken Notification Subscription",
 				emailInfo.PreferHTMLMail, "notification-welcome", welcomeData,
 			)
+			tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
+				rlog, tx, req.Mytoken.JWT, mt, *ctxutils.ClientMetaData(ctx), req.Mytoken.OriginalTokenType,
+			)
+			if err != nil {
+				res = model.ErrorToInternalServerErrorResponse(err)
+				return err
+			}
+			resData := pkg.NotificationsCreateResponse{
+				NotificationsCreateResponse: api.NotificationsCreateResponse{
+					ManagementCode: managementCode,
+				},
+			}
 			res = &model.Response{
 				Status:   fiber.StatusCreated,
-				Response: managementCode, //TODO
+				Response: resData,
+			}
+			if tokenUpdate != nil {
+				resData.TokenUpdate = tokenUpdate
+				res.Cookies = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
+				res.Response = resData
+			}
+
+			e := api.EventNotificationCreated
+			if req.MomID.HashValid() {
+				e = api.EventNotificationCreatedOther
+			}
+			if err = eventService.LogEvent(
+				rlog, tx, pkg3.MTEvent{
+					Event:          e,
+					MTID:           mt.ID,
+					ClientMetaData: *ctxutils.ClientMetaData(ctx),
+				},
+			); err != nil {
+				res = model.ErrorToInternalServerErrorResponse(err)
+				return err
 			}
 			return nil
 		},

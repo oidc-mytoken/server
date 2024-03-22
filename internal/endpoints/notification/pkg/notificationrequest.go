@@ -34,3 +34,9 @@ type NotificationRemoveTokenRequest struct {
 	Mytoken universalmytoken.UniversalMytoken `json:"mytoken" xml:"mytoken" form:"mytoken"`
 	MomID   mtid.MOMID                        `json:"mom_id" xml:"mom_id" form:"mom_id"`
 }
+
+// NotificationsCreateResponse is a type holding the response to a notification creation request
+type NotificationsCreateResponse struct {
+	api.NotificationsCreateResponse
+	TokenUpdate *pkg.MytokenResponse `json:"token_update,omitempty"`
+}

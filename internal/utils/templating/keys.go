@@ -44,8 +44,10 @@ const (
 
 // Keys for sub configs
 const (
-	MustacheSubTokeninfo     = "tokeninfo"
-	MustacheSubCreateMT      = "create-mt"
-	MustacheSubNotifications = "notifications"
-	MustacheSubMTListing     = "mt-listing"
+	MustacheSubTokeninfo            = "tokeninfo"
+	MustacheSubCreateMT             = "create-mt"
+	MustacheSubNotifications        = "notifications"
+	MustacheSubNotificationListing  = "notification-listing"
+	MustacheSubNewNotificationModal = "new-notification-modal"
+	MustacheSubMTListing            = "mt-listing"
 )
