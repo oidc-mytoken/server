@@ -24,6 +24,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	notifier "github.com/oidc-mytoken/server/internal/notifier/client"
+	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
@@ -173,8 +174,8 @@ func handleNewMailNotification(
 			mtID := mtid.MOMID{MTID: mt.ID}
 			var usedRestriction *restrictions.Restriction
 			welcomeData := map[string]any{
-				"management-url":       managementCode, //TODO
-				"token-name":           mt.Name,        // in case of momid req we will replace it later
+				"management-url":       routes.NotificationManagementURL(managementCode),
+				"token-name":           mt.Name, // in case of momid req we will replace it later
 				"issuer-url":           config.Get().IssuerURL,
 				"notification_classes": req.NotificationClasses,
 			}

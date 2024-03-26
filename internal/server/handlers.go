@@ -246,3 +246,17 @@ func handlePrivacy(ctx *fiber.Ctx) error {
 	}
 	return ctx.Render("sites/privacy", binding, templating.LayoutMain)
 }
+
+func handleNotificationManagement(ctx *fiber.Ctx) error {
+	return ctx.Render(
+		"sites/manage-notification", map[string]any{
+			"notification-management":                  true,
+			"empty-navbar":                             true,
+			templating.MustacheSubNewNotificationModal: true,
+			templating.MustacheKeyNotificationClasses:  webentities.AllWebNotificationClass(),
+			templating.MustacheKeyCollapse: map[string]bool{
+				"NotificationManagement": true,
+			},
+		}, templating.LayoutMain,
+	)
+}

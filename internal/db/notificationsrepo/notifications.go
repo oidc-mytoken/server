@@ -161,7 +161,7 @@ func GetNotificationsForUser(
 // GetNotificationForManagementCode returns the notification for a management code
 func GetNotificationForManagementCode(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, managementCode string,
-) (info *api.NotificationInfo, err error) {
+) (info *api.ManagementCodeNotificationInfoResponse, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			var withClass []notificationInfoBaseWithClass
@@ -179,19 +179,27 @@ func GetNotificationForManagementCode(
 				return nil
 			}
 			// we can have multiple entries for the different classes, but they will all be for the same notification id
-			info = &api.NotificationInfo{NotificationInfoBase: withClass[0].NotificationInfoBase}
+			info = &api.ManagementCodeNotificationInfoResponse{
+				NotificationInfo: api.NotificationInfo{
+					NotificationInfoBase: withClass[0].NotificationInfoBase,
+				},
+			}
 			for _, n := range withClass {
 				info.Classes = append(info.Classes, api.NewNotificationClass(n.Class))
 			}
 			if !info.UserWide {
-				if err = tx.Select(
-					&info.SubscribedTokens, `CALL Notifications_GetMTsForNotification(?)`,
-					info.NotificationID,
+				if err = errors.WithStack(
+					tx.Select(
+						&info.SubscribedTokens, `CALL Notifications_GetMTsForNotification(?)`,
+						info.NotificationID,
+					),
 				); err != nil {
-					return err
+					if _, err = db.ParseError(err); err != nil {
+						return err
+					}
 				}
 			}
-			return nil
+			return errors.WithStack(tx.Get(&info.OIDCIssuer, `CALL GetOIDCIssForManagementCode(?)`, managementCode))
 		},
 	)
 	return

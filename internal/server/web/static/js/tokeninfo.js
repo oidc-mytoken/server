@@ -127,7 +127,7 @@ function historyToHTML(events) {
 
 let tokenTreeIDCounter = 1;
 
-function _tokenTreeToHTML(tree, deleteClass, depth, parentID = 0) {
+function _tokenTreeToHTML(tree, deleteClass, depth, parentID = "0", includeBtns = true, filter_tokens = undefined, filter_out = false) {
     let token = tree['token'];
     let name = token['name'] || 'unnamed token';
     let nameClass = name === 'unnamed token' ? ' text-muted' : '';
@@ -140,9 +140,14 @@ function _tokenTreeToHTML(tree, deleteClass, depth, parentID = 0) {
     let hasChildren = false;
     if (children !== undefined) {
         children.forEach(function (child) {
-            tableEntries = _tokenTreeToHTML(child, deleteClass, depth + 1, thisID) + tableEntries;
+            tableEntries = _tokenTreeToHTML(child, deleteClass, depth + 1, thisID, includeBtns, filter_tokens, filter_out) + tableEntries;
             hasChildren = true;
         })
+    }
+    if (filter_tokens !== undefined) {
+        if (filter_out === filter_tokens.some(momid => momid === token["mom_id"])) {
+            return tableEntries;
+        }
     }
     let isExpired = (expires_at !== 0 && new Date(expires_at * 1000) < new Date());
     let historyBtn = `<button id="history-${token['mom_id']}" class="btn ml-2" type="button" onclick="showHistoryForID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Event History' : 'Sign in to show event history.'}"><i class="fas fa-history"></i></button>`;
@@ -152,7 +157,7 @@ function _tokenTreeToHTML(tree, deleteClass, depth, parentID = 0) {
         notificationsBtn += ` data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Manage notifications' : 'Sign in to manage notifications.'}"`;
     }
     notificationsBtn += `><i class="fas fa-bell"></i></butoton>`;
-    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" mom-id="${token['mom_id']}" class="${depth > 0 ? 'd-none' : ''} ${isExpired ? 'text-muted' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td>${historyBtn}${notificationsBtn}${deleteBtn}</td></tr>` + tableEntries;
+    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" mom-id="${token['mom_id']}" class="${depth > 0 ? 'd-none' : ''} ${isExpired ? 'text-muted' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td class="actions-td">${includeBtns ? historyBtn + notificationsBtn + deleteBtn : ""}</td></tr>` + tableEntries;
     return tableEntries
 }
 

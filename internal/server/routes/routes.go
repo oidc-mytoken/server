@@ -13,10 +13,11 @@ import (
 
 // EndpointURIs
 var (
-	RedirectURI              string
-	ConsentEndpoint          string
-	CalendarDownloadEndpoint string
-	ActionsEndpoint          string
+	RedirectURI                    string
+	ConsentEndpoint                string
+	CalendarDownloadEndpoint       string
+	ActionsEndpoint                string
+	NotificationManagementEndpoint string
 )
 
 // Init initializes the authcode component
@@ -26,6 +27,10 @@ func Init() {
 	ConsentEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.ConsentEndpoint)
 	CalendarDownloadEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.CalendarEndpoint)
 	ActionsEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.ActionsEndpoint)
+	NotificationManagementEndpoint = utils.CombineURLPath(
+		config.Get().IssuerURL,
+		generalPaths.NotificationManagementEndpoint,
+	)
 }
 
 // ActionsURL builds an action url from a pkg.ActionInfo
@@ -35,4 +40,8 @@ func ActionsURL(actionCode pkg.ActionInfo) string {
 	params.Set("code", url.QueryEscape(actionCode.Code))
 	p := params.Encode()
 	return fmt.Sprintf("%s?%s", ActionsEndpoint, p)
+}
+
+func NotificationManagementURL(mc string) string {
+	return utils.CombineURLPath(NotificationManagementEndpoint, mc)
 }

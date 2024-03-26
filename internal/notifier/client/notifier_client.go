@@ -18,6 +18,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/notifier/pkg"
 	server "github.com/oidc-mytoken/server/internal/notifier/server"
 	"github.com/oidc-mytoken/server/internal/notifier/server/mailing"
+	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/geoip"
 )
 
@@ -161,7 +162,7 @@ func sendNotificationsForNotificationInfos(
 					"notification-class": notificationClassName,
 					"mom_id":             mtID.Hash(),
 					"token-name":         tokenName.String,
-					"management-url":     n.ManagementCode, //TODO
+					"management-url":     routes.NotificationManagementURL(n.ManagementCode),
 				}
 				if e != nil {
 					bindingData["event"] = e.Event.String()

@@ -214,7 +214,7 @@ function _notificationAddAllTokenList($container, hide_tokens = undefined) {
         return;
     }
     let $all_trs = $original_trs.clone(true);
-    $container.html();
+    $container.html("");
     $all_trs.each(function (_, tr) {
         let $tr = $(tr);
         let old_id = $tr.attr("id");
@@ -306,7 +306,7 @@ function copyTokenTr($tr, force, tokens) {
             return;
         }
     }
-    let $btntd = $tr.find('i.fa-bell').parent().parent();
+    let $btntd = $tr.find('td.actions-td');
     let mom_id = $tr.find('i.fa-trash').parent().attr("id").replace("revoke-", "");
     $tr.find('i.fa-bell').parent().remove();
     $tr.find('i.fa-trash').parent().remove();
@@ -859,7 +859,7 @@ function saveNewNotification() {
     });
 }
 
-function addTokensToNotification() {
+function addTokensToNotification(callback = undefined) {
     let datas = getSelectedTokensForNotification();
     let ajax_promises = [];
     let mc = $managementCodeInput.val();
@@ -874,15 +874,15 @@ function addTokensToNotification() {
                 url: `${storageGet('notifications_endpoint')}/${mc}/token`
             }));
     })
-    $.when(...ajax_promises).then(function () {
-        listNotifications(function () {
-            $('#notifications-msg').find(`tr[management-code=${mc}] td[role=button]`)[0].click();
-            $newNotificationModal.modal('hide');
-        });
-    }, function (errRes) {
-        $errorModalMsg.text(getErrorMessage(errRes));
-        $errorModal.modal();
-    })
+    if (callback === undefined) {
+        callback = function () {
+            listNotifications(function () {
+                $('#notifications-msg').find(`tr[management-code=${mc}] td[role=button]`)[0].click();
+                $newNotificationModal.modal('hide');
+            })
+        };
+    }
+    $.when(...ajax_promises).then(callback, standardErrorHandler);
 }
 
 $('#new-notification-user-wide-input').on('change', function () {

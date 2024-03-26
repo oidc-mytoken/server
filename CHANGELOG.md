@@ -15,9 +15,18 @@
 
 ## mytoken 0.10.0
 
+### Features
+
+- Add support for notifications:
+  - Allows to create email notifications for various things
+  - Allows to calendar invites for token expirations
+  - Allows to create calendars and add token expirations to it; the ics feed can be subscribed to
+  - Allows to manage notifications on the web-interface
+
 ### Enhancements
 
 - In the tokeninfo pane in the webinterface expired JWTs now get a more precise badge.
+- Improved on returning json errors instead of html on api paths
 
 ## mytoken 0.9.2
 

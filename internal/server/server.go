@@ -121,16 +121,18 @@ func addRoutes(s fiber.Router) {
 	s.Get("/native", handleNativeCallback)
 	s.Get("/native/abort", handleNativeConsentAbortCallback)
 	s.Get(generalPaths.Privacy, handlePrivacy)
-	s.Get("/settings", handleSettings)
 	s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id"), calendar.HandleGetICS)
-	s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id", "view"), handleViewCalendar)
 	s.Get(generalPaths.ActionsEndpoint, actions.HandleActions)
 	addAPIRoutes(s)
 }
 
 func addWebRoutes(s fiber.Router) {
+	generalPaths := paths.GetGeneralPaths()
 	s.Get("/", handleIndex)
 	s.Get("/home", handleHome)
+	s.Get("/settings", handleSettings)
+	s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id", "view"), handleViewCalendar)
+	s.Get(utils.CombineURLPath(generalPaths.NotificationManagementEndpoint, ":mc"), handleNotificationManagement)
 }
 
 func start(s *fiber.App) {

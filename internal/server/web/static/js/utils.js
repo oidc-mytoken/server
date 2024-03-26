@@ -1,3 +1,6 @@
+const $errorModal = $('#error-modal');
+const $errorModalMsg = $('#error-modal-msg')
+
 $.fn.serializeObject = function () {
     let o = {};
     let a = this.serializeArray();

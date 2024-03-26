@@ -40,14 +40,15 @@ func init() {
 			0: defaultAPIPaths(apipath.V0),
 		},
 		other: GeneralPaths{
-			ConfigurationEndpoint: WellknownMytokenConfiguration,
-			FederationEndpoint:    WellknownOpenIDFederation,
-			OIDCRedirectEndpoint:  "/redirect",
-			JWKSEndpoint:          "/jwks",
-			ConsentEndpoint:       "/c",
-			Privacy:               "/privacy",
-			CalendarEndpoint:      "/calendars",
-			ActionsEndpoint:       "/actions",
+			ConfigurationEndpoint:          WellknownMytokenConfiguration,
+			FederationEndpoint:             WellknownOpenIDFederation,
+			OIDCRedirectEndpoint:           "/redirect",
+			JWKSEndpoint:                   "/jwks",
+			ConsentEndpoint:                "/c",
+			Privacy:                        "/privacy",
+			CalendarEndpoint:               "/calendars",
+			ActionsEndpoint:                "/actions",
+			NotificationManagementEndpoint: "/notifications",
 		},
 	}
 }
@@ -59,14 +60,15 @@ type paths struct {
 
 // GeneralPaths holds all non-api route paths
 type GeneralPaths struct {
-	ConfigurationEndpoint string
-	FederationEndpoint    string
-	OIDCRedirectEndpoint  string
-	JWKSEndpoint          string
-	ConsentEndpoint       string
-	Privacy               string
-	CalendarEndpoint      string
-	ActionsEndpoint       string
+	ConfigurationEndpoint          string
+	FederationEndpoint             string
+	OIDCRedirectEndpoint           string
+	JWKSEndpoint                   string
+	ConsentEndpoint                string
+	Privacy                        string
+	CalendarEndpoint               string
+	ActionsEndpoint                string
+	NotificationManagementEndpoint string
 }
 
 // APIPaths holds all api route paths
