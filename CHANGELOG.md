@@ -27,6 +27,7 @@
 
 - In the tokeninfo pane in the webinterface expired JWTs now get a more precise badge.
 - Improved on returning json errors instead of html on api paths
+- When not being logged in and no OP was selected now the 'Create new Mytoken' button in the webinterface is disabled.
 
 ## mytoken 0.9.2
 

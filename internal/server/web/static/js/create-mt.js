@@ -45,6 +45,19 @@ function mtInstructions(prefix = "") {
 
 const mtPrefix = "createMT-";
 
+const $getMTBtn = $('#get-mt');
+
+function disableCreateNewMytokenButtonBecauseOfMissingIssuer() {
+    $getMTBtn.prop("disabled", true);
+    $getMTBtn.attr("data-original-title", "Please select OpenID Provider");
+    $getMTBtn.tooltip();
+}
+
+function enableCreateNewMytokenButton() {
+    $getMTBtn.prop("disabled", false);
+    $getMTBtn.attr("data-original-title", "");
+}
+
 function initCreateMT(...next) {
     if (loggedIn) {
         $mtOIDCIss.selectpicker('val', storageGet("oidc_issuer"));
@@ -56,6 +69,11 @@ function initCreateMT(...next) {
     updateRotationIcon(mtPrefix);
     initProfileSupport();
     fillPropertiesFromQuery();
+    if ($mtOIDCIss.val() === "") {
+        disableCreateNewMytokenButtonBecauseOfMissingIssuer();
+    } else {
+        enableCreateNewMytokenButton();
+    }
     doNext(...next);
 }
 
@@ -136,6 +154,7 @@ function fillPropertiesFromQuery() {
 }
 
 $mtOIDCIss.on('changed.bs.select', function () {
+    enableCreateNewMytokenButton();
     initRestrGUI(mtPrefix);
 });
 
