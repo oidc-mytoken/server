@@ -86,3 +86,14 @@ func AddRemoveFromCalendarCode(
 	)
 	return
 }
+
+// UseRemoveCalendarCode uses a calendar remove ActionCode to remove a token from a calendar and then deletes the
+// code from the database
+func UseRemoveCalendarCode(rlog log.Ext1FieldLogger, tx *sqlx.Tx, code string) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL ActionCodes_UseRemoveFromCalendar(?)`, code)
+			return errors.WithStack(err)
+		},
+	)
+}

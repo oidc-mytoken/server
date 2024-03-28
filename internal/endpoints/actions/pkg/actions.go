@@ -9,13 +9,11 @@ import (
 const (
 	ActionRecreate           = "recreate_token"
 	ActionVerifyEmail        = "verify_email"
-	ActionManageNotification = "manage_notification"
 	ActionRemoveFromCalendar = "remove_from_calendar"
 )
 
 // CodeLifetimes holds the default lifetime of the different action codes
 var CodeLifetimes = map[string]int{
-	ActionManageNotification: 0,
 	ActionVerifyEmail:        3600,
 	ActionRecreate:           0,
 	ActionRemoveFromCalendar: 0,

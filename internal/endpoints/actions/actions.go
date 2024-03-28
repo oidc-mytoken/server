@@ -23,8 +23,6 @@ func HandleActions(ctx *fiber.Ctx) error {
 	switch actionInfo.Action {
 	case pkg.ActionRecreate:
 		return handleRecreate(ctx, actionInfo.Code)
-	case pkg.ActionManageNotification:
-		return handleManageNotification(ctx, actionInfo.Code)
 	case pkg.ActionVerifyEmail:
 		return handleVerifyEmail(ctx, actionInfo.Code)
 	case pkg.ActionRemoveFromCalendar:
@@ -53,11 +51,15 @@ func handleVerifyEmail(ctx *fiber.Ctx, code string) error {
 	)
 }
 
-func handleManageNotification(ctx *fiber.Ctx, code string) error {
-	return ctxutils.RenderErrorPage(ctx, fiber.StatusNotImplemented, api.ErrorNYI.CombinedMessage())
-}
 func handleRemoveFromCalendar(ctx *fiber.Ctx, code string) error {
-	return ctxutils.RenderErrorPage(ctx, fiber.StatusNotImplemented, api.ErrorNYI.CombinedMessage())
+	rlog := logger.GetRequestLogger(ctx)
+	err := actionrepo.UseRemoveCalendarCode(rlog, nil, code)
+	if err != nil {
+		return ctxutils.RenderInternalServerErrorPage(ctx, err)
+	}
+	return ctxutils.RenderErrorPage(
+		ctx, http.StatusOK, "The token was successfully removed from the calendar.", "Token Removed from Calendar",
+	)
 }
 
 // CreateVerifyEmail creates an action url for verifying a mail address
