@@ -2,11 +2,14 @@ package actionrepo
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/unixtime"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 )
 
 // VerifyMail verifies a mail address
@@ -96,4 +99,25 @@ func UseRemoveCalendarCode(rlog log.Ext1FieldLogger, tx *sqlx.Tx, code string) e
 			return errors.WithStack(err)
 		},
 	)
+}
+
+// RecreateData holds data stored in the database to enable re-creation of mytokens
+type RecreateData struct {
+	Name         db.NullString             `db:"name"`
+	Issuer       string                    `db:"issuer"`
+	Restrictions restrictions.Restrictions `db:"restrictions"`
+	Capabilities api.Capabilities          `db:"capabilities"`
+	Rotation     *api.Rotation             `db:"rotation"`
+	Created      unixtime.UnixTime         `db:"created"`
+}
+
+// GetRecreateData returns the stored token recreation data linked to the passed code
+func GetRecreateData(rlog log.Ext1FieldLogger, tx *sqlx.Tx, code string) (data RecreateData, found bool, err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Get(&data, `CALL ActionCodes_GetRecreateData(?)`, code))
+		},
+	)
+	found, err = db.ParseError(err)
+	return
 }

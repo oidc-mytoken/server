@@ -1,13 +1,18 @@
 package actions
 
 import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/unixtime"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/actionrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/actions/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
@@ -34,8 +39,56 @@ func HandleActions(ctx *fiber.Ctx) error {
 	)
 }
 
-func handleRecreate(ctx *fiber.Ctx, code string) error {
-	return ctxutils.RenderErrorPage(ctx, fiber.StatusNotImplemented, api.ErrorNYI.CombinedMessage())
+func handleRecreate(ctx *fiber.Ctx, code string) (err error) {
+	rlog := logger.GetRequestLogger(ctx)
+	var found bool
+	var baseRequest string
+	err = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			var data actionrepo.RecreateData
+			data, found, err = actionrepo.GetRecreateData(rlog, nil, code)
+			if err != nil || !found {
+				return err
+			}
+			var req api.GeneralMytokenRequest
+			req.Issuer = data.Issuer
+			if data.Name.Valid {
+				req.Name = data.Name.String
+			}
+			req.Rotation = data.Rotation
+			req.Capabilities = data.Capabilities
+			if data.Restrictions != nil {
+				restr := make(api.Restrictions, len(data.Restrictions))
+				created := data.Created
+				now := unixtime.Now()
+				diff := now - created
+				for i, r := range data.Restrictions {
+					apiR := &r.Restriction
+					if r.NotBefore != 0 {
+						apiR.NotBefore = int64(r.NotBefore + diff)
+					}
+					if r.ExpiresAt != 0 {
+						apiR.ExpiresAt = int64(r.ExpiresAt + diff)
+					}
+					restr[i] = apiR
+				}
+				req.Restrictions = restr
+			}
+			j, err := json.Marshal(req)
+			if err != nil {
+				return err
+			}
+			baseRequest = base64.RawURLEncoding.EncodeToString(j)
+			return nil
+		},
+	)
+	if err != nil {
+		return ctxutils.RenderInternalServerErrorPage(ctx, err)
+	}
+	if !found {
+		return ctxutils.RenderErrorPage(ctx, fiber.StatusNotFound, "recreation code not found")
+	}
+	return ctx.Redirect(fmt.Sprintf("/home?r=%s#mt", baseRequest), fiber.StatusSeeOther)
 }
 func handleVerifyEmail(ctx *fiber.Ctx, code string) error {
 	rlog := logger.GetRequestLogger(ctx)
