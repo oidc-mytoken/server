@@ -137,7 +137,6 @@ function fillGUIFromRequestData(req) {
     fillGUIWithMaybeTemplate(req.restrictions, "restr", set_restrictions_in_gui, mtPrefix);
     fillGUIWithMaybeTemplate(req.rotation, "rot", set_rotation_in_gui, mtPrefix);
     fillGUIWithMaybeTemplate(req.capabilities, "cap", set_capabilities_in_gui, mtPrefix);
-
 }
 
 function fillPropertiesFromQuery() {
@@ -151,6 +150,7 @@ function fillPropertiesFromQuery() {
     const req_str = window.atob(base64);
     const req = JSON.parse(req_str);
     fillGUIFromRequestData(req);
+    $(prefixId(`profile-template`, mtPrefix)).val("");
 }
 
 $mtOIDCIss.on('changed.bs.select', function () {
