@@ -43,10 +43,7 @@ function listNotifications(...next) {
             $('[data-toggle="tooltip"]').tooltip();
             doNext(...next);
         },
-        error: function (errRes) {
-            $errorModalMsg.text(getErrorMessage(errRes));
-            $errorModal.modal();
-        },
+        error: standardErrorHandler,
     });
 }
 
@@ -343,10 +340,7 @@ function deleteNotification() {
         success: function () {
             listNotifications();
         },
-        error: function (errRes) {
-            $errorModalMsg.text(getErrorMessage(errRes));
-            $errorModal.modal();
-        }
+        error: standardErrorHandler
     });
 }
 
@@ -372,10 +366,7 @@ function removeTokenFromNotificationFromMangement(mom_id) {
                 $('#notifications-msg').find(`tr[management-code=${mc}] td[role=button]`)[0].click();
             });
         },
-        error: function (errRes) {
-            $errorModalMsg.text(getErrorMessage(errRes));
-            $errorModal.modal();
-        }
+        error: standardErrorHandler
     });
 }
 
@@ -511,9 +502,9 @@ function fillNotificationAndCalendarInfo(cals, notifications, $container, prefix
     let notificationsSet = notifications !== undefined && notifications.length > 0;
     if (!calsSet && !notificationsSet) {
         $container.hideB();
-        return;
+    } else {
+        $container.showB();
     }
-    $container.showB();
     fillCalendarInfo(cals, calsSet, prefix);
     fillNotificationInfo(notifications, notificationsSet, prefix);
 }
@@ -526,12 +517,12 @@ function notificationModal(doesExpire) {
     let nots = momIDNotificationsMap[id] || [];
     let user_nots = momIDNotificationsMap["user"] || [];
     nots = nots.concat(user_nots);
-    $tokeninfoCalendarListing(notificationPrefix).showB();
     fillNotificationAndCalendarInfo(cals, nots, $(prefixId("not-info-body", notificationPrefix)), notificationPrefix);
 
     if (!doesExpire) {
-        $tokeninfoCalendarListing(notificationPrefix).hideB();
+        $('#notifications-calendarinfo-alert').hideB();
     } else {
+        $('#notifications-calendarinfo-alert').showB();
         notificationModalInitSubscribeCalendars(cals);
         notificationModalInitEntryInvite();
     }
@@ -709,7 +700,7 @@ $('#sent-calendar-add').on('click', function () {
         success: function () {
             getCalendars(function () {
                 let cals = momIDCalendarsMap[momID];
-                fillCalendarInfo(cals, true, notificationPrefix);
+                fillCalendarInfo(cals, cals !== undefined && cals.length > 0, notificationPrefix);
                 notificationModalInitSubscribeCalendars(cals);
             });
         },
