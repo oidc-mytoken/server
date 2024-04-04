@@ -136,7 +136,7 @@ func ParseError(e error) (found bool, err error) {
 		found = true
 		return
 	}
-	if !errors.Is(err, sql.ErrNoRows) {
+	if !errors.Is(e, sql.ErrNoRows) {
 		err = e
 	}
 	return
