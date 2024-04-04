@@ -51,7 +51,7 @@ func HandleGet(ctx *fiber.Ctx) error {
 			}
 			return &MailSettingsInfoResponse{
 				MailSettingsInfoResponse: api.MailSettingsInfoResponse{
-					EmailAddress:   info.Mail,
+					EmailAddress:   info.Mail.String,
 					EmailVerified:  info.MailVerified,
 					PreferHTMLMail: info.PreferHTMLMail,
 				},

@@ -345,16 +345,16 @@ func HandleCalendarEntryViaMail(
 				res = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
-			if !found {
+			if !found || !mailInfo.Mail.Valid {
 				res = &model.Response{
-					Status:   http.StatusPreconditionRequired,
+					Status:   http.StatusUnprocessableEntity,
 					Response: api.ErrorMailRequired,
 				}
 				return errors.New("dummy")
 			}
 			if !mailInfo.MailVerified {
 				res = &model.Response{
-					Status:   http.StatusPreconditionRequired,
+					Status:   http.StatusUnprocessableEntity,
 					Response: api.ErrorMailNotVerified,
 				}
 				return errors.New("dummy")
@@ -364,7 +364,9 @@ func HandleCalendarEntryViaMail(
 				res = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
-			calText, errRes := mailCalendarForMytoken(rlog, tx, id, mtInfo.Name.String, req.Comment, mailInfo.Mail)
+			calText, errRes := mailCalendarForMytoken(
+				rlog, tx, id, mtInfo.Name.String, req.Comment, mailInfo.Mail.String,
+			)
 			if errRes != nil {
 				res = errRes
 				return errors.New("dummy")
@@ -375,7 +377,7 @@ func HandleCalendarEntryViaMail(
 				filename = id.Hash()
 			}
 			notifier.SendICSMail(
-				mailInfo.Mail,
+				mailInfo.Mail.String,
 				fmt.Sprintf("Mytoken Expiration Calendar Reminder for '%s'", filename),
 				"You can add the event to your calendar to be notified before the mytoken expires.",
 				mailing.Attachment{

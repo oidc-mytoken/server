@@ -148,6 +148,9 @@ func sendNotificationsForNotificationInfos(
 				if err != nil {
 					return err
 				}
+				if !emailInfo.Mail.Valid {
+					return errors.New("no email set for user")
+				}
 				if !emailInfo.MailVerified {
 					return errors.New("notification email not verified")
 				}
@@ -173,7 +176,7 @@ func sendNotificationsForNotificationInfos(
 				}
 				rlog.Debug("sending notification mail")
 				SendTemplateEmail(
-					emailInfo.Mail, fmt.Sprintf("mytoken notification: %s", notificationClassName),
+					emailInfo.Mail.String, fmt.Sprintf("mytoken notification: %s", notificationClassName),
 					emailInfo.PreferHTMLMail, "notification", bindingData,
 				)
 

@@ -213,15 +213,29 @@ func handleNewMailNotification(
 			if err != nil {
 				return err
 			}
+			if !emailInfo.Mail.Valid {
+				res = &model.Response{
+					Status:   fiber.StatusUnprocessableEntity,
+					Response: api.ErrorMailRequired,
+				}
+				return errors.New("dummy")
+			}
+			if !emailInfo.MailVerified {
+				res = &model.Response{
+					Status:   fiber.StatusUnprocessableEntity,
+					Response: api.ErrorMailNotVerified,
+				}
+				return errors.New("dummy")
+			}
+
 			notifier.SendTemplateEmail(
-				emailInfo.Mail, "New Mytoken Notification Subscription",
+				emailInfo.Mail.String, "New Mytoken Notification Subscription",
 				emailInfo.PreferHTMLMail, "notification-welcome", welcomeData,
 			)
 			tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
 				rlog, tx, req.Mytoken.JWT, mt, *ctxutils.ClientMetaData(ctx), req.Mytoken.OriginalTokenType,
 			)
 			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
 			resData := pkg.NotificationsCreateResponse{

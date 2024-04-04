@@ -10,9 +10,9 @@ import (
 )
 
 type mailInfo struct {
-	Mail           string `db:"email"`
-	MailVerified   bool   `db:"email_verified"`
-	PreferHTMLMail bool   `db:"prefer_html_mail"`
+	Mail           db.NullString `db:"email"`
+	MailVerified   bool          `db:"email_verified"`
+	PreferHTMLMail bool          `db:"prefer_html_mail"`
 }
 
 // GetMail returns the mail address and verification status for a user linked to a mytoken
