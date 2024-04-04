@@ -41,6 +41,7 @@ func HandleGetSSHInfo(ctx *fiber.Ctx) error {
 		ctx, nil, &reqMytoken, api.CapabilitySSHGrantRead, &api.EventSSHKeyListed, "", fiber.StatusOK,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *model.Response) {
 			info, err := sshrepo.GetAllSSHInfo(rlog, tx, mt.ID)
+			_, err = db.ParseError(err)
 			if err != nil {
 				rlog.Errorf("%s", errorfmt.Full(err))
 				return nil, model.ErrorToInternalServerErrorResponse(err)
