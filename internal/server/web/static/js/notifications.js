@@ -23,7 +23,7 @@ function listNotifications(...next) {
         type: "GET",
         url: storageGet('notifications_endpoint'),
         success: function (res) {
-            let notifications = res["notifications"];
+            let notifications = res["notifications"] || [];
             notificationsMap = {};
             momIDNotificationsMap = {};
             notifications.forEach(function (n) {
@@ -589,7 +589,7 @@ function getCalendars(callback = undefined, ...next) {
         type: "GET",
         url: storageGet('notifications_endpoint') + "/calendars",
         success: function (res) {
-            let cals = res["calendars"];
+            let cals = res["calendars"] || [];
             cals.forEach(function (c) {
                 let tokens = c["subscribed_tokens"] || [];
                 tokens.forEach(function (momid) {
