@@ -87,6 +87,7 @@ func HandleSettingsHelper(
 						Event:          *logEvent,
 						MTID:           mt.ID,
 						ClientMetaData: *clientMetaData,
+						Comment:        eventComment,
 					},
 				); err != nil {
 					return
