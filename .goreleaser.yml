@@ -34,6 +34,16 @@ builds:
     flags:
       - -trimpath
     mod_timestamp: '{{ .CommitTimestamp }}'
+  - id: notifier-server
+    main: ./cmd/mytoken-server/mytoken-notifier-server
+    binary: mytoken-notifier-server
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    flags:
+      - -trimpath
+    mod_timestamp: '{{ .CommitTimestamp }}'
 archives:
   - name_template: >-
       {{ .ProjectName }}_{{ .Version }}_
@@ -121,6 +131,28 @@ nfpms:
         file_name_template: >-
           {{ .PackageName }}-{{ .Version }}.
           {{- if eq .Arch "386" }}i386{{- else if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
+  - id: notifier-pkg
+    package_name: mytoken-notifier-server
+    file_name_template: >-
+      {{ .PackageName }}_{{ .Version }}_
+      {{- if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}
+    builds:
+      - notifier-server
+    homepage: https://mytoken-docs.data.kit.edu/server
+    maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
+    description: A standalone notifier server for mytoken notifications
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    release: "1"
+    section: misc
+    bindir: /usr/bin
+    overrides:
+      rpm:
+        file_name_template: >-
+          {{ .PackageName }}-{{ .Version }}.
+          {{- if eq .Arch "386" }}i386{{- else if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
 dockers:
   - goos: linux
     goarch: amd64
@@ -162,6 +194,20 @@ dockers:
       - "--pull"
       - "--label=org.opencontainers.image.created={{.Date}}"
       - "--label=org.opencontainers.image.title=mytoken-migratedb"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+  - goos: linux
+    goarch: amd64
+    ids:
+      - notifier-server
+    image_templates:
+      - "oidcmytoken/mytoken-notifier-server:unstable"
+      - "oidcmytoken/mytoken-notifier-server:{{ .Tag }}"
+    dockerfile: cmd/mytoken-server/mytoken-notifier-server/Dockerfile
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title=mytoken-notifier-server"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - "--label=org.opencontainers.image.version={{.Version}}"
 checksum:

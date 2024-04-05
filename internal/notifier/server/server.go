@@ -28,12 +28,15 @@ func startServer() {
 	server.Use(requestid.New())
 
 	server.Post(
-		"/email", func(ctx *fiber.Ctx) error {
+		ServerPaths.Email, func(ctx *fiber.Ctx) error {
 			var req pkg.EmailNotificationRequest
 			if err := ctx.BodyParser(&req); err != nil {
 				return err
 			}
-			return HandleEmailRequest(req)
+			if err := HandleEmailRequest(req); err != nil {
+				return err
+			}
+			return ctx.Status(fiber.StatusNoContent).Send(nil)
 		},
 	)
 	log.WithError(server.Listen(":40111")).Fatal()

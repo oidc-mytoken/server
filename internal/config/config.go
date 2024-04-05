@@ -255,26 +255,41 @@ func (g profileGroupsCredentials) validate() error {
 }
 
 type notificationConf struct {
-	AnyEnabled      bool                 `yaml:"-"`
-	SchedulerNeeded bool                 `yaml:"-"`
-	Mail            MailNotificationConf `yaml:"email"`
-	Websocket       onlyEnable           `yaml:"ws"`
-	ICS             onlyEnable           `yaml:"ics"`
+	AnyEnabled     bool                 `yaml:"-"`
+	Mail           MailNotificationConf `yaml:"email"`
+	Websocket      onlyEnable           `yaml:"ws"`
+	ICS            onlyEnable           `yaml:"ics"`
+	NotifierServer string               `yaml:"notifier_server_url"`
 }
 
 func (c *notificationConf) validate() error {
 	c.AnyEnabled = c.Mail.Enabled || c.Websocket.Enabled || c.ICS.Enabled
-	c.SchedulerNeeded = c.Mail.Enabled || c.Websocket.Enabled
+	if !c.AnyEnabled {
+		return nil
+	}
+	if conf.Server.DistributedServers {
+		if c.NotifierServer == "" {
+			return errors.New("distributed deployment, but no notifier_server_url set")
+		}
+	}
+	if c.NotifierServer != "" {
+		if c.Mail.MailServer.Host != "" {
+			log.Warning(
+				"a standalone notifier server is used; however mail_server configuration is given here",
+			)
+		}
+	}
 	return nil
-	//TODO
 }
 
+// MailNotificationConf holds the configuration for email notifications
 type MailNotificationConf struct {
 	Enabled      bool           `yaml:"enabled"`
 	MailServer   MailServerConf `yaml:"mail_server"`
 	OverwriteDir string         `yaml:"overwrite_dir"`
 }
 
+// MailServerConf holds the configuration for the email server
 type MailServerConf struct {
 	Host        string `yaml:"host"`
 	Port        int    `yaml:"port"`

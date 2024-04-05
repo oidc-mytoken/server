@@ -5,6 +5,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/httpclient"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -32,29 +33,41 @@ var notifier notifierClient
 // depending on the server deployment model either for communicating with a standalone notifier server or with the
 // integrated one.
 func Init() {
-	if config.Get().Server.DistributedServers {
-		initStandalone()
+	if !config.Get().Features.Notifications.AnyEnabled {
+		return
+	}
+	if nsURL := config.Get().Features.Notifications.NotifierServer; nsURL != "" {
+		initStandalone(nsURL)
 	} else {
 		initIntegraded()
 	}
 }
 
-func initStandalone() {
-	//TODO
-	notifier = standaloneNotifier{}
+func initStandalone(serverURL string) {
+	notifier = standaloneNotifier{
+		serverAddress: serverURL,
+		paths:         server.ServerPaths.Prefix(serverURL),
+	}
 }
 func initIntegraded() {
-	//TODO
 	notifier = integratedNotifier{}
-	server.InitIntegraded()
+	server.InitIntegrated()
 }
 
-type standaloneNotifier struct{}
+type standaloneNotifier struct {
+	serverAddress string
+	paths         server.Paths
+}
 type integratedNotifier struct{}
 
 // SendEmailRequest sends a pkg.EmailNotificationRequest to the standalone notifier server
 func (n standaloneNotifier) SendEmailRequest(req pkg.EmailNotificationRequest) {
-	// todo
+	_, err := httpclient.Do().R().
+		SetBody(req).
+		Post(n.paths.Email)
+	if err != nil {
+		log.WithError(err).Error("error while sending notification request to notifier server")
+	}
 }
 
 // SendEmailRequest sends a pkg.EmailNotificationRequest to the integrated notification server

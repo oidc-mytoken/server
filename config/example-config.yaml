@@ -235,6 +235,30 @@ features:
     groups:
     # _: admin
 
+  # If true a guest mode is enabled that allows to obtain mytokens without further auth, ATs are obviously dummy
+  guest_mode: false
+
+  # Settings related to the notifications feature
+  notifications:
+    # If a standalone notifier server is used (required in a distributed setup), specify the base url here
+    notifier_server_url:
+    # Enables calendar support
+    ics:
+      enabled: true
+    # Email notifications
+    email:
+      enabled: true
+      # Settings for the used mailserver, only used if the integrated notifier is used
+      mail_server:
+        host:
+        port: 25
+        user:
+        password:
+        from_address:
+    # Not yet implemented
+    ws:
+      enabled: true
+
   # Configuration for usage of OpenID Federations
   federation:
     enabled: false
