@@ -44,3 +44,13 @@ func ChangePreferredMailType(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MT
 		},
 	)
 }
+
+// SetEmail sets a user's email address
+func SetEmail(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, mail string, mailVerified bool) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Users_SetMail(?,?,?)`, mtID, mail, mailVerified)
+			return errors.WithStack(err)
+		},
+	)
+}
