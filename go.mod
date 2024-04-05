@@ -32,7 +32,7 @@ require (
 	github.com/zachmann/go-oidcfed v0.1.0
 	golang.org/x/crypto v0.21.0
 	golang.org/x/mod v0.16.0
-	golang.org/x/oauth2 v0.18.0
+	golang.org/x/oauth2 v0.19.0
 	golang.org/x/term v0.19.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -51,7 +51,6 @@ require (
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gofiber/template v1.8.3 // indirect
 	github.com/gofiber/utils v1.1.0 // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/klauspost/compress v1.17.6 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
@@ -70,8 +69,6 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/net v0.22.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
-	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
 )
 
 replace github.com/urfave/cli/v2 => github.com/zachmann/cli/v2 v2.3.1-0.20211220102037-d619fd40a704
