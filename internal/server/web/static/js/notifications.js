@@ -417,7 +417,7 @@ function fillCalendarInfo(cals, calsSet, prefix = "") {
 }
 
 function fillNotificationInfo(notifications, notificationsSet, prefix = "") {
-    if (!notificationsSet) {
+    if (!notificationsSet || notifications.length === 0) {
         $tokeninfoNotificationsListing(prefix).hideB();
         $tokeninfoNoNotifications(prefix).showB();
         notifications = [];
@@ -444,6 +444,18 @@ function fillNotificationInfo(notifications, notificationsSet, prefix = "") {
         tableEntries += `<tr management-code="${management_code}"><td>${checker}</td><td>${notification_classes_html}</td><td>${tokens}</td></tr>`;
     })
     $(prefixId("subscribe-mail-existing-notifications", prefix)).html(tableEntries);
+    if (otherNots.length === 0) {
+        if ($(prefixId('subscribe-mail-new', prefix)).hasClass("d-none")) {
+            toggle_subscribe_notification_content(prefix);
+        }
+        $(`.${prefix}toggle-subscribe-notification-content-btn`).hideB();
+    } else {
+        if ($(prefixId('subscribe-mail-new', prefix)).hasClass("d-none")) {
+            $(prefixId("switch-to-new-mail-notification-btn", prefix)).showB();
+        } else {
+            $(prefixId("switch-to-existing-mail-notification-btn", prefix)).showB();
+        }
+    }
 
     $('[data-toggle="tooltip"]').tooltip();
 }
@@ -524,7 +536,7 @@ function notificationModal(doesExpire) {
     } else {
         $('#notifications-calendarinfo-alert').showB();
         notificationModalInitSubscribeCalendars(cals);
-        notificationModalInitEntryInvite();
+        notificationModalCheckEmailOK();
     }
 
     $notificationsModal.modal();
@@ -543,7 +555,9 @@ function notificationModalInitSubscribeCalendars(cals) {
     $calendarSelector.trigger('change');
 }
 
-function notificationModalInitEntryInvite() {
+function notificationModalCheckEmailOK(nextMailOK = function () {
+}, nextMailNotOK = function () {
+}) {
     $('.notify-entry-content-element').hideB();
     let email_ok = cachedNotificationsTypeData["email_ok"];
     if (email_ok !== undefined && email_ok !== null && email_ok) {
@@ -559,15 +573,18 @@ function notificationModalInitEntryInvite() {
             if (email === undefined || email === null || email === "") {
                 $('.email-not-set-hint').showB();
                 cachedNotificationsTypeData["email_ok"] = false;
+                nextMailNotOK();
                 return;
             }
             if (email_verified === undefined || !email_verified) {
                 $('.email-not-verified-hint').showB();
                 cachedNotificationsTypeData["email_ok"] = false;
+                nextMailNotOK();
                 return;
             }
             $('.notify-entry-content-normal').showB();
             cachedNotificationsTypeData["email_ok"] = true;
+            nextMailOK();
         },
         error: function (errRes) {
             $errorModalMsg.text(getErrorMessage(errRes));
@@ -778,9 +795,11 @@ $('#btn-save-notification-classes').on('click', function () {
 })
 
 function newNotificationModal() {
-    notificationAddAllTokenList($('#notifications-all-tokens-to-subscribe-table'));
-    $onlyAddTokensContent.hideB();
     $newNotificationContent.showB();
+    notificationModalCheckEmailOK(function () {
+        notificationAddAllTokenList($('#notifications-all-tokens-to-subscribe-table'));
+    });
+    $onlyAddTokensContent.hideB();
     $newNotificationModal.modal()
 }
 

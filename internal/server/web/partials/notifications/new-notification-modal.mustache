@@ -15,29 +15,35 @@
                 </div>
                 <div class="modal-body">
                     <div class="new-notification-content">
-                        <div class="alert border">
-                            <h5>Select Notification Classes</h5>
-                            <ul class="list-group bg-my_grey list-group-striped">
-                                {{#notification-classes}}
-                                    {{> capabilities/part}}
-                                {{/notification-classes}}
-                            </ul>
-                        </div>
-                        <div>
-                            <h5>Tokens</h5>
-                            <div class="custom-control custom-switch">
-                                <input type="checkbox" class="custom-control-input"
-                                       id="new-notification-user-wide-input">
-                                <label class="custom-control-label" for="new-notification-user-wide-input">User
-                                    Wide</label>
+
+                        {{>notifications/email-not-verified}}
+                        {{>notifications/email-not-provided}}
+
+                        <div class="notify-entry-content-normal notify-entry-content-element">
+                            <div class="alert border">
+                                <h5>Select Notification Classes</h5>
+                                <ul class="list-group bg-my_grey list-group-striped">
+                                    {{#notification-classes}}
+                                        {{> capabilities/part}}
+                                    {{/notification-classes}}
+                                </ul>
                             </div>
-                            <small class="form-text text-muted mb-2">User wide notifications apply to all your
-                                mytokens.</small>
-                        </div>
-                        <div class="row">
-                            <button class="btn-success btn mx-3 new-notification-save-btn user-wide-toggle-effected d-none col">
-                                <i class="sticky-center mx-auto fas fa-plus"></i> Create User-Wide Notification
-                            </button>
+                            <div>
+                                <h5>Tokens</h5>
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input"
+                                           id="new-notification-user-wide-input">
+                                    <label class="custom-control-label" for="new-notification-user-wide-input">User
+                                        Wide</label>
+                                </div>
+                                <small class="form-text text-muted mb-2">User wide notifications apply to all your
+                                    mytokens.</small>
+                            </div>
+                            <div class="row">
+                                <button class="btn-success btn mx-3 new-notification-save-btn user-wide-toggle-effected d-none col">
+                                    <i class="sticky-center mx-auto fas fa-plus"></i> Create User-Wide Notification
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -47,7 +53,8 @@
                         </p>
                     </div>
 
-                    <div class="row mx-1 user-wide-toggle-effected" id="tokens-notifications-select-content">
+                    <div class="row mx-1 user-wide-toggle-effected notify-entry-content-normal notify-entry-content-element"
+                         id="tokens-notifications-select-content">
                         <button class="btn-success btn col mr-2 d-inline-flex align-items-start new-notification-save-btn"
                                 style="max-width:5%;"
                                 data-toggle="tooltip" data-placement="top" data-original-title="Save">
