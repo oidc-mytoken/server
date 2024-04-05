@@ -23,8 +23,8 @@ func ExpandNotificationsToChildrenIfApplicable(rlog log.Ext1FieldLogger, tx *sql
 	)
 }
 
-// notificationInfoBaseWithClass is a type for holding information about a notification including class
-type notificationInfoBaseWithClass struct {
+// NotificationInfoBaseWithClass is a type for holding information about a notification including class
+type NotificationInfoBaseWithClass struct {
 	notificationInfoBase
 	Class string `db:"class"`
 }
@@ -64,7 +64,7 @@ func GetNotificationsForMTAndClass(
 // GetNotificationsForMT checks for and returns the found notifications for a certain mytoken
 func GetNotificationsForMT(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID any,
-) (notifications []notificationInfoBaseWithClass, err error) {
+) (notifications []NotificationInfoBaseWithClass, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err = db.ParseError(tx.Select(&notifications, `CALL Notifications_GetForMT(?)`, mtID))
@@ -96,7 +96,7 @@ func GetNotificationsAndCalendarsForMT(
 
 func notificationInfoBaseWithClassToNotificationInfo(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx,
-	in []notificationInfoBaseWithClass,
+	in []NotificationInfoBaseWithClass,
 ) (
 	out []api.
 		NotificationInfo,
@@ -146,7 +146,7 @@ func GetNotificationsForUser(
 ) (notifications []api.NotificationInfo, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			var withClass []notificationInfoBaseWithClass
+			var withClass []NotificationInfoBaseWithClass
 			_, err = db.ParseError(tx.Select(&withClass, `CALL Notifications_GetForUser(?)`, mtID))
 			if err != nil {
 				return errors.WithStack(err)
@@ -164,7 +164,7 @@ func GetNotificationForManagementCode(
 ) (info *api.ManagementCodeNotificationInfoResponse, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			var withClass []notificationInfoBaseWithClass
+			var withClass []NotificationInfoBaseWithClass
 			found, err := db.ParseError(
 				tx.Select(
 					&withClass, `CALL Notifications_GetForManagementCode(?)`,
