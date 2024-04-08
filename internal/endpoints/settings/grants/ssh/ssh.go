@@ -72,7 +72,9 @@ func HandleDeleteSSHKey(ctx *fiber.Ctx) error {
 	rlog.Trace("Parsed delete ssh key request")
 	if req.SSHKeyFingerprint == "" {
 		if req.SSHKey == "" {
-			return model.BadRequestErrorResponse("One of the required parameters 'ssh_key' or 'ssh_key_hash' must be given").Send(ctx)
+			return model.BadRequestErrorResponse(
+				"One of the required parameters 'ssh_key' or 'ssh_key_hash' must be given",
+			).Send(ctx)
 		}
 		sshKey, _, _, _, err := gossh.ParseAuthorizedKey([]byte(req.SSHKey))
 		if err != nil {

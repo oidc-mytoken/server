@@ -31,13 +31,16 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
 
+var managementCodeNotValidError = model.NotFoundErrorResponse("management_code not valid")
+var missingManagementCodeError = model.BadRequestErrorResponse("missing management_code")
+
 // HandleGetByManagementCode returns the api.NotificationInfo for the notification linked to a management code
 func HandleGetByManagementCode(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle notification get request for management code")
 	managementCode := ctx.Params("code")
 	if managementCode == "" {
-		return model.BadRequestErrorResponse("missing management_code").Send(ctx)
+		return missingManagementCodeError.Send(ctx)
 	}
 
 	var res *model.Response
@@ -49,7 +52,7 @@ func HandleGetByManagementCode(ctx *fiber.Ctx) error {
 				return err
 			}
 			if info == nil {
-				res = model.NotFoundErrorResponse("management_code not valid")
+				res = managementCodeNotValidError
 				return errors.New("dummy")
 			}
 			res = &model.Response{
@@ -68,7 +71,7 @@ func HandleDeleteByManagementCode(ctx *fiber.Ctx) error {
 	rlog.Debug("Handle notification get request for management code")
 	managementCode := ctx.Params("code")
 	if managementCode == "" {
-		return model.BadRequestErrorResponse("missing management_code").Send(ctx)
+		return missingManagementCodeError.Send(ctx)
 	}
 
 	err := notificationsrepo.Delete(rlog, nil, managementCode)
@@ -284,7 +287,7 @@ func HandleNotificationUpdateClasses(ctx *fiber.Ctx) error {
 	rlog.Debug("Handle notification update classes request")
 	managementCode := ctx.Params("code")
 	if managementCode == "" {
-		return model.BadRequestErrorResponse("missing management_code").Send(ctx)
+		return missingManagementCodeError.Send(ctx)
 	}
 	var req api.NotificationUpdateNotificationClassesRequest
 	if err := ctx.BodyParser(&req); err != nil {
@@ -298,7 +301,7 @@ func HandleNotificationUpdateClasses(ctx *fiber.Ctx) error {
 				return err
 			}
 			if info == nil {
-				res = model.NotFoundErrorResponse("management_code not valid")
+				res = managementCodeNotValidError
 				return nil
 			}
 			return notificationsrepo.UpdateNotificationClasses(rlog, tx, info.NotificationID, req.Classes)
@@ -319,7 +322,7 @@ func HandleNotificationAddToken(ctx *fiber.Ctx) error {
 	rlog.Debug("Handle notification add token request")
 	managementCode := ctx.Params("code")
 	if managementCode == "" {
-		return model.BadRequestErrorResponse("missing management_code").Send(ctx)
+		return missingManagementCodeError.Send(ctx)
 	}
 	var req pkg.NotificationAddTokenRequest
 	if err := ctx.BodyParser(&req); err != nil {
@@ -342,7 +345,7 @@ func HandleNotificationAddToken(ctx *fiber.Ctx) error {
 				return err
 			}
 			if info == nil {
-				res = model.NotFoundErrorResponse("management_code not valid")
+				res = managementCodeNotValidError
 				return nil
 			}
 			return notificationsrepo.AddTokenToNotification(rlog, tx, info.NotificationID, mtID, req.IncludeChildren)
@@ -363,7 +366,7 @@ func HandleNotificationRemoveToken(ctx *fiber.Ctx) error {
 	rlog.Debug("Handle notification remove token request")
 	managementCode := ctx.Params("code")
 	if managementCode == "" {
-		return model.BadRequestErrorResponse("missing management_code").Send(ctx)
+		return missingManagementCodeError.Send(ctx)
 	}
 	var req pkg.NotificationRemoveTokenRequest
 	if err := ctx.BodyParser(&req); err != nil {
@@ -386,7 +389,7 @@ func HandleNotificationRemoveToken(ctx *fiber.Ctx) error {
 				return err
 			}
 			if info == nil {
-				res = model.NotFoundErrorResponse("management_code not valid")
+				res = managementCodeNotValidError
 				return nil
 			}
 			return notificationsrepo.RemoveTokenFromNotification(rlog, tx, info.NotificationID, mtID)

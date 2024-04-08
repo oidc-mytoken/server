@@ -39,6 +39,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
 
+var calendarNotFoundError = model.NotFoundErrorResponse("calendar not found")
+
 // HandleGetICS returns a calendar ics by its id
 func HandleGetICS(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
@@ -80,7 +82,7 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 		if e != nil {
 			return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 		}
-		return model.NotFoundErrorResponse("calendar not found").Send(ctx)
+		return calendarNotFoundError.Send(ctx)
 	}
 	ctx.Set(fiber.HeaderContentType, "text/calendar")
 	ctx.Set(fiber.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, info.Name))
@@ -247,7 +249,7 @@ func HandleGet(ctx *fiber.Ctx) error {
 		if e != nil {
 			return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
 		}
-		return model.NotFoundErrorResponse("calendar not found").Send(ctx)
+		return calendarNotFoundError.Send(ctx)
 	}
 	return ctx.Redirect(info.ICSPath)
 }
@@ -472,7 +474,7 @@ func HandleAddMytoken(ctx *fiber.Ctx) error {
 				if e != nil {
 					res = model.ErrorToInternalServerErrorResponse(err)
 				}
-				res = model.NotFoundErrorResponse("calendar not found")
+				res = calendarNotFoundError
 				return err
 			}
 			if err = calendarrepo.AddMytokenToCalendar(rlog, tx, id, info.ID); err != nil {

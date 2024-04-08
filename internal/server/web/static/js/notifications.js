@@ -245,7 +245,7 @@ function _notificationAddAllTokenList($container, hide_tokens = undefined) {
 }
 
 function toggleIncludeChildren() {
-    $input = $(this).find('input.include-children-switch');
+    let $input = $(this).find('input.include-children-switch');
     if ($input.prop("disabled")) {
         return;
     }
@@ -449,12 +449,10 @@ function fillNotificationInfo(notifications, notificationsSet, prefix = "") {
             toggle_subscribe_notification_content(prefix);
         }
         $(`.${prefix}toggle-subscribe-notification-content-btn`).hideB();
+    } else if ($(prefixId('subscribe-mail-new', prefix)).hasClass("d-none")) {
+        $(prefixId("switch-to-new-mail-notification-btn", prefix)).showB();
     } else {
-        if ($(prefixId('subscribe-mail-new', prefix)).hasClass("d-none")) {
-            $(prefixId("switch-to-new-mail-notification-btn", prefix)).showB();
-        } else {
-            $(prefixId("switch-to-existing-mail-notification-btn", prefix)).showB();
-        }
+        $(prefixId("switch-to-existing-mail-notification-btn", prefix)).showB();
     }
 
     $('[data-toggle="tooltip"]').tooltip();

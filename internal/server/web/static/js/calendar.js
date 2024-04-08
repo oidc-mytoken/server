@@ -21,7 +21,7 @@ $(document).ready(function () {
         eventDidMount: function (info) {
             let title = info.event.extendedProps.description;
             title = title.replaceAll('\n', ' <br/> ');
-            title = title.replace(/(https?\:\/\/)\S+/g, function (matched) {
+            title = title.replace(/(https?:\/\/)\S+/g, function (matched) {
                 return `<a href="${matched}" target="_blank" rel="noopener noreferrer">${matched}</a>`;
             });
             info.event.setProp('url', '');
