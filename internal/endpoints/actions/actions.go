@@ -63,14 +63,14 @@ func handleRecreate(ctx *fiber.Ctx, code string) (err error) {
 				now := unixtime.Now()
 				diff := now - created
 				for i, r := range data.Restrictions {
-					apiR := &r.Restriction
+					apiR := r.Restriction
 					if r.NotBefore != 0 {
 						apiR.NotBefore = int64(r.NotBefore + diff)
 					}
 					if r.ExpiresAt != 0 {
 						apiR.ExpiresAt = int64(r.ExpiresAt + diff)
 					}
-					restr[i] = apiR
+					restr[i] = &apiR
 				}
 				req.Restrictions = restr
 			}
