@@ -30,12 +30,12 @@ import (
 )
 
 // HandleAccessTokenEndpoint handles request on the access token endpoint
-func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
+func HandleAccessTokenEndpoint(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle access token request")
 	req := request.NewAccessTokenRequest()
 	if err := ctx.BodyParser(&req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	rlog.Trace("Parsed access token request")
 	if req.Mytoken.JWT == "" {
@@ -43,11 +43,11 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	}
 
 	if errRes := auth.RequireGrantType(rlog, model.GrantTypeMytoken, req.GrantType); errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	usedRestriction, errRes := auth.RequireCapabilityAndRestriction(
 		rlog, nil, mt, ctxutils.ClientMetaData(ctx),
@@ -56,14 +56,14 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 		api.CapabilityAT,
 	)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	provider, errRes := auth.RequireMatchingIssuer(rlog, mt.OIDCIssuer, &req.Issuer)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 
-	return HandleAccessTokenRefresh(rlog, mt, req, *ctxutils.ClientMetaData(ctx), provider, usedRestriction).Send(ctx)
+	return HandleAccessTokenRefresh(rlog, mt, req, *ctxutils.ClientMetaData(ctx), provider, usedRestriction)
 }
 
 func parseScopesAndAudienceToUse(

@@ -38,12 +38,11 @@ var settingsMetadata = api.SettingsMetaData{
 }
 
 // HandleSettings handles Metadata requests to the settings endpoint
-func HandleSettings(ctx *fiber.Ctx) error {
-	res := serverModel.Response{
+func HandleSettings(ctx *fiber.Ctx) *serverModel.Response {
+	return &serverModel.Response{
 		Status:   fiber.StatusOK,
 		Response: settingsMetadata,
 	}
-	return res.Send(ctx)
 }
 
 // HandleSettingsHelper is a helper wrapper function that handles various settings request with the help of a callback
@@ -57,17 +56,17 @@ func HandleSettingsHelper(
 	okStatus int,
 	callback func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response),
 	tokenGoneAfterCallback bool,
-) error {
+) *serverModel.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, reqMytoken, ctx)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
 		rlog, tx, mt, ctxutils.ClientMetaData(ctx), requiredCapability,
 	)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	var tokenUpdate *my.MytokenResponse
 	var rsp my.TokenUpdatableResponse
@@ -105,10 +104,10 @@ func HandleSettingsHelper(
 		},
 	); err != nil {
 		if errRes != nil {
-			return errRes.Send(ctx)
+			return errRes
 		}
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return serverModel.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		return serverModel.ErrorToInternalServerErrorResponse(err)
 	}
 
 	var cake []*fiber.Cookie
@@ -120,9 +119,9 @@ func HandleSettingsHelper(
 		cake = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
 		okStatus = fiber.StatusOK
 	}
-	return serverModel.Response{
+	return &serverModel.Response{
 		Status:   okStatus,
 		Response: rsp,
 		Cookies:  cake,
-	}.Send(ctx)
+	}
 }

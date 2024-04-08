@@ -90,27 +90,27 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 }
 
 // HandleAdd handles a request to create a new calendar
-func HandleAdd(ctx *fiber.Ctx) error {
+func HandleAdd(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle add calendar request")
 	var umt universalmytoken.UniversalMytoken
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
 		rlog, nil, mt,
 		ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyToken,
 	)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	var calendarInfo api.NotificationCalendar
 	if err := errors.WithStack(ctx.BodyParser(&calendarInfo)); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	if calendarInfo.Name == "" {
-		return model.BadRequestErrorResponse("required parameter 'name' is missing").Send(ctx)
+		return model.BadRequestErrorResponse("required parameter 'name' is missing")
 	}
 
 	id := utils.RandASCIIString(32)
@@ -132,7 +132,7 @@ func HandleAdd(ctx *fiber.Ctx) error {
 		ICSPath: icsPath,
 		ICS:     cal.Serialize(),
 	}
-	res := model.Response{
+	res := &model.Response{
 		Status:   http.StatusCreated,
 		Response: pkg.CreateCalendarResponse{NotificationCalendar: calendarInfo},
 	}
@@ -166,27 +166,27 @@ func HandleAdd(ctx *fiber.Ctx) error {
 			)
 		},
 	); err != nil {
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	return res.Send(ctx)
+	return res
 }
 
 // HandleDelete deletes a calendar
-func HandleDelete(ctx *fiber.Ctx) error {
+func HandleDelete(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	name := ctx.Params("name")
 	rlog.WithField("calendar", name).Debug("Handle delete calendar request")
 	var umt universalmytoken.UniversalMytoken
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
 		rlog, nil, mt,
 		ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyToken,
 	)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 
 	var res *model.Response
@@ -223,14 +223,14 @@ func HandleDelete(ctx *fiber.Ctx) error {
 			)
 		},
 	); err != nil {
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if res != nil {
-		return res.Send(ctx)
+		return res
 	}
-	return model.Response{
+	return &model.Response{
 		Status: http.StatusNoContent,
-	}.Send(ctx)
+	}
 }
 
 // HandleGet looks up the id for a calendar name for the given user (by mytoken) and redirects to the ics endpoint
@@ -255,20 +255,20 @@ func HandleGet(ctx *fiber.Ctx) error {
 }
 
 // HandleList lists all calendars for a user
-func HandleList(ctx *fiber.Ctx) error {
+func HandleList(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle list calendar request")
 	var umt universalmytoken.UniversalMytoken
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
 		rlog, nil, mt,
 		ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyTokenRead,
 	)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	var res *model.Response
 	_ = db.Transact(
@@ -308,14 +308,14 @@ func HandleList(ctx *fiber.Ctx) error {
 			)
 		},
 	)
-	return res.Send(ctx)
+	return res
 }
 
 // HandleCalendarEntryViaMail creates a calendar entry for a mytoken and sends it via mail
 func HandleCalendarEntryViaMail(
 	ctx *fiber.Ctx, rlog logrus.Ext1FieldLogger, mt *mytoken.Mytoken,
 	req pkg4.SubscribeNotificationRequest,
-) error {
+) *model.Response {
 	rlog.Debug("Handle calendar entry via mail request")
 
 	clientMetadata := ctxutils.ClientMetaData(ctx)
@@ -327,15 +327,15 @@ func HandleCalendarEntryViaMail(
 			rlog, nil, api.CapabilityTokeninfoNotify,
 			api.CapabilityNotifyAnyToken, mt, id, clientMetadata,
 		); errRes != nil {
-			return errRes.Send(ctx)
+			return errRes
 		}
 		if errRes := auth.RequireMytokensForSameUser(rlog, nil, id, mt.ID); errRes != nil {
-			return errRes.Send(ctx)
+			return errRes
 		}
 	}
 	usedRestriction, errRes := auth.RequireUsableRestrictionOther(rlog, nil, mt, clientMetadata)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 
 	var res *model.Response
@@ -425,11 +425,11 @@ func HandleCalendarEntryViaMail(
 			return nil
 		},
 	)
-	return res.Send(ctx)
+	return res
 }
 
 // HandleAddMytoken handles a request to add a mytoken to a calendar
-func HandleAddMytoken(ctx *fiber.Ctx) error {
+func HandleAddMytoken(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle add mytoken to calendar request")
 
@@ -438,12 +438,12 @@ func HandleAddMytoken(ctx *fiber.Ctx) error {
 	var umt universalmytoken.UniversalMytoken
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 
 	var req pkg.AddMytokenToCalendarRequest
 	if err := errors.WithStack(ctx.BodyParser(&req)); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 
 	id := mt.ID
@@ -454,15 +454,15 @@ func HandleAddMytoken(ctx *fiber.Ctx) error {
 			rlog, nil, api.CapabilityTokeninfoNotify,
 			api.CapabilityNotifyAnyToken, mt, id, clientMetadata,
 		); errRes != nil {
-			return errRes.Send(ctx)
+			return errRes
 		}
 		if errRes = auth.RequireMytokensForSameUser(rlog, nil, id, mt.ID); errRes != nil {
-			return errRes.Send(ctx)
+			return errRes
 		}
 	}
 	usedRestriction, errRes := auth.RequireUsableRestrictionOther(rlog, nil, mt, clientMetadata)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 
 	var res *model.Response
@@ -538,7 +538,7 @@ func HandleAddMytoken(ctx *fiber.Ctx) error {
 			return nil
 		},
 	)
-	return res.Send(ctx)
+	return res
 }
 
 func eventForMytoken(

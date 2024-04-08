@@ -25,17 +25,17 @@ func handleIntrospect(s ssh.Session) error {
 	rlog := logger.GetSSHRequestLogger(ctx.Value("session").(string))
 	rlog.Debug("Handle tokeninfo introspect from ssh")
 
-	var res model.Response
+	var res *model.Response
 	var errRes *model.Response
 	_ = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
-			errRes = auth.RequireMytokenNotRevoked(rlog, nil, mt, clientMetaData)
+			errRes = auth.RequireMytokenNotRevoked(rlog, tx, mt, clientMetaData)
 			if errRes != nil {
 				return errors.New("dummy")
 			}
 			res = tokeninfo.HandleTokenInfoIntrospect(rlog, tx, mt, model.ResponseTypeToken, clientMetaData)
 			if res.Status >= 400 {
-				errRes = &res
+				errRes = res
 				return errors.New("dummy")
 			}
 			return nil
@@ -57,7 +57,7 @@ func handleHistory(s ssh.Session) error {
 	rlog := logger.GetSSHRequestLogger(ctx.Value("session").(string))
 	rlog.Debug("Handle tokeninfo history from ssh")
 
-	var res model.Response
+	var res *model.Response
 	var errRes *model.Response
 	_ = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
@@ -67,7 +67,7 @@ func handleHistory(s ssh.Session) error {
 			}
 			res = tokeninfo.HandleTokenInfoHistory(rlog, tx, &pkg.TokenInfoRequest{}, mt, clientMetaData)
 			if res.Status >= 400 {
-				errRes = &res
+				errRes = res
 				return errors.New("dummy")
 			}
 			return nil
@@ -89,7 +89,7 @@ func handleSubtokens(s ssh.Session) error {
 	rlog := logger.GetSSHRequestLogger(ctx.Value("session").(string))
 	rlog.Debug("Handle tokeninfo subtokens from ssh")
 
-	var res model.Response
+	var res *model.Response
 	var errRes *model.Response
 	_ = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
@@ -99,7 +99,7 @@ func handleSubtokens(s ssh.Session) error {
 			}
 			res = tokeninfo.HandleTokenInfoSubtokens(rlog, tx, &pkg.TokenInfoRequest{}, mt, clientMetaData)
 			if res.Status >= 400 {
-				errRes = &res
+				errRes = res
 				return errors.New("dummy")
 			}
 			return nil
@@ -121,7 +121,7 @@ func handleListMytokens(s ssh.Session) error {
 	rlog := logger.GetSSHRequestLogger(ctx.Value("session").(string))
 	rlog.Debug("Handle tokeninfo list mytokens from ssh")
 
-	var res model.Response
+	var res *model.Response
 	var errRes *model.Response
 	_ = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
@@ -131,7 +131,7 @@ func handleListMytokens(s ssh.Session) error {
 			}
 			res = tokeninfo.HandleTokenInfoList(rlog, tx, &pkg.TokenInfoRequest{}, mt, clientMetaData)
 			if res.Status >= 400 {
-				errRes = &res
+				errRes = res
 				return errors.New("dummy")
 			}
 			return nil

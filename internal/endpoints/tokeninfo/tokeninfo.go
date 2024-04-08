@@ -16,39 +16,39 @@ import (
 )
 
 // HandleTokenInfo handles requests to the tokeninfo endpoint
-func HandleTokenInfo(ctx *fiber.Ctx) error {
+func HandleTokenInfo(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	var req pkg.TokenInfoRequest
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	clientMetadata := ctxutils.ClientMetaData(ctx)
 	switch req.Action {
 	case model.TokeninfoActionIntrospect:
-		return HandleTokenInfoIntrospect(rlog, nil, mt, req.Mytoken.OriginalTokenType, clientMetadata).Send(ctx)
+		return HandleTokenInfoIntrospect(rlog, nil, mt, req.Mytoken.OriginalTokenType, clientMetadata)
 	case model.TokeninfoActionNotifications:
-		return HandleTokenInfoNotifications(rlog, nil, &req, mt, clientMetadata).Send(ctx)
+		return HandleTokenInfoNotifications(rlog, nil, &req, mt, clientMetadata)
 	case model.TokeninfoActionEventHistory:
-		return HandleTokenInfoHistory(rlog, nil, &req, mt, clientMetadata).Send(ctx)
+		return HandleTokenInfoHistory(rlog, nil, &req, mt, clientMetadata)
 	case model.TokeninfoActionSubtokenTree:
-		return HandleTokenInfoSubtokens(rlog, nil, &req, mt, clientMetadata).Send(ctx)
+		return HandleTokenInfoSubtokens(rlog, nil, &req, mt, clientMetadata)
 	case model.TokeninfoActionListMytokens:
-		return HandleTokenInfoList(rlog, nil, &req, mt, clientMetadata).Send(ctx)
+		return HandleTokenInfoList(rlog, nil, &req, mt, clientMetadata)
 	default:
-		return model.BadRequestErrorResponse(fmt.Sprintf("unknown action '%s'", req.Action.String())).Send(ctx)
+		return model.BadRequestErrorResponse(fmt.Sprintf("unknown action '%s'", req.Action.String()))
 	}
 }
 
-func makeTokenInfoResponse(rsp interface{}, tokenUpdate *response.MytokenResponse) model.Response {
+func makeTokenInfoResponse(rsp interface{}, tokenUpdate *response.MytokenResponse) *model.Response {
 	var cake []*fiber.Cookie
 	if tokenUpdate != nil {
 		cake = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
 	}
-	return model.Response{
+	return &model.Response{
 		Status:   fiber.StatusOK,
 		Response: rsp,
 		Cookies:  cake,

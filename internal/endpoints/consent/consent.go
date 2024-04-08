@@ -121,7 +121,10 @@ func HandleConsent(ctx *fiber.Ctx) error {
 	return handleConsent(ctx, &(authInfo.AuthCodeFlowRequest.OIDCFlowRequest), true)
 }
 
-func handleConsentDecline(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut, oState *state.State) error {
+func handleConsentDecline(
+	ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut,
+	oState *state.State,
+) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	url := "/"
 	if authInfo.PollingCode {
@@ -136,19 +139,19 @@ func handleConsentDecline(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInf
 		m := utils.StructToStringMapUsingJSONTags(res.Response)
 		m["url"] = url
 		res.Response = m
-		return res.Send(ctx)
+		return res
 	}
 	if authInfo.PollingCode {
 		if err := transfercoderepo.DeclineConsentByState(rlog, nil, oState); err != nil {
 			rlog.Errorf("%s", errorfmt.Full(err))
 		}
 	}
-	return model.Response{
+	return &model.Response{
 		Status: httpstatus.StatusOKForward,
 		Response: map[string]string{
 			"url": url,
 		},
-	}.Send(ctx)
+	}
 }
 
 // handleConsentAccept handles the acceptance of a consent code
@@ -195,19 +198,19 @@ func handleConsentAccept(
 }
 
 // HandleConsentPost handles consent confirmation requests
-func HandleConsentPost(ctx *fiber.Ctx) error {
+func HandleConsentPost(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	authInfo, oState, err := getAuthInfoFromConsentCodeStr(rlog, ctx.Params("consent_code"))
 	if err != nil {
 		// Don't log error here, it was already logged
-		return err
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if len(ctx.Body()) == 0 {
 		return handleConsentDecline(ctx, authInfo, oState)
 	}
 	req := pkg.ConsentApprovalRequest{}
 	if err = json.Unmarshal(ctx.Body(), &req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
-	return handleConsentAccept(rlog, &req, oState).Send(ctx)
+	return handleConsentAccept(rlog, &req, oState)
 }

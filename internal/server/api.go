@@ -30,62 +30,66 @@ func addAPIRoutes(s fiber.Router) {
 
 func addAPIvXRoutes(s fiber.Router, version int) {
 	apiPaths := paths.GetAPIPaths(version)
-	s.Post(apiPaths.MytokenEndpoint, mytoken.HandleMytokenEndpoint)
-	s.Post(apiPaths.AccessTokenEndpoint, access.HandleAccessTokenEndpoint)
+	s.Post(apiPaths.MytokenEndpoint, toFiberHandler(mytoken.HandleMytokenEndpoint))
+	s.Post(apiPaths.AccessTokenEndpoint, toFiberHandler(access.HandleAccessTokenEndpoint))
 	if config.Get().Features.TokenRevocation.Enabled {
-		s.Post(apiPaths.RevocationEndpoint, revocation.HandleRevoke)
+		s.Post(apiPaths.RevocationEndpoint, toFiberHandler(revocation.HandleRevoke))
 	}
 	if config.Get().Features.TransferCodes.Enabled {
-		s.Post(apiPaths.TokenTransferEndpoint, mytoken.HandleCreateTransferCodeForExistingMytoken)
+		s.Post(apiPaths.TokenTransferEndpoint, toFiberHandler(mytoken.HandleCreateTransferCodeForExistingMytoken))
 	}
 	if config.Get().Features.TokenInfo.Enabled {
-		s.Post(apiPaths.TokenInfoEndpoint, tokeninfo.HandleTokenInfo)
+		s.Post(apiPaths.TokenInfoEndpoint, toFiberHandler(tokeninfo.HandleTokenInfo))
 	}
-	s.Get(apiPaths.UserSettingEndpoint, settings.HandleSettings)
+	s.Get(apiPaths.UserSettingEndpoint, toFiberHandler(settings.HandleSettings))
 	grantPath := utils.CombineURLPath(apiPaths.UserSettingEndpoint, "grants")
-	s.Get(grantPath, grants.HandleListGrants)
-	s.Post(grantPath, grants.HandleEnableGrant)
-	s.Delete(grantPath, grants.HandleDisableGrant)
+	s.Get(grantPath, toFiberHandler(grants.HandleListGrants))
+	s.Post(grantPath, toFiberHandler(grants.HandleEnableGrant))
+	s.Delete(grantPath, toFiberHandler(grants.HandleDisableGrant))
 	if config.Get().Features.SSH.Enabled {
 		sshGrantPath := utils.CombineURLPath(grantPath, "ssh")
-		s.Get(sshGrantPath, ssh.HandleGetSSHInfo)
-		s.Post(sshGrantPath, ssh.HandlePost)
-		s.Delete(sshGrantPath, ssh.HandleDeleteSSHKey)
+		s.Get(sshGrantPath, toFiberHandler(ssh.HandleGetSSHInfo))
+		s.Post(sshGrantPath, toFiberHandler(ssh.HandlePost))
+		s.Delete(sshGrantPath, toFiberHandler(ssh.HandleDeleteSSHKey))
 	}
 	addProfileEndpointRoutes(s, apiPaths)
 	if config.Get().Features.Notifications.AnyEnabled {
 		if config.Get().Features.Notifications.ICS.Enabled {
-			s.Get(apiPaths.CalendarEndpoint, calendar.HandleList)
-			s.Post(apiPaths.CalendarEndpoint, calendar.HandleAdd)
+			s.Get(apiPaths.CalendarEndpoint, toFiberHandler(calendar.HandleList))
+			s.Post(apiPaths.CalendarEndpoint, toFiberHandler(calendar.HandleAdd))
 			s.Get(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleGet)
-			s.Post(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleAddMytoken)
-			s.Delete(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleDelete)
+			s.Post(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), toFiberHandler(calendar.HandleAddMytoken))
+			s.Delete(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), toFiberHandler(calendar.HandleDelete))
 		}
-		s.Post(apiPaths.NotificationEndpoint, notification.HandlePost)
-		s.Get(apiPaths.NotificationEndpoint, notification.HandleGet)
-		s.Get(utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code"), notification.HandleGetByManagementCode)
+		s.Post(apiPaths.NotificationEndpoint, toFiberHandler(notification.HandlePost))
+		s.Get(apiPaths.NotificationEndpoint, toFiberHandler(notification.HandleGet))
+		s.Get(
+			utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code"),
+			toFiberHandler(notification.HandleGetByManagementCode),
+		)
 		s.Delete(
-			utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code"), notification.HandleDeleteByManagementCode,
+			utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code"),
+			toFiberHandler(notification.HandleDeleteByManagementCode),
 		)
 		s.Post(
 			utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code", "nc"),
-			notification.HandleNotificationUpdateClasses,
+			toFiberHandler(notification.HandleNotificationUpdateClasses),
 		)
 		s.Put(
 			utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code", "nc"),
-			notification.HandleNotificationUpdateClasses,
+			toFiberHandler(notification.HandleNotificationUpdateClasses),
 		)
 		s.Post(
 			utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code", "token"),
-			notification.HandleNotificationAddToken,
+			toFiberHandler(notification.HandleNotificationAddToken),
 		)
 		s.Delete(
 			utils.CombineURLPath(apiPaths.NotificationEndpoint, ":code", "token"),
-			notification.HandleNotificationRemoveToken,
+			toFiberHandler(notification.HandleNotificationRemoveToken),
 		)
 		if config.Get().Features.Notifications.Mail.Enabled {
-			s.Get(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "email"), email.HandleGet)
-			s.Put(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "email"), email.HandlePut)
+			s.Get(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "email"), toFiberHandler(email.HandleGet))
+			s.Put(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "email"), toFiberHandler(email.HandlePut))
 		}
 	}
 }

@@ -32,12 +32,12 @@ import (
 )
 
 // HandleRevoke handles requests to the revocation endpoint
-func HandleRevoke(ctx *fiber.Ctx) error {
+func HandleRevoke(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle revocation request")
 	req := api.RevocationRequest{}
 	if err := ctx.BodyParser(&req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	rlog.WithField("parsed request", fmt.Sprintf("%+v", req)).WithField(
 		"body", string(ctx.Body()),
@@ -46,7 +46,7 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 	if req.Token == "" {
 		req.Token = ctx.Cookies("mytoken")
 		if req.Token == "" {
-			return model.BadRequestErrorResponse("no token given").Send(ctx)
+			return model.BadRequestErrorResponse("no token given")
 		}
 		if req.MOMID == "" {
 			clearCookie = true
@@ -92,16 +92,16 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 			},
 		)
 		if res != nil {
-			return res.Send(ctx)
+			return res
 		}
-		return ctx.SendStatus(fiber.StatusNoContent)
+		return &model.Response{Status: fiber.StatusNoContent}
 	}
 	errRes := revokeAnyToken(rlog, nil, req.Token, req.OIDCIssuer, req.Recursive)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	if clearCookie {
-		return model.Response{
+		return &model.Response{
 			Status: fiber.StatusNoContent,
 			Cookies: []*fiber.Cookie{
 				{
@@ -114,9 +114,9 @@ func HandleRevoke(ctx *fiber.Ctx) error {
 					SameSite: "Strict",
 				},
 			},
-		}.Send(ctx)
+		}
 	}
-	return ctx.SendStatus(fiber.StatusNoContent)
+	return &model.Response{Status: fiber.StatusNoContent}
 }
 
 func revokeByID(

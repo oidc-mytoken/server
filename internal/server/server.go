@@ -108,15 +108,15 @@ func Init() {
 func addRoutes(s fiber.Router) {
 	addWebRoutes(s)
 	generalPaths := paths.GetGeneralPaths()
-	s.Get(generalPaths.ConfigurationEndpoint, configuration.HandleConfiguration)
-	s.Get(paths.WellknownOpenIDConfiguration, configuration.HandleConfiguration)
+	s.Get(generalPaths.ConfigurationEndpoint, toFiberHandler(configuration.HandleConfiguration))
+	s.Get(paths.WellknownOpenIDConfiguration, toFiberHandler(configuration.HandleConfiguration))
 	if config.Get().Features.Federation.Enabled {
 		s.Get(generalPaths.FederationEndpoint, federation.HandleEntityConfiguration)
 	}
 	s.Get(generalPaths.JWKSEndpoint, endpoints.HandleJWKS)
 	s.Get(generalPaths.OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
 	s.Get("/c/:consent_code", consent.HandleConsent)
-	s.Post("/c/:consent_code", consent.HandleConsentPost)
+	s.Post("/c/:consent_code", toFiberHandler(consent.HandleConsentPost))
 	s.Post("/c", consent.HandleCreateConsent)
 	s.Get("/native", handleNativeCallback)
 	s.Get("/native/abort", handleNativeConsentAbortCallback)

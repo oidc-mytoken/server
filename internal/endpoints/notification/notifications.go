@@ -35,12 +35,12 @@ var managementCodeNotValidError = model.NotFoundErrorResponse("management_code n
 var missingManagementCodeError = model.BadRequestErrorResponse("missing management_code")
 
 // HandleGetByManagementCode returns the api.NotificationInfo for the notification linked to a management code
-func HandleGetByManagementCode(ctx *fiber.Ctx) error {
+func HandleGetByManagementCode(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle notification get request for management code")
 	managementCode := ctx.Params("code")
 	if managementCode == "" {
-		return missingManagementCodeError.Send(ctx)
+		return missingManagementCodeError
 	}
 
 	var res *model.Response
@@ -62,40 +62,40 @@ func HandleGetByManagementCode(ctx *fiber.Ctx) error {
 			return nil
 		},
 	)
-	return res.Send(ctx)
+	return res
 }
 
 // HandleDeleteByManagementCode returns the api.NotificationInfo for the notification linked to a management code
-func HandleDeleteByManagementCode(ctx *fiber.Ctx) error {
+func HandleDeleteByManagementCode(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle notification get request for management code")
 	managementCode := ctx.Params("code")
 	if managementCode == "" {
-		return missingManagementCodeError.Send(ctx)
+		return missingManagementCodeError
 	}
 
 	err := notificationsrepo.Delete(rlog, nil, managementCode)
 	if err != nil {
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	return model.Response{Status: fiber.StatusNoContent}.Send(ctx)
+	return &model.Response{Status: fiber.StatusNoContent}
 }
 
 // HandleGet handles get requests and returns a list of all notifications for a user
-func HandleGet(ctx *fiber.Ctx) error {
+func HandleGet(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle notification get request")
 	var umt universalmytoken.UniversalMytoken
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
 		rlog, nil, mt,
 		ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyTokenRead,
 	)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	var res *model.Response
 	_ = db.Transact(
@@ -139,20 +139,20 @@ func HandleGet(ctx *fiber.Ctx) error {
 			)
 		},
 	)
-	return res.Send(ctx)
+	return res
 }
 
 // HandlePost is the main entry function for handling notification creation requests
-func HandlePost(ctx *fiber.Ctx) error {
+func HandlePost(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle notification create request")
 	var req pkg.SubscribeNotificationRequest
 	if err := ctx.BodyParser(&req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	managementCode := utils.RandASCIIString(64)
 	switch req.NotificationType {
@@ -161,16 +161,16 @@ func HandlePost(ctx *fiber.Ctx) error {
 	case api.NotificationTypeMail:
 		return handleNewMailNotification(ctx, rlog, mt, req, managementCode)
 	case api.NotificationTypeWebsocket:
-		return model.ResponseNYI.Send(ctx)
+		return &model.ResponseNYI
 	default:
-		return model.BadRequestErrorResponse("unknown notification_type").Send(ctx)
+		return model.BadRequestErrorResponse("unknown notification_type")
 	}
 }
 
 func handleNewMailNotification(
 	ctx *fiber.Ctx, rlog logrus.Ext1FieldLogger, mt *mytoken.Mytoken,
 	req pkg.SubscribeNotificationRequest, managementCode string,
-) error {
+) *model.Response {
 	var res *model.Response
 	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
@@ -274,24 +274,24 @@ func handleNewMailNotification(
 		},
 	); err != nil {
 		if res != nil {
-			return res.Send(ctx)
+			return res
 		}
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	return res.Send(ctx)
+	return res
 }
 
 // HandleNotificationUpdateClasses handles requests to update the NotificationClasses for a notification
-func HandleNotificationUpdateClasses(ctx *fiber.Ctx) error {
+func HandleNotificationUpdateClasses(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle notification update classes request")
 	managementCode := ctx.Params("code")
 	if managementCode == "" {
-		return missingManagementCodeError.Send(ctx)
+		return missingManagementCodeError
 	}
 	var req api.NotificationUpdateNotificationClassesRequest
 	if err := ctx.BodyParser(&req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	var res *model.Response
 	err := db.Transact(
@@ -308,25 +308,25 @@ func HandleNotificationUpdateClasses(ctx *fiber.Ctx) error {
 		},
 	)
 	if err != nil {
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if res == nil {
 		res = &model.Response{Status: fiber.StatusNoContent}
 	}
-	return res.Send(ctx)
+	return res
 }
 
 // HandleNotificationAddToken handles requests to add a mytoken to a notification
-func HandleNotificationAddToken(ctx *fiber.Ctx) error {
+func HandleNotificationAddToken(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle notification add token request")
 	managementCode := ctx.Params("code")
 	if managementCode == "" {
-		return missingManagementCodeError.Send(ctx)
+		return missingManagementCodeError
 	}
 	var req pkg.NotificationAddTokenRequest
 	if err := ctx.BodyParser(&req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	var res *model.Response
 	err := db.Transact(
@@ -352,25 +352,25 @@ func HandleNotificationAddToken(ctx *fiber.Ctx) error {
 		},
 	)
 	if err != nil {
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if res == nil {
 		res = &model.Response{Status: fiber.StatusNoContent}
 	}
-	return res.Send(ctx)
+	return res
 }
 
 // HandleNotificationRemoveToken handles requests to remove a mytoken from a notification
-func HandleNotificationRemoveToken(ctx *fiber.Ctx) error {
+func HandleNotificationRemoveToken(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle notification remove token request")
 	managementCode := ctx.Params("code")
 	if managementCode == "" {
-		return missingManagementCodeError.Send(ctx)
+		return missingManagementCodeError
 	}
 	var req pkg.NotificationRemoveTokenRequest
 	if err := ctx.BodyParser(&req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	var res *model.Response
 	err := db.Transact(
@@ -396,10 +396,10 @@ func HandleNotificationRemoveToken(ctx *fiber.Ctx) error {
 		},
 	)
 	if err != nil {
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if res == nil {
 		res = &model.Response{Status: fiber.StatusNoContent}
 	}
-	return res.Send(ctx)
+	return res
 }

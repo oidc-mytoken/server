@@ -1,8 +1,6 @@
 package shorttokenrepo
 
 import (
-	"database/sql"
-
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
@@ -94,7 +92,7 @@ func (pt *ProxyToken) JWT(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (jwt string, va
 					JWT  string    `db:"jwt"`
 					MTID mtid.MTID `db:"MT_id"`
 				}
-				if err = tx.Get(&res, `CALL ProxyTokens_GetMT(?)`, pt.id); err != nil {
+				if _, err = db.ParseError(tx.Get(&res, `CALL ProxyTokens_GetMT(?)`, pt.id)); err != nil {
 					return errors.WithStack(err)
 				}
 				pt.encryptedJWT = res.JWT
@@ -102,10 +100,6 @@ func (pt *ProxyToken) JWT(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (jwt string, va
 				return nil
 			},
 		); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				err = nil
-				return
-			}
 			return
 		}
 	}

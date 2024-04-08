@@ -61,18 +61,18 @@ func doTokenInfoSubtokens(
 func HandleTokenInfoSubtokens(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken,
 	clientMetadata *api.ClientMetaData,
-) model.Response {
+) *model.Response {
 	// If we call this function it means the token is valid.
 	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
 		rlog, tx, mt, clientMetadata, api.CapabilityTokeninfoSubtokens,
 	)
 	if errRes != nil {
-		return *errRes
+		return errRes
 	}
 	tokenTree, tokenUpdate, err := doTokenInfoSubtokens(rlog, tx, req, mt, clientMetadata, usedRestriction)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return *model.ErrorToInternalServerErrorResponse(err)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	rsp := pkg.NewTokeninfoSubtokensResponse(tokenTree, tokenUpdate)
 	return makeTokenInfoResponse(rsp, tokenUpdate)

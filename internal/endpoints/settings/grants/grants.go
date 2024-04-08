@@ -19,7 +19,7 @@ import (
 
 // HandleListGrants handles GET requests to the grants endpoints and returns a list of enabled/disabled grant types for
 // the user
-func HandleListGrants(ctx *fiber.Ctx) error {
+func HandleListGrants(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle get grant type request")
 	var reqMytoken universalmytoken.UniversalMytoken
@@ -41,14 +41,14 @@ func HandleListGrants(ctx *fiber.Ctx) error {
 }
 
 // HandleEnableGrant handles requests to enable a grant type
-func HandleEnableGrant(ctx *fiber.Ctx) error {
+func HandleEnableGrant(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle enable grant type request")
 	return handleEditGrant(rlog, ctx, grantrepo.Enable, api.EventGrantEnabled, fiber.StatusCreated)
 }
 
 // HandleDisableGrant handles requests to disable a grant type
-func HandleDisableGrant(ctx *fiber.Ctx) error {
+func HandleDisableGrant(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle disable grant type request")
 	return handleEditGrant(rlog, ctx, grantrepo.Disable, api.EventGrantDisabled, fiber.StatusNoContent)
@@ -58,13 +58,13 @@ func handleEditGrant(
 	rlog log.Ext1FieldLogger, ctx *fiber.Ctx,
 	dbCallBack func(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID, grant model.GrantType) error,
 	evt api.Event, okStatus int,
-) error {
+) *model.Response {
 	req := request.GrantTypeRequest{GrantType: -1}
 	if err := ctx.BodyParser(&req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	if !req.GrantType.Valid() {
-		return model.BadRequestErrorResponse("no valid 'grant_type' found").Send(ctx)
+		return model.BadRequestErrorResponse("no valid 'grant_type' found")
 	}
 	rlog.Trace("Parsed grant type request")
 

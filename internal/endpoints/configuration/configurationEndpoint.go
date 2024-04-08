@@ -24,15 +24,14 @@ func SupportedProviders() []api.SupportedProviderConfig {
 }
 
 // HandleConfiguration handles calls to the configuration endpoint
-func HandleConfiguration(ctx *fiber.Ctx) error {
+func HandleConfiguration(*fiber.Ctx) *model.Response {
 	if config.Get().Features.Federation.Enabled {
 		mytokenConfig.ProvidersSupported = append(getProvidersFromConfig(), oidcfed.SupportedProviders()...)
 	}
-	res := model.Response{
+	return &model.Response{
 		Status:   fiber.StatusOK,
 		Response: mytokenConfig,
 	}
-	return res.Send(ctx)
 }
 
 var mytokenConfig *pkg.MytokenConfiguration

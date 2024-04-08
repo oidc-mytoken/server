@@ -26,6 +26,9 @@ func (r Response) Send(ctx *fiber.Ctx) error {
 	if fasthttp.StatusCodeIsRedirect(r.Status) {
 		return ctx.Redirect(r.Response.(string), r.Status)
 	}
+	if r.Response == nil {
+		return ctx.SendStatus(r.Status)
+	}
 	return ctx.Status(r.Status).JSON(r.Response)
 }
 

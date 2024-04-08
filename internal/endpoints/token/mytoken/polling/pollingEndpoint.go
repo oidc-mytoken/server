@@ -17,16 +17,16 @@ import (
 )
 
 // HandlePollingCode handles a request on the polling endpoint
-func HandlePollingCode(ctx *fiber.Ctx) error {
+func HandlePollingCode(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	req := response.NewPollingCodeRequest()
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	clientMetaData := ctxutils.ClientMetaData(ctx)
 	mt, token, pollingCodeStatus, errRes := CheckPollingCodeReq(rlog, req, *clientMetaData, false)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	maxTokenLen := 0
 	if pollingCodeStatus.MaxTokenLen != nil {
@@ -35,12 +35,12 @@ func HandlePollingCode(ctx *fiber.Ctx) error {
 	res, err := mt.ToTokenResponse(rlog, pollingCodeStatus.ResponseType, maxTokenLen, *clientMetaData, token)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	return model.Response{
+	return &model.Response{
 		Status:   fiber.StatusOK,
 		Response: res,
-	}.Send(ctx)
+	}
 }
 
 // CheckPollingCodeReq checks a pkg.PollingCodeRequest and returns the linked mytoken if valid

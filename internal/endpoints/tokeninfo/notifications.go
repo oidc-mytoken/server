@@ -89,17 +89,17 @@ func doTokenInfoNotifications(
 func handleTokenInfoNotifications(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken,
 	clientMetadata *api.ClientMetaData,
-) model.Response {
+) *model.Response {
 	usedRestriction, errRes := auth.RequireUsableRestrictionOther(rlog, nil, mt, clientMetadata)
 	if errRes != nil {
-		return *errRes
+		return errRes
 	}
 	res, err := doTokenInfoNotifications(rlog, tx, req, mt, clientMetadata, usedRestriction)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return *model.ErrorToInternalServerErrorResponse(err)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	rsp := model.Response{
+	rsp := &model.Response{
 		Status:   fiber.StatusOK,
 		Response: res,
 	}
@@ -113,7 +113,7 @@ func handleTokenInfoNotifications(
 func HandleTokenInfoNotifications(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken,
 	clientMetadata *api.ClientMetaData,
-) model.Response {
+) *model.Response {
 	// If we call this function it means the token is valid.
 
 	rlog.Debug("Handle tokeninfo notifications request")
@@ -121,7 +121,7 @@ func HandleTokenInfoNotifications(
 		if errRes := auth.RequireCapability(
 			rlog, tx, api.CapabilityTokeninfoNotify, mt, clientMetadata,
 		); errRes != nil {
-			return *errRes
+			return errRes
 		}
 		return handleTokenInfoNotifications(rlog, tx, req, mt, clientMetadata)
 	}
@@ -132,10 +132,10 @@ func HandleTokenInfoNotifications(
 			}
 			isParent, err := helper.MOMIDHasParent(rlog, tx, momid, mt.ID)
 			if err != nil {
-				return *model.ErrorToInternalServerErrorResponse(err)
+				return model.ErrorToInternalServerErrorResponse(err)
 			}
 			if !isParent {
-				return model.Response{
+				return &model.Response{
 					Status: fiber.StatusForbidden,
 					Response: api.Error{
 						Error: api.ErrorStrInsufficientCapabilities,
@@ -151,10 +151,10 @@ func HandleTokenInfoNotifications(
 
 		same, err := helper.CheckMytokensAreForSameUser(rlog, tx, momid, mt.ID)
 		if err != nil {
-			return *model.ErrorToInternalServerErrorResponse(err)
+			return model.ErrorToInternalServerErrorResponse(err)
 		}
 		if !same {
-			return model.Response{
+			return &model.Response{
 				Status: fiber.StatusForbidden,
 				Response: api.Error{
 					Error: api.ErrorStrInvalidGrant,

@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
@@ -15,6 +16,7 @@ import (
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
 	"github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	notifier "github.com/oidc-mytoken/server/internal/notifier/client"
@@ -37,7 +39,7 @@ func (res *MailSettingsInfoResponse) SetTokenUpdate(tokenUpdate *my.MytokenRespo
 }
 
 // HandleGet handles GET requests to the email settings endpoint
-func HandleGet(ctx *fiber.Ctx) error {
+func HandleGet(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle get email info request")
 	var reqMytoken universalmytoken.UniversalMytoken
@@ -60,79 +62,108 @@ func HandleGet(ctx *fiber.Ctx) error {
 	)
 }
 
-func HandlePut(ctx *fiber.Ctx) error {
+func changeEmailAddress(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, email string,
+	clientMetaData *api.ClientMetaData,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			if err := userrepo.ChangeEmail(rlog, tx, mtID, email); err != nil {
+				return err
+			}
+			verificationURL, err := actions.CreateVerifyEmail(rlog, tx, mtID)
+			if err != nil {
+				return err
+			}
+			mailInfo, err := userrepo.GetMail(rlog, tx, mtID)
+			if err != nil {
+				return err
+			}
+			if err = eventService.LogEvent(
+				rlog, tx, pkg.MTEvent{
+					Event:          api.EventEmailChanged,
+					MTID:           mtID,
+					Comment:        email,
+					ClientMetaData: *clientMetaData,
+				},
+			); err != nil {
+				return err
+			}
+			notifier.SendTemplateEmail(
+				email, mailtemplates.SubjectVerifyMail, mailInfo.PreferHTMLMail,
+				mailtemplates.TemplateVerifyMail, map[string]any{
+					"issuer": config.Get().IssuerURL,
+					"link":   verificationURL,
+				},
+			)
+			return nil
+		},
+	)
+}
+
+func changePreferredMimeType(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, preferHTML bool,
+	clientMetaData *api.ClientMetaData,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+
+			if err := userrepo.ChangePreferredMailType(rlog, tx, mtID, preferHTML); err != nil {
+				return err
+			}
+			eventComment := "to plain text"
+			if preferHTML {
+				eventComment = "to html"
+			}
+			if err := eventService.LogEvent(
+				rlog, tx, pkg.MTEvent{
+					Event:          api.EventEmailMimetypeChanged,
+					Comment:        eventComment,
+					MTID:           mtID,
+					ClientMetaData: *clientMetaData,
+				},
+			); err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+}
+
+func HandlePut(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle update email settings request")
 	var req api.UpdateMailSettingsRequest
 	if err := ctx.BodyParser(&req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	if req.PreferHTMLMail == nil && req.EmailAddress == "" {
-		return model.BadRequestErrorResponse("no request parameter given").Send(ctx)
+		return model.BadRequestErrorResponse("no request parameter given")
 	}
 	var reqMytoken universalmytoken.UniversalMytoken
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &reqMytoken, ctx)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
 		rlog, nil, mt, ctxutils.ClientMetaData(ctx), api.CapabilityEmail,
 	)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	var tokenUpdate *my.MytokenResponse
 	clientMetaData := ctxutils.ClientMetaData(ctx)
 	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
 			if req.PreferHTMLMail != nil {
-				if err := userrepo.ChangePreferredMailType(rlog, tx, mt.ID, *req.PreferHTMLMail); err != nil {
-					return err
-				}
-				eventComment := "to plain text"
-				if *req.PreferHTMLMail {
-					eventComment = "to html"
-				}
-				if err := eventService.LogEvent(
-					rlog, tx, pkg.MTEvent{
-						Event:          api.EventEmailMimetypeChanged,
-						Comment:        eventComment,
-						MTID:           mt.ID,
-						ClientMetaData: *clientMetaData,
-					},
-				); err != nil {
+				if err := changePreferredMimeType(rlog, tx, mt.ID, *req.PreferHTMLMail, clientMetaData); err != nil {
 					return err
 				}
 			}
 			if req.EmailAddress != "" {
-				if err := userrepo.ChangeEmail(rlog, tx, mt.ID, req.EmailAddress); err != nil {
+				if err := changeEmailAddress(rlog, tx, mt.ID, req.EmailAddress, clientMetaData); err != nil {
 					return err
 				}
-				verificationURL, err := actions.CreateVerifyEmail(rlog, tx, mt.ID)
-				if err != nil {
-					return err
-				}
-				mailInfo, err := userrepo.GetMail(rlog, tx, mt.ID)
-				if err != nil {
-					return err
-				}
-				if err = eventService.LogEvent(
-					rlog, tx, pkg.MTEvent{
-						Event:          api.EventEmailChanged,
-						MTID:           mt.ID,
-						Comment:        req.EmailAddress,
-						ClientMetaData: *clientMetaData,
-					},
-				); err != nil {
-					return err
-				}
-				notifier.SendTemplateEmail(
-					req.EmailAddress, mailtemplates.SubjectVerifyMail, mailInfo.PreferHTMLMail,
-					mailtemplates.TemplateVerifyMail, map[string]any{
-						"issuer": config.Get().IssuerURL,
-						"link":   verificationURL,
-					},
-				)
 			}
 			if err := usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
 				return err
@@ -145,14 +176,14 @@ func HandlePut(ctx *fiber.Ctx) error {
 			return err
 		},
 	); err != nil {
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if tokenUpdate != nil {
-		return model.Response{
+		return &model.Response{
 			Status:   fiber.StatusOK,
 			Response: my.OnlyTokenUpdateRes{TokenUpdate: tokenUpdate},
 			Cookies:  []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)},
-		}.Send(ctx)
+		}
 	}
-	return model.Response{Status: fiber.StatusNoContent}.Send(ctx)
+	return &model.Response{Status: fiber.StatusNoContent}
 }

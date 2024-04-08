@@ -14,7 +14,6 @@ import (
 	pkg2 "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
-	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 )
 
 // HandleTokenInfoIntrospect handles token introspection
@@ -24,12 +23,12 @@ func HandleTokenInfoIntrospect(
 	mt *mytoken.Mytoken,
 	origionalTokenType model.ResponseType,
 	clientMetadata *api.ClientMetaData,
-) model.Response {
+) *model.Response {
 	// If we call this function it means the token is valid.
 	if errRes := auth.RequireCapability(
 		rlog, tx, api.CapabilityTokeninfoIntrospect, mt, clientMetadata,
 	); errRes != nil {
-		return *errRes
+		return errRes
 	}
 
 	var usedToken mytoken.UsedMytoken
@@ -49,10 +48,9 @@ func HandleTokenInfoIntrospect(
 			)
 		},
 	); err != nil {
-		rlog.Errorf("%s", errorfmt.Full(err))
-		return *model.ErrorToInternalServerErrorResponse(err)
+		return nil
 	}
-	return model.Response{
+	return &model.Response{
 		Status: fiber.StatusOK,
 		Response: pkg.TokeninfoIntrospectResponse{
 			TokeninfoIntrospectResponse: api.TokeninfoIntrospectResponse{
