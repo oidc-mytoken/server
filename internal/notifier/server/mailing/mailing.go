@@ -127,9 +127,9 @@ func (a *Attachment) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aa); err != nil {
 		return errors.WithStack(err)
 	}
-	(*a).Filename = aa.Filename
-	(*a).ContentType = aa.ContentType
-	(*a).Reader = bytes.NewReader(aa.Data)
+	a.Filename = aa.Filename
+	a.ContentType = aa.ContentType
+	a.Reader = bytes.NewReader(aa.Data)
 	return nil
 }
 
