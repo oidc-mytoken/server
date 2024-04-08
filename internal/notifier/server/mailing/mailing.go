@@ -159,17 +159,17 @@ var HTMLMailSender TemplateMailSender = htmlMailSender{}
 var ICSMailSender MailSender = icsMailSender{}
 
 // Send implements the MailSender interface
-func (s noopSender) Send(_, _, _ string, _ ...Attachment) error {
+func (noopSender) Send(_, _, _ string, _ ...Attachment) error {
 	return nil
 }
 
 // SendTemplate implements the TemplateMailSender interface
-func (s noopSender) SendTemplate(_, _, _ string, _ any) error {
+func (noopSender) SendTemplate(_, _, _ string, _ any) error {
 	return nil
 }
 
 // Send implements the MailSender interface
-func (s plainTextMailSender) Send(to, subject, text string, attachments ...Attachment) error {
+func (plainTextMailSender) Send(to, subject, text string, attachments ...Attachment) error {
 	mail := &email.Email{
 		From:    fromAddress,
 		To:      []string{to},
@@ -195,7 +195,7 @@ func (s plainTextMailSender) SendTemplate(to, subject, template string, binding 
 }
 
 // Send implements the MailSender interface
-func (s htmlMailSender) Send(to, subject, text string, attachments ...Attachment) error {
+func (htmlMailSender) Send(to, subject, text string, attachments ...Attachment) error {
 	mail := &email.Email{
 		From:    fromAddress,
 		To:      []string{to},
@@ -221,7 +221,7 @@ func (s htmlMailSender) SendTemplate(to, subject, template string, binding any) 
 }
 
 // Send implements the MailSender interface
-func (s icsMailSender) Send(to, subject, text string, attachments ...Attachment) error {
+func (icsMailSender) Send(to, subject, text string, attachments ...Attachment) error {
 	mail := &email.Email{
 		From:    fromAddress,
 		To:      []string{to},

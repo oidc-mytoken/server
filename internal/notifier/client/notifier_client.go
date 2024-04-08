@@ -71,7 +71,7 @@ func (n standaloneNotifier) SendEmailRequest(req pkg.EmailNotificationRequest) {
 }
 
 // SendEmailRequest sends a pkg.EmailNotificationRequest to the integrated notification server
-func (n integratedNotifier) SendEmailRequest(req pkg.EmailNotificationRequest) {
+func (integratedNotifier) SendEmailRequest(req pkg.EmailNotificationRequest) {
 	server.HandleEmailRequest(req)
 }
 
