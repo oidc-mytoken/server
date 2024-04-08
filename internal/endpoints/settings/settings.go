@@ -38,7 +38,7 @@ var settingsMetadata = api.SettingsMetaData{
 }
 
 // HandleSettings handles Metadata requests to the settings endpoint
-func HandleSettings(ctx *fiber.Ctx) *serverModel.Response {
+func HandleSettings(*fiber.Ctx) *serverModel.Response {
 	return &serverModel.Response{
 		Status:   fiber.StatusOK,
 		Response: settingsMetadata,
