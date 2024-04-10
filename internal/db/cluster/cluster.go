@@ -204,12 +204,12 @@ func (n *node) trans(rlog log.Ext1FieldLogger, fn func(*sqlx.Tx) error) error {
 }
 
 func (c *Cluster) next(rlog log.Ext1FieldLogger) *node {
-	rlog.Trace("Selecting a node")
+	// rlog.Trace("Selecting a node")
 	select {
 	case n := <-c.active:
 		if n.active {
 			c.active <- n
-			rlog.WithField("host", n.host).Trace("Selected active node")
+			// rlog.WithField("host", n.host).Trace("Selected active node")
 			return n
 		}
 		rlog.WithField("host", n.host).Trace("Found inactive node")

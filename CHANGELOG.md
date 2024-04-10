@@ -12,6 +12,23 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+
+## mytoken 0.10.0
+
+### Features
+
+- Add support for notifications:
+  - Allows to create email notifications for various things
+  - Allows to calendar invites for token expirations
+  - Allows to create calendars and add token expirations to it; the ics feed can be subscribed to
+  - Allows to manage notifications on the web-interface
+
+### Enhancements
+
+- In the tokeninfo pane in the webinterface expired JWTs now get a more precise badge.
+- Improved on returning json errors instead of html on api paths
+- When not being logged in and no OP was selected now the 'Create new Mytoken' button in the webinterface is disabled.
+
 ## mytoken 0.9.2
 
 ### Packaging
@@ -28,7 +45,7 @@
 - Bump golang.org/x/mod from 0.15.0 to 0.16.0
 - Bump golang.org/x/oauth2 from 0.17.0 to 0.18.0
 - Bump golang.org/x/term from 0.17.0 to 0.18.0
-
+- 
 ## mytoken 0.9.1
 
 ### Enhancements

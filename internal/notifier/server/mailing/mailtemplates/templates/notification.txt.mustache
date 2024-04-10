@@ -1,0 +1,28 @@
+Your mytoken was used for something we should notify you about. Here are the details:
+
+{{#token-name}}
+    Mytoken Name: {{.}}
+{{/token-name}}
+Mytoken Mom ID: {{mom_id}}
+IP: {{ip}}
+User-Agent: {{user-agent}}
+{{#country}}
+    Location: {{.}}
+{{/country}}
+
+Notification Reason: {{notification-class}}
+{{#event}}
+    Event: {{.}}
+{{/event}}
+{{#comment}}
+    Comment: {{.}}
+{{/comment}}
+{{#additional-data}}
+    {{Key}}: {{Value}}
+{{/additional-data}}
+
+
+If you want to manage this notification subscription, you can do so at: {{management-url}}
+
+Sincerly,
+the mytoken notification bot.

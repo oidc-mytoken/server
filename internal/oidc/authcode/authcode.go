@@ -23,6 +23,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/userrepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
@@ -30,6 +31,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/oidc/oidcreqres"
 	"github.com/oidc-mytoken/server/internal/oidc/pkce"
 	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
+	"github.com/oidc-mytoken/server/internal/oidc/userinfo"
 	"github.com/oidc-mytoken/server/internal/server/httpstatus"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	iutils "github.com/oidc-mytoken/server/internal/utils"
@@ -93,10 +95,7 @@ func StartAuthCodeFlow(ctx *fiber.Ctx, req *response.AuthCodeFlowRequest) *model
 	req.Issuer = p.Issuer()
 	exp := req.Restrictions.GetExpires()
 	if exp > 0 && exp < unixtime.Now() {
-		return &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("token would already be expired"),
-		}
+		return model.BadRequestErrorResponse("token would already be expired")
 	}
 
 	oState, consentCode := state.CreateState()
@@ -149,7 +148,7 @@ func CodeExchange(
 	rlog log.Ext1FieldLogger, oState *state.State, code string, networkData api.ClientMetaData,
 ) *model.Response {
 	rlog.Debug("Handle code exchange")
-	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(rlog, oState)
+	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(rlog, nil, oState)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &model.Response{
@@ -251,6 +250,17 @@ func CodeExchange(
 					return err
 				}
 			}
+			mailInfo, err := userrepo.GetMail(rlog, tx, ste.ID)
+			_, err = db.ParseError(err)
+			if err != nil {
+				return err
+			}
+			if !mailInfo.Mail.Valid {
+				mail, mailVerified := extractMail(rlog, oidcTokenRes, p)
+				if err = userrepo.SetEmail(rlog, tx, ste.ID, mail, mailVerified); err != nil {
+					return err
+				}
+			}
 			return authcodeinforepo.DeleteAuthFlowInfoByState(rlog, tx, oState)
 		},
 	); err != nil {
@@ -283,6 +293,31 @@ func CodeExchange(
 		Response: ternary.IfNotEmptyOr(authInfo.RedirectURI, "/home"),
 		Cookies:  []*fiber.Cookie{cookie},
 	}
+}
+
+func extractMail(rlog log.Ext1FieldLogger, oidcTokenRes *oidcreqres.OIDCTokenResponse, provider model.Provider) (
+	mail string,
+	verified bool,
+) {
+	var ok bool
+	mail, ok = jwtutils.GetStringFromJWT(rlog, oidcTokenRes.IDToken, "email")
+	if ok {
+		verified = true
+		return
+	}
+	mail, ok = jwtutils.GetStringFromJWT(rlog, oidcTokenRes.AccessToken, "email")
+	if ok {
+		verified = true
+		return
+	}
+	userinfoRes, errRes, err := userinfo.Get(provider, oidcTokenRes.AccessToken)
+	if err != nil || errRes != nil {
+		mail = ""
+		return
+	}
+	mail, _ = userinfoRes["email"].(string)
+	verified, _ = userinfoRes["email_verified"].(bool)
+	return
 }
 
 func createMytokenEntry(

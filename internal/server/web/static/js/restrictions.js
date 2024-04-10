@@ -155,6 +155,14 @@ function fillJSONEditor(prefix = "") {
     restrictionsArea(prefix).val(JSON.stringify(getRestrictionsData(prefix), null, 4));
 }
 
+function triggerUpdateRestrFromJSONEditorAuxclick(e, prefix) {
+    if (e.button === 1) { // only on middle click
+        setTimeout(function () { // we add a delay so that the content is actually pasted before we update
+            updateRestrFromJSONEditor(prefix);
+        }, 50);
+    }
+}
+
 function updateRestrFromJSONEditor(prefix) {
     let r = [];
     try {

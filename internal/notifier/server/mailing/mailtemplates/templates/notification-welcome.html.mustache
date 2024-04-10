@@ -1,0 +1,22 @@
+<p>You have been successfully subscribed to receive notifications for
+    {{#mtid}}
+        your mytoken {{#token-name}}'{{.}}'{{/token-name}} with the mom id '{{.}}'
+    {{/mtid}}
+    {{^mtid}}
+        all your mytokens
+    {{/mtid}}
+    on <a href="{{issuer-url}}">{{issuer-url}}</a>.
+</p>
+<p>You will be notified about the following things:</p>
+<ul>
+    {{#notification-classes}}
+        <li>{{Name}}</li>
+    {{/notification-classes}}
+</ul>
+
+<p>
+    If you want to manage this notification subscription, you can do so <a href="{{management-url}}">here</a>.
+</p>
+
+Sincerly,<br>
+the mytoken notification bot.

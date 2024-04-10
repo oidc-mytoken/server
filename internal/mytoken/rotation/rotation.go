@@ -11,7 +11,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	pkg2 "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 )
 
@@ -32,10 +32,11 @@ func rotateMytoken(
 				return err
 			}
 			return eventService.LogEvent(
-				rlog, tx, eventService.MTEvent{
-					Event: event.FromNumber(event.MTRotated, ""),
-					MTID:  rotated.ID,
-				}, clientMetaData,
+				rlog, tx, pkg2.MTEvent{
+					Event:          api.EventMTRotated,
+					MTID:           rotated.ID,
+					ClientMetaData: clientMetaData,
+				},
 			)
 		},
 	); err != nil {
@@ -44,8 +45,8 @@ func rotateMytoken(
 	return rotated, true, nil
 }
 
-// RotateMytokenAfterAT rotates a mytoken after it was used to obtain an AT if rotation is enabled for that case
-func RotateMytokenAfterAT(
+// rotateMytokenAfterAT rotates a mytoken after it was used to obtain an AT if rotation is enabled for that case
+func rotateMytokenAfterAT(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData,
 ) (*mytoken.Mytoken, bool, error) {
 	if old.Rotation == nil {
@@ -57,9 +58,9 @@ func RotateMytokenAfterAT(
 	return rotateMytoken(rlog, tx, oldJWT, old, clientMetaData)
 }
 
-// RotateMytokenAfterOther rotates a mytoken after it was used for other usages than AT if rotation is enabled for that
+// rotateMytokenAfterOther rotates a mytoken after it was used for other usages than AT if rotation is enabled for that
 // case
-func RotateMytokenAfterOther(
+func rotateMytokenAfterOther(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData,
 ) (*mytoken.Mytoken, bool, error) {
 	if old.Rotation == nil {
@@ -77,7 +78,7 @@ func RotateMytokenAfterOtherForResponse(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData,
 	responseType model.ResponseType,
 ) (*pkg.MytokenResponse, error) {
-	my, rotated, err := RotateMytokenAfterOther(rlog, tx, oldJWT, old, clientMetaData)
+	my, rotated, err := rotateMytokenAfterOther(rlog, tx, oldJWT, old, clientMetaData)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +95,7 @@ func RotateMytokenAfterATForResponse(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, oldJWT string, old *mytoken.Mytoken, clientMetaData api.ClientMetaData,
 	responseType model.ResponseType,
 ) (*pkg.MytokenResponse, error) {
-	my, rotated, err := RotateMytokenAfterAT(rlog, tx, oldJWT, old, clientMetaData)
+	my, rotated, err := rotateMytokenAfterAT(rlog, tx, oldJWT, old, clientMetaData)
 	if err != nil {
 		return nil, err
 	}

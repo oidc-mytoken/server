@@ -109,6 +109,15 @@ var defaultConfig = Config{
 			Enabled: true,
 			Groups:  make(map[string]string),
 		},
+		Notifications: notificationConf{
+			Mail: MailNotificationConf{
+				Enabled: false,
+				MailServer: MailServerConf{
+					Port: 587,
+				},
+			},
+			ICS: onlyEnable{true},
+		},
 		Federation: federationConf{
 			Enabled:                     false,
 			EntityConfigurationLifetime: 7 * 24 * 60 * 60,
@@ -164,6 +173,7 @@ type featuresConf struct {
 	ServerProfiles          serverProfilesConf      `yaml:"server_profiles"`
 	Federation              federationConf          `yaml:"federation"`
 	GuestMode               onlyEnable              `yaml:"guest_mode"`
+	Notifications           notificationConf        `yaml:"notifications"`
 }
 
 func (c *featuresConf) validate() error {
@@ -174,6 +184,9 @@ func (c *featuresConf) validate() error {
 		return err
 	}
 	if err := c.Federation.validate(); err != nil {
+		return err
+	}
+	if err := c.Notifications.validate(); err != nil {
 		return err
 	}
 	return nil
@@ -239,6 +252,50 @@ func (g profileGroupsCredentials) validate() error {
 		}
 	}
 	return nil
+}
+
+type notificationConf struct {
+	AnyEnabled     bool                 `yaml:"-"`
+	Mail           MailNotificationConf `yaml:"email"`
+	Websocket      onlyEnable           `yaml:"ws"`
+	ICS            onlyEnable           `yaml:"ics"`
+	NotifierServer string               `yaml:"notifier_server_url"`
+}
+
+func (c *notificationConf) validate() error {
+	c.AnyEnabled = c.Mail.Enabled || c.Websocket.Enabled || c.ICS.Enabled
+	if !c.AnyEnabled {
+		return nil
+	}
+	if conf.Server.DistributedServers {
+		if c.NotifierServer == "" {
+			return errors.New("distributed deployment, but no notifier_server_url set")
+		}
+	}
+	if c.NotifierServer != "" {
+		if c.Mail.MailServer.Host != "" {
+			log.Warning(
+				"a standalone notifier server is used; however mail_server configuration is given here",
+			)
+		}
+	}
+	return nil
+}
+
+// MailNotificationConf holds the configuration for email notifications
+type MailNotificationConf struct {
+	Enabled      bool           `yaml:"enabled"`
+	MailServer   MailServerConf `yaml:"mail_server"`
+	OverwriteDir string         `yaml:"overwrite_dir"`
+}
+
+// MailServerConf holds the configuration for the email server
+type MailServerConf struct {
+	Host        string `yaml:"host"`
+	Port        int    `yaml:"port"`
+	Username    string `yaml:"user"`
+	Password    string `yaml:"password"`
+	FromAddress string `yaml:"from_address"`
 }
 
 type tokeninfoConfig struct {
@@ -333,8 +390,9 @@ type serverConf struct {
 	TLS    tlsConf `yaml:"tls"`
 	Secure bool    `yaml:"-"` // Secure indicates if the connection to the mytoken server is secure. This is
 	// independent of TLS, e.g. a Proxy can be used.
-	ProxyHeader string      `yaml:"proxy_header"`
-	Limiter     limiterConf `yaml:"request_limits"`
+	ProxyHeader        string      `yaml:"proxy_header"`
+	Limiter            limiterConf `yaml:"request_limits"`
+	DistributedServers bool        `yaml:"distributed_servers"`
 }
 
 type limiterConf struct {

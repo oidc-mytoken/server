@@ -2,12 +2,14 @@ package server
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	fiberUtils "github.com/gofiber/fiber/v2/utils"
 	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/server/apipath"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
@@ -26,7 +28,9 @@ func handleError(ctx *fiber.Ctx, err error) error {
 		rlog.Errorf("%s", errorfmt.Full(err))
 	}
 
-	if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" {
+	if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" && !strings.HasPrefix(
+		ctx.Path(), apipath.Prefix,
+	) {
 		return handleErrorHTML(ctx, code, msg)
 	}
 	return handleErrorJSON(ctx, code, msg)

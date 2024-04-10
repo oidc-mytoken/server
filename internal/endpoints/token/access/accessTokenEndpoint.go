@@ -16,7 +16,7 @@ import (
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
@@ -30,12 +30,12 @@ import (
 )
 
 // HandleAccessTokenEndpoint handles request on the access token endpoint
-func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
+func HandleAccessTokenEndpoint(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle access token request")
 	req := request.NewAccessTokenRequest()
 	if err := ctx.BodyParser(&req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	rlog.Trace("Parsed access token request")
 	if req.Mytoken.JWT == "" {
@@ -43,27 +43,27 @@ func HandleAccessTokenEndpoint(ctx *fiber.Ctx) error {
 	}
 
 	if errRes := auth.RequireGrantType(rlog, model.GrantTypeMytoken, req.GrantType); errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
-		rlog, nil, mt, ctx.IP(),
+	usedRestriction, errRes := auth.RequireCapabilityAndRestriction(
+		rlog, nil, mt, ctxutils.ClientMetaData(ctx),
 		utils.SplitIgnoreEmpty(req.Scope, " "),
 		utils.SplitIgnoreEmpty(req.Audience, " "),
 		api.CapabilityAT,
 	)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 	provider, errRes := auth.RequireMatchingIssuer(rlog, mt.OIDCIssuer, &req.Issuer)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 
-	return HandleAccessTokenRefresh(rlog, mt, req, *ctxutils.ClientMetaData(ctx), provider, usedRestriction).Send(ctx)
+	return HandleAccessTokenRefresh(rlog, mt, req, *ctxutils.ClientMetaData(ctx), provider, usedRestriction)
 }
 
 func parseScopesAndAudienceToUse(
@@ -143,10 +143,12 @@ func HandleAccessTokenRefresh(
 				return err
 			}
 			if err = eventService.LogEvent(
-				rlog, tx, eventService.MTEvent{
-					Event: event.FromNumber(event.ATCreated, "Used grant_type mytoken"),
-					MTID:  mt.ID,
-				}, networkData,
+				rlog, tx, pkg.MTEvent{
+					Event:          api.EventATCreated,
+					Comment:        "Used grant_type mytoken",
+					MTID:           mt.ID,
+					ClientMetaData: networkData,
+				},
 			); err != nil {
 				return err
 			}

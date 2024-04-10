@@ -108,7 +108,7 @@ function getSupportedScopesFromStorage(iss = "") {
     if (iss === "") {
         if (typeof (issuer) !== 'undefined') {
             iss = issuer;
-        } else if (typeof ($mtOIDCIss !== 'undefined')) {
+        } else if (typeof $mtOIDCIss !== 'undefined') {
             iss = $mtOIDCIss.val();
         } else {
             iss = storageGet("oidc_issuer");

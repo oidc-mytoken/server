@@ -26,7 +26,7 @@ func handleSSHAT(reqData []byte, s ssh.Session) error {
 		}
 	}
 	mt := ctx.Value("mytoken").(*mytoken.Mytoken)
-	clientMetaData := api.ClientMetaData{
+	clientMetaData := &api.ClientMetaData{
 		IP:        ctx.Value("ip").(string),
 		UserAgent: ctx.Value("user_agent").(string),
 	}
@@ -36,12 +36,12 @@ func handleSSHAT(reqData []byte, s ssh.Session) error {
 	rlog.Debug("Handle AT from ssh")
 	rlog.Trace("Parsed AT request")
 
-	errRes := auth.RequireMytokenNotRevoked(rlog, nil, mt)
+	errRes := auth.RequireMytokenNotRevoked(rlog, nil, mt, clientMetaData)
 	if errRes != nil {
 		return writeErrRes(s, errRes)
 	}
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
-		rlog, nil, mt, clientMetaData.IP,
+	usedRestriction, errRes := auth.RequireCapabilityAndRestriction(
+		rlog, nil, mt, clientMetaData,
 		utils.SplitIgnoreEmpty(req.Scope, " "),
 		utils.SplitIgnoreEmpty(req.Audience, " "),
 		api.CapabilityAT,
@@ -53,7 +53,7 @@ func handleSSHAT(reqData []byte, s ssh.Session) error {
 	if errRes != nil {
 		return writeErrRes(s, errRes)
 	}
-	res := access.HandleAccessTokenRefresh(rlog, mt, req, clientMetaData, provider, usedRestriction)
+	res := access.HandleAccessTokenRefresh(rlog, mt, req, *clientMetaData, provider, usedRestriction)
 	if res.Status >= 400 {
 		return writeErrRes(s, res)
 	}

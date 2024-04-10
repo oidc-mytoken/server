@@ -11,8 +11,9 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
+	helper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/utils/cryptutils"
@@ -103,30 +104,38 @@ func (mte *MytokenEntry) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx, comment st
 		Sub:       mte.Token.OIDCSubject,
 		ExpiresAt: db.NewNullTime(mte.expiresAt.Time()),
 	}
+	meta, err := mte.Token.DBMetadata()
+	if err != nil {
+		return err
+	}
+	steStore.MytokenDBMetadata = meta
+
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			if mte.rtID == nil {
-				if _, err := tx.Exec(`CALL CryptStoreRT_Insert(?,@ID)`, mte.rtEncrypted); err != nil {
+				if _, err = tx.Exec(`CALL CryptStoreRT_Insert(?,@ID)`, mte.rtEncrypted); err != nil {
 					return errors.WithStack(err)
 				}
 				var rtID uint64
-				if err := tx.Get(&rtID, `SELECT @ID`); err != nil {
+				if err = tx.Get(&rtID, `SELECT @ID`); err != nil {
 					return errors.WithStack(err)
 				}
 				mte.rtID = &rtID
 			}
 			steStore.RefreshTokenID = *mte.rtID
-			if err := steStore.Store(rlog, tx); err != nil {
+			if err = steStore.Store(rlog, tx); err != nil {
 				return err
 			}
-			if err := storeEncryptionKey(tx, mte.encryptionKeyEncrypted, steStore.RefreshTokenID, mte.ID); err != nil {
+			if err = storeEncryptionKey(tx, mte.encryptionKeyEncrypted, steStore.RefreshTokenID, mte.ID); err != nil {
 				return err
 			}
 			return eventService.LogEvent(
-				rlog, tx, eventService.MTEvent{
-					Event: event.FromNumber(event.MTCreated, comment),
-					MTID:  mte.ID,
-				}, mte.networkData,
+				rlog, tx, pkg.MTEvent{
+					Event:          api.EventMTCreated,
+					Comment:        comment,
+					MTID:           mte.ID,
+					ClientMetaData: mte.networkData,
+				},
 			)
 		},
 	)
@@ -148,6 +157,7 @@ type mytokenEntryStore struct {
 	Iss            string
 	Sub            string
 	ExpiresAt      sql.NullTime
+	helper.MytokenDBMetadata
 }
 
 // Store stores the mytokenEntryStore in the database; if this is the first token for this user, the user is also added
@@ -156,8 +166,9 @@ func (e *mytokenEntryStore) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(
-				`CALL MTokens_Insert(?,?,?,?,?,?,?,?,?)`,
-				e.Sub, e.Iss, e.ID, e.SeqNo, e.ParentID, e.RefreshTokenID, e.Name, e.IP, e.ExpiresAt,
+				`CALL MTokens_Insert(?,?,?,?,?,?,?,?,?,?,?,?)`,
+				e.Sub, e.Iss, e.ID, e.SeqNo, e.ParentID, e.RefreshTokenID, e.Name, e.IP, e.ExpiresAt, e.Capabilities,
+				e.Rotation, e.Restrictions,
 			)
 			return errors.WithStack(err)
 		},

@@ -1,3 +1,6 @@
+const $errorModal = $('#error-modal');
+const $errorModalMsg = $('#error-modal-msg')
+
 $.fn.serializeObject = function () {
     let o = {};
     let a = this.serializeArray();
@@ -13,6 +16,19 @@ $.fn.serializeObject = function () {
     });
     return o;
 };
+
+Object.defineProperty(Array.prototype, "includesPrefix", {
+    value: function (prefix) {
+        let found = false;
+        this.forEach(function (v) {
+            if (v.startsWith(prefix)) {
+                found = true
+                return found;
+            }
+        });
+        return found;
+    }
+})
 
 $.fn.showB = function () {
     this.removeClass('d-none');
@@ -54,15 +70,18 @@ function escapeSelector(s) {
 }
 
 function doNext(...next) {
-    switch (next.length) {
-        case 0:
-            return;
-        case 1:
-            return next[0]();
-        default:
-            let other = next.splice(1);
-            return next[0](...other);
+    if (next.length === 0) {
+        return;
     }
+    let n = next[0];
+    if (typeof n !== 'function') {
+        return;
+    }
+    if (next.length === 1) {
+        return n();
+    }
+    let other = next.splice(1);
+    return n(...other);
 }
 
 function chainFunctions(...fncs) {
@@ -150,4 +169,21 @@ function select_set_value_by_option_name($select, option) {
     const optionToSelect = options.find(item => item.text === option);
     const value = optionToSelect.value;
     $select.val(value);
+}
+
+function addToArrayMap(map, key, value, equals = (a, b) => a === b) {
+    let arr = map[key];
+    if (arr === undefined) {
+        arr = [];
+    }
+    if (!arr.some(a => equals(a, value))) {
+        arr.push(value)
+    }
+    map[key] = arr
+    return map
+}
+
+function standardErrorHandler(errRes) {
+    $errorModalMsg.text(getErrorMessage(errRes));
+    $errorModal.modal();
 }

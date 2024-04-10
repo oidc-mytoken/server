@@ -1,0 +1,72 @@
+<input id="management-code" type="hidden">
+<div class="alert border">
+    <div class="row mb-2">
+        <h5 class="col">Subscribed Notification Classes</h5>
+        {{#collapse.NotificationManagement}}
+            <button class="btn btn-info my-expand" type="button" data-toggle="collapse"
+                    data-target="#notification-management-collapsable-content-nc"
+                    aria-expanded="false" aria-controls="notification-management-collapsable-content-nc"
+            >Expand
+            </button>
+        {{/collapse.NotificationManagement}}
+    </div>
+    <div id="notification-management-collapsable-content-nc"
+         class="{{#collapse.NotificationManagement}}collapse{{/collapse.NotificationManagement}}">
+        <ul class="list-group bg-my_grey list-group-striped">
+            {{#notification-classes}}
+                {{> capabilities/part}}
+            {{/notification-classes}}
+        </ul>
+        <button role="button" class="btn btn-primary mt-2" id="btn-save-notification-classes"><i class="fas
+            fa-save"></i>
+        </button>
+    </div>
+</div>
+
+<div class="alert border">
+    <div id="subscribed-tokens-details">
+        <div class="row">
+            <h5 class="col">Subscribed Tokens</h5>
+
+            {{#collapse.NotificationManagement}}
+                <button class="btn btn-info my-expand" type="button" data-toggle="collapse"
+                        data-target="#notification-management-collapsable-content-tokens"
+                        aria-expanded="false" aria-controls="notification-management-collapsable-content-tokens"
+                >Expand
+                </button>
+            {{/collapse.NotificationManagement}}
+        </div>
+
+        <div id="notification-management-collapsable-content-tokens"
+             class="{{#collapse.NotificationManagement}}collapse{{/collapse.NotificationManagement}}">
+            <div class="d-none" id="token-list-login-hint">
+                <input type="hidden" id="login-hint-issuer">
+                <p>To show information about the tokens subscribed to this notification or add or remove tokens,
+                    please login in another tab and reload this page:</p>
+                <button class="btn btn-primary" id="token-list-login-btn">Login</button>
+            </div>
+            <div id="token-list-login-hint-hide">
+                <table class="table table-hover table-grey">
+                    <thead>
+                    <tr>
+                        <th style="min-width: 35%;">Token Name</th>
+                        <th>Created</th>
+                        <th>Created from IP</th>
+                        <th>Expires</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody id="notifications-tokens-table">
+                    </tbody>
+                </table>
+                <button class="btn btn-success" id="btn-add-token-to-notification"><i class="fa fa-plus-circle"></i>
+                    Add token
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="subscribed-tokens-details-user-wide" class="d-none">
+        <h5>User Wide Notification</h5>
+        <p>This notification is user-wide and applies to all mytokens.</p>
+    </div>
+</div>

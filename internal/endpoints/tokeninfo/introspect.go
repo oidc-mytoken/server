@@ -11,44 +11,46 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	pkg2 "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
-	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 )
 
 // HandleTokenInfoIntrospect handles token introspection
 func HandleTokenInfoIntrospect(
 	rlog log.Ext1FieldLogger,
+	tx *sqlx.Tx,
 	mt *mytoken.Mytoken,
 	origionalTokenType model.ResponseType,
 	clientMetadata *api.ClientMetaData,
-) model.Response {
+) *model.Response {
 	// If we call this function it means the token is valid.
-	if errRes := auth.RequireCapability(rlog, api.CapabilityTokeninfoIntrospect, mt); errRes != nil {
-		return *errRes
+	if errRes := auth.RequireCapability(
+		rlog, tx, api.CapabilityTokeninfoIntrospect, mt, clientMetadata,
+	); errRes != nil {
+		return errRes
 	}
 
 	var usedToken mytoken.UsedMytoken
 	if err := db.RunWithinTransaction(
-		rlog, nil, func(tx *sqlx.Tx) error {
+		rlog, tx, func(tx *sqlx.Tx) error {
 			tmp, err := mt.ToUsedMytoken(rlog, tx)
 			if err != nil {
 				return err
 			}
 			usedToken = *tmp
 			return eventService.LogEvent(
-				rlog, tx, eventService.MTEvent{
-					Event: event.FromNumber(event.TokenInfoIntrospect, ""),
-					MTID:  mt.ID,
-				}, *clientMetadata,
+				rlog, tx, pkg2.MTEvent{
+					Event:          api.EventTokenInfoIntrospect,
+					MTID:           mt.ID,
+					ClientMetaData: *clientMetadata,
+				},
 			)
 		},
 	); err != nil {
-		rlog.Errorf("%s", errorfmt.Full(err))
-		return *model.ErrorToInternalServerErrorResponse(err)
+		return nil
 	}
-	return model.Response{
+	return &model.Response{
 		Status: fiber.StatusOK,
 		Response: pkg.TokeninfoIntrospectResponse{
 			TokeninfoIntrospectResponse: api.TokeninfoIntrospectResponse{

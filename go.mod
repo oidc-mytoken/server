@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/Songmu/prompter v0.5.1
+	github.com/arran4/golang-ical v0.2.1
 	github.com/coreos/go-oidc/v3 v3.9.0
 	github.com/evanphx/json-patch/v5 v5.9.0
 	github.com/fatih/structs v1.1.0
@@ -18,14 +19,16 @@ require (
 	github.com/ip2location/ip2location-go v8.3.0+incompatible
 	github.com/jinzhu/copier v0.4.0
 	github.com/jmoiron/sqlx v1.3.5
+	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/lestrrat-go/jwx v1.2.29
-	github.com/oidc-mytoken/api v0.11.2-0.20230810083726-bf164306e5b2
+	github.com/oidc-mytoken/api v0.11.2-0.20240326112016-c09f38e107c4
 	github.com/oidc-mytoken/lib v0.7.1
 	github.com/oidc-mytoken/utils v0.1.3-0.20230731143919-ea5b78243e5d
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pires/go-proxyproto v0.7.0
 	github.com/pkg/errors v0.9.1
 	github.com/redis/go-redis/v9 v9.5.1
+	github.com/sethvargo/go-limiter v0.7.2
 	github.com/sirupsen/logrus v1.9.3
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
 	github.com/valyala/fasthttp v1.52.0

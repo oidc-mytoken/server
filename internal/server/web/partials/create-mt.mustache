@@ -81,19 +81,23 @@
 
                 <div class="col-md">
                     <div class="alert border">
-                        {{> capabilities}}
+                        {{> capabilities/capabilities}}
                     </div>
                 </div>
 
                 <div class="col-md">
                     <div class="alert border">
-                        {{> restrictions}}
+                        {{> restrictions/restrictions}}
                     </div>
                 </div>
             </div>
         </div>
 
-        <a href="#mt" class="btn btn-primary mx-auto d-block" id="get-mt">Create new Mytoken</a>
+        <div class="row">
+            <button role="link" href="#mt" class="btn btn-primary col mx-3 d-block" id="get-mt" data-toggle="tooltip"
+                    data-original-title="">Create new Mytoken
+            </button>
+        </div>
     </div>
 
     <div id="mt-result" class="d-none">

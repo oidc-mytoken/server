@@ -7,13 +7,24 @@
                 <a class="nav-link active" id="grants-tab" data-toggle="tab" href="#grants" role="tab"
                    aria-controls="grants" aria-selected="true">Grant Types</a>
             </li>
+
+            <li class="nav-item">
+                <a class="nav-link" id="notifications-tab" data-toggle="tab" href="#notifications" role="tab"
+                   aria-controls="notifications">Notifications</a>
+            </li>
         </ul>
     </div>
+
     <div class="card-body tab-content">
         <div class="tab-pane show active" id="grants" role="tabpanel" aria-labelledby="grants-tab">
-            {{> grants}}
+            {{> settings/grants}}
+        </div>
+
+        <div class="tab-pane" id="notifications" role="tabpanel" aria-labelledby="notifications-tab">
+            {{> settings/notifications}}
         </div>
     </div>
+
 </div>
 
 <div class="modal fade" tabindex="-1" role="dialog" id="settings-error-modal">

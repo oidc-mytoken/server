@@ -1,6 +1,3 @@
-const $errorModal = $('#error-modal');
-const $errorModalMsg = $('#error-modal-msg')
-
 function openCorrectTab() {
     // https://stackoverflow.com/a/17552459
     // Javascript to enable link to tab

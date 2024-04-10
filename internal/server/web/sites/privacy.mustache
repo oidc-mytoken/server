@@ -13,7 +13,10 @@
     <p>
         Users of the mytoken service use it to manage and obtain OpenID Connect tokens. Therefore, mytoken receives
         these tokens and stores them. All tokens are only stored encrypted.<br>
-        Personal information (e.g. emails, names) mytoken receives from the OpenID provider are discarded, and not further processed.
+        Personal information (e.g. names) mytoken receives from the OpenID provider are discarded, and not further
+        processed.
+        As an exception the user's email address is obtained from the OpenID provider and stored in the database to
+        enable notification mails. This email address can be changed and deleted by the user.
     </p>
 </div>
 

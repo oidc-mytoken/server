@@ -25,9 +25,14 @@ server:
     cert:
     # The TLS certificate key file
     key:
+  # If behind a load balancer or reverse proxy and TLS is set on that and not on the mytoken server set this option
+  # to 'true'
+  ##secure: true
   # If behind a load balancer or reverse proxy, set this option.
   # Mytoken will read the client's ip address from this header.
-  # proxy_header: "X-FORWARDED-FOR"
+  ##proxy_header: "X-FORWARDED-FOR"
+  # If you run the mytoken server in a distributed setup with multiple instances set this option to 'true'
+  distributed_servers: false
   # Configure the request limits (these are per IP)
   request_limits:
     # Unless false request limits are enabled
@@ -229,6 +234,30 @@ features:
     # group is the default group managed by the server admin
     groups:
     # _: admin
+
+  # If true a guest mode is enabled that allows to obtain mytokens without further auth, ATs are obviously dummy
+  guest_mode: false
+
+  # Settings related to the notifications feature
+  notifications:
+    # If a standalone notifier server is used (required in a distributed setup), specify the base url here
+    notifier_server_url:
+    # Enables calendar support
+    ics:
+      enabled: true
+    # Email notifications
+    email:
+      enabled: true
+      # Settings for the used mailserver, only used if the integrated notifier is used
+      mail_server:
+        host:
+        port: 25
+        user:
+        password:
+        from_address:
+    # Not yet implemented
+    ws:
+      enabled: true
 
   # Configuration for usage of OpenID Federations
   federation:

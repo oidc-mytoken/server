@@ -1,0 +1,54 @@
+<div class="form-group row">
+    <div class="col">
+        <label class="control-label">Email address</label>
+        <div class="form-group">
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                <span class="input-group-text bg-my_grey d-none" id="email-verified-icon"
+                      data-toggle="tooltip" data-placement="top"
+                      title="Email address is verified." data-original-title="">
+                <i class="fas fa-check-circle text-success"></i>
+                    </span>
+                    <span class="input-group-text bg-my_grey" id="email-unverified-icon"
+                          data-toggle="tooltip" data-placement="top"
+                          title="Email address is not yet verified." data-original-title="">
+                <i class="fas fa-times-circle text-danger"></i>
+                    </span>
+
+                </div>
+                <input type="email" class="form-control" id="email-input" aria-label="Notifications email address"
+                       disabled>
+                <div class="input-group-append">
+                    <button class="btn btn-primary" id="edit-mail-btn" role="button" data-toggle="tooltip"
+                            data-placement="top" title="Change email address" data-original-title="">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-primary d-none" id="save-mail-btn" role="button" data-toggle="tooltip"
+                            data-placement="top" title="Save email address" data-original-title="">
+                        <i class="fas fa-save"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-5">
+        <div class="alert border">
+            <h5>Preferred Email Mimetype</h5>
+            <div class="form-group">
+                <div class="custom-control custom-radio">
+                    <input type="radio" id="preferred_mimetype_txt" name="preferred_mimetype"
+                           class="custom-control-input"
+                           checked>
+                    <label class="custom-control-label" for="preferred_mimetype_txt">Plain text emails</label>
+                </div>
+
+                <div class="custom-control custom-radio">
+                    <input type="radio" id="preferred_mimetype_html" name="preferred_mimetype"
+                           class="custom-control-input">
+                    <label class="custom-control-label" for="preferred_mimetype_html">HTML emails</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

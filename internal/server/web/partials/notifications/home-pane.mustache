@@ -1,0 +1,30 @@
+{{#notifications}}
+    {{#notification-listing}}
+    <h4>Notifications</h4>
+    <p>
+        Settings related to email notifications can be changed under <a href="/settings#notifications">Settings</a>.
+    </p>
+
+    <button class="btn btn-success" onclick="newNotificationModal()"><i class="fas fa-plus"></i> Create
+        new Notification
+    </button>
+    {{>notifications/new-notification-modal}}
+    {{>notifications/delete-notification-modal}}
+
+    <button class="btn btn-reload" id="notifications-reload" data-toggle="tooltip" data-placement="bottom"
+            title="Reload data">
+        <i class="fas fa-sync"></i>
+    </button>
+    <button class="btn btn-copy copier d-none" id="list-copy" data-toggle="tooltip" data-placement="bottom"
+            title="Copy to clipboard" data-clipboard-target="#notifications-msg">
+        <i class="far fa-copy"></i>
+    </button>
+    <p class="card-text" id="notifications-msg"></p>
+
+
+    <div class="d-none" id="notifications-modify">
+        {{>notifications/management}}
+    </div>
+
+    {{/notification-listing}}
+{{/notifications}}

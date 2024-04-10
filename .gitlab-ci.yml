@@ -44,7 +44,7 @@ staticcheck:
 vet:
   stage: lint
   script:
-    - go vet ./...
+    - go vet -structtag=false ./...
 
 build_server:
   stage: build

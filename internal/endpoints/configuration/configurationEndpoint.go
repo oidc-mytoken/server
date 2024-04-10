@@ -24,15 +24,14 @@ func SupportedProviders() []api.SupportedProviderConfig {
 }
 
 // HandleConfiguration handles calls to the configuration endpoint
-func HandleConfiguration(ctx *fiber.Ctx) error {
+func HandleConfiguration(*fiber.Ctx) *model.Response {
 	if config.Get().Features.Federation.Enabled {
 		mytokenConfig.ProvidersSupported = append(getProvidersFromConfig(), oidcfed.SupportedProviders()...)
 	}
-	res := model.Response{
+	return &model.Response{
 		Status:   fiber.StatusOK,
 		Response: mytokenConfig,
 	}
-	return res.Send(ctx)
 }
 
 var mytokenConfig *pkg.MytokenConfiguration
@@ -71,17 +70,18 @@ func basicConfiguration() *pkg.MytokenConfiguration {
 	otherPaths := paths.GetGeneralPaths()
 	return &pkg.MytokenConfiguration{
 		MytokenConfiguration: api.MytokenConfiguration{
-			Issuer:               config.Get().IssuerURL,
-			AccessTokenEndpoint:  utils.CombineURLPath(config.Get().IssuerURL, apiPaths.AccessTokenEndpoint),
-			MytokenEndpoint:      utils.CombineURLPath(config.Get().IssuerURL, apiPaths.MytokenEndpoint),
-			TokeninfoEndpoint:    utils.CombineURLPath(config.Get().IssuerURL, apiPaths.TokenInfoEndpoint),
-			UserSettingsEndpoint: utils.CombineURLPath(config.Get().IssuerURL, apiPaths.UserSettingEndpoint),
-			ProfilesEndpoint:     utils.CombineURLPath(config.Get().IssuerURL, apiPaths.ProfilesEndpoint),
-			JWKSURI:              utils.CombineURLPath(config.Get().IssuerURL, otherPaths.JWKSEndpoint),
-			ProvidersSupported:   getProvidersFromConfig(),
-			TokenSigningAlgValue: config.Get().Signing.Mytoken.Alg.String(),
-			ServiceDocumentation: config.Get().ServiceDocumentation,
-			Version:              version.VERSION,
+			Issuer:                config.Get().IssuerURL,
+			AccessTokenEndpoint:   utils.CombineURLPath(config.Get().IssuerURL, apiPaths.AccessTokenEndpoint),
+			MytokenEndpoint:       utils.CombineURLPath(config.Get().IssuerURL, apiPaths.MytokenEndpoint),
+			TokeninfoEndpoint:     utils.CombineURLPath(config.Get().IssuerURL, apiPaths.TokenInfoEndpoint),
+			UserSettingsEndpoint:  utils.CombineURLPath(config.Get().IssuerURL, apiPaths.UserSettingEndpoint),
+			NotificationsEndpoint: utils.CombineURLPath(config.Get().IssuerURL, apiPaths.NotificationEndpoint),
+			ProfilesEndpoint:      utils.CombineURLPath(config.Get().IssuerURL, apiPaths.ProfilesEndpoint),
+			JWKSURI:               utils.CombineURLPath(config.Get().IssuerURL, otherPaths.JWKSEndpoint),
+			ProvidersSupported:    getProvidersFromConfig(),
+			TokenSigningAlgValue:  config.Get().Signing.Mytoken.Alg.String(),
+			ServiceDocumentation:  config.Get().ServiceDocumentation,
+			Version:               version.VERSION,
 		},
 		AccessTokenEndpointGrantTypesSupported: []model.GrantType{model.GrantTypeMytoken},
 		MytokenEndpointGrantTypesSupported: []model.GrantType{

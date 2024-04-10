@@ -10,15 +10,18 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/mustache/v2"
+	"github.com/oidc-mytoken/utils/utils"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints"
+	"github.com/oidc-mytoken/server/internal/endpoints/actions"
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration"
 	"github.com/oidc-mytoken/server/internal/endpoints/consent"
 	"github.com/oidc-mytoken/server/internal/endpoints/federation"
+	"github.com/oidc-mytoken/server/internal/endpoints/notification/calendar"
 	"github.com/oidc-mytoken/server/internal/endpoints/redirect"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/server/apipath"
@@ -104,26 +107,32 @@ func Init() {
 
 func addRoutes(s fiber.Router) {
 	addWebRoutes(s)
-	s.Get(paths.GetGeneralPaths().ConfigurationEndpoint, configuration.HandleConfiguration)
-	s.Get(paths.WellknownOpenIDConfiguration, configuration.HandleConfiguration)
+	generalPaths := paths.GetGeneralPaths()
+	s.Get(generalPaths.ConfigurationEndpoint, toFiberHandler(configuration.HandleConfiguration))
+	s.Get(paths.WellknownOpenIDConfiguration, toFiberHandler(configuration.HandleConfiguration))
 	if config.Get().Features.Federation.Enabled {
-		s.Get(paths.GetGeneralPaths().FederationEndpoint, federation.HandleEntityConfiguration)
+		s.Get(generalPaths.FederationEndpoint, federation.HandleEntityConfiguration)
 	}
-	s.Get(paths.GetGeneralPaths().JWKSEndpoint, endpoints.HandleJWKS)
-	s.Get(paths.GetGeneralPaths().OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
+	s.Get(generalPaths.JWKSEndpoint, endpoints.HandleJWKS)
+	s.Get(generalPaths.OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
 	s.Get("/c/:consent_code", consent.HandleConsent)
-	s.Post("/c/:consent_code", consent.HandleConsentPost)
+	s.Post("/c/:consent_code", toFiberHandler(consent.HandleConsentPost))
 	s.Post("/c", consent.HandleCreateConsent)
 	s.Get("/native", handleNativeCallback)
 	s.Get("/native/abort", handleNativeConsentAbortCallback)
-	s.Get(paths.GetGeneralPaths().Privacy, handlePrivacy)
-	s.Get("/settings", handleSettings)
+	s.Get(generalPaths.Privacy, handlePrivacy)
+	s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id"), calendar.HandleGetICS)
+	s.Get(generalPaths.ActionsEndpoint, actions.HandleActions)
 	addAPIRoutes(s)
 }
 
 func addWebRoutes(s fiber.Router) {
+	generalPaths := paths.GetGeneralPaths()
 	s.Get("/", handleIndex)
 	s.Get("/home", handleHome)
+	s.Get("/settings", handleSettings)
+	s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id", "view"), handleViewCalendar)
+	s.Get(utils.CombineURLPath(generalPaths.NotificationManagementEndpoint, ":mc"), handleNotificationManagement)
 }
 
 func start(s *fiber.App) {
