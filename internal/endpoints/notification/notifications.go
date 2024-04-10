@@ -16,19 +16,16 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/notification/calendar"
 	"github.com/oidc-mytoken/server/internal/endpoints/notification/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
-	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	pkg3 "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	notifier "github.com/oidc-mytoken/server/internal/notifier/client"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
-	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
+	"github.com/oidc-mytoken/server/internal/utils/mytokenutils"
 )
 
 var managementCodeNotValidError = model.NotFoundErrorResponse("management_code not valid")
@@ -53,7 +50,7 @@ func HandleGetByManagementCode(ctx *fiber.Ctx) *model.Response {
 			}
 			if info == nil {
 				res = managementCodeNotValidError
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 			res = &model.Response{
 				Status:   fiber.StatusOK,
@@ -98,11 +95,10 @@ func HandleGet(ctx *fiber.Ctx) *model.Response {
 		return errRes
 	}
 	var res *model.Response
-	_ = db.Transact(
+	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
 			infos, err := notificationsrepo.GetNotificationsForUser(rlog, tx, mt.ID)
 			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
 			resData := pkg.NotificationsListResponse{
@@ -114,31 +110,19 @@ func HandleGet(ctx *fiber.Ctx) *model.Response {
 				Status:   fiber.StatusOK,
 				Response: resData,
 			}
-
-			tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
-				rlog, tx, umt.JWT, mt, *ctxutils.ClientMetaData(ctx), umt.OriginalTokenType,
+			var rollback bool
+			res, rollback = mytokenutils.DoAfterRequestThingsOther(
+				rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
+				api.EventNotificationListed, "", usedRestriction, umt.JWT, umt.OriginalTokenType,
 			)
-			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
+			if rollback {
+				return errors.New("rollback")
 			}
-			if tokenUpdate != nil {
-				res.Cookies = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
-				resData.TokenUpdate = tokenUpdate
-				res.Response = resData
-			}
-			if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
-				return err
-			}
-			return eventService.LogEvent(
-				rlog, tx, pkg3.MTEvent{
-					Event:          api.EventNotificationListed,
-					MTID:           mt.ID,
-					ClientMetaData: *ctxutils.ClientMetaData(ctx),
-				},
-			)
+			return nil
 		},
-	)
+	); err != nil && res == nil {
+		res = model.ErrorToInternalServerErrorResponse(err)
+	}
 	return res
 }
 
@@ -182,26 +166,24 @@ func handleNewMailNotification(
 				"issuer-url":           config.Get().IssuerURL,
 				"notification_classes": req.NotificationClasses,
 			}
+			requiredCapability := api.CapabilityTokeninfoNotify
 			if req.MomID.HashValid() {
 				mtID = req.MomID
+				if res = auth.RequireMytokensForSameUser(rlog, tx, mtID.MTID, mt.ID); res != nil {
+					return errors.New("rollback")
+				}
 				name, err := mytokenrepohelper.GetMTName(rlog, tx, mtID.MTID)
 				if err != nil {
 					return err
 				}
 				welcomeData["token-name"] = name.String
-				usedRestriction, res = auth.RequireCapabilityAndRestrictionOther(
-					rlog, nil, mt, ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyToken,
-				)
-				if res != nil {
-					return errors.New("dummy")
-				}
-			} else { // mytoken notification for itself
-				usedRestriction, res = auth.RequireCapabilityAndRestrictionOther(
-					rlog, nil, mt, ctxutils.ClientMetaData(ctx), api.CapabilityTokeninfoNotify,
-				)
-				if res != nil {
-					return errors.New("dummy")
-				}
+				requiredCapability = api.CapabilityNotifyAnyToken
+			}
+			usedRestriction, res = auth.RequireCapabilityAndRestrictionOther(
+				rlog, tx, mt, ctxutils.ClientMetaData(ctx), requiredCapability,
+			)
+			if res != nil {
+				return errors.New("rollback")
 			}
 			if !req.UserWide {
 				welcomeData["mtid"] = mtID.Hash()
@@ -221,62 +203,45 @@ func handleNewMailNotification(
 					Status:   fiber.StatusUnprocessableEntity,
 					Response: api.ErrorMailRequired,
 				}
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 			if !emailInfo.MailVerified {
 				res = &model.Response{
 					Status:   fiber.StatusUnprocessableEntity,
 					Response: api.ErrorMailNotVerified,
 				}
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 
 			notifier.SendTemplateEmail(
 				emailInfo.Mail.String, "New Mytoken Notification Subscription",
 				emailInfo.PreferHTMLMail, "notification-welcome", welcomeData,
 			)
-			tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
-				rlog, tx, req.Mytoken.JWT, mt, *ctxutils.ClientMetaData(ctx), req.Mytoken.OriginalTokenType,
-			)
-			if err != nil {
-				return err
-			}
-			resData := pkg.NotificationsCreateResponse{
-				NotificationsCreateResponse: api.NotificationsCreateResponse{
-					ManagementCode: managementCode,
+
+			res = &model.Response{
+				Status: fiber.StatusCreated,
+				Response: pkg.NotificationsCreateResponse{
+					NotificationsCreateResponse: api.NotificationsCreateResponse{
+						ManagementCode: managementCode,
+					},
 				},
 			}
-			res = &model.Response{
-				Status:   fiber.StatusCreated,
-				Response: resData,
-			}
-			if tokenUpdate != nil {
-				resData.TokenUpdate = tokenUpdate
-				res.Cookies = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
-				res.Response = resData
-			}
-
 			e := api.EventNotificationCreated
 			if req.MomID.HashValid() {
 				e = api.EventNotificationCreatedOther
 			}
-			if err = eventService.LogEvent(
-				rlog, tx, pkg3.MTEvent{
-					Event:          e,
-					MTID:           mt.ID,
-					ClientMetaData: *ctxutils.ClientMetaData(ctx),
-				},
-			); err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
+			var rollback bool
+			res, rollback = mytokenutils.DoAfterRequestThingsOther(
+				rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx), e, "",
+				usedRestriction, req.Mytoken.JWT, req.Mytoken.OriginalTokenType,
+			)
+			if rollback {
+				return errors.New("rollback")
 			}
 			return nil
 		},
-	); err != nil {
-		if res != nil {
-			return res
-		}
-		return model.ErrorToInternalServerErrorResponse(err)
+	); err != nil && res == nil {
+		res = model.ErrorToInternalServerErrorResponse(err)
 	}
 	return res
 }
@@ -302,13 +267,13 @@ func HandleNotificationUpdateClasses(ctx *fiber.Ctx) *model.Response {
 			}
 			if info == nil {
 				res = managementCodeNotValidError
-				return nil
+				return errors.New("rollback")
 			}
 			return notificationsrepo.UpdateNotificationClasses(rlog, tx, info.NotificationID, req.Classes)
 		},
 	)
-	if err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
+	if err != nil && res == nil {
+		res = model.ErrorToInternalServerErrorResponse(err)
 	}
 	if res == nil {
 		res = &model.Response{Status: fiber.StatusNoContent}
@@ -336,7 +301,7 @@ func HandleNotificationAddToken(ctx *fiber.Ctx) *model.Response {
 				mt, errRes := auth.RequireValidMytoken(rlog, tx, &req.Mytoken, nil)
 				if errRes != nil {
 					res = errRes
-					return nil
+					return errors.New("rollback")
 				}
 				mtID = mtid.MOMID{MTID: mt.ID}
 			}
@@ -346,13 +311,13 @@ func HandleNotificationAddToken(ctx *fiber.Ctx) *model.Response {
 			}
 			if info == nil {
 				res = managementCodeNotValidError
-				return nil
+				return errors.New("rollback")
 			}
 			return notificationsrepo.AddTokenToNotification(rlog, tx, info.NotificationID, mtID, req.IncludeChildren)
 		},
 	)
-	if err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
+	if err != nil && res == nil {
+		res = model.ErrorToInternalServerErrorResponse(err)
 	}
 	if res == nil {
 		res = &model.Response{Status: fiber.StatusNoContent}
@@ -380,7 +345,7 @@ func HandleNotificationRemoveToken(ctx *fiber.Ctx) *model.Response {
 				mt, errRes := auth.RequireValidMytoken(rlog, tx, &req.Mytoken, nil)
 				if errRes != nil {
 					res = errRes
-					return nil
+					return errors.New("rollback")
 				}
 				mtID = mtid.MOMID{MTID: mt.ID}
 			}
@@ -390,13 +355,13 @@ func HandleNotificationRemoveToken(ctx *fiber.Ctx) *model.Response {
 			}
 			if info == nil {
 				res = managementCodeNotValidError
-				return nil
+				return errors.New("rollback")
 			}
 			return notificationsrepo.RemoveTokenFromNotification(rlog, tx, info.NotificationID, mtID)
 		},
 	)
-	if err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
+	if err != nil && res == nil {
+		res = model.ErrorToInternalServerErrorResponse(err)
 	}
 	if res == nil {
 		res = &model.Response{Status: fiber.StatusNoContent}

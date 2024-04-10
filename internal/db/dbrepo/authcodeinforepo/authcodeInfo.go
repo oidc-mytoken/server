@@ -75,10 +75,10 @@ func (i *AuthFlowInfo) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 }
 
 // GetAuthFlowInfoByState returns AuthFlowInfoIn by state
-func GetAuthFlowInfoByState(rlog log.Ext1FieldLogger, state *state.State) (*AuthFlowInfoOut, error) {
+func GetAuthFlowInfoByState(rlog log.Ext1FieldLogger, tx *sqlx.Tx, state *state.State) (*AuthFlowInfoOut, error) {
 	info := authFlowInfo{}
-	if err := db.Transact(
-		rlog, func(tx *sqlx.Tx) error {
+	if err := db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
 			row := tx.QueryRowx(`CALL AuthInfo_Get(?)`, state)
 			if err := row.Err(); err != nil {
 				return errors.WithStack(err)
@@ -112,7 +112,7 @@ func UpdateTokenInfoByState(
 ) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			info, err := GetAuthFlowInfoByState(rlog, state)
+			info, err := GetAuthFlowInfoByState(rlog, tx, state)
 			if err != nil {
 				return err
 			}

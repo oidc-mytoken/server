@@ -70,7 +70,7 @@ func HandleRevoke(ctx *fiber.Ctx) *model.Response {
 				errRes := revokeByID(rlog, tx, req, authToken, metadata)
 				if errRes != nil {
 					res = errRes
-					return errors.New("dummy")
+					return errors.New("rollback")
 				}
 				tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
 					rlog, tx, token.JWT, authToken, *metadata, token.OriginalTokenType,
@@ -124,7 +124,7 @@ func revokeByID(
 	authToken *mytokenPkg.Mytoken,
 	clientMetadata *api.ClientMetaData,
 ) (errRes *model.Response) {
-	dummy := errors.New("dummy")
+	rollback := errors.New("rollback")
 	_ = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			isParent, err := helper.MOMIDHasParent(rlog, nil, req.MOMID, authToken.ID)
@@ -143,7 +143,7 @@ func revokeByID(
 						),
 					},
 				}
-				return dummy
+				return rollback
 			}
 			same, err := helper.CheckMytokensAreForSameUser(rlog, nil, req.MOMID, authToken.ID)
 			if err != nil {
@@ -158,7 +158,7 @@ func revokeByID(
 						ErrorDescription: "The provided token cannot be used to revoke this mom_id",
 					},
 				}
-				return dummy
+				return rollback
 			}
 			if err = helper.RevokeMT(rlog, tx, req.MOMID, req.Recursive); err != nil {
 				errRes = model.ErrorToInternalServerErrorResponse(err)

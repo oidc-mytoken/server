@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
@@ -16,6 +17,7 @@ type CalendarInfo struct {
 	Name    string `db:"name" json:"name"`
 	ICSPath string `db:"ics_path" json:"ics_path"`
 	ICS     string `db:"ics" json:"-"`
+	pkg.OnlyTokenUpdateRes
 }
 
 // Insert inserts a calendar for the given user (given by the mytoken) into the database

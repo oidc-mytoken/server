@@ -22,21 +22,17 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/actions"
 	"github.com/oidc-mytoken/server/internal/endpoints/notification/calendar/pkg"
 	pkg4 "github.com/oidc-mytoken/server/internal/endpoints/notification/pkg"
-	pkg2 "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
-	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	pkg3 "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	notifier "github.com/oidc-mytoken/server/internal/notifier/client"
 	"github.com/oidc-mytoken/server/internal/notifier/server/mailing"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
-	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
+	"github.com/oidc-mytoken/server/internal/utils/mytokenutils"
 )
 
 var calendarNotFoundError = model.NotFoundErrorResponse("calendar not found")
@@ -141,31 +137,17 @@ func HandleAdd(ctx *fiber.Ctx) *model.Response {
 			if err := calendarrepo.Insert(rlog, tx, mt.ID, dbInfo); err != nil {
 				return err
 			}
-			tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
-				rlog, tx, umt.JWT, mt, *ctxutils.ClientMetaData(ctx), umt.OriginalTokenType,
+			var rollback bool
+			res, rollback = mytokenutils.DoAfterRequestThingsOther(
+				rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
+				api.EventCalendarCreated, calendarInfo.Name, usedRestriction, umt.JWT, umt.OriginalTokenType,
 			)
-			if err != nil {
-				return err
+			if rollback {
+				return errors.New("rollback")
 			}
-			if tokenUpdate != nil {
-				res.Cookies = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
-				resData := res.Response.(pkg.CreateCalendarResponse)
-				resData.TokenUpdate = tokenUpdate
-				res.Response = resData
-			}
-			if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
-				return err
-			}
-			return eventService.LogEvent(
-				rlog, tx, pkg3.MTEvent{
-					Event:          api.EventCalendarCreated,
-					MTID:           mt.ID,
-					Comment:        calendarInfo.Name,
-					ClientMetaData: *ctxutils.ClientMetaData(ctx),
-				},
-			)
+			return nil
 		},
-	); err != nil {
+	); err != nil && res == nil {
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	return res
@@ -195,42 +177,25 @@ func HandleDelete(ctx *fiber.Ctx) *model.Response {
 			if err := calendarrepo.Delete(rlog, tx, mt.ID, name); err != nil {
 				return err
 			}
-			tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
-				rlog, tx, umt.JWT, mt, *ctxutils.ClientMetaData(ctx), umt.OriginalTokenType,
+			var rollback bool
+			res, rollback = mytokenutils.DoAfterRequestThingsOther(
+				rlog, tx, nil, mt, *ctxutils.ClientMetaData(ctx),
+				api.EventCalendarDeleted, name, usedRestriction, umt.JWT, umt.OriginalTokenType,
 			)
-			if err != nil {
-				return err
+			if rollback {
+				return errors.New("rollback")
 			}
-			if tokenUpdate != nil {
-				res = &model.Response{
-					Status: fiber.StatusOK,
-					Response: pkg2.OnlyTokenUpdateRes{
-						TokenUpdate: tokenUpdate,
-					},
-					Cookies: []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)},
-				}
-			}
-			if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
-				return err
-			}
-			return eventService.LogEvent(
-				rlog, tx, pkg3.MTEvent{
-					Event:          api.EventCalendarDeleted,
-					Comment:        name,
-					MTID:           mt.ID,
-					ClientMetaData: *ctxutils.ClientMetaData(ctx),
-				},
-			)
+			return nil
 		},
-	); err != nil {
-		return model.ErrorToInternalServerErrorResponse(err)
+	); err != nil && res == nil {
+		res = model.ErrorToInternalServerErrorResponse(err)
 	}
-	if res != nil {
-		return res
+	if res == nil {
+		res = &model.Response{
+			Status: http.StatusNoContent,
+		}
 	}
-	return &model.Response{
-		Status: http.StatusNoContent,
-	}
+	return res
 }
 
 // HandleGet looks up the id for a calendar name for the given user (by mytoken) and redirects to the ics endpoint
@@ -271,43 +236,29 @@ func HandleList(ctx *fiber.Ctx) *model.Response {
 		return errRes
 	}
 	var res *model.Response
-	_ = db.Transact(
+	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
 			infos, err := calendarrepo.List(rlog, tx, mt.ID)
 			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
-			resData := pkg.CalendarListResponse{CalendarListResponse: api.CalendarListResponse{Calendars: infos}}
 			res = &model.Response{
 				Status:   fiber.StatusOK,
-				Response: resData,
+				Response: pkg.CalendarListResponse{CalendarListResponse: api.CalendarListResponse{Calendars: infos}},
 			}
-
-			tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
-				rlog, tx, umt.JWT, mt, *ctxutils.ClientMetaData(ctx), umt.OriginalTokenType,
+			var rollback bool
+			res, rollback = mytokenutils.DoAfterRequestThingsOther(
+				rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
+				api.EventCalendarListed, "", usedRestriction, umt.JWT, umt.OriginalTokenType,
 			)
-			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
+			if rollback {
+				return errors.New("rollback")
 			}
-			if tokenUpdate != nil {
-				res.Cookies = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
-				resData.TokenUpdate = tokenUpdate
-				res.Response = resData
-			}
-			if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
-				return err
-			}
-			return eventService.LogEvent(
-				rlog, tx, pkg3.MTEvent{
-					Event:          api.EventCalendarListed,
-					MTID:           mt.ID,
-					ClientMetaData: *ctxutils.ClientMetaData(ctx),
-				},
-			)
+			return nil
 		},
-	)
+	); err != nil && res == nil {
+		res = model.ErrorToInternalServerErrorResponse(err)
+	}
 	return res
 }
 
@@ -317,30 +268,29 @@ func HandleCalendarEntryViaMail(
 	req pkg4.SubscribeNotificationRequest,
 ) *model.Response {
 	rlog.Debug("Handle calendar entry via mail request")
-
-	clientMetadata := ctxutils.ClientMetaData(ctx)
-	id := mt.ID
-	momMode := req.MomID.Hash() != id.Hash()
-	if momMode {
-		id = req.MomID.MTID
-		if errRes := auth.RequireMytokenIsParentOrCapability(
-			rlog, nil, api.CapabilityTokeninfoNotify,
-			api.CapabilityNotifyAnyToken, mt, id, clientMetadata,
-		); errRes != nil {
-			return errRes
-		}
-		if errRes := auth.RequireMytokensForSameUser(rlog, nil, id, mt.ID); errRes != nil {
-			return errRes
-		}
-	}
-	usedRestriction, errRes := auth.RequireUsableRestrictionOther(rlog, nil, mt, clientMetadata)
-	if errRes != nil {
-		return errRes
-	}
-
 	var res *model.Response
 	_ = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
+			clientMetadata := ctxutils.ClientMetaData(ctx)
+			id := mt.ID
+			momMode := req.MomID.Hash() != id.Hash()
+			if momMode {
+				id = req.MomID.MTID
+				if res = auth.RequireMytokenIsParentOrCapability(
+					rlog, tx, api.CapabilityTokeninfoNotify,
+					api.CapabilityNotifyAnyToken, mt, id, clientMetadata,
+				); res != nil {
+					return errors.New("rollback")
+				}
+				if res = auth.RequireMytokensForSameUser(rlog, tx, id, mt.ID); res != nil {
+					return errors.New("rollback")
+				}
+			}
+			usedRestriction, errRes := auth.RequireUsableRestrictionOther(rlog, tx, mt, clientMetadata)
+			if errRes != nil {
+				res = errRes
+				return errors.New("rollback")
+			}
 			mailInfo, err := userrepo.GetMail(rlog, tx, id)
 			found, err := db.ParseError(err)
 			if err != nil {
@@ -352,14 +302,14 @@ func HandleCalendarEntryViaMail(
 					Status:   http.StatusUnprocessableEntity,
 					Response: api.ErrorMailRequired,
 				}
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 			if !mailInfo.MailVerified {
 				res = &model.Response{
 					Status:   http.StatusUnprocessableEntity,
 					Response: api.ErrorMailNotVerified,
 				}
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 			mtInfo, err := tree.SingleTokenEntry(rlog, tx, id)
 			if err != nil {
@@ -371,7 +321,7 @@ func HandleCalendarEntryViaMail(
 			)
 			if errRes != nil {
 				res = errRes
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 
 			filename := mtInfo.Name.String
@@ -389,38 +339,19 @@ func HandleCalendarEntryViaMail(
 				},
 			)
 
-			if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
 			mytokenEvent := api.EventNotificationSubscribed
 			if momMode {
 				mytokenEvent = api.EventNotificationSubscribedOther
 			}
-			if err = eventService.LogEvent(
-				rlog, tx, pkg3.MTEvent{
-					Event:          mytokenEvent,
-					Comment:        "email calendar entry",
-					MTID:           mt.ID,
-					ClientMetaData: *ctxutils.ClientMetaData(ctx),
-				},
-			); err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-			res = &model.Response{
-				Status: http.StatusNoContent,
-			}
-			tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
-				rlog, tx, req.Mytoken.JWT, mt, *ctxutils.ClientMetaData(ctx), req.Mytoken.OriginalTokenType,
+			var rollback bool
+			res, rollback = mytokenutils.DoAfterRequestThingsOther(
+				rlog, tx, &model.Response{
+					Status: http.StatusNoContent,
+				}, mt, *ctxutils.ClientMetaData(ctx), mytokenEvent, "email calendar entry", usedRestriction,
+				req.Mytoken.JWT, req.Mytoken.OriginalTokenType,
 			)
-			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-			if tokenUpdate != nil {
-				res.Cookies = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
-				res.Response = pkg2.OnlyTokenUpdateRes{TokenUpdate: tokenUpdate}
+			if rollback {
+				return errors.New("rollback")
 			}
 			return nil
 		},
@@ -471,10 +402,11 @@ func HandleAddMytoken(ctx *fiber.Ctx) *model.Response {
 			info, err := calendarrepo.Get(rlog, tx, id, calendarName)
 			if err != nil {
 				_, e := db.ParseError(err)
-				if e != nil {
+				if e == nil {
+					res = calendarNotFoundError
+				} else {
 					res = model.ErrorToInternalServerErrorResponse(err)
 				}
-				res = calendarNotFoundError
 				return err
 			}
 			if err = calendarrepo.AddMytokenToCalendar(rlog, tx, id, info.ID); err != nil {
@@ -490,7 +422,7 @@ func HandleAddMytoken(ctx *fiber.Ctx) *model.Response {
 			event, errRes := eventForMytoken(rlog, tx, id, req.Comment, true, calendarName)
 			if errRes != nil {
 				res = errRes
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 			cal.AddVEvent(event)
 			info.ICS = cal.Serialize()
@@ -499,42 +431,22 @@ func HandleAddMytoken(ctx *fiber.Ctx) *model.Response {
 				return err
 			}
 
-			if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
 			mytokenEvent := api.EventNotificationSubscribed
 			if momMode {
 				mytokenEvent = api.EventNotificationSubscribedOther
 			}
-			if err = eventService.LogEvent(
-				rlog, tx, pkg3.MTEvent{
-					Event:          mytokenEvent,
-					MTID:           mt.ID,
-					Comment:        fmt.Sprintf("calendar '%s'", info.Name),
-					ClientMetaData: *ctxutils.ClientMetaData(ctx),
-				},
-			); err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-
 			res = &model.Response{
 				Status:   http.StatusOK,
 				Response: info,
 			}
-			tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
-				rlog, tx, umt.JWT, mt, *ctxutils.ClientMetaData(ctx), umt.OriginalTokenType,
+			var rollback bool
+			res, rollback = mytokenutils.DoAfterRequestThingsOther(
+				rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
+				mytokenEvent, fmt.Sprintf("calendar '%s'", info.Name), usedRestriction, umt.JWT, umt.OriginalTokenType,
 			)
-			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
+			if rollback {
+				return errors.New("rollback")
 			}
-			if tokenUpdate != nil {
-				res.Cookies = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
-				res.Response = pkg2.OnlyTokenUpdateRes{TokenUpdate: tokenUpdate}
-			}
-
 			return nil
 		},
 	)

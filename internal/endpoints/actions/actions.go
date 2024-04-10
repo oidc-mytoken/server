@@ -46,7 +46,7 @@ func handleRecreate(ctx *fiber.Ctx, code string) (err error) {
 	err = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
 			var data actionrepo.RecreateData
-			data, found, err = actionrepo.GetRecreateData(rlog, nil, code)
+			data, found, err = actionrepo.GetRecreateData(rlog, tx, code)
 			if err != nil || !found {
 				return err
 			}

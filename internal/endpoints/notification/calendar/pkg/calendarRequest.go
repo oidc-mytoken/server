@@ -16,11 +16,11 @@ type AddMytokenToCalendarRequest struct {
 // CreateCalendarResponse is the response returned when a new calendar is created
 type CreateCalendarResponse struct {
 	api.NotificationCalendar
-	TokenUpdate *pkg.MytokenResponse `json:"token_update,omitempty"`
+	pkg.OnlyTokenUpdateRes
 }
 
 // CalendarListResponse is the response returned to list all calendars of a user
 type CalendarListResponse struct {
 	api.CalendarListResponse
-	TokenUpdate *pkg.MytokenResponse `json:"token_update,omitempty"`
+	pkg.OnlyTokenUpdateRes
 }

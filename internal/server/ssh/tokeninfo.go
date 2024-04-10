@@ -31,12 +31,12 @@ func handleIntrospect(s ssh.Session) error {
 		rlog, func(tx *sqlx.Tx) error {
 			errRes = auth.RequireMytokenNotRevoked(rlog, tx, mt, clientMetaData)
 			if errRes != nil {
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 			res = tokeninfo.HandleTokenInfoIntrospect(rlog, tx, mt, model.ResponseTypeToken, clientMetaData)
 			if res.Status >= 400 {
 				errRes = res
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 			return nil
 		},
@@ -63,12 +63,12 @@ func handleHistory(s ssh.Session) error {
 		rlog, func(tx *sqlx.Tx) error {
 			errRes = auth.RequireMytokenNotRevoked(rlog, tx, mt, clientMetaData)
 			if errRes != nil {
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 			res = tokeninfo.HandleTokenInfoHistory(rlog, tx, &pkg.TokenInfoRequest{}, mt, clientMetaData)
 			if res.Status >= 400 {
 				errRes = res
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 			return nil
 		},
@@ -93,14 +93,14 @@ func handleSubtokens(s ssh.Session) error {
 	var errRes *model.Response
 	_ = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
-			errRes = auth.RequireMytokenNotRevoked(rlog, nil, mt, clientMetaData)
+			errRes = auth.RequireMytokenNotRevoked(rlog, tx, mt, clientMetaData)
 			if errRes != nil {
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 			res = tokeninfo.HandleTokenInfoSubtokens(rlog, tx, &pkg.TokenInfoRequest{}, mt, clientMetaData)
 			if res.Status >= 400 {
 				errRes = res
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 			return nil
 		},
@@ -125,14 +125,14 @@ func handleListMytokens(s ssh.Session) error {
 	var errRes *model.Response
 	_ = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
-			errRes = auth.RequireMytokenNotRevoked(rlog, nil, mt, clientMetaData)
+			errRes = auth.RequireMytokenNotRevoked(rlog, tx, mt, clientMetaData)
 			if errRes != nil {
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 			res = tokeninfo.HandleTokenInfoList(rlog, tx, &pkg.TokenInfoRequest{}, mt, clientMetaData)
 			if res.Status >= 400 {
 				errRes = res
-				return errors.New("dummy")
+				return errors.New("rollback")
 			}
 			return nil
 		},

@@ -75,7 +75,7 @@ func getAuthInfoFromConsentCodeStr(rlog log.Ext1FieldLogger, code string) (
 ) {
 	consentCode := state.ConsentCodeFromStr(code)
 	oState := state.NewState(consentCode.GetState())
-	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(rlog, oState)
+	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(rlog, nil, oState)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = fiber.ErrNotFound

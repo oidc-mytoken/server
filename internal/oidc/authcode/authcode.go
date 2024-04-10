@@ -148,7 +148,7 @@ func CodeExchange(
 	rlog log.Ext1FieldLogger, oState *state.State, code string, networkData api.ClientMetaData,
 ) *model.Response {
 	rlog.Debug("Handle code exchange")
-	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(rlog, oState)
+	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(rlog, nil, oState)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &model.Response{

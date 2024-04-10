@@ -18,7 +18,7 @@ type SubscribeNotificationRequest struct {
 // NotificationsListResponse is a type holding the response to a notification list request
 type NotificationsListResponse struct {
 	api.NotificationsListResponse
-	TokenUpdate *pkg.MytokenResponse `json:"token_update,omitempty"`
+	pkg.OnlyTokenUpdateRes
 }
 
 // NotificationAddTokenRequest is a request object for adding a mytoken to an existing notification
@@ -38,5 +38,5 @@ type NotificationRemoveTokenRequest struct {
 // NotificationsCreateResponse is a type holding the response to a notification creation request
 type NotificationsCreateResponse struct {
 	api.NotificationsCreateResponse
-	TokenUpdate *pkg.MytokenResponse `json:"token_update,omitempty"`
+	pkg.OnlyTokenUpdateRes
 }

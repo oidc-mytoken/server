@@ -353,16 +353,12 @@ func specialTokenHandling(mt *Mytoken) error {
 			Minor: 7,
 		},
 	) {
-		_ = db.Transact(
-			log.StandardLogger(), func(tx *sqlx.Tx) error {
-				meta, err := mt.DBMetadata()
-				if err != nil {
-					return err
-				}
-				return mytokenrepohelper.SetMetadata(
-					log.StandardLogger(), tx, mt.ID, meta,
-				)
-			},
+		meta, err := mt.DBMetadata()
+		if err != nil {
+			return err
+		}
+		return mytokenrepohelper.SetMetadata(
+			log.StandardLogger(), nil, mt.ID, meta,
 		)
 	}
 	return nil
