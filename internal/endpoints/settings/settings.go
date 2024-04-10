@@ -75,8 +75,11 @@ func HandleSettingsHelper(
 				res = errRes
 				return errors.New("rollback")
 			}
+			if okStatus == 0 {
+				okStatus = fiber.StatusOK
+			}
 			res = &serverModel.Response{
-				Status:   fiber.StatusOK,
+				Status:   okStatus,
 				Response: rsp,
 			}
 			if tokenGoneAfterCallback {
