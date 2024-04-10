@@ -14,8 +14,6 @@ service_operator:
 
 # Configuration for the mytoken server
 server:
-  # If you run a single mytoken server - i.e. no fault tolerance - set this option to 'true'; this improves performance
-  ##single_server: true
   # If TLS is not enabled, mytoken will listen on this port, default: 8000
   port: 8000
   tls:
@@ -33,6 +31,8 @@ server:
   # If behind a load balancer or reverse proxy, set this option.
   # Mytoken will read the client's ip address from this header.
   ##proxy_header: "X-FORWARDED-FOR"
+  # If you run the mytoken server in a distributed setup with multiple instances set this option to 'true'
+  distributed_servers: false
   # Configure the request limits (these are per IP)
   request_limits:
     # Unless false request limits are enabled
