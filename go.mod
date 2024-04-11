@@ -21,7 +21,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/lestrrat-go/jwx v1.2.29
-	github.com/oidc-mytoken/api v0.11.2-0.20240326112016-c09f38e107c4
+	github.com/oidc-mytoken/api v0.11.2-0.20240411093116-56b9c243b31d
 	github.com/oidc-mytoken/lib v0.7.1
 	github.com/oidc-mytoken/utils v0.1.3-0.20230731143919-ea5b78243e5d
 	github.com/patrickmn/go-cache v2.1.0+incompatible

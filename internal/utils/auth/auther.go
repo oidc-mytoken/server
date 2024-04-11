@@ -8,6 +8,7 @@ import (
 	"github.com/oidc-mytoken/api/v0"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/eventrepo"
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/model"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
@@ -18,6 +19,7 @@ import (
 	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
+	"github.com/oidc-mytoken/server/internal/utils/iputils"
 )
 
 // RequireGrantType checks that the passed model.GrantType are the same, and returns an error model.Response if not
@@ -76,13 +78,17 @@ func RequireMytokenNotRevoked(
 		return model.ErrorToInternalServerErrorResponse(dbErr)
 	}
 	if revoked {
-		_ = notifier.SendNotificationsForSubClass(rlog, tx, mt.ID, api.NotificationClassRevokedUsage, clientData, nil)
+		_ = notifier.SendNotificationsForSubClass(
+			rlog, tx, mt.ID, api.NotificationClassRevokedUsage, clientData,
+			nil, nil,
+		)
 		return &model.Response{
 			Status:   fiber.StatusUnauthorized,
 			Response: model.InvalidTokenError(""),
 		}
 	}
 	rlog.Trace("Checked mytoken not revoked")
+	checkIPUnusual(rlog, tx, mt.ID, clientData)
 	return nil
 }
 
@@ -138,7 +144,7 @@ func RequireCapability(
 					Key:   "Needed Capability",
 					Value: capability.Name,
 				},
-			},
+			}, nil,
 		)
 		return &model.Response{
 			Status:   fiber.StatusForbidden,
@@ -168,7 +174,7 @@ func requireUseableRestriction(
 	)
 	if len(useableRestrictions) == 0 {
 		_ = notifier.SendNotificationsForSubClass(
-			rlog, tx, mt.ID, api.NotificationClassRestrictedUsages, clientData, nil,
+			rlog, tx, mt.ID, api.NotificationClassRestrictedUsages, clientData, nil, nil,
 		)
 		return nil, &model.Response{
 			Status:   fiber.StatusForbidden,
@@ -177,6 +183,25 @@ func requireUseableRestriction(
 	}
 	rlog.Trace("Checked mytoken restrictions")
 	return useableRestrictions[0], nil
+}
+
+func checkIPUnusual(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, clientData *api.ClientMetaData,
+) {
+	rlog.WithField("ip", clientData.IP).Debug("Checking if this is an unusual ip")
+	_ = notifier.SendNotificationsForSubClass(
+		rlog, tx, mtID, api.NotificationClassUnusualIPs, clientData, nil,
+		func() (bool, error) {
+			ips, err := eventrepo.GetPreviouslyUsedIPs(rlog, tx, mtID)
+			if err != nil {
+				return false, err
+			}
+			if len(ips) == 0 {
+				return false, nil
+			}
+			return !iputils.IPIsIn(clientData.IP, ips), nil
+		},
+	)
 }
 
 // RequireUsableRestriction checks that the mytoken.Mytoken's restrictions allow the usage
@@ -267,7 +292,7 @@ func RequireMytokenIsParentOrCapability(
 				Key:   "Needed Capability",
 				Value: capabilityIfNotParent.Name,
 			},
-		},
+		}, nil,
 	)
 	return &model.Response{
 		Status: fiber.StatusForbidden,

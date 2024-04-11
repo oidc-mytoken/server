@@ -105,7 +105,7 @@ func SendICSMail(to, subject, text string, attachments ...mailing.Attachment) {
 	}()
 }
 
-// SendNotificationsForEvent sends all relevant notifications for a event through the relevant notification server,
+// SendNotificationsForEvent sends all relevant notifications for an event through the relevant notification server,
 // if there are any
 func SendNotificationsForEvent(rlog log.Ext1FieldLogger, tx *sqlx.Tx, e pkg2.MTEvent) error {
 	rlog.WithField("event", e.Event.String()).Debug("checking and sending notification for event")
@@ -127,6 +127,7 @@ func SendNotificationsForEvent(rlog log.Ext1FieldLogger, tx *sqlx.Tx, e pkg2.MTE
 func SendNotificationsForSubClass(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
 	nc *api.NotificationClass, clientData *api.ClientMetaData, additionalData model.KeyValues,
+	additionalCallbackCheck func() (bool, error),
 ) error {
 	rlog.WithField("notification_class", nc.Name).Debug("checking and sending notification for (sub)class")
 	allNotifications, err := notificationsrepo.GetNotificationsForMT(rlog, tx, mtID)
@@ -139,6 +140,18 @@ func SendNotificationsForSubClass(
 		thisNC := api.NewNotificationClass(n.Class)
 		if thisNC.Contains(nc) {
 			notifications = append(notifications, n.NotificationInfoBase)
+		}
+	}
+	if len(notifications) == 0 {
+		return nil
+	}
+	if additionalCallbackCheck != nil {
+		ok, err := additionalCallbackCheck()
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return nil
 		}
 	}
 	rlog.WithField("number_filtered_notifications", len(notifications)).Trace("found notifications for token and class")
