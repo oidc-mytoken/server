@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/Songmu/prompter v0.5.1
-	github.com/arran4/golang-ical v0.2.1
+	github.com/arran4/golang-ical v0.2.7
 	github.com/coreos/go-oidc/v3 v3.9.0
 	github.com/evanphx/json-patch/v5 v5.9.0
 	github.com/fatih/structs v1.1.0

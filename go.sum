@@ -69,8 +69,8 @@ github.com/andybalholm/brotli v1.1.0/go.mod h1:sms7XGricyQI9K10gOSf56VKKWS4oLer5
 github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be h1:9AeTilPcZAjCFIImctFaOjnTIavg87rW78vTPkQqLI8=
 github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be/go.mod h1:ySMOLuWl6zY27l47sB3qLNK6tF2fkHG55UZxx8oIVo4=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/arran4/golang-ical v0.2.1 h1:7gSJYzMu4milwosbHNxi3mQZHiTWny9A7B8XH4rmx+w=
-github.com/arran4/golang-ical v0.2.1/go.mod h1:RqMuPGmwRRwjkb07hmm+JBqcWa1vF1LvVmPtSZN2OhQ=
+github.com/arran4/golang-ical v0.2.7 h1:VO7YlVaGupZE15aj6NhUhte/MIfZuoIzkoI71VsG6Gg=
+github.com/arran4/golang-ical v0.2.7/go.mod h1:RqMuPGmwRRwjkb07hmm+JBqcWa1vF1LvVmPtSZN2OhQ=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=
 github.com/bsm/gomega v1.27.10 h1:yeMWxP2pV2fG3FgAODIY8EiRE3dy0aeFYt4l7wh6yKA=
 github.com/cbroglie/mustache v1.4.0 h1:Azg0dVhxTml5me+7PsZ7WPrQq1Gkf3WApcHMjMprYoU=
@@ -288,7 +288,6 @@ github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWb
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/oidc-mytoken/api v0.9.1/go.mod h1:DBIlUbaIgGlf607VZx8zFC97VR3WNN0kaMVO1AqyTdE=
 github.com/oidc-mytoken/api v0.11.1/go.mod h1:bd7obYvztiIQW1PoRVBTOg8/clWlauNGwcZEu5mRbwg=
-github.com/oidc-mytoken/api v0.11.2-0.20240322111856-056e17719fbc/go.mod h1:E4nGP5D9575NtqQohVaC41rxRjoXvwtJi72aoIO2uUk=
 github.com/oidc-mytoken/api v0.11.2-0.20240326112016-c09f38e107c4 h1:Io3RPYdq3taAlWHTGocRiFRS6bnk9/1QARi6usQHmaI=
 github.com/oidc-mytoken/api v0.11.2-0.20240326112016-c09f38e107c4/go.mod h1:4QwDXesKKEzbTmH2vENYCVcmdb5/gbDPg3DOm9HQLdg=
 github.com/oidc-mytoken/lib v0.7.1 h1:inqnng/iVU42TU8Cuac7wP8I+JraTYmWMKSXdZvShfU=
