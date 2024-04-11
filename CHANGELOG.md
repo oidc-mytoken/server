@@ -29,6 +29,10 @@
 - Improved on returning json errors instead of html on api paths
 - When not being logged in and no OP was selected now the 'Create new Mytoken' button in the webinterface is disabled.
 
+### Dependencies
+
+- Bump go version from 1.19 to 1.22
+
 ## mytoken 0.9.2
 
 ### Packaging

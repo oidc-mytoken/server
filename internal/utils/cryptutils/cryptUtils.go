@@ -7,12 +7,10 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"fmt"
-	mathRand "math/rand"
 	"strings"
 
 	"github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/pbkdf2"
 )
 
@@ -24,20 +22,21 @@ const (
 const malFormedCiphertext = "malformed ciphertext"
 
 // RandomBytes returns size random bytes
-func RandomBytes(size int) []byte {
+func RandomBytes(size int) ([]byte, error) {
 	r := make([]byte, size)
-	if _, err := rand.Read(r); err != nil {
-		log.WithError(err).Error()
-		_, _ = mathRand.Read(r)
-	}
-	return r
+	_, err := rand.Read(r)
+	return r, errors.WithStack(err)
 }
 
-func deriveKey(password string, salt []byte, size int) ([]byte, []byte) {
+func deriveKey(password string, salt []byte, size int) ([]byte, []byte, error) {
 	if salt == nil {
-		salt = RandomBytes(saltLen)
+		var err error
+		salt, err = RandomBytes(saltLen)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
-	return pbkdf2.Key([]byte(password), salt, keyIterations, size, sha512.New), salt
+	return pbkdf2.Key([]byte(password), salt, keyIterations, size, sha512.New), salt, nil
 }
 
 // AES128Encrypt encrypts a string using AES128 with the passed password
@@ -71,7 +70,10 @@ func AES256Decrypt(cipher, password string) (string, error) {
 }
 
 func aesEncrypt(plain, password string, keyLen int) (string, error) {
-	key, salt := deriveKey(password, nil, keyLen)
+	key, salt, err := deriveKey(password, nil, keyLen)
+	if err != nil {
+		return "", err
+	}
 	ciph, err := AESEncrypt(plain, key)
 	if err != nil {
 		return "", err
@@ -94,7 +96,10 @@ func aesDecrypt(cipher, password string, keyLen int) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, malFormedCiphertext)
 	}
-	key, _ := deriveKey(password, salt, keyLen)
+	key, _, err := deriveKey(password, salt, keyLen)
+	if err != nil {
+		return "", err
+	}
 	return AESDecrypt(arr[1], key)
 }
 
