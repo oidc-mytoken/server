@@ -4,7 +4,7 @@ include:
 variables:
   UPSTREAM_PROJECT: oidc-mytoken/server
 
-image: golang:1.19
+image: golang:1.22
 stages:
   - build
   - test
