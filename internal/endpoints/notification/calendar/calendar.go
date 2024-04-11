@@ -130,7 +130,7 @@ func HandleAdd(ctx *fiber.Ctx) *model.Response {
 	}
 	res := &model.Response{
 		Status:   http.StatusCreated,
-		Response: pkg.CreateCalendarResponse{NotificationCalendar: calendarInfo},
+		Response: &pkg.CreateCalendarResponse{NotificationCalendar: calendarInfo},
 	}
 	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
@@ -244,7 +244,7 @@ func HandleList(ctx *fiber.Ctx) *model.Response {
 			}
 			res = &model.Response{
 				Status:   fiber.StatusOK,
-				Response: pkg.CalendarListResponse{CalendarListResponse: api.CalendarListResponse{Calendars: infos}},
+				Response: &pkg.CalendarListResponse{CalendarListResponse: api.CalendarListResponse{Calendars: infos}},
 			}
 			var rollback bool
 			res, rollback = mytokenutils.DoAfterRequestThingsOther(
@@ -437,7 +437,7 @@ func HandleAddMytoken(ctx *fiber.Ctx) *model.Response {
 			}
 			res = &model.Response{
 				Status:   http.StatusOK,
-				Response: info,
+				Response: &info,
 			}
 			var rollback bool
 			res, rollback = mytokenutils.DoAfterRequestThingsOther(

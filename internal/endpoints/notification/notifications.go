@@ -101,14 +101,13 @@ func HandleGet(ctx *fiber.Ctx) *model.Response {
 			if err != nil {
 				return err
 			}
-			resData := pkg.NotificationsListResponse{
-				NotificationsListResponse: api.NotificationsListResponse{
-					Notifications: infos,
-				},
-			}
 			res = &model.Response{
-				Status:   fiber.StatusOK,
-				Response: resData,
+				Status: fiber.StatusOK,
+				Response: &pkg.NotificationsListResponse{
+					NotificationsListResponse: api.NotificationsListResponse{
+						Notifications: infos,
+					},
+				},
 			}
 			var rollback bool
 			res, rollback = mytokenutils.DoAfterRequestThingsOther(
@@ -220,7 +219,7 @@ func handleNewMailNotification(
 
 			res = &model.Response{
 				Status: fiber.StatusCreated,
-				Response: pkg.NotificationsCreateResponse{
+				Response: &pkg.NotificationsCreateResponse{
 					NotificationsCreateResponse: api.NotificationsCreateResponse{
 						ManagementCode: managementCode,
 					},
