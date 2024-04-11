@@ -38,9 +38,12 @@ type MytokenEntry struct {
 }
 
 // InitRefreshToken links a refresh token to this MytokenEntry
-func (mte *MytokenEntry) InitRefreshToken(rt string) error {
+func (mte *MytokenEntry) InitRefreshToken(rt string) (err error) {
 	mte.refreshToken = rt
-	mte.encryptionKey = cryptutils.RandomBytes(32)
+	mte.encryptionKey, err = cryptutils.RandomBytes(32)
+	if err != nil {
+		return
+	}
 	tmp, err := cryptutils.AESEncrypt(mte.refreshToken, mte.encryptionKey)
 	if err != nil {
 		return err
