@@ -77,7 +77,7 @@ func GetEventHistoryChildren(
 func GetPreviouslyUsedIPs(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID) (ips []string, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			_, err = db.ParseError(errors.WithStack(tx.Select(&ips, `CALL Events_getIPs(?)`, mtID)))
+			_, err = db.ParseError(errors.WithStack(tx.Select(&ips, `CALL Events_GetIPs(?)`, mtID)))
 			return err
 		},
 	)

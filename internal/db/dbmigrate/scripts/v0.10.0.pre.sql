@@ -582,6 +582,11 @@ BEGIN
     SELECT u.iss FROM Users u WHERE u.id = (SELECT n.uid FROM Notifications n WHERE n.management_code = CODE);
 END;;
 
+CREATE OR REPLACE PROCEDURE Events_GetIPs(IN MTID VARCHAR(128))
+BEGIN
+    SELECT UNIQUE ip FROM MT_Events me WHERE me.MT_id = MTID;
+END;;
+
 DELIMITER ;
 
 # Values
