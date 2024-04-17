@@ -184,6 +184,11 @@ func HandleMytokenFromMytokenReq(
 			); err != nil {
 				return err
 			}
+			if err = notificationsrepo.ScheduleExpirationNotificationsIfNeeded(
+				rlog, tx, ste.ID, ste.Token.ExpiresAt, ste.Token.IssuedAt,
+			); err != nil {
+				return err
+			}
 			return eventService.LogEvents(
 				rlog, tx, []pkg.MTEvent{
 					{

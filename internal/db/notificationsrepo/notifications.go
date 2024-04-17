@@ -25,27 +25,35 @@ func ExpandNotificationsToChildrenIfApplicable(rlog log.Ext1FieldLogger, tx *sql
 
 // NotificationInfoBaseWithClass is a type for holding information about a notification including class
 type NotificationInfoBaseWithClass struct {
-	notificationInfoBase
+	NotificationInfoBase
 	Class string `db:"class"`
 }
-type notificationInfoBase struct {
+
+// NotificationInfoBase is a type for holding information about a notification
+type NotificationInfoBase struct {
 	api.NotificationInfoBase
 	WebSocketPath db.NullString `db:"ws" json:"ws,omitempty"`
+	UID           uint64        `db:"uid" json:"-"`
+}
+
+// ManagementCodeNotificationInfoResponse extens api.ManagementCodeNotificationInfoResponse with a uid (not for json)
+type ManagementCodeNotificationInfoResponse struct {
+	api.ManagementCodeNotificationInfoResponse
+	UID uint64 `db:"uid" json:"-"`
 }
 
 // GetNotificationsForMTAndClass checks for and returns the found notifications for a certain mytoken and
 // notification class
 func GetNotificationsForMTAndClass(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
-	class api.NotificationClass,
+	class *api.NotificationClass,
 ) (notifications []api.NotificationInfoBase, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			var dbNotifications []notificationInfoBase
+			var dbNotifications []NotificationInfoBase
 			_, err = db.ParseError(
 				tx.Select(
-					&dbNotifications, `CALL Notifications_GetForMTAndClass(?,?)`, mtID,
-					class.Name,
+					&dbNotifications, `CALL Notifications_GetForMTAndClass(?,?)`, mtID, class.Name,
 				),
 			)
 			if err != nil {
@@ -98,8 +106,7 @@ func notificationInfoBaseWithClassToNotificationInfo(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx,
 	in []NotificationInfoBaseWithClass,
 ) (
-	out []api.
-		NotificationInfo,
+	out []api.NotificationInfo,
 	err error,
 ) {
 	notificationMap := make(map[uint64]api.NotificationInfo)
@@ -112,10 +119,10 @@ func notificationInfoBaseWithClassToNotificationInfo(
 					nie.Classes = append(nie.Classes, api.NewNotificationClass(n.Class))
 				} else {
 					ids = append(ids, n.NotificationID)
-					n.NotificationInfoBase.WebSocketPath = n.WebSocketPath.String
+					n.NotificationInfoBase.NotificationInfoBase.WebSocketPath = n.WebSocketPath.String
 					nie = api.NotificationInfo{
-						NotificationInfoBase: n.NotificationInfoBase,
-						Classes:              []*api.NotificationClass{api.NewNotificationClass(n.Class)},
+						NotificationInfoBase: n.NotificationInfoBase.NotificationInfoBase,
+						Classes:              api.NotificationClasses{api.NewNotificationClass(n.Class)},
 					}
 					if !n.UserWide {
 						if err = tx.Select(
@@ -161,7 +168,7 @@ func GetNotificationsForUser(
 // GetNotificationForManagementCode returns the notification for a management code
 func GetNotificationForManagementCode(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, managementCode string,
-) (info *api.ManagementCodeNotificationInfoResponse, err error) {
+) (info *ManagementCodeNotificationInfoResponse, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			var withClass []NotificationInfoBaseWithClass
@@ -179,10 +186,13 @@ func GetNotificationForManagementCode(
 				return nil
 			}
 			// we can have multiple entries for the different classes, but they will all be for the same notification id
-			info = &api.ManagementCodeNotificationInfoResponse{
-				NotificationInfo: api.NotificationInfo{
-					NotificationInfoBase: withClass[0].NotificationInfoBase,
+			info = &ManagementCodeNotificationInfoResponse{
+				ManagementCodeNotificationInfoResponse: api.ManagementCodeNotificationInfoResponse{
+					NotificationInfo: api.NotificationInfo{
+						NotificationInfoBase: withClass[0].NotificationInfoBase.NotificationInfoBase,
+					},
 				},
+				UID: withClass[0].UID,
 			}
 			for _, n := range withClass {
 				info.Classes = append(info.Classes, api.NewNotificationClass(n.Class))
@@ -257,7 +267,7 @@ func newMTNotification(
 }
 
 func linkNotificationClasses(
-	rlog log.Ext1FieldLogger, tx *sqlx.Tx, nid uint64, classes []*api.NotificationClass,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, nid uint64, classes api.NotificationClasses,
 ) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
@@ -305,7 +315,7 @@ func RemoveTokenFromNotification(
 
 // UpdateNotificationClasses updates the notification classes for a notification
 func UpdateNotificationClasses(
-	rlog log.Ext1FieldLogger, tx *sqlx.Tx, notificationID uint64, newClasses []*api.NotificationClass,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, notificationID uint64, newClasses api.NotificationClasses,
 ) (err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {

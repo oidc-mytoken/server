@@ -24,6 +24,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/userrepo"
+	"github.com/oidc-mytoken/server/internal/db/notificationsrepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
@@ -346,6 +347,11 @@ func createMytokenEntry(
 		return nil, err
 	}
 	if err = mte.Store(rlog, tx, "Used grant_type oidc_flow authorization_code"); err != nil {
+		return nil, err
+	}
+	if err = notificationsrepo.ScheduleExpirationNotificationsIfNeeded(
+		rlog, tx, mte.ID, mte.Token.ExpiresAt, mte.Token.IssuedAt,
+	); err != nil {
 		return nil, err
 	}
 	return mte, nil

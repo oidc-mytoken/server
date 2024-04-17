@@ -7,16 +7,18 @@ import (
 
 // Actions
 const (
-	ActionRecreate           = "recreate_token"
-	ActionVerifyEmail        = "verify_email"
-	ActionRemoveFromCalendar = "remove_from_calendar"
+	ActionRecreate             = "recreate_token"
+	ActionVerifyEmail          = "verify_email"
+	ActionRemoveFromCalendar   = "remove_from_calendar"
+	ActionUnsubscribeScheduled = "unsubscribe_scheduled"
 )
 
 // CodeLifetimes holds the default lifetime of the different action codes
 var CodeLifetimes = map[string]int{
-	ActionVerifyEmail:        3600,
-	ActionRecreate:           0,
-	ActionRemoveFromCalendar: 0,
+	ActionVerifyEmail:          3600,
+	ActionRecreate:             0,
+	ActionRemoveFromCalendar:   0,
+	ActionUnsubscribeScheduled: 0,
 }
 
 // ActionInfo is type for associating an Action with a Code

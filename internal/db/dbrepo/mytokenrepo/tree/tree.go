@@ -58,6 +58,16 @@ func AllTokens(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) ([]*Myt
 	return tokensToTrees(tokens), nil
 }
 
+// AllTokensByUID returns information about all mytokens for a user
+func AllTokensByUID(rlog log.Ext1FieldLogger, tx *sqlx.Tx, uid uint64) (tokens []*MytokenEntry, err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Select(&tokens, `CALL MTokens_GetForUser(?)`, uid))
+		},
+	)
+	return
+}
+
 // TokenSubTree returns information about all subtokens for the passed mytoken
 func TokenSubTree(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) (MytokenEntryTree, error) {
 	var tokens []*MytokenEntry

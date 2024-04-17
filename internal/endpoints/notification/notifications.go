@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/unixtime"
 	"github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -11,6 +12,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/tree"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/userrepo"
 	"github.com/oidc-mytoken/server/internal/db/notificationsrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/notification/calendar"
@@ -54,7 +56,7 @@ func HandleGetByManagementCode(ctx *fiber.Ctx) *model.Response {
 			}
 			res = &model.Response{
 				Status:   fiber.StatusOK,
-				Response: info,
+				Response: info.ManagementCodeNotificationInfoResponse,
 			}
 			return nil
 		},
@@ -190,6 +192,19 @@ func handleNewMailNotification(
 			if err := notificationsrepo.NewNotification(rlog, tx, req, mtID, managementCode, ""); err != nil {
 				return err
 			}
+			if req.NotificationClasses.Contains(api.NotificationClassExpiration) {
+				var withClass []notificationsrepo.NotificationInfoBaseWithClass
+				if err := tx.Select(
+					&withClass, `CALL Notifications_GetForManagementCode(?)`, managementCode,
+				); err != nil {
+					return err
+				}
+				if err := notificationsrepo.AddScheduledExpirationNotifications(
+					rlog, tx, withClass[0].NotificationInfoBase,
+				); err != nil {
+					return err
+				}
+			}
 			if err := usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
 				return err
 			}
@@ -268,7 +283,36 @@ func HandleNotificationUpdateClasses(ctx *fiber.Ctx) *model.Response {
 				res = managementCodeNotValidError
 				return errors.New("rollback")
 			}
-			return notificationsrepo.UpdateNotificationClasses(rlog, tx, info.NotificationID, req.Classes)
+			if err = notificationsrepo.UpdateNotificationClasses(
+				rlog, tx, info.NotificationID,
+				req.Classes,
+			); err != nil {
+				return err
+			}
+			includedExpBefore := info.Classes.Contains(api.NotificationClassExpiration)
+			includesExpNow := req.Classes.Contains(api.NotificationClassExpiration)
+			if includesExpNow && !includedExpBefore {
+				// exp class was added
+				if err = notificationsrepo.AddScheduledExpirationNotifications(
+					rlog, tx,
+					notificationsrepo.NotificationInfoBase{
+						NotificationInfoBase: info.NotificationInfoBase,
+						WebSocketPath:        db.NewNullString(info.WebSocketPath),
+						UID:                  info.UID,
+					},
+				); err != nil {
+					return err
+				}
+			}
+			if includedExpBefore && !includesExpNow {
+				// exp class was removed
+				if err = notificationsrepo.DeleteScheduledExpirationNotifications(
+					rlog, tx, info.NotificationID,
+				); err != nil {
+					return err
+				}
+			}
+			return nil
 		},
 	)
 	if err != nil && res == nil {
@@ -296,13 +340,24 @@ func HandleNotificationAddToken(ctx *fiber.Ctx) *model.Response {
 	err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
 			mtID := req.MomID
-			if !mtID.HashValid() {
+			var expiresAt unixtime.UnixTime
+			var createdAt unixtime.UnixTime
+			if mtID.HashValid() {
+				mtInfo, err := tree.SingleTokenEntry(rlog, tx, mtID.MTID)
+				if err != nil {
+					return err
+				}
+				expiresAt = mtInfo.ExpiresAt
+				createdAt = mtInfo.CreatedAt
+			} else {
 				mt, errRes := auth.RequireValidMytoken(rlog, tx, &req.Mytoken, nil)
 				if errRes != nil {
 					res = errRes
 					return errors.New("rollback")
 				}
 				mtID = mtid.MOMID{MTID: mt.ID}
+				expiresAt = mt.ExpiresAt
+				createdAt = mt.IssuedAt
 			}
 			info, err := notificationsrepo.GetNotificationForManagementCode(rlog, tx, managementCode)
 			if err != nil {
@@ -312,7 +367,20 @@ func HandleNotificationAddToken(ctx *fiber.Ctx) *model.Response {
 				res = managementCodeNotValidError
 				return errors.New("rollback")
 			}
-			return notificationsrepo.AddTokenToNotification(rlog, tx, info.NotificationID, mtID, req.IncludeChildren)
+			if err = notificationsrepo.AddTokenToNotification(
+				rlog, tx, info.NotificationID, mtID,
+				req.IncludeChildren,
+			); err != nil {
+				return err
+			}
+			if info.Classes.Contains(api.NotificationClassExpiration) {
+				if err = notificationsrepo.ScheduleExpirationNotifications(
+					rlog, tx, info.NotificationID, mtID.MTID, expiresAt, createdAt,
+				); err != nil {
+					return err
+				}
+			}
+			return nil
 		},
 	)
 	if err != nil && res == nil {
@@ -356,7 +424,12 @@ func HandleNotificationRemoveToken(ctx *fiber.Ctx) *model.Response {
 				res = managementCodeNotValidError
 				return errors.New("rollback")
 			}
-			return notificationsrepo.RemoveTokenFromNotification(rlog, tx, info.NotificationID, mtID)
+			if err = notificationsrepo.RemoveTokenFromNotification(rlog, tx, info.NotificationID, mtID); err != nil {
+				return err
+			}
+			return notificationsrepo.DeleteScheduledExpirationNotificationsForMT(
+				rlog, tx, info.NotificationID, mtID.MTID,
+			)
 		},
 	)
 	if err != nil && res == nil {

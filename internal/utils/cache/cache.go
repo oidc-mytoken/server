@@ -17,7 +17,8 @@ type Cache interface {
 
 var c Cache
 
-func setCache(cache Cache) {
+// SetCache sets the cache
+func SetCache(cache Cache) {
 	c = cache
 }
 
@@ -46,6 +47,7 @@ const (
 	WebProfiles
 	FederationLib
 	FederationOPMetadata
+	ScheduledNotifications
 )
 
 func k(t Type, key string) string {

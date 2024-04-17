@@ -90,12 +90,39 @@ func AddRemoveFromCalendarCode(
 	return
 }
 
+// AddScheduleNotificationCode adds a code for un-scheduling scheduled notifications
+func AddScheduleNotificationCode(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, notificationID uint64, code string,
+) (err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err = tx.Exec(`CALL ActionCodes_AddScheduleNotificationCode(?,?,?)`, code, notificationID, mtID)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			return err
+		},
+	)
+	return
+}
+
 // UseRemoveCalendarCode uses a calendar remove ActionCode to remove a token from a calendar and then deletes the
 // code from the database
 func UseRemoveCalendarCode(rlog log.Ext1FieldLogger, tx *sqlx.Tx, code string) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL ActionCodes_UseRemoveFromCalendar(?)`, code)
+			return errors.WithStack(err)
+		},
+	)
+}
+
+// UseUnsubscribeFurtherNotificationsCode uses the ActionCode to unsubscribe from further scheduled notifications and
+// deletes the code
+func UseUnsubscribeFurtherNotificationsCode(rlog log.Ext1FieldLogger, tx *sqlx.Tx, code string) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL ActionCodes_UnsubscribeFurtherScheduled(?)`, code)
 			return errors.WithStack(err)
 		},
 	)
@@ -119,5 +146,18 @@ func GetRecreateData(rlog log.Ext1FieldLogger, tx *sqlx.Tx, code string) (data R
 		},
 	)
 	found, err = db.ParseError(err)
+	return
+}
+
+// GetScheduledNotificationActionCode returns the action code for a scheduled notification
+func GetScheduledNotificationActionCode(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, nid uint64) (
+	code string,
+	err error,
+) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Get(&code, `CALL ScheduledNotification_GetActionCode(?,?)`, nid, mtID))
+		},
+	)
 	return
 }
