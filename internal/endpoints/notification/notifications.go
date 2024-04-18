@@ -205,26 +205,10 @@ func handleNewMailNotification(
 					return err
 				}
 			}
-			if err := usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
-				return err
-			}
-			emailInfo, err := userrepo.GetMail(rlog, tx, mt.ID)
+			emailInfo, errRes, err := userrepo.GetAndCheckMail(rlog, tx, mt.ID)
 			if err != nil {
+				res = errRes
 				return err
-			}
-			if !emailInfo.Mail.Valid {
-				res = &model.Response{
-					Status:   fiber.StatusUnprocessableEntity,
-					Response: api.ErrorMailRequired,
-				}
-				return errors.New("rollback")
-			}
-			if !emailInfo.MailVerified {
-				res = &model.Response{
-					Status:   fiber.StatusUnprocessableEntity,
-					Response: api.ErrorMailNotVerified,
-				}
-				return errors.New("rollback")
 			}
 
 			notifier.SendTemplateEmail(
