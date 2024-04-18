@@ -32,6 +32,8 @@ func HandleActions(ctx *fiber.Ctx) error {
 		return handleVerifyEmail(ctx, actionInfo.Code)
 	case pkg.ActionRemoveFromCalendar:
 		return handleRemoveFromCalendar(ctx, actionInfo.Code)
+	case pkg.ActionUnsubscribeScheduled:
+		return handleUnsubscribeScheduled(ctx, actionInfo.Code)
 	}
 	return ctxutils.RenderErrorPage(
 		ctx, fiber.StatusBadRequest, model.BadRequestError("unknown action").
@@ -90,6 +92,7 @@ func handleRecreate(ctx *fiber.Ctx, code string) (err error) {
 	}
 	return ctx.Redirect(fmt.Sprintf("/home?r=%s#mt", baseRequest), fiber.StatusSeeOther)
 }
+
 func handleVerifyEmail(ctx *fiber.Ctx, code string) error {
 	rlog := logger.GetRequestLogger(ctx)
 	verified, err := actionrepo.VerifyMail(rlog, nil, code)
@@ -112,6 +115,18 @@ func handleRemoveFromCalendar(ctx *fiber.Ctx, code string) error {
 	}
 	return ctxutils.RenderErrorPage(
 		ctx, http.StatusOK, "The token was successfully removed from the calendar.", "Token Removed from Calendar",
+	)
+}
+
+func handleUnsubscribeScheduled(ctx *fiber.Ctx, code string) error {
+	rlog := logger.GetRequestLogger(ctx)
+	err := actionrepo.UseUnsubscribeFurtherNotificationsCode(rlog, nil, code)
+	if err != nil {
+		return ctxutils.RenderInternalServerErrorPage(ctx, err)
+	}
+	return ctxutils.RenderErrorPage(
+		ctx, http.StatusOK, "You have successfully unsubscribed from further notifications of this kind.",
+		"Unsubscribed",
 	)
 }
 
@@ -152,4 +167,21 @@ func CreateRemoveFromCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.M
 		return "", err
 	}
 	return routes.ActionsURL(code), nil
+}
+
+// GetUnsubscribeScheduled obtains the action code stored in the database for a scheduled notification and returns
+// the action url
+func GetUnsubscribeScheduled(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, nid uint64) (
+	string,
+	error,
+) {
+	code, err := actionrepo.GetScheduledNotificationActionCode(rlog, tx, mtID, nid)
+	if err != nil {
+		return "", err
+	}
+	ac := pkg.ActionInfo{
+		Action: pkg.ActionUnsubscribeScheduled,
+		Code:   code,
+	}
+	return routes.ActionsURL(ac), nil
 }

@@ -318,6 +318,7 @@ func parseJWT(token string, skipCalimsValidation bool) (*Mytoken, error) {
 	return nil, errors.New("token not valid")
 }
 
+// DBMetadata return the mytokenrepohelper.MytokenDBMetadata for a Mytoken
 func (mt *Mytoken) DBMetadata() (meta mytokenrepohelper.MytokenDBMetadata, err error) {
 	creator := func(i any) (db.NullString, error) {
 		data := ""

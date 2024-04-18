@@ -14,6 +14,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/server/paths"
 )
 
+// SupportedProviders returns a list of all the api.
+// SupportedProviderConfig including providers specified in the config file as well as possible oidc fed providers
 func SupportedProviders() []api.SupportedProviderConfig {
 	if config.Get().Features.Federation.Enabled {
 		mytokenConfig.ProvidersSupported = append(getProvidersFromConfig(), oidcfed.SupportedProviders()...)

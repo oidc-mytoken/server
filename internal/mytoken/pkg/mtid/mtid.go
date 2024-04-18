@@ -19,9 +19,9 @@ type MTID struct {
 
 // New creates a new MTID
 func New() (MTID, error) {
-	uuid, err := uuid.NewV4()
+	u, err := uuid.NewV4()
 	return MTID{
-		UUID: uuid,
+		UUID: u,
 	}, errors.WithStack(err)
 }
 

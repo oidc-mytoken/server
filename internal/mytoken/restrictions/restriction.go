@@ -45,6 +45,7 @@ type Restriction struct {
 	api.Restriction `json:",inline"`
 }
 
+// NewRestrictionsFromAPI turn api.Restrictions into Restrictions
 func NewRestrictionsFromAPI(apis api.Restrictions) (rs Restrictions) {
 	for _, a := range apis {
 		rs = append(

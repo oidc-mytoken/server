@@ -2,14 +2,17 @@ package notifier
 
 import (
 	"encoding/json"
+	"time"
 
 	utils2 "github.com/oidc-mytoken/utils/utils"
+	gocache "github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/notifier/pkg"
 	"github.com/oidc-mytoken/server/internal/notifier/server/mailing"
 	"github.com/oidc-mytoken/server/internal/utils"
+	"github.com/oidc-mytoken/server/internal/utils/cache"
 )
 
 // ServerPaths holds the server paths
@@ -41,6 +44,7 @@ func (p Paths) Prefix(prefix string) (out Paths) {
 // InitStandalone initializes a standalone notifier server
 func InitStandalone(mailConf config.MailNotificationConf) {
 	initCommon(mailConf)
+	cache.SetCache(gocache.New(3*time.Minute, 5*time.Minute))
 	startServer()
 }
 
@@ -57,12 +61,28 @@ func initCommon(mailConf config.MailNotificationConf) {
 // HandleEmailRequest handles a pkg.EmailNotificationRequest
 func HandleEmailRequest(req pkg.EmailNotificationRequest) error {
 	log.WithField("req", req).Info("Handling email request")
+	sID := req.ScheduleID
+	returnError := func(err error) error {
+		return err
+	}
+	if sID != "" {
+		if _, found := cache.Get(cache.ScheduledNotifications, sID); found {
+			return nil
+		} else {
+			returnError = func(err error) error {
+				if err == nil {
+					cache.Set(cache.ScheduledNotifications, sID, struct{}{})
+				}
+				return err
+			}
+		}
+	}
 	if req.ICSInvite {
 		if err := mailing.ICSMailSender.Send(req.To, req.Subject, req.Text, req.Attachments...); err != nil {
 			log.WithError(err).Error("error while sending ics mail invite")
-			return err
+			return returnError(err)
 		}
-		return nil
+		return returnError(nil)
 	}
 	sender := mailing.PlainTextMailSender
 	if req.PreferHTML {
@@ -71,13 +91,13 @@ func HandleEmailRequest(req pkg.EmailNotificationRequest) error {
 	if req.Template != "" {
 		if err := sender.SendTemplate(req.To, req.Subject, req.Template, req.BindingData); err != nil {
 			log.WithError(err).Error("error while sending templated mail")
-			return err
+			return returnError(err)
 		}
-		return nil
+		return returnError(nil)
 	}
 	if err := sender.Send(req.To, req.Subject, req.Text, req.Attachments...); err != nil {
 		log.WithError(err).Error("error while sending mail")
-		return err
+		return returnError(err)
 	}
-	return nil
+	return returnError(nil)
 }

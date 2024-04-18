@@ -24,11 +24,11 @@ CREATE INDEX IF NOT EXISTS AuthInfo_FK
     ON AuthInfo (polling_code);
 
 ALTER TABLE Users
-    ADD email TEXT NULL;
+    ADD IF NOT EXISTS email TEXT NULL;
 ALTER TABLE Users
-    ADD email_verified BOOL DEFAULT 0 NOT NULL;
+    ADD IF NOT EXISTS email_verified BOOL DEFAULT 0 NOT NULL;
 ALTER TABLE Users
-    ADD prefer_html_mail BOOL DEFAULT 1 NOT NULL;
+    ADD IF NOT EXISTS prefer_html_mail BOOL DEFAULT 1 NOT NULL;
 
 CREATE TABLE IF NOT EXISTS ActionReferencesUser
 (
@@ -54,11 +54,11 @@ CREATE TABLE IF NOT EXISTS Calendars
 );
 
 ALTER TABLE MTokens
-    ADD capabilities JSON NULL;
+    ADD IF NOT EXISTS capabilities JSON NULL;
 ALTER TABLE MTokens
-    ADD rotation JSON NULL;
+    ADD IF NOT EXISTS rotation JSON NULL;
 ALTER TABLE MTokens
-    ADD restrictions JSON NULL;
+    ADD IF NOT EXISTS restrictions JSON NULL;
 
 CREATE TABLE IF NOT EXISTS ActionReferencesMytokens
 (
@@ -107,6 +107,24 @@ CREATE TABLE IF NOT EXISTS Notifications
             ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS ActionReferencesNotificationSchedule
+(
+    action_id       BIGINT UNSIGNED NOT NULL,
+    notification_id BIGINT UNSIGNED NOT NULL,
+    MT_id           VARCHAR(128)    NOT NULL,
+    CONSTRAINT ActionReferencesNotificationSchedule_UN
+        UNIQUE (notification_id, MT_id),
+    CONSTRAINT ActionReferencesNotificationSchedule_FK
+        FOREIGN KEY (MT_id) REFERENCES MTokens (id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT ActionReferencesNotificationSchedule_FK_1
+        FOREIGN KEY (notification_id) REFERENCES Notifications (id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT ActionReferencesNotificationSchedule_FK_2
+        FOREIGN KEY (action_id) REFERENCES ActionCodes (id)
+            ON UPDATE CASCADE ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS MTNotificationsMapping
 (
     MT_id            VARCHAR(128)         NOT NULL,
@@ -115,16 +133,34 @@ CREATE TABLE IF NOT EXISTS MTNotificationsMapping
     CONSTRAINT MTNotificationsMapping_pk
         UNIQUE (notification_id, MT_id),
     CONSTRAINT MTNotificationsMapping_MTokens_id_fk
-        FOREIGN KEY (MT_id) REFERENCES MTokens (id),
+        FOREIGN KEY (MT_id) REFERENCES MTokens (id) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT MTNotificationsMapping_Notifications_id_fk
-        FOREIGN KEY (notification_id) REFERENCES Notifications (id)
+        FOREIGN KEY (notification_id) REFERENCES Notifications (id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS SubscribedNotificationClasses
 (
     notificaton_id BIGINT UNSIGNED NOT NULL, class VARCHAR(128) NOT NULL, CONSTRAINT SubscribedNotificationClasses_pk
     UNIQUE (notificaton_id, class), CONSTRAINT SubscribedNotificationClasses_Notifications_id_fk
-        FOREIGN KEY (notificaton_id) REFERENCES Notifications (id)
+        FOREIGN KEY (notificaton_id) REFERENCES Notifications (id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE OR REPLACE TABLE NotificationSchedule
+(
+    id                        BIGINT UNSIGNED AUTO_INCREMENT
+        PRIMARY KEY,
+    due_time                  DATETIME                     NOT NULL,
+    notification_id           BIGINT UNSIGNED              NOT NULL,
+    MT_id                     VARCHAR(128)                 NOT NULL,
+    class                     VARCHAR(128)                 NOT NULL,
+    additional_info           LONGTEXT COLLATE utf8mb4_bin NULL
+        CHECK (JSON_VALID(`additional_info`)),
+    CONSTRAINT NotificationSchedule_FK
+        FOREIGN KEY (MT_id) REFERENCES MTokens (id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT NotificationSchedule_FK_1
+        FOREIGN KEY (notification_id) REFERENCES Notifications (id)
+            ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
@@ -161,7 +197,7 @@ SELECT `me`.`time`       AS `time`,
     FROM (`Events` `e` JOIN `MT_Events` `me` ON (`e`.`id` = `me`.`event_id`))
     ORDER BY `me`.`time` DESC;
 
-CREATE VIEW IF NOT EXISTS MailVerificationCodes AS
+CREATE OR REPLACE VIEW MailVerificationCodes AS
 SELECT `fa`.`id`         AS `id`,
        `fa`.`action`     AS `action`,
        `fa`.`code`       AS `code`,
@@ -174,7 +210,7 @@ SELECT `fa`.`id`         AS `id`,
                                           WHERE `a`.`action` = 'verify_email')) `fa` JOIN `ActionReferencesUser` `aru`
           ON (`aru`.`action_id` = `fa`.`id`));
 
-CREATE VIEW IF NOT EXISTS MytokenRecreateCodes AS
+CREATE OR REPLACE VIEW MytokenRecreateCodes AS
 SELECT `fa`.`id`           AS `id`,
        `fa`.`action`       AS `action`,
        `fa`.`code`         AS `code`,
@@ -184,16 +220,19 @@ SELECT `fa`.`id`           AS `id`,
        `mt`.`capabilities` AS `capabilities`,
        `mt`.`rotation`     AS `rotation`,
        `mt`.`restrictions` AS `restrictions`,
-       `mt`.`created`      AS `token_created`
-    FROM (((SELECT `ac`.`id`         AS `id`,
-                   `ac`.`action`     AS `action`,
-                   `ac`.`code`       AS `code`,
-                   `ac`.`expires_at` AS `expires_at`
-                FROM `ActionCodes` `ac`
-                WHERE `ac`.`action` = (SELECT `a`.`id`
-                                           FROM `Actions` `a`
-                                           WHERE `a`.`action` = 'recreate_token')) `fa` JOIN `ActionReferencesMytokens` `arm`
-           ON (`arm`.`action_id` = `fa`.`id`)) JOIN `MTokens` `mt` ON (`mt`.`id` = `arm`.`MT_id`));
+       `mt`.`created` AS `token_created`,
+       `u`.`iss`      AS `issuer`
+    FROM ((((SELECT `ac`.`id`         AS `id`,
+                    `ac`.`action`     AS `action`,
+                    `ac`.`code`       AS `code`,
+                    `ac`.`expires_at` AS `expires_at`
+                 FROM `ActionCodes` `ac`
+                 WHERE `ac`.`action` = (SELECT `a`.`id`
+                                            FROM `Actions` `a`
+                                            WHERE `a`.`action` = 'recreate_token')) `fa` JOIN `ActionReferencesMytokens` `arm`
+            ON (`arm`.`action_id` = `fa`.`id`)) JOIN `MTokens` `mt`
+           ON (`mt`.`id` = `arm`.`MT_id`)) JOIN `Users` `u` ON (`mt`.`user_id` = `u`.`id`));
+
 
 ### Procedures
 
@@ -231,6 +270,16 @@ BEGIN
                                                                         WHERE m.id = MTID))));
 END;;
 
+CREATE OR REPLACE PROCEDURE ActionCodes_AddScheduleNotificationCode(IN CODE_ varchar(128), IN NID bigint unsigned, IN
+    MTID varchar(128))
+BEGIN
+    DECLARE id bigint unsigned;
+    SET TIME_ZONE = "+0:00";
+    INSERT INTO ActionCodes (action, code) VALUES((SELECT a.id FROM Actions a WHERE a.`action` ='unsubscribe_scheduled'), CODE_);
+    SELECT LAST_INSERT_ID() INTO id;
+    INSERT INTO ActionReferencesNotificationSchedule (action_id,notification_id,MT_id) VALUES(id, NID, MTID);
+END;;
+
 CREATE OR REPLACE PROCEDURE ActionCodes_AddVerifyMail(IN MTID VARCHAR(128), IN CODE_ VARCHAR(128), IN EXPIRES_IN INT)
 BEGIN
     DECLARE aid BIGINT UNSIGNED;
@@ -256,7 +305,7 @@ END;
 
 CREATE OR REPLACE PROCEDURE ActionCodes_GetRecreateData(IN CODE_ VARCHAR(128))
 BEGIN
-    SELECT name, capabilities, restrictions, rotation, token_created AS created
+    SELECT name, capabilities, restrictions, rotation, token_created AS created, issuer
         FROM MytokenRecreateCodes
         WHERE code = CODE_;
 END;;
@@ -264,13 +313,21 @@ END;;
 CREATE OR REPLACE PROCEDURE ActionCodes_RemoveFromCalendar(IN CODE_ VARCHAR(128))
 BEGIN
     SET TIME_ZONE = "+0:00";
-    DELETE FROM CalendarMapping WHERE mapping_id = (SELECT mapping_id FROM CalendarRemoveCodes WHERE code = CODE_);
+    DELETE FROM CalendarMapping WHERE mapping_id = (SELECT calendar_mapping_id FROM CalendarRemoveCodes WHERE code =
+                                                                                                           CODE_);
 END;;
 
-CREATE OR REPLACE PROCEDURE ActionCodes_UseRecreateToken(IN CODE_ VARCHAR(128))
+CREATE OR REPLACE PROCEDURE ActionCodes_UnsubscribeFurtherScheduled(IN CODE_ VARCHAR(128))
 BEGIN
-    CALL ActionCodes_GetRecreateData(CODE_);
-    CALL ActionCodes_Delete(CODE_);
+    DECLARE MTID VARCHAR(128);
+    DECLARE NID BIGINT UNSIGNED;
+    DECLARE AID BIGINT UNSIGNED;
+    SELECT ac.id INTO AID FROM ActionCodes ac WHERE ac.code=CODE_ AND ac.action=(SELECT id FROM
+                                                                                               Actions WHERE action=
+                                                                                                             'unsubscribe_scheduled');
+    SELECT ans.MT_id, ans.notification_id INTO MTID, NID FROM ActionReferencesNotificationSchedule ans WHERE ans.action_id = AID;
+    DELETE FROM NotificationSchedule WHERE MT_id = MTID AND notification_id = NID;
+    DELETE FROM ActionCodes WHERE id=AID;
 END;;
 
 CREATE OR REPLACE PROCEDURE ActionCodes_UseRemoveFromCalendar(IN CODE_ VARCHAR(128))
@@ -394,6 +451,26 @@ BEGIN
         WHERE id = MTID;
 END;;
 
+CREATE OR REPLACE PROCEDURE NotificationScheduleAdd(IN DUETIME TIMESTAMP, IN NID BIGINT UNSIGNED, IN MTID VARCHAR(128),
+                                                    IN CLASS_ VARCHAR(128), IN ADDITIONALINFO LONGTEXT)
+BEGIN
+    INSERT IGNORE INTO NotificationSchedule (due_time, notification_id, MT_id, class, additional_info) VALUES(DUETIME, NID, MTID, CLASS_,ADDITIONALINFO);
+END;;
+
+CREATE OR REPLACE PROCEDURE NotificationSchedule_DeleteExpirations(IN NID BIGINT UNSIGNED)
+BEGIN
+    DELETE FROM NotificationSchedule WHERE notification_id = NID AND class = 'exp';
+    DELETE FROM ActionCodes WHERE id IN (SELECT action_id FROM ActionReferencesNotificationSchedule WHERE
+            notification_id=NID);
+END;;
+
+CREATE OR REPLACE PROCEDURE NotificationSchedule_DeleteExpirationsForMT(IN NID BIGINT UNSIGNED, IN MTID VARCHAR(128))
+BEGIN
+    DELETE FROM NotificationSchedule WHERE notification_id = NID AND MT_id = MTID AND class = 'exp';
+    DELETE FROM ActionCodes WHERE action IN (SELECT action_id FROM ActionReferencesNotificationSchedule WHERE
+            notification_id=NID AND MT_id=MTID);
+END;;
+
 CREATE OR REPLACE PROCEDURE Notifications_ClearNotificationClasses(IN NID BIGINT UNSIGNED)
 BEGIN
     DELETE FROM SubscribedNotificationClasses WHERE notificaton_id = NID;
@@ -431,12 +508,12 @@ END;;
 
 CREATE OR REPLACE PROCEDURE Notifications_DeleteByManagementCode(IN CODE VARCHAR(128))
 BEGIN
-    DECLARE nid BIGINT UNSIGNED;
-    SELECT id FROM Notifications WHERE management_code = CODE INTO nid;
-    DELETE FROM SubscribedNotificationClasses WHERE notificaton_id = nid;
-    DELETE FROM MTNotificationsMapping WHERE notification_id = nid;
-    DELETE FROM Notifications WHERE id = nid;
+    DECLARE nid bigint unsigned;
+    SELECT id FROM Notifications WHERE management_code=CODE INTO nid;
+    DELETE FROM ActionCodes WHERE id IN (SELECT action_id FROM ActionReferencesNotificationSchedule WHERE notification_id=nid);
+    DELETE FROM Notifications WHERE id=nid;
 END;;
+
 
 CREATE OR REPLACE PROCEDURE Notifications_ExpandToChildren(IN PARENT VARCHAR(128), IN CHILD VARCHAR(128))
 BEGIN
@@ -450,7 +527,7 @@ END;;
 
 CREATE OR REPLACE PROCEDURE Notifications_GetForMT(IN MTID VARCHAR(128))
 BEGIN
-    SELECT n.id, n.type, n.management_code, n.ws, n.user_wide, snc.class
+    SELECT n.id, n.type, n.management_code, n.ws, n.user_wide, snc.class, n.uid
         FROM ((SELECT *
                    FROM Notifications
                    WHERE id IN (
@@ -463,7 +540,7 @@ END;;
 
 CREATE OR REPLACE PROCEDURE Notifications_GetForMTAndClass(IN MTID VARCHAR(128), IN _CLASS VARCHAR(128))
 BEGIN
-    SELECT n.id, n.type, n.management_code, n.ws, n.user_wide
+    SELECT n.id, n.type, n.management_code, n.ws, n.user_wide, n.uid
         FROM Notifications n
         WHERE id IN (((SELECT notification_id FROM MTNotificationsMapping WHERE MT_id = MTID)
                       UNION
@@ -477,7 +554,7 @@ END;;
 
 CREATE OR REPLACE PROCEDURE Notifications_GetForManagementCode(IN CODE VARCHAR(128))
 BEGIN
-    SELECT n.id, n.type, n.management_code, n.ws, n.user_wide, snc.class
+    SELECT n.id, n.type, n.management_code, n.ws, n.user_wide, snc.class, n.uid
         FROM ((SELECT *
                    FROM Notifications
                    WHERE management_code = CODE) n JOIN SubscribedNotificationClasses snc ON n.id = snc.notificaton_id
@@ -487,7 +564,7 @@ END;;
 
 CREATE OR REPLACE PROCEDURE Notifications_GetForUser(IN MTID VARCHAR(128))
 BEGIN
-    SELECT n.id, n.type, n.management_code, n.ws, n.user_wide, snc.class
+    SELECT n.id, n.type, n.management_code, n.ws, n.user_wide, snc.class, n.uid
         FROM ((SELECT *
                    FROM Notifications
                    WHERE uid = (SELECT user_id FROM MTokens WHERE id = MTID)) n JOIN SubscribedNotificationClasses snc
@@ -552,6 +629,12 @@ BEGIN
     END IF;
 END;;
 
+
+CREATE OR REPLACE PROCEDURE ScheduledNotification_GetActionCode(IN NID BIGINT UNSIGNED, IN MTID VARCHAR(128))
+BEGIN
+    SELECT ac.code FROM ActionCodes ac WHERE ac.id =(SELECT arns.action_id  FROM ActionReferencesNotificationSchedule arns WHERE arns.MT_id = MTID AND arns.notification_id = NID);
+END;;
+
 CREATE OR REPLACE PROCEDURE Users_ChangeMail(IN MTID VARCHAR(128), IN MAIL TEXT)
 BEGIN
     UPDATE Users SET email=MAIL, email_verified=0 WHERE id = (SELECT m.user_id FROM MTokens m WHERE m.id = MTID);
@@ -585,6 +668,15 @@ END;;
 CREATE OR REPLACE PROCEDURE Events_GetIPs(IN MTID VARCHAR(128))
 BEGIN
     SELECT UNIQUE ip FROM MT_Events me WHERE me.MT_id = MTID;
+END;;
+
+CREATE OR REPLACE PROCEDURE PopOneDueScheduledNotification()
+BEGIN
+    DECLARE sid BIGINT UNSIGNED;
+    SET TIME_ZONE = "+0:00";
+    SELECT ns.id INTO sid  FROM NotificationSchedule ns WHERE ns.due_time <= CURRENT_TIMESTAMP() LIMIT 1;
+    SELECT nss.*, n.`type` ,n.management_code, n.ws , n.user_wide ,n.uid  FROM (( SELECT * FROM NotificationSchedule ns WHERE ns.id=sid ) nss JOIN Notifications n ON nss.notification_id = n.id);
+    DELETE FROM NotificationSchedule WHERE id=sid;
 END;;
 
 DELIMITER ;
@@ -631,3 +723,7 @@ INSERT IGNORE INTO Actions (action)
     VALUES ('unsubscribe_notification');
 INSERT IGNORE INTO Actions (action)
     VALUES ('recreate_token');
+INSERT IGNORE INTO Actions (action)
+    VALUES ('remove_from_calendar');
+INSERT IGNORE INTO Actions (action)
+    VALUES ('unsubscribe_scheduled');

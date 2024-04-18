@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -20,7 +21,8 @@ func handleError(ctx *fiber.Ctx, err error) error {
 	msg := errorfmt.Error(err)
 	rlog := logger.GetRequestLogger(ctx)
 
-	if e, ok := err.(*fiber.Error); ok {
+	var e *fiber.Error
+	if errors.As(err, &e) {
 		code = e.Code
 		msg = e.Error()
 	}

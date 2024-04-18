@@ -28,6 +28,7 @@ func NewProxyToken(size int) *ProxyToken {
 	return CreateProxyToken(token)
 }
 
+// CreateProxyToken creates a new *ProxyToken for a token
 func CreateProxyToken(token string) *ProxyToken {
 	id := hashutils.SHA512Str([]byte(token))
 	return &ProxyToken{

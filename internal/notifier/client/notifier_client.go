@@ -41,6 +41,7 @@ func Init() {
 	} else {
 		initIntegraded()
 	}
+	initScheduler()
 }
 
 func initStandalone(serverURL string) {
@@ -72,7 +73,7 @@ func (n standaloneNotifier) SendEmailRequest(req pkg.EmailNotificationRequest) {
 
 // SendEmailRequest sends a pkg.EmailNotificationRequest to the integrated notification server
 func (integratedNotifier) SendEmailRequest(req pkg.EmailNotificationRequest) {
-	server.HandleEmailRequest(req)
+	_ = server.HandleEmailRequest(req)
 }
 
 // SendTemplateEmail sends a templated email through the relevant notification server
@@ -90,7 +91,7 @@ func SendTemplateEmail(to, subject string, preferHTML bool, template string, bin
 	}()
 }
 
-// SendICSMail sends a ics calendar invite via email through the relevant notification server
+// SendICSMail sends an ics calendar invite via email through the relevant notification server
 func SendICSMail(to, subject, text string, attachments ...mailing.Attachment) {
 	// skipcq GO-E1007
 	go func() {
@@ -114,9 +115,12 @@ func SendNotificationsForEvent(rlog log.Ext1FieldLogger, tx *sqlx.Tx, e pkg2.MTE
 		return nil
 	}
 	rlog.WithField("notification_class", nc.Name).Trace("found notification class")
-	notifications, err := notificationsrepo.GetNotificationsForMTAndClass(rlog, tx, e.MTID, *nc)
+	notifications, err := notificationsrepo.GetNotificationsForMTAndClass(rlog, tx, e.MTID, nc)
 	if err != nil {
 		return err
+	}
+	if len(notifications) == 0 {
+		return nil
 	}
 	rlog.WithField("number_notifications", len(notifications)).Trace("found notifications for the class and token")
 	return sendNotificationsForNotificationInfos(rlog, tx, e.MTID, notifications, nc.Name, &e.ClientMetaData, &e, nil)
@@ -139,7 +143,7 @@ func SendNotificationsForSubClass(
 	for _, n := range allNotifications {
 		thisNC := api.NewNotificationClass(n.Class)
 		if thisNC.Contains(nc) {
-			notifications = append(notifications, n.NotificationInfoBase)
+			notifications = append(notifications, n.NotificationInfoBase.NotificationInfoBase)
 		}
 	}
 	if len(notifications) == 0 {

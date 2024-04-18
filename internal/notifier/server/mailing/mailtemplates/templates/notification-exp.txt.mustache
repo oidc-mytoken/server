@@ -1,0 +1,21 @@
+Your mytoken will expire soon. Here are the details:
+
+{{#token-name}}
+Mytoken Name: {{.}}
+{{/token-name}}
+Mytoken Mom ID: {{mom_id}}
+Expires: {{expires_at}}
+
+{{#additional-data}}
+{{Key}}: {{Value}}
+{{/additional-data}}
+
+To re-create a mytoken with similar properties, follow this link: {{{recreate-url}}}
+
+If you created a new mytoken or do not need it anymore, you might want to unsubscribe from further expiration
+notifications for this mytoken: {{{unsubscribe-exp-this-token-url}}}
+
+If you want to manage the whole notification subscription, you can do so at: {{{management-url}}}
+
+Sincerly,
+the mytoken notification bot.

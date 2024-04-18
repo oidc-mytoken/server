@@ -1,3 +1,5 @@
+// noinspection GrazieInspection
+
 let notificationsMap = {};
 
 let momIDNotificationsMap = {};
@@ -148,6 +150,7 @@ function toggleSubscriptionDetails(managementCode) {
     }
     fillModifyNotification(managementCode);
     $container.append($notificationsModifyDiv);
+    enableSaveNotificationClassesButton();
     $notificationsModifyDiv.showB();
     $container.showB();
 }
@@ -772,25 +775,29 @@ function toggle_subscribe_notification_content(prefix = "") {
     $(selectors.join(",")).toggleClass('d-none');
 }
 
-$('#btn-save-notification-classes').on('click', function () {
-    let mc = $managementCodeInput.val();
-    let data = {"notification_classes": getCheckedCapabilities(notificationListPrefix)};
-    data = JSON.stringify(data);
-    $.ajax({
-        type: "PUT",
-        data: data,
-        dataType: "json",
-        contentType: "application/json",
-        url: `${storageGet('notifications_endpoint')}/${mc}/nc`,
-        success: function () {
-            listNotifications();
-        },
-        error: function (errRes) {
-            $errorModalMsg.text(getErrorMessage(errRes));
-            $errorModal.modal();
-        }
-    });
-})
+enableSaveNotificationClassesButton();
+
+function enableSaveNotificationClassesButton() {
+    $('#btn-save-notification-classes').off('click').on('click', function () {
+        let mc = $managementCodeInput.val();
+        let data = {"notification_classes": getCheckedCapabilities(notificationListPrefix)};
+        data = JSON.stringify(data);
+        $.ajax({
+            type: "PUT",
+            data: data,
+            dataType: "json",
+            contentType: "application/json",
+            url: `${storageGet('notifications_endpoint')}/${mc}/nc`,
+            success: function () {
+                listNotifications();
+            },
+            error: function (errRes) {
+                $errorModalMsg.text(getErrorMessage(errRes));
+                $errorModal.modal();
+            }
+        });
+    })
+}
 
 function newNotificationModal() {
     $newNotificationContent.showB();

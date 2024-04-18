@@ -38,8 +38,8 @@ func init() {
 	}
 }
 
+// Init initializes the mail templates
 func Init() {
-
 	overWriteDir := config.Get().Features.Notifications.Mail.OverwriteDir
 	engine = mustache.NewFileSystem(
 		fileio.NewLocalAndOtherSearcherFilesystem(overWriteDir, http.FS(templates)),
@@ -58,10 +58,12 @@ func render(name, suffix string, bindData any) (string, error) {
 	return buf.String(), nil
 }
 
+// HTML renders a html-suffix file
 func HTML(name string, bindData any) (string, error) {
 	return render(name, ".html", bindData)
 }
 
+// Text renders a txt-suffix file
 func Text(name string, bindData any) (string, error) {
 	return render(name, ".txt", bindData)
 }

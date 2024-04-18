@@ -1,11 +1,14 @@
 package userrepo
 
 import (
+	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
@@ -23,6 +26,37 @@ func GetMail(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID) (data MailIn
 			return errors.WithStack(tx.Get(&data, `CALL Users_GetMail(?)`, mtID))
 		},
 	)
+	return
+}
+
+// GetAndCheckMail gets the MailInfo for a mytoken and already checks that it can be used
+func GetAndCheckMail(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID) (
+	data MailInfo, errRes *model.Response,
+	err error,
+) {
+	data, err = GetMail(rlog, tx, mtID)
+	var found bool
+	found, err = db.ParseError(err)
+	if err != nil {
+		errRes = model.ErrorToInternalServerErrorResponse(err)
+		return
+	}
+	if !found || !data.Mail.Valid {
+		errRes = &model.Response{
+			Status:   fiber.StatusUnprocessableEntity,
+			Response: api.ErrorMailRequired,
+		}
+		err = errors.New("rollback")
+		return
+	}
+	if !data.MailVerified {
+		errRes = &model.Response{
+			Status:   fiber.StatusUnprocessableEntity,
+			Response: api.ErrorMailNotVerified,
+		}
+		err = errors.New("rollback")
+		return
+	}
 	return
 }
 

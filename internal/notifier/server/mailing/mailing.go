@@ -109,6 +109,7 @@ type attachmentMarshal struct {
 	ContentType string `json:"ct"`
 }
 
+// MarshalJSON implements the json.Marshaler interface
 func (a Attachment) MarshalJSON() ([]byte, error) {
 	readerData, err := io.ReadAll(a.Reader)
 	if err != nil {
@@ -122,6 +123,7 @@ func (a Attachment) MarshalJSON() ([]byte, error) {
 	return json.Marshal(aa)
 }
 
+// UnmarshalJSON implements the json.Unmarshaler
 func (a *Attachment) UnmarshalJSON(data []byte) error {
 	var aa attachmentMarshal
 	if err := json.Unmarshal(data, &aa); err != nil {

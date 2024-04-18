@@ -291,25 +291,10 @@ func HandleCalendarEntryViaMail(
 				res = errRes
 				return errors.New("rollback")
 			}
-			mailInfo, err := userrepo.GetMail(rlog, tx, id)
-			found, err := db.ParseError(err)
+			mailInfo, errRes, err := userrepo.GetAndCheckMail(rlog, tx, id)
 			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
+				res = errRes
 				return err
-			}
-			if !found || !mailInfo.Mail.Valid {
-				res = &model.Response{
-					Status:   http.StatusUnprocessableEntity,
-					Response: api.ErrorMailRequired,
-				}
-				return errors.New("rollback")
-			}
-			if !mailInfo.MailVerified {
-				res = &model.Response{
-					Status:   http.StatusUnprocessableEntity,
-					Response: api.ErrorMailNotVerified,
-				}
-				return errors.New("rollback")
 			}
 			mtInfo, err := tree.SingleTokenEntry(rlog, tx, id)
 			if err != nil {

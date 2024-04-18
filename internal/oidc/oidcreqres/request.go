@@ -35,7 +35,7 @@ func NewRefreshRequest(rt string, aud *model.AudienceConf) *RefreshRequest {
 	}
 }
 
-// ToURLValues formats the RefreshRequest as a url.Values
+// ToURLValues formats the RefreshRequest as an url.Values
 func (r *RefreshRequest) ToURLValues() url.Values {
 	m := make(url.Values)
 	m["grant_type"] = []string{r.GrantType}

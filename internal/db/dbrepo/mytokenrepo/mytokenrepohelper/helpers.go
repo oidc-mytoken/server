@@ -110,6 +110,7 @@ func UpdateSeqNo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID, seqno uint
 	)
 }
 
+// MytokenDBMetadata is a type for metadata about a mytoken
 type MytokenDBMetadata struct {
 	Capabilities db.NullString
 	Rotation     db.NullString
