@@ -197,7 +197,7 @@ SELECT `me`.`time`       AS `time`,
     FROM (`Events` `e` JOIN `MT_Events` `me` ON (`e`.`id` = `me`.`event_id`))
     ORDER BY `me`.`time` DESC;
 
-CREATE VIEW IF NOT EXISTS MailVerificationCodes AS
+CREATE OR REPLACE VIEW MailVerificationCodes AS
 SELECT `fa`.`id`         AS `id`,
        `fa`.`action`     AS `action`,
        `fa`.`code`       AS `code`,
@@ -210,7 +210,7 @@ SELECT `fa`.`id`         AS `id`,
                                           WHERE `a`.`action` = 'verify_email')) `fa` JOIN `ActionReferencesUser` `aru`
           ON (`aru`.`action_id` = `fa`.`id`));
 
-CREATE VIEW IF NOT EXISTS MytokenRecreateCodes AS
+CREATE OR REPLACE VIEW MytokenRecreateCodes AS
 SELECT `fa`.`id`           AS `id`,
        `fa`.`action`       AS `action`,
        `fa`.`code`         AS `code`,
@@ -220,16 +220,19 @@ SELECT `fa`.`id`           AS `id`,
        `mt`.`capabilities` AS `capabilities`,
        `mt`.`rotation`     AS `rotation`,
        `mt`.`restrictions` AS `restrictions`,
-       `mt`.`created`      AS `token_created`
-    FROM (((SELECT `ac`.`id`         AS `id`,
-                   `ac`.`action`     AS `action`,
-                   `ac`.`code`       AS `code`,
-                   `ac`.`expires_at` AS `expires_at`
-                FROM `ActionCodes` `ac`
-                WHERE `ac`.`action` = (SELECT `a`.`id`
-                                           FROM `Actions` `a`
-                                           WHERE `a`.`action` = 'recreate_token')) `fa` JOIN `ActionReferencesMytokens` `arm`
-           ON (`arm`.`action_id` = `fa`.`id`)) JOIN `MTokens` `mt` ON (`mt`.`id` = `arm`.`MT_id`));
+       `mt`.`created` AS `token_created`,
+       `u`.`iss`      AS `issuer`
+    FROM ((((SELECT `ac`.`id`         AS `id`,
+                    `ac`.`action`     AS `action`,
+                    `ac`.`code`       AS `code`,
+                    `ac`.`expires_at` AS `expires_at`
+                 FROM `ActionCodes` `ac`
+                 WHERE `ac`.`action` = (SELECT `a`.`id`
+                                            FROM `Actions` `a`
+                                            WHERE `a`.`action` = 'recreate_token')) `fa` JOIN `ActionReferencesMytokens` `arm`
+            ON (`arm`.`action_id` = `fa`.`id`)) JOIN `MTokens` `mt`
+           ON (`mt`.`id` = `arm`.`MT_id`)) JOIN `Users` `u` ON (`mt`.`user_id` = `u`.`id`));
+
 
 ### Procedures
 
