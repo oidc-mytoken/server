@@ -90,7 +90,7 @@ func handleDueMailNotification(
 	case notificationsrepo.ScheduleClassExp:
 		exp_, ok := n.AdditionalInfo[notificationsrepo.AdditionalInfoKeyExpiresAt].(float64)
 		if !ok {
-			logger.Error("'expires_at' missing or wrong time in scheduled notifcation of class 'exp'")
+			logger.Error("'expires_at' missing or wrong time in scheduled notification of class 'exp'")
 			return nil
 		}
 		exp := unixtime.UnixTime(exp_)

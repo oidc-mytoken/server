@@ -1,3 +1,5 @@
+// noinspection GrazieInspection
+
 let notificationsMap = {};
 
 let momIDNotificationsMap = {};

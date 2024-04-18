@@ -6,7 +6,7 @@ service_operator:
   # The name of the service operator
   name: "Example Foundation"
   homepage: "https://example.com"
-  # An email address where users can contact the service operator. It is recommend to use a email list for this
+  # An email address where users can contact the service operator. It is recommended to use an email list for this
   mail_contact: "mytoken@example.com"
   # A dedicated email address for privacy related topics can be given. If you do not have a dedicated mail for privacy, it can be omitted.
   mail_privacy: "mytoken-privacy@example.com"
@@ -57,7 +57,7 @@ database:
   # Enable / Disable cleanup of expired db entries once a day
   schedule_cleanup: true
 
-# The database file for ip geo location. Will be installed by setup to this location.
+# The database file for ip geolocation. Will be installed by setup to this location.
 geo_ip_db_file: "/mytoken/IP2LOCATION-LITE-DB1.IPV6.BIN"
 
 # Configuration for token signing
@@ -86,7 +86,7 @@ logging:
     # The minimal log level that should be logged
     level: "error"
     # Configuration for 'smart' logging. If enabled internal logging is usually logged from the minimal log level as
-    # usual, but if an error occurs an special error log is logged to a dedicated file that contains all log entries
+    # usual, but if an error occurs a special error log is logged to a dedicated file that contains all log entries
     # (with all log levels, also levels that normally wouldn't be logged) for that particular request.
     smart:
       # Unless false smart logging is enabled
@@ -161,7 +161,8 @@ features:
     expires_after: 300 # The time in seconds how long a polling code can be used
     polling_interval: 5 # The interval in seconds the native application should wait between two polling attempts
 
-  # Support for rotation mytokens; users can enable rotation/disable rotation for their mytokens; if enabled a new mytoken will be returned after each usages and old mytokens can no longer be used.
+    # Support for rotation mytokens; users can enable rotation/disable rotation for their mytokens;
+    # if enabled a new mytoken will be returned after each usage and old mytokens can no longer be used.
   token_rotation:
     enabled: true
 

@@ -36,7 +36,7 @@ type NotificationInfoBase struct {
 	UID           uint64        `db:"uid" json:"-"`
 }
 
-// ManagementCodeNotificationInfoResponse extens api.ManagementCodeNotificationInfoResponse with a uid (not for json)
+// ManagementCodeNotificationInfoResponse extens api.ManagementCodeNotificationInfoResponse with an uid (not for json)
 type ManagementCodeNotificationInfoResponse struct {
 	api.ManagementCodeNotificationInfoResponse
 	UID uint64 `db:"uid" json:"-"`
@@ -82,6 +82,8 @@ func GetNotificationsForMT(
 	return
 }
 
+// GetNotificationsAndCalendarsForMT obtains all api.NotificationInfo and api.
+// CalendarInfo for a mytoken from the database
 func GetNotificationsAndCalendarsForMT(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID any,
 ) (notifications []api.NotificationInfo, calendars []api.CalendarInfo, err error) {

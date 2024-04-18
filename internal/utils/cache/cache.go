@@ -10,6 +10,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 )
 
+// Cache is an interface for setting and getting cache entries
 type Cache interface {
 	Get(key string) (any, bool)
 	Set(key string, value any, expiration time.Duration)
@@ -22,6 +23,7 @@ func SetCache(cache Cache) {
 	c = cache
 }
 
+// InitCache initializes the cache according to the configuration
 func InitCache() {
 	if c != nil {
 		return
@@ -72,14 +74,17 @@ type subcache struct {
 	t Type
 }
 
+// Get implements the Cache interface
 func (sc subcache) Get(key string) (any, bool) {
 	return Get(sc.t, key)
 }
 
+// Set implements the Cache interface
 func (sc subcache) Set(key string, value any, expiration time.Duration) {
 	Set(sc.t, key, value, expiration)
 }
 
+// SubCache returns a sub-cache for the given Type
 func SubCache(t Type) Cache {
 	return subcache{t}
 }

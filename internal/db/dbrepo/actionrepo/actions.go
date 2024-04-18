@@ -25,14 +25,14 @@ func VerifyMail(rlog log.Ext1FieldLogger, tx *sqlx.Tx, code string) (verified bo
 				return errors.WithStack(err)
 			}
 			verified = rows == 1
-			return DeleteCode(rlog, tx, code)
+			return deleteCode(rlog, tx, code)
 		},
 	)
 	return
 }
 
-// DeleteCode deletes a code
-func DeleteCode(rlog log.Ext1FieldLogger, tx *sqlx.Tx, code string) error {
+// deleteCode deletes a code
+func deleteCode(rlog log.Ext1FieldLogger, tx *sqlx.Tx, code string) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL ActionCodes_Delete(?)`, code)

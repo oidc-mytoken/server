@@ -34,10 +34,10 @@ func RequireGrantType(rlog log.Ext1FieldLogger, want, got model.GrantType) *mode
 	return nil
 }
 
-// RequireMytoken checks the passed universalmytoken.UniversalMytoken and if needed other request parameters like
+// requireMytoken checks the passed universalmytoken.UniversalMytoken and if needed other request parameters like
 // authorization header and cookie value for a mytoken string. The mytoken string is parsed and if not valid an error
 // model.Response is returned.
-func RequireMytoken(rlog log.Ext1FieldLogger, reqToken *universalmytoken.UniversalMytoken, ctx *fiber.Ctx) (
+func requireMytoken(rlog log.Ext1FieldLogger, reqToken *universalmytoken.UniversalMytoken, ctx *fiber.Ctx) (
 	*mytoken.Mytoken, *model.Response,
 ) {
 	if reqToken.JWT == "" {
@@ -100,7 +100,7 @@ func RequireValidMytoken(
 ) (
 	*mytoken.Mytoken, *model.Response,
 ) {
-	mt, errRes := RequireMytoken(rlog, reqToken, ctx)
+	mt, errRes := requireMytoken(rlog, reqToken, ctx)
 	if errRes != nil {
 		return nil, errRes
 	}
@@ -268,6 +268,8 @@ func RequireMytokensForSameUser(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id1, id2 
 	return nil
 }
 
+// RequireMytokenIsParentOrCapability checks that a mytoken has a required capability or is the parent of another
+// mytoken
 func RequireMytokenIsParentOrCapability(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, capabilityIfParent,
 	capabilityIfNotParent api.Capability,

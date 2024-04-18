@@ -6,7 +6,7 @@ service_operator:
   # The name of the service operator
   name: "Example Foundation"
   homepage: "https://example.com"
-  # An email address where users can contact the service operator. It is recommend to use a email list for this
+  # An email address where users can contact the service operator. It is recommended to use an email list for this
   mail_contact: "mytoken@example.com"
   # A dedicated email address for privacy related topics can be given.
   # If you do not have a dedicated mail for privacy, it can be omitted.
@@ -47,7 +47,7 @@ server:
     always_allow:
       - "127.0.0.1"
 
-# The database file for ip geo location. Will be installed by setup to this location.
+# The database file for ip geolocation. Will be installed by setup to this location.
 geo_ip_db_file: "/IP2LOCATION-LITE-DB1.IPV6.BIN"
 
 # Configuration of the mytoken API
@@ -125,7 +125,7 @@ logging:
     # The minimal log level that should be logged
     level: "error"
     # Configuration for 'smart' logging. If enabled internal logging is usually logged from the minimal log level as
-    # usual, but if an error occurs an special error log is logged to a dedicated file that contains all log entries
+    # usual, but if an error occurs a special error log is logged to a dedicated file that contains all log entries
     # (with all log levels, also levels that normally wouldn't be logged) for that particular request.
     smart:
       # Unless false smart logging is enabled

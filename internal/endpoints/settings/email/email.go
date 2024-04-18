@@ -130,6 +130,7 @@ func changePreferredMimeType(
 	)
 }
 
+// HandlePut handles PUT requests to the email settings endpoint, i.e. it updates email settings
 func HandlePut(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle update email settings request")

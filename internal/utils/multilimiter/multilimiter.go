@@ -10,6 +10,7 @@ import (
 	"github.com/sethvargo/go-limiter/memorystore"
 )
 
+// MultiStore is a type for multiple limiter.Store
 type MultiStore struct {
 	multi []*struct {
 		store            limiter.Store
@@ -18,6 +19,7 @@ type MultiStore struct {
 	mutex sync.RWMutex
 }
 
+// New creates a new *MultiStore
 func New(configs []*memorystore.Config) (*MultiStore, error) {
 	m := &MultiStore{}
 	for _, c := range configs {
@@ -37,6 +39,7 @@ func New(configs []*memorystore.Config) (*MultiStore, error) {
 	return m, nil
 }
 
+// Take implements the limiter.Store interface
 func (m *MultiStore) Take(ctx context.Context, key string) (ok bool, reset time.Time, firstFail bool, err error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -60,6 +63,7 @@ func (m *MultiStore) Take(ctx context.Context, key string) (ok bool, reset time.
 	return
 }
 
+// NewDefaultMultiStore creates a *MultiStore with the default internals
 func NewDefaultMultiStore() (*MultiStore, error) {
 	return New(
 		[]*memorystore.Config{

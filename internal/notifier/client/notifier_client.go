@@ -73,7 +73,7 @@ func (n standaloneNotifier) SendEmailRequest(req pkg.EmailNotificationRequest) {
 
 // SendEmailRequest sends a pkg.EmailNotificationRequest to the integrated notification server
 func (integratedNotifier) SendEmailRequest(req pkg.EmailNotificationRequest) {
-	server.HandleEmailRequest(req)
+	_ = server.HandleEmailRequest(req)
 }
 
 // SendTemplateEmail sends a templated email through the relevant notification server
@@ -91,7 +91,7 @@ func SendTemplateEmail(to, subject string, preferHTML bool, template string, bin
 	}()
 }
 
-// SendICSMail sends a ics calendar invite via email through the relevant notification server
+// SendICSMail sends an ics calendar invite via email through the relevant notification server
 func SendICSMail(to, subject, text string, attachments ...mailing.Attachment) {
 	// skipcq GO-E1007
 	go func() {

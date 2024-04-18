@@ -42,6 +42,7 @@ func ActionsURL(actionCode pkg.ActionInfo) string {
 	return fmt.Sprintf("%s?%s", ActionsEndpoint, p)
 }
 
+// NotificationManagementURL builds notification management url for the passes management code
 func NotificationManagementURL(mc string) string {
 	return utils.CombineURLPath(NotificationManagementEndpoint, mc)
 }

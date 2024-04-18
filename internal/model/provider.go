@@ -7,6 +7,7 @@ import (
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
 )
 
+// Provider is an interface type for OIDC providers
 type Provider interface {
 	Name() string
 	Issuer() string
@@ -21,12 +22,14 @@ type Provider interface {
 	) (string, error)
 }
 
+// AudienceConf is a type for holding configuration about audience
 type AudienceConf struct {
 	RFC8707           bool   `yaml:"use_rfc8707"`
 	RequestParameter  string `yaml:"request_parameter"`
 	SpaceSeparateAuds bool   `yaml:"space_separate_auds"`
 }
 
+// Constants for audience parameters
 const (
 	AudienceParameterAudience = "audience"
 	AudienceParameterResource = "resource"

@@ -8,7 +8,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// OIDCFlow is a enum like type for oidc flows
+// OIDCFlow is an enum like type for oidc flows
 type OIDCFlow int
 
 var oidcFlows = [...]string{api.OIDCFlowAuthorizationCode}

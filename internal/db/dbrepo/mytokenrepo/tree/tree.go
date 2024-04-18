@@ -35,6 +35,7 @@ func (ste *MytokenEntry) Root() bool {
 	return !ste.ParentID.HashValid()
 }
 
+// SingleTokenEntry obtains the MytokenEntry for a single mytoken
 func SingleTokenEntry(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) (m MytokenEntry, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {

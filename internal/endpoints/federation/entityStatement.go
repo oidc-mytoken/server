@@ -15,6 +15,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/server/paths"
 )
 
+// InitEntityConfiguration initializes the entity configuration if enabled
 func InitEntityConfiguration() {
 	if config.Get().Features.Federation.Entity != nil {
 		return
