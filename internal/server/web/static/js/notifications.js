@@ -73,6 +73,11 @@ function getNotificationClassIcon(notificationInfo, class_name) {
             "green": `<i class="fas fa-shield-alt text-success"></i>`,
             "yellow": `<i class="fas fa-shield-alt text-info"></i>`,
             "grey": `<i class="fas fa-shield-alt text-muted"></i>`
+        },
+        "expiration": {
+            "green": `<i class="fas fa-clock text-success"></i>`,
+            "yellow": `<i class="fas fa-clock text-info"></i>`,
+            "grey": `<i class="fas fa-clock text-muted"></i>`
         }
     };
     if (notificationInfo["notification_classes"].includes(class_name)) {
@@ -109,7 +114,8 @@ function notificationsToTable(notifications, details = true, last_td = (n => "")
         let notification_classes_icons = getNotificationClassIcon(n, "AT_creations") +
             getNotificationClassIcon(n, "subtoken_creations") +
             getNotificationClassIcon(n, "setting_changes") +
-            getNotificationClassIcon(n, "security");
+            getNotificationClassIcon(n, "security") +
+            getNotificationClassIcon(n, "expiration");
         let notification_classes_str = n["notification_classes"].join(", ");
         let notification_classes_html = `<span data-toggle="tooltip"
               data-placement="bottom" title=""
@@ -438,7 +444,8 @@ function fillNotificationInfo(notifications, notificationsSet, prefix = "") {
         let notification_classes_icons = getNotificationClassIcon(n, "AT_creations") +
             getNotificationClassIcon(n, "subtoken_creations") +
             getNotificationClassIcon(n, "setting_changes") +
-            getNotificationClassIcon(n, "security");
+            getNotificationClassIcon(n, "security") +
+            getNotificationClassIcon(n, "expiration");
         let notification_classes_str = n["notification_classes"].join(", ");
         let notification_classes_html = `<span data-toggle="tooltip"
               data-placement="bottom" title=""
