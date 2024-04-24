@@ -7,7 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
-	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/endpoints/notification/calendar/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
@@ -17,7 +17,6 @@ type CalendarInfo struct {
 	Name    string `db:"name" json:"name"`
 	ICSPath string `db:"ics_path" json:"ics_path"`
 	ICS     string `db:"ics" json:"-"`
-	pkg.OnlyTokenUpdateRes
 }
 
 // Insert inserts a calendar for the given user (given by the mytoken) into the database
@@ -96,13 +95,7 @@ func calendarInfosToAPICalendarInfos(rlog log.Ext1FieldLogger, tx *sqlx.Tx, in [
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			for _, i := range in {
-				info := api.CalendarInfo{
-					NotificationCalendar: api.NotificationCalendar{
-						Name:    i.Name,
-						ICSPath: i.ICSPath,
-					},
-				}
-				info.SubscribedTokens, err = GetMTsInCalendar(rlog, tx, i.ID)
+				info, err := i.toAPICalendarInfo(rlog, tx)
 				if err != nil {
 					return err
 				}
@@ -112,6 +105,39 @@ func calendarInfosToAPICalendarInfos(rlog log.Ext1FieldLogger, tx *sqlx.Tx, in [
 		},
 	)
 	return
+}
+
+// toAPICalendarInfo transforms a CalendarInfo into an api.CalendarInfo
+func (i CalendarInfo) toAPICalendarInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (
+	out api.CalendarInfo, err error,
+) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			out = api.CalendarInfo{
+				NotificationCalendar: api.NotificationCalendar{
+					Name:    i.Name,
+					ICSPath: i.ICSPath,
+				},
+			}
+			out.SubscribedTokens, err = GetMTsInCalendar(rlog, tx, i.ID)
+			return err
+		},
+	)
+	return
+}
+
+// ToCalendarInfoResponse transforms a CalendarInfo into an pkg.CalendarInfoResponse
+func (i CalendarInfo) ToCalendarInfoResponse(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (
+	*pkg.CalendarInfoResponse, error,
+) {
+	info, err := i.toAPICalendarInfo(rlog, tx)
+	if err != nil {
+		return nil, err
+	}
+	return &pkg.CalendarInfoResponse{
+		CalendarInfo: info,
+	}, nil
+
 }
 
 // List returns a list of all calendar entries for a user

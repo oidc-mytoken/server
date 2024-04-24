@@ -24,3 +24,9 @@ type CalendarListResponse struct {
 	api.CalendarListResponse
 	pkg.OnlyTokenUpdateRes
 }
+
+// CalendarInfoResponse is a type for holding a response with information about a single calendar
+type CalendarInfoResponse struct {
+	api.CalendarInfo
+	pkg.OnlyTokenUpdateRes
+}

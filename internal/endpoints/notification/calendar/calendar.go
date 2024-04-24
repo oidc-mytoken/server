@@ -420,9 +420,14 @@ func HandleAddMytoken(ctx *fiber.Ctx) *model.Response {
 			if momMode {
 				mytokenEvent = api.EventNotificationSubscribedOther
 			}
+			resInfo, err := info.ToCalendarInfoResponse(rlog, tx)
+			if err != nil {
+				res = model.ErrorToInternalServerErrorResponse(err)
+				return err
+			}
 			res = &model.Response{
 				Status:   http.StatusOK,
-				Response: &info,
+				Response: resInfo,
 			}
 			var rollback bool
 			res, rollback = mytokenutils.DoAfterRequestThingsOther(
