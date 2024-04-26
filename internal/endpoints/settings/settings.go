@@ -27,11 +27,12 @@ func InitSettings() {
 	settingsMetadata.GrantTypeEndpoint = utils.CombineURLPath(
 		config.Get().IssuerURL, apiPaths.UserSettingEndpoint, "grants",
 	)
+	settingsMetadata.EmailEndpoint = utils.CombineURLPath(
+		config.Get().IssuerURL, apiPaths.UserSettingEndpoint, "email",
+	)
 }
 
-var settingsMetadata = api.SettingsMetaData{
-	GrantTypeEndpoint: "grants",
-}
+var settingsMetadata = api.SettingsMetaData{}
 
 // HandleSettings handles Metadata requests to the settings endpoint
 func HandleSettings(*fiber.Ctx) *serverModel.Response {
