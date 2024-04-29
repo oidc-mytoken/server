@@ -60,6 +60,9 @@ func DoAfterRequestThingsOther(
 			if res == nil {
 				res = &model.Response{Status: fiber.StatusOK}
 			}
+			if res.Status == fiber.StatusNoContent {
+				res.Status = fiber.StatusOK
+			}
 			res.Cookies = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
 			tokenUpdatable, ok := res.Response.(pkg2.TokenUpdatableResponse)
 			if ok {
