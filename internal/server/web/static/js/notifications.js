@@ -21,6 +21,20 @@ $(function () {
 })
 
 function listNotifications(...next) {
+    let notificationIterator = function (n) {
+        notificationsMap[n["management_code"]] = n;
+        if (n["user_wide"]) {
+            addToArrayMap(momIDNotificationsMap, "user", n, (a, b) => a["notification_id"] === b["notification_id"])
+        } else {
+            let tokens = n["subscribed_tokens"];
+            if (tokens !== undefined) {
+                tokens.forEach(momid => {
+                    addToArrayMap(momIDNotificationsMap, momid, n, (a, b) => a["notification_id"] === b["notification_id"])
+                });
+            }
+        }
+    };
+
     $.ajax({
         type: "GET",
         url: storageGet('notifications_endpoint'),
@@ -28,19 +42,7 @@ function listNotifications(...next) {
             let notifications = res["notifications"] || [];
             notificationsMap = {};
             momIDNotificationsMap = {};
-            notifications.forEach(function (n) {
-                notificationsMap[n["management_code"]] = n;
-                if (n["user_wide"]) {
-                    addToArrayMap(momIDNotificationsMap, "user", n, (a, b) => a["notification_id"] === b["notification_id"])
-                } else {
-                    let tokens = n["subscribed_tokens"];
-                    if (tokens !== undefined) {
-                        tokens.forEach(function (momid) {
-                            addToArrayMap(momIDNotificationsMap, momid, n, (a, b) => a["notification_id"] === b["notification_id"])
-                        });
-                    }
-                }
-            })
+            notifications.forEach(notificationIterator);
             $('#notifications-msg').html(notificationsToTable(notifications, true, n => `<button class="btn" type="button" onclick="showDeleteNotificationModal('${n["management_code"]}')" data-toggle="tooltip" data-placement="right" data-original-title="Delete Notification"><i class="fas fa-trash"></i></button>`));
             $('[data-toggle="tooltip"]').tooltip();
             doNext(...next);
@@ -617,7 +619,7 @@ function getCalendars(callback = undefined, ...next) {
             let cals = res["calendars"] || [];
             cals.forEach(function (c) {
                 let tokens = c["subscribed_tokens"] || [];
-                tokens.forEach(function (momid) {
+                tokens.forEach(momid => {
                     addToArrayMap(momIDCalendarsMap, momid, c, (a, b) => a["ics_path"] === b["ics_path"])
                 });
                 calendarURLs[c["name"]] = c["ics_path"];
