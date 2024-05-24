@@ -31,7 +31,7 @@ require (
 	github.com/sethvargo/go-limiter v1.0.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
-	github.com/valyala/fasthttp v1.52.0
+	github.com/valyala/fasthttp v1.54.0
 	github.com/zachmann/go-oidcfed v0.1.0
 	golang.org/x/crypto v0.23.0
 	golang.org/x/mod v0.17.0
@@ -55,7 +55,7 @@ require (
 	github.com/gofiber/template v1.8.3 // indirect
 	github.com/gofiber/utils v1.1.0 // indirect
 	github.com/google/uuid v1.5.0 // indirect
-	github.com/klauspost/compress v1.17.6 // indirect
+	github.com/klauspost/compress v1.17.7 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
