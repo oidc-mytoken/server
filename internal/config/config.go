@@ -422,14 +422,31 @@ type signingConf struct {
 
 // ProviderConf holds information about a provider
 type ProviderConf struct {
-	Issuer              string              `yaml:"issuer"`
-	ClientID            string              `yaml:"client_id"`
-	ClientSecret        string              `yaml:"client_secret"`
-	Scopes              []string            `yaml:"scopes"`
-	MytokensMaxLifetime int64               `yaml:"mytokens_max_lifetime"`
-	Endpoints           *oauth2x.Endpoints  `yaml:"-"`
-	Name                string              `yaml:"name"`
-	Audience            *model.AudienceConf `yaml:"audience"`
+	Issuer               string                   `yaml:"issuer"`
+	ClientID             string                   `yaml:"client_id"`
+	ClientSecret         string                   `yaml:"client_secret"`
+	Scopes               []string                 `yaml:"scopes"`
+	MytokensMaxLifetime  int64                    `yaml:"mytokens_max_lifetime"`
+	EnforcedRestrictions EnforcedRestrictionsConf `yaml:"enforced_restrictions"`
+	Endpoints            *oauth2x.Endpoints       `yaml:"-"`
+	Name                 string                   `yaml:"name"`
+	Audience             *model.AudienceConf      `yaml:"audience"`
+}
+
+// EnforcedRestrictionsConf is a type for holding configuration for enforced restrictions
+type EnforcedRestrictionsConf struct {
+	Enabled         bool              `yaml:"-"`
+	ClaimName       string            `yaml:"claim"`
+	DefaultTemplate string            `yaml:"default_template"`
+	ForbidOnDefault bool              `yaml:"forbid_on_default"`
+	Mapping         map[string]string `yaml:"mapping"`
+}
+
+func (c *EnforcedRestrictionsConf) validate() error {
+	if c.ClaimName != "" {
+		c.Enabled = true
+	}
+	return nil
 }
 
 // ServiceOperatorConf is type holding the configuration for the service operator of this mytoken instance
@@ -575,6 +592,9 @@ func validate() error {
 	for i, p := range conf.Providers {
 		if p.Issuer == "" {
 			return errors.Errorf("invalid config: provider.issuer not set (Index %d)", i)
+		}
+		if err = p.EnforcedRestrictions.validate(); err != nil {
+			return err
 		}
 		oc, err := oauth2x.NewConfig(context.Get(), p.Issuer)
 		if err != nil {

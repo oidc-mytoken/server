@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"slices"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
@@ -25,6 +26,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/userrepo"
 	"github.com/oidc-mytoken/server/internal/db/notificationsrepo"
+	"github.com/oidc-mytoken/server/internal/db/profilerepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
@@ -215,17 +217,34 @@ func CodeExchange(
 	}
 	authInfo.Restrictions.SetMaxAudiences(audiences) // Update restrictions with correct audiences
 
-	oidcSub, ok := jwtutils.GetStringFromJWT(rlog, oidcTokenRes.IDToken, "sub")
-	if !ok {
+	attrs := []string{
+		"sub",
+		"email",
+		"email_verified",
+	}
+	enforcedRestrictionsConf := provider2.GetEnforcedRestrictionsByIssuer(p.Issuer())
+	if enforcedRestrictionsConf.Enabled {
+		attrs = append(attrs, enforcedRestrictionsConf.ClaimName)
+	}
+	userInfos := userinfo.GetUserAttributes(rlog, oidcTokenRes, p, attrs...)
+	oidcSub := iutils.GetStringFromAnyMap(userInfos, "sub")
+	if oidcSub == "" {
 		return &model.Response{
 			Status:   httpstatus.StatusOIDPError,
 			Response: model.ErrorWithoutDescription("could not get 'subject' from id token"),
 		}
 	}
+	enforcedRestrictions, errRes := getEnforcedRestrictionTemplate(enforcedRestrictionsConf, userInfos)
+	if errRes != nil {
+		return errRes
+	}
 	var ste *mytokenrepo.MytokenEntry
 	if err = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
-			ste, err = createMytokenEntry(rlog, tx, authInfo, oidcTokenRes.RefreshToken, oidcSub, networkData)
+			ste, err = createMytokenEntry(
+				rlog, tx, authInfo, enforcedRestrictions, oidcTokenRes.RefreshToken, oidcSub,
+				networkData,
+			)
 			if err != nil {
 				return err
 			}
@@ -257,7 +276,8 @@ func CodeExchange(
 				return err
 			}
 			if !mailInfo.Mail.Valid {
-				mail, mailVerified := extractMail(rlog, oidcTokenRes, p)
+				mail := iutils.GetStringFromAnyMap(userInfos, "email")
+				mailVerified := iutils.GetBoolFromAnyMap(userInfos, "email_verified")
 				if err = userrepo.SetEmail(rlog, tx, ste.ID, mail, mailVerified); err != nil {
 					return err
 				}
@@ -296,44 +316,92 @@ func CodeExchange(
 	}
 }
 
-func extractMail(rlog log.Ext1FieldLogger, oidcTokenRes *oidcreqres.OIDCTokenResponse, provider model.Provider) (
-	mail string,
-	verified bool,
+func getEnforcedRestrictionTemplate(conf config.EnforcedRestrictionsConf, userInfos map[string]any) (
+	template string,
+	errRes *model.Response,
 ) {
-	var ok bool
-	mail, ok = jwtutils.GetStringFromJWT(rlog, oidcTokenRes.IDToken, "email")
-	if ok {
-		verified = true
+	if !conf.Enabled {
 		return
 	}
-	mail, ok = jwtutils.GetStringFromJWT(rlog, oidcTokenRes.AccessToken, "email")
-	if ok {
-		verified = true
-		return
+	entitlements, found := userInfos[conf.ClaimName]
+	if found {
+		switch entitlements := entitlements.(type) {
+		case string:
+			for k, v := range conf.Mapping {
+				if k == entitlements {
+					return v, nil
+				}
+			}
+		case []any:
+			s := make([]string, len(entitlements))
+			var ok bool
+			for i, e := range entitlements {
+				s[i], ok = e.(string)
+				if !ok {
+					return "", &model.Response{
+						Status: httpstatus.StatusOIDPError,
+						Response: model.OIDCError(
+							"invalid_op_response",
+							fmt.Sprintf("cannot understand type of claim '%s'", conf.ClaimName),
+						),
+					}
+				}
+			}
+			for k, v := range conf.Mapping {
+				if slices.Contains(s, k) {
+					return v, nil
+				}
+			}
+		case []string:
+			for k, v := range conf.Mapping {
+				if slices.Contains(entitlements, k) {
+					return v, nil
+				}
+			}
+		default:
+			return "", &model.Response{
+				Status: httpstatus.StatusOIDPError,
+				Response: model.OIDCError(
+					"invalid_op_response",
+					fmt.Sprintf("cannot understand type of claim '%s'", conf.ClaimName),
+				),
+			}
+		}
 	}
-	userinfoRes, errRes, err := userinfo.Get(provider, oidcTokenRes.AccessToken)
-	if err != nil || errRes != nil {
-		mail = ""
-		return
+	if conf.ForbidOnDefault {
+		return "", &model.Response{
+			Status: fiber.StatusForbidden,
+			Response: api.Error{
+				Error:            api.ErrorStrAccessDenied,
+				ErrorDescription: "you do not have the required attributes to use this service",
+			},
+		}
 	}
-	mail, _ = userinfoRes["email"].(string)
-	verified, _ = userinfoRes["email_verified"].(bool)
-	return
+	return conf.DefaultTemplate, nil
 }
 
 func createMytokenEntry(
-	rlog log.Ext1FieldLogger, tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut, rt,
-	oidcSub string, networkData api.ClientMetaData,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut,
+	enforcedRestrictionsTemplate, rt, oidcSub string, networkData api.ClientMetaData,
 ) (*mytokenrepo.MytokenEntry, error) {
 	var rot *api.Rotation
 	if authFlowInfo.Rotation != nil {
 		rot = &authFlowInfo.Rotation.Rotation
 	}
+	restr := authFlowInfo.Restrictions.Restrictions
+	if enforcedRestrictionsTemplate != "" {
+		parser := profilerepo.NewDBProfileParser(rlog)
+		enforced, err := parser.ParseRestrictionsTemplateByName(enforcedRestrictionsTemplate)
+		if err != nil {
+			return nil, err
+		}
+		restr, _ = restrictions.Tighten(rlog, restrictions.NewRestrictionsFromAPI(enforced), restr)
+	}
 	mt, err := mytoken.NewMytoken(
 		oidcSub,
 		authFlowInfo.Issuer,
 		authFlowInfo.Name,
-		authFlowInfo.Restrictions.Restrictions,
+		restr,
 		authFlowInfo.Capabilities.Capabilities,
 		rot,
 		unixtime.Now(),

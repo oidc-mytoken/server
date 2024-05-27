@@ -294,8 +294,11 @@ github.com/oidc-mytoken/api v0.11.2-0.20240426092102-fa4d583a79ad h1:jFJqhdX7Bqi
 github.com/oidc-mytoken/api v0.11.2-0.20240426092102-fa4d583a79ad/go.mod h1:4QwDXesKKEzbTmH2vENYCVcmdb5/gbDPg3DOm9HQLdg=
 github.com/oidc-mytoken/lib v0.7.1 h1:inqnng/iVU42TU8Cuac7wP8I+JraTYmWMKSXdZvShfU=
 github.com/oidc-mytoken/lib v0.7.1/go.mod h1:LLDCpHCFzyodYLWSf69FDI4cvql/8B2sdKhVjmOBPgI=
-github.com/oidc-mytoken/utils v0.1.3-0.20230731143919-ea5b78243e5d h1:6FH7MuDNSDWxhSzdzim7qeM4XASDb8TL4nytZAZLpBc=
 github.com/oidc-mytoken/utils v0.1.3-0.20230731143919-ea5b78243e5d/go.mod h1:pAUlvF/mYz8CjinCx4iwoWzG514B9EhuCpu7O+afaD8=
+github.com/oidc-mytoken/utils v0.1.3-0.20240527124833-ff78b3b8b7c0 h1:pzJAHtgBnqZa5gtfZ1zdejLU9TXlbTrsF4xr6Au7MN4=
+github.com/oidc-mytoken/utils v0.1.3-0.20240527124833-ff78b3b8b7c0/go.mod h1:uSoQrIe1T+erlQSQQM+hu9jZhWBOltipz6UH9vCgNo8=
+github.com/oidc-mytoken/utils v0.1.3-0.20240527155944-26103774a5aa h1:Ff2ebDPyHdxTIx95G5hD5PuS8o495JIwu4a2lsQ9sX8=
+github.com/oidc-mytoken/utils v0.1.3-0.20240527155944-26103774a5aa/go.mod h1:PH/hvZP5HjEQFF/l/ooPj0MH0yhpqO4sEF9V33+cGL0=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
 github.com/patrickmn/go-cache v2.1.0+incompatible/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
 github.com/philhofer/fwd v1.1.2 h1:bnDivRJ1EWPjUIRXV5KfORO897HTbpFAQddBdE8t7Gw=
