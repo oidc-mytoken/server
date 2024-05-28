@@ -34,14 +34,16 @@
 - Bump go version from 1.19 to 1.22
 - Bump github.com/coreos/go-oidc/v3 from 3.9.0 to 3.10.0
 - Bump github.com/gliderlabs/ssh from 0.3.6 to 0.3.7
-- Bump github.com/go-resty/resty/v2 from 2.11.0 to 2.12.0
+- Bump github.com/go-resty/resty/v2 from 2.11.0 to 2.13.1
 - Bump github.com/go-sql-driver/mysql from 1.8.0 to 1.8.1
 - Bump github.com/gofiber/fiber/v2 from 2.52.2 to 2.52.4
-- Bump github.com/gofiber/template/mustache/v2 from 2.0.9 to 2.0.10
-- Bump golang.org/x/crypto from 0.21.0 to 0.22.0
+- Bump github.com/gofiber/template/mustache/v2 from 2.0.9 to 2.0.11
+- Bump github.com/jmoiron/sqlx from 1.3.5 to 1.4.0
+- Bump github.com/valyala/fasthttp from 1.52.0 to 1.54.0
+- Bump golang.org/x/crypto from 0.21.0 to 0.23.0
 - Bump golang.org/x/mod from 0.16.0 to 0.17.0
-- Bump golang.org/x/oauth2 from 0.18.0 to 0.19.0
-- Bump golang.org/x/term from 0.18.0 to 0.19.0
+- Bump golang.org/x/oauth2 from 0.18.0 to 0.20.0
+- Bump golang.org/x/term from 0.18.0 to 0.20.0
 
 ## mytoken 0.9.2
 
@@ -64,7 +66,7 @@
 
 ### Enhancements
 
-- Improfile includes handling in the webitnerface restrictions editor.
+- Improve includes handling in the webinterface restrictions editor.
 
 ### Dependencies
 
