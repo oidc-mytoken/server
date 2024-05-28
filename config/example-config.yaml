@@ -294,4 +294,22 @@ providers:
       request_parameter: "resource"
       # Defines how multiple audience values in a request are handled;
       space_separate_auds: false
+    # Settings related to restrictions that should be enforced for different user groups depending on an OP attribute
+    enforced_restrictions:
+      # The claim-name on which the decision which restriction template is enforced is based on
+      #claim: "eduperson_entitlements"
+      # If true, indicates that access should be completely forbidden if no value from 'mapping' matches
+      #forbid_on_default: false
+      # The default restriction template that will be enforced for all users where no value from 'mapping' matches;
+      # only used if 'forbid_on_default=false'; the restriction template must be configured on the server or be
+      # provided as json (but as a string)
+      #default_template: web-default
+      # A mapping between claim values and the enforced restriction template; the templates must be configured on the
+      # server or be provided as json (but as a string); an entry matches if the attribute is a string array and the
+      # mapping key is included in the array or the attribute is a single value and equals the mapping key;
+      # the mapping MUST be given in order such that the highest privileged template is listed first
+      mapping:
+      #admin: ""
+      #urn:geant:mytoken:advanced: "advanced"
+      #urn:geant:mytoken:medium: "medium"
 
