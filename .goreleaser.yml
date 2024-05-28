@@ -160,6 +160,7 @@ dockers:
       - server
     image_templates:
       - "oidcmytoken/mytoken-server:unstable"
+      - "oidcmytoken/mytoken-server:prerel"
       - "oidcmytoken/mytoken-server:{{ .Tag }}"
     dockerfile: cmd/mytoken-server/Dockerfile
     build_flag_templates:
@@ -174,6 +175,7 @@ dockers:
       - setup
     image_templates:
       - "oidcmytoken/mytoken-setup:unstable"
+      - "oidcmytoken/mytoken-setup:prerel"
       - "oidcmytoken/mytoken-setup:{{ .Tag }}"
     dockerfile: cmd/mytoken-server/mytoken-setup/Dockerfile
     build_flag_templates:
@@ -188,6 +190,7 @@ dockers:
       - migratedb
     image_templates:
       - "oidcmytoken/mytoken-migratedb:unstable"
+      - "oidcmytoken/mytoken-migratedb:prerel"
       - "oidcmytoken/mytoken-migratedb:{{ .Tag }}"
     dockerfile: cmd/mytoken-server/mytoken-migratedb/Dockerfile
     build_flag_templates:
@@ -202,6 +205,7 @@ dockers:
       - notifier-server
     image_templates:
       - "oidcmytoken/mytoken-notifier-server:unstable"
+      - "oidcmytoken/mytoken-notifier-server:prerel"
       - "oidcmytoken/mytoken-notifier-server:{{ .Tag }}"
     dockerfile: cmd/mytoken-server/mytoken-notifier-server/Dockerfile
     build_flag_templates:
