@@ -391,7 +391,7 @@ func createMytokenEntry(
 	restr := authFlowInfo.Restrictions.Restrictions
 	if enforcedRestrictionsTemplate != "" {
 		parser := profilerepo.NewDBProfileParser(rlog)
-		enforced, err := parser.ParseRestrictionsTemplateByName(enforcedRestrictionsTemplate)
+		enforced, err := parser.ParseRestrictionsTemplate([]byte(enforcedRestrictionsTemplate))
 		if err != nil {
 			return nil, err
 		}
