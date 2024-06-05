@@ -34,7 +34,7 @@ require (
 	github.com/valyala/fasthttp v1.54.0
 	github.com/zachmann/go-oidcfed v0.1.0
 	golang.org/x/crypto v0.23.0
-	golang.org/x/mod v0.17.0
+	golang.org/x/mod v0.18.0
 	golang.org/x/oauth2 v0.20.0
 	golang.org/x/term v0.20.0
 	gopkg.in/yaml.v3 v3.0.1
