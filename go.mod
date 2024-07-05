@@ -36,7 +36,7 @@ require (
 	golang.org/x/crypto v0.23.0
 	golang.org/x/mod v0.17.0
 	golang.org/x/oauth2 v0.20.0
-	golang.org/x/term v0.20.0
+	golang.org/x/term v0.22.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -71,7 +71,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/sys v0.22.0 // indirect
 )
 
 replace github.com/urfave/cli/v2 => github.com/zachmann/cli/v2 v2.3.1-0.20211220102037-d619fd40a704
