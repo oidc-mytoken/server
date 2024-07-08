@@ -140,7 +140,9 @@ func addRecoverMiddleware(s fiber.Router) {
 
 func addHelmetMiddleware(s fiber.Router) {
 	helmetConfig := helmet.ConfigDefault
-	helmetConfig.Next = nextCors
+	helmetConfig.Next = func(ctx *fiber.Ctx) bool {
+		return !nextCors(ctx)
+	}
 	s.Use(helmet.New(helmetConfig))
 }
 
