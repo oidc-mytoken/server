@@ -13,11 +13,11 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
+	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
-	"github.com/gofiber/helmet/v2"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -35,6 +35,16 @@ var staticFS fs.FS
 //go:embed web/static/img/favicon.ico
 var _faviconFS embed.FS
 var faviconFS fs.FS
+
+var corsAllowedPaths = []string{
+	paths.WellknownMytokenConfiguration,
+	paths.WellknownOpenIDConfiguration,
+	paths.GetGeneralPaths().JWKSEndpoint,
+}
+var corsAllowedPrefixes = []string{
+	apipath.Prefix,
+	"/static",
+}
 
 func init() {
 	var err error
@@ -129,40 +139,35 @@ func addRecoverMiddleware(s fiber.Router) {
 }
 
 func addHelmetMiddleware(s fiber.Router) {
-	s.Use(helmet.New())
+	helmetConfig := helmet.ConfigDefault
+	helmetConfig.Next = nextCors
+	s.Use(helmet.New(helmetConfig))
 }
 
 func addRequestIDMiddleware(s fiber.Router) {
 	s.Use(requestid.New())
 }
 
+func nextCors(c *fiber.Ctx) bool {
+	p := c.Path()
+	for _, pre := range corsAllowedPrefixes {
+		if strings.HasPrefix(p, pre) {
+			return false
+		}
+	}
+	for _, pre := range corsAllowedPaths {
+		if p == pre {
+			return false
+		}
+	}
+	return true
+}
+
 func addCorsMiddleware(s fiber.Router) {
-	allowedPaths := []string{
-		paths.WellknownMytokenConfiguration,
-		paths.WellknownOpenIDConfiguration,
-		paths.GetGeneralPaths().JWKSEndpoint,
-	}
-	allowedPrefixes := []string{
-		apipath.Prefix,
-		"/static",
-	}
 	s.Use(
 		cors.New(
 			cors.Config{
-				Next: func(c *fiber.Ctx) bool {
-					p := c.Path()
-					for _, pre := range allowedPrefixes {
-						if strings.HasPrefix(p, pre) {
-							return false
-						}
-					}
-					for _, pre := range allowedPaths {
-						if p == pre {
-							return false
-						}
-					}
-					return true
-				},
+				Next: nextCors,
 			},
 		),
 	)

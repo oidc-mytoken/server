@@ -29,6 +29,10 @@
 - Improved on returning json errors instead of html on api paths
 - When not being logged in and no OP was selected now the 'Create new Mytoken' button in the webinterface is disabled.
 
+### Other
+
+- Changed CORP settings for `/api` and `/static` as this lead to problems with oidc-agent.
+
 ### Dependencies
 
 - Bump go version from 1.19 to 1.22
