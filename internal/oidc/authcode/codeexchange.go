@@ -152,9 +152,8 @@ func exchangeCodeForToken(
 func updateAuthInfoScopesAndAudiences(
 	rlog log.Ext1FieldLogger, authInfo *authcodeinforepo.AuthFlowInfoOut, oidcTokenRes *oidcreqres.OIDCTokenResponse,
 ) {
-	scopes := authInfo.Restrictions.GetScopes()
 	if scopesStr := oidcTokenRes.Scopes; scopesStr != "" {
-		scopes = iutils.SplitIgnoreEmpty(scopesStr, " ")
+		scopes := iutils.SplitIgnoreEmpty(scopesStr, " ")
 		authInfo.Restrictions.SetMaxScopes(scopes)
 	}
 
