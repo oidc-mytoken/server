@@ -189,6 +189,9 @@ func (c *featuresConf) validate() error {
 	if err := c.Notifications.validate(); err != nil {
 		return err
 	}
+	if err := c.SSH.validate(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -228,6 +231,27 @@ type sshConf struct {
 	UseProxyProtocol bool         `yaml:"use_proxy_protocol"`
 	KeyFiles         []string     `yaml:"keys"`
 	PrivateKeys      []ssh.Signer `yaml:"-"`
+}
+
+func (c *sshConf) validate() error {
+	if !c.Enabled {
+		return nil
+	}
+	if len(c.KeyFiles) == 0 {
+		return errors.New("invalid config: ssh feature enabled, but no ssh private key set")
+	}
+	for _, pkf := range c.KeyFiles {
+		pemBytes, err := os.ReadFile(pkf)
+		if err != nil {
+			return errors.Wrap(err, "reading ssh private key")
+		}
+		signer, err := ssh.ParsePrivateKey(pemBytes)
+		if err != nil {
+			return errors.Wrap(err, "parsing ssh private key")
+		}
+		c.PrivateKeys = append(c.PrivateKeys, signer)
+	}
+	return nil
 }
 
 type serverProfilesConf struct {
@@ -558,6 +582,28 @@ func validate() error {
 	if conf == nil {
 		return errors.New("config not set")
 	}
+	if err := validateIssuerURL(); err != nil {
+		return err
+	}
+	if err := configureServerTLS(); err != nil {
+		return err
+	}
+	if err := validateConfigSections(); err != nil {
+		return err
+	}
+	if err := validateProviders(); err != nil {
+		return err
+	}
+	if conf.Features.GuestMode.Enabled {
+		addGuestModeProvider()
+	}
+	if err := validateSigningConfig(); err != nil {
+		return err
+	}
+	return validateWebInterface()
+}
+
+func validateIssuerURL() error {
 	if conf.IssuerURL == "" {
 		return errors.New("invalid config: issuer_url not set")
 	}
@@ -570,6 +616,10 @@ func validate() error {
 		return errors.Wrap(err, "invalid config: issuer_url not valid")
 	}
 	conf.Host = u.Hostname()
+	return nil
+}
+
+func configureServerTLS() error {
 	if conf.Server.TLS.Enabled {
 		if conf.Server.TLS.Key != "" && conf.Server.TLS.Cert != "" {
 			conf.Server.Port = 443
@@ -577,90 +627,92 @@ func validate() error {
 			conf.Server.TLS.Enabled = false
 		}
 	}
-	if err = conf.Logging.validate(); err != nil {
+	return nil
+}
+
+func validateConfigSections() error {
+	if err := conf.Logging.validate(); err != nil {
 		return err
 	}
-	if err = conf.ServiceOperator.validate(); err != nil {
+
+	if err := conf.ServiceOperator.validate(); err != nil {
 		return err
 	}
-	if err = conf.Features.validate(); err != nil {
-		return err
-	}
-	if len(conf.Providers) <= 0 {
+
+	return conf.Features.validate()
+}
+
+func validateProviders() error {
+	if len(conf.Providers) == 0 {
 		return errors.New("invalid config: providers must have at least one entry")
 	}
 	for i, p := range conf.Providers {
-		if p.Issuer == "" {
-			return errors.Errorf("invalid config: provider.issuer not set (Index %d)", i)
-		}
-		if err = p.EnforcedRestrictions.validate(); err != nil {
+		if err := validateProvider(p, i); err != nil {
 			return err
-		}
-		oc, err := oauth2x.NewConfig(context.Get(), p.Issuer)
-		if err != nil {
-			return errors.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
-		}
-		// Endpoints only returns an error if it does discovery but this was already done in NewConfig, so we can ignore
-		// the error value
-		p.Endpoints, _ = oc.Endpoints()
-		if p.ClientID == "" {
-			return errors.Errorf("invalid config: provider.clientid not set (Index %d)", i)
-		}
-		if p.ClientSecret == "" {
-			return errors.Errorf("invalid config: provider.clientsecret not set (Index %d)", i)
-		}
-		if len(p.Scopes) <= 0 {
-			return errors.Errorf("invalid config: provider.scopes not set (Index %d)", i)
-		}
-		if p.Audience == nil {
-			p.Audience = &model.AudienceConf{RFC8707: true}
-		}
-		if p.Audience.RFC8707 {
-			p.Audience.RequestParameter = model.AudienceParameterResource
-			p.Audience.SpaceSeparateAuds = false
-		} else if p.Audience.RequestParameter == "" {
-			p.Audience.RequestParameter = model.AudienceParameterResource
 		}
 		conf.Providers[i] = p
 	}
-	if conf.Features.GuestMode.Enabled {
-		iss := utils2.CombineURLPath(conf.IssuerURL, paths.GetCurrentAPIPaths().GuestModeOP)
-		p := ProviderConf{
-			Issuer: iss,
-			Name:   "Guest Mode",
-			Scopes: []string{"openid"},
-			Endpoints: &oauth2x.Endpoints{
-				Authorization: utils2.CombineURLPath(iss, "auth"),
-				Token:         utils2.CombineURLPath(iss, "token"),
-			},
-		}
-		conf.Providers = append(conf.Providers, p)
+	return nil
+}
+
+func validateProvider(p ProviderConf, i int) error {
+	if p.Issuer == "" {
+		return errors.Errorf("invalid config: provider.issuer not set (Index %d)", i)
 	}
-	if conf.IssuerURL == "" {
-		return errors.New("invalid config: issuer_url not set")
+	if err := p.EnforcedRestrictions.validate(); err != nil {
+		return err
 	}
+	oc, err := oauth2x.NewConfig(context.Get(), p.Issuer)
+	if err != nil {
+		return errors.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
+	}
+	p.Endpoints, _ = oc.Endpoints()
+	if p.ClientID == "" {
+		return errors.Errorf("invalid config: provider.clientid not set (Index %d)", i)
+	}
+	if p.ClientSecret == "" {
+		return errors.Errorf("invalid config: provider.clientsecret not set (Index %d)", i)
+	}
+	if len(p.Scopes) == 0 {
+		return errors.Errorf("invalid config: provider.scopes not set (Index %d)", i)
+	}
+	if p.Audience == nil {
+		p.Audience = &model.AudienceConf{RFC8707: true}
+	}
+	if p.Audience.RFC8707 {
+		p.Audience.RequestParameter = model.AudienceParameterResource
+		p.Audience.SpaceSeparateAuds = false
+	} else if p.Audience.RequestParameter == "" {
+		p.Audience.RequestParameter = model.AudienceParameterResource
+	}
+	return nil
+}
+
+func addGuestModeProvider() {
+	iss := utils2.CombineURLPath(conf.IssuerURL, paths.GetCurrentAPIPaths().GuestModeOP)
+	p := ProviderConf{
+		Issuer: iss,
+		Name:   "Guest Mode",
+		Scopes: []string{"openid"},
+		Endpoints: &oauth2x.Endpoints{
+			Authorization: utils2.CombineURLPath(iss, "auth"),
+			Token:         utils2.CombineURLPath(iss, "token"),
+		},
+	}
+	conf.Providers = append(conf.Providers, p)
+}
+
+func validateSigningConfig() error {
 	if conf.Signing.Mytoken.KeyFile == "" {
 		return errors.New("invalid config: signing keyfile not set")
 	}
 	if conf.Signing.Mytoken.Alg == "" {
 		return errors.New("invalid config: token signing alg not set")
 	}
-	if conf.Features.SSH.Enabled {
-		if len(conf.Features.SSH.KeyFiles) == 0 {
-			return errors.New("invalid config: ssh feature enabled, but no ssh private key set")
-		}
-		for _, pkf := range conf.Features.SSH.KeyFiles {
-			pemBytes, err := os.ReadFile(pkf)
-			if err != nil {
-				return errors.Wrap(err, "reading ssh private key")
-			}
-			signer, err := ssh.ParsePrivateKey(pemBytes)
-			if err != nil {
-				return errors.Wrap(err, "parsing ssh private key")
-			}
-			conf.Features.SSH.PrivateKeys = append(conf.Features.SSH.PrivateKeys, signer)
-		}
-	}
+	return nil
+}
+
+func validateWebInterface() error {
 	if !conf.Features.TokenInfo.Introspect.Enabled && conf.Features.WebInterface.Enabled {
 		return errors.New("web interface requires tokeninfo.introspect to be enabled")
 	}
