@@ -159,47 +159,31 @@ func handleNewMailNotification(
 	var res *model.Response
 	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
-			mtID := mtid.MOMID{MTID: mt.ID}
+			mtID, requiredCapability, welcomeData, errRes, err := prepareNotificationWelcomeData(
+				rlog, tx, mt, req, managementCode,
+			)
+			if err != nil {
+				res = errRes
+				return err
+			}
 			var usedRestriction *restrictions.Restriction
-			welcomeData := map[string]any{
-				"management-url":       routes.NotificationManagementURL(managementCode),
-				"token-name":           mt.Name, // in case of momid req we will replace it later
-				"issuer-url":           config.Get().IssuerURL,
-				"notification_classes": req.NotificationClasses,
-			}
-			requiredCapability := api.CapabilityTokeninfoNotify
-			if req.MomID.HashValid() {
-				mtID = req.MomID
-				if res = auth.RequireMytokensForSameUser(rlog, tx, mtID.MTID, mt.ID); res != nil {
-					return errors.New("rollback")
-				}
-				name, err := mytokenrepohelper.GetMTName(rlog, tx, mtID.MTID)
-				if err != nil {
-					return err
-				}
-				welcomeData["token-name"] = name.String
-				requiredCapability = api.CapabilityNotifyAnyToken
-			}
 			usedRestriction, res = auth.RequireCapabilityAndRestrictionOther(
 				rlog, tx, mt, ctxutils.ClientMetaData(ctx), requiredCapability,
 			)
 			if res != nil {
 				return errors.New("rollback")
 			}
-			if !req.UserWide {
-				welcomeData["mtid"] = mtID.Hash()
-			}
-			if err := notificationsrepo.NewNotification(rlog, tx, req, mtID, managementCode, ""); err != nil {
+			if err = notificationsrepo.NewNotification(rlog, tx, req, mtID, managementCode, ""); err != nil {
 				return err
 			}
 			if req.NotificationClasses.Contains(api.NotificationClassExpiration) {
 				var withClass []notificationsrepo.NotificationInfoBaseWithClass
-				if err := tx.Select(
+				if err = tx.Select(
 					&withClass, `CALL Notifications_GetForManagementCode(?)`, managementCode,
 				); err != nil {
 					return err
 				}
-				if err := notificationsrepo.AddScheduledExpirationNotifications(
+				if err = notificationsrepo.AddScheduledExpirationNotifications(
 					rlog, tx, withClass[0].NotificationInfoBase,
 				); err != nil {
 					return err
@@ -242,6 +226,38 @@ func handleNewMailNotification(
 		res = model.ErrorToInternalServerErrorResponse(err)
 	}
 	return res
+}
+
+func prepareNotificationWelcomeData(
+	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, mt *mytoken.Mytoken,
+	req pkg.SubscribeNotificationRequest, managementCode string,
+) (mtid.MOMID, api.Capability, map[string]interface{}, *model.Response, error) {
+	mtID := mtid.MOMID{MTID: mt.ID}
+	welcomeData := map[string]interface{}{
+		"management-url":       routes.NotificationManagementURL(managementCode),
+		"token-name":           mt.Name,
+		"issuer-url":           config.Get().IssuerURL,
+		"notification_classes": req.NotificationClasses,
+	}
+	requiredCapability := api.CapabilityTokeninfoNotify
+
+	if req.MomID.HashValid() {
+		mtID = req.MomID
+		if errRes := auth.RequireMytokensForSameUser(rlog, tx, mtID.MTID, mt.ID); errRes != nil {
+			return mtID, requiredCapability, welcomeData, errRes, errors.New("rollback")
+		}
+		name, err := mytokenrepohelper.GetMTName(rlog, tx, mtID.MTID)
+		if err != nil {
+			return mtID, requiredCapability, welcomeData, nil, err
+		}
+		welcomeData["token-name"] = name.String
+		requiredCapability = api.CapabilityNotifyAnyToken
+	}
+	if !req.UserWide {
+		welcomeData["mtid"] = mtID.Hash()
+	}
+
+	return mtID, requiredCapability, welcomeData, nil, nil
 }
 
 // HandleNotificationUpdateClasses handles requests to update the NotificationClasses for a notification

@@ -362,19 +362,9 @@ func HandleAddMytoken(ctx *fiber.Ctx) *model.Response {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
 
-	id := mt.ID
-	momMode := req.MomID.Hash() != id.Hash()
-	if momMode {
-		id = req.MomID.MTID
-		if errRes = auth.RequireMytokenIsParentOrCapability(
-			rlog, nil, api.CapabilityTokeninfoNotify,
-			api.CapabilityNotifyAnyToken, mt, id, clientMetadata,
-		); errRes != nil {
-			return errRes
-		}
-		if errRes = auth.RequireMytokensForSameUser(rlog, nil, id, mt.ID); errRes != nil {
-			return errRes
-		}
+	id, momMode, errRes := validateMomMode(rlog, mt, req, clientMetadata)
+	if errRes != nil {
+		return errRes
 	}
 	usedRestriction, errRes := auth.RequireUsableRestrictionOther(rlog, nil, mt, clientMetadata)
 	if errRes != nil {
@@ -441,6 +431,26 @@ func HandleAddMytoken(ctx *fiber.Ctx) *model.Response {
 		},
 	)
 	return res
+}
+
+func validateMomMode(
+	rlog logrus.Ext1FieldLogger, mt *mytoken.Mytoken, req pkg.AddMytokenToCalendarRequest,
+	clientMetadata *api.ClientMetaData,
+) (mtid.MTID, bool, *model.Response) {
+	id := mt.ID
+	momMode := req.MomID.Hash() != id.Hash()
+	if momMode {
+		id = req.MomID.MTID
+		if errRes := auth.RequireMytokenIsParentOrCapability(
+			rlog, nil, api.CapabilityTokeninfoNotify, api.CapabilityNotifyAnyToken, mt, id, clientMetadata,
+		); errRes != nil {
+			return id, momMode, errRes
+		}
+		if errRes := auth.RequireMytokensForSameUser(rlog, nil, id, mt.ID); errRes != nil {
+			return id, momMode, errRes
+		}
+	}
+	return id, momMode, nil
 }
 
 func eventForMytoken(
