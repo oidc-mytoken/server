@@ -7,6 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/utils/utils/jwtutils"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
@@ -20,6 +21,7 @@ import (
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
+	"github.com/oidc-mytoken/server/internal/oidc/oidcreqres"
 	"github.com/oidc-mytoken/server/internal/oidc/refresh"
 	"github.com/oidc-mytoken/server/internal/utils"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
@@ -95,50 +97,57 @@ func HandleAccessTokenRefresh(
 	rlog log.Ext1FieldLogger, mt *mytoken.Mytoken, req request.AccessTokenRequest, networkData api.ClientMetaData,
 	provider model.Provider, usedRestriction *restrictions.Restriction,
 ) *model.Response {
-	rt, rtFound, dbErr := cryptstore.GetRefreshToken(rlog, nil, mt.ID, req.Mytoken.JWT)
-	if dbErr != nil {
-		rlog.Errorf("%s", errorfmt.Full(dbErr))
-		return model.ErrorToInternalServerErrorResponse(dbErr)
-	}
-	if !rtFound {
-		return &model.Response{
-			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError("No refresh token attached"),
-		}
-	}
-
-	scopes, auds := parseScopesAndAudienceToUse(
-		req.Scope, strings.Split(req.Audience, " "), usedRestriction, provider.Scopes(),
-	)
-	oidcRes, oidcErrRes, err := refresh.DoFlowAndUpdateDB(rlog, provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds)
-	if err != nil {
-		rlog.Errorf("%s", errorfmt.Full(err))
-		return model.ErrorToInternalServerErrorResponse(err)
-	}
-	if oidcErrRes != nil {
-		return &model.Response{
-			Status:   oidcErrRes.Status,
-			Response: model.OIDCError(oidcErrRes.Error, oidcErrRes.ErrorDescription),
-		}
-	}
-
-	retScopes := oidcRes.Scopes
-	if retScopes == "" {
-		retScopes = scopes
-	}
-	retAudiences, _ := jwtutils.GetAudiencesFromJWT(rlog, oidcRes.AccessToken)
-	at := accesstokenrepo.AccessToken{
-		Token:     oidcRes.AccessToken,
-		IP:        networkData.IP,
-		Comment:   req.Comment,
-		Mytoken:   mt,
-		Scopes:    utils.SplitIgnoreEmpty(retScopes, " "),
-		Audiences: retAudiences,
-	}
-
+	var errRes *model.Response
 	var tokenUpdate *response.MytokenResponse
-	if err = db.Transact(
+	var oidcRes *oidcreqres.OIDCTokenResponse
+	var retScopes string
+	var retAudiences []string
+	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
+			rt, rtFound, dbErr := cryptstore.GetRefreshToken(rlog, tx, mt.ID, req.Mytoken.JWT)
+			if dbErr != nil {
+				return dbErr
+			}
+			if !rtFound {
+				errRes = &model.Response{
+					Status:   fiber.StatusUnauthorized,
+					Response: model.InvalidTokenError("No refresh token attached"),
+				}
+				return errors.New("rollback")
+			}
+
+			scopes, auds := parseScopesAndAudienceToUse(
+				req.Scope, strings.Split(req.Audience, " "), usedRestriction, provider.Scopes(),
+			)
+			opRes, oidcErrRes, err := refresh.DoFlowAndUpdateDB(
+				rlog, tx, provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds,
+			)
+			if err != nil {
+				return err
+			}
+			if oidcErrRes != nil {
+				errRes = &model.Response{
+					Status:   oidcErrRes.Status,
+					Response: model.OIDCError(oidcErrRes.Error, oidcErrRes.ErrorDescription),
+				}
+				return errors.New("rollback")
+			}
+			oidcRes = opRes
+
+			retScopes = oidcRes.Scopes
+			if retScopes == "" {
+				retScopes = scopes
+			}
+			retAudiences, _ = jwtutils.GetAudiencesFromJWT(rlog, oidcRes.AccessToken)
+			at := accesstokenrepo.AccessToken{
+				Token:     oidcRes.AccessToken,
+				IP:        networkData.IP,
+				Comment:   req.Comment,
+				Mytoken:   mt,
+				Scopes:    utils.SplitIgnoreEmpty(retScopes, " "),
+				Audiences: retAudiences,
+			}
+
 			if err = at.Store(rlog, tx); err != nil {
 				return err
 			}
@@ -163,6 +172,9 @@ func HandleAccessTokenRefresh(
 			return err
 		},
 	); err != nil {
+		if errRes != nil {
+			return errRes
+		}
 		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}

@@ -1,6 +1,7 @@
 package refresh
 
 import (
+	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/utils/httpclient"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -12,20 +13,20 @@ import (
 )
 
 // UpdateChangedRT is a function that should update a refresh token, it takes the old value as well as the new one
-type UpdateChangedRT func(rlog log.Ext1FieldLogger, tokenID mtid.MTID, newRT, mytoken string) error
+type UpdateChangedRT func(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID, newRT, mytoken string) error
 
 // DoFlowWithoutUpdate uses a refresh token to obtain a new access token; if the refresh token changes, this is ignored
 func DoFlowWithoutUpdate(
 	rlog log.Ext1FieldLogger, provider model.Provider, tokenID mtid.MTID, mytoken, rt, scopes string,
 	audiences []string,
 ) (*oidcreqres.OIDCTokenResponse, *oidcreqres.OIDCErrorResponse, error) {
-	return DoFlowAndUpdate(rlog, provider, tokenID, mytoken, rt, scopes, audiences, nil)
+	return DoFlowAndUpdate(rlog, nil, provider, tokenID, mytoken, rt, scopes, audiences, nil)
 }
 
 // DoFlowAndUpdate uses a refresh token to obtain a new access token; if the refresh token changes, the
 // UpdateChangedRT function is used to update the refresh token
 func DoFlowAndUpdate(
-	rlog log.Ext1FieldLogger, provider model.Provider, tokenID mtid.MTID, mytoken, rt, scopes string,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, provider model.Provider, tokenID mtid.MTID, mytoken, rt, scopes string,
 	audiences []string,
 	updateFnc UpdateChangedRT,
 ) (*oidcreqres.OIDCTokenResponse, *oidcreqres.OIDCErrorResponse, error) {
@@ -49,7 +50,7 @@ func DoFlowAndUpdate(
 		return nil, nil, errors.New("could not unmarshal oidc response")
 	}
 	if res.RefreshToken != "" && res.RefreshToken != rt && updateFnc != nil {
-		if err = updateFnc(rlog, tokenID, res.RefreshToken, mytoken); err != nil {
+		if err = updateFnc(rlog, tx, tokenID, res.RefreshToken, mytoken); err != nil {
 			return res, nil, err
 		}
 	}
@@ -59,12 +60,12 @@ func DoFlowAndUpdate(
 // DoFlowAndUpdateDB uses a refresh token to obtain a new access token; if the refresh token changes, it is
 // updated in the database
 func DoFlowAndUpdateDB(
-	rlog log.Ext1FieldLogger, provider model.Provider, tokenID mtid.MTID, mytoken, rt, scopes string,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, provider model.Provider, tokenID mtid.MTID, mytoken, rt, scopes string,
 	audiences []string,
 ) (*oidcreqres.OIDCTokenResponse, *oidcreqres.OIDCErrorResponse, error) {
-	return DoFlowAndUpdate(rlog, provider, tokenID, mytoken, rt, scopes, audiences, updateChangedRTInDB)
+	return DoFlowAndUpdate(rlog, tx, provider, tokenID, mytoken, rt, scopes, audiences, updateChangedRTInDB)
 }
 
-func updateChangedRTInDB(rlog log.Ext1FieldLogger, tokenID mtid.MTID, newRT, mytoken string) error {
-	return cryptstore.UpdateRefreshToken(rlog, nil, tokenID, newRT, mytoken)
+func updateChangedRTInDB(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID, newRT, mytoken string) error {
+	return cryptstore.UpdateRefreshToken(rlog, tx, tokenID, newRT, mytoken)
 }
