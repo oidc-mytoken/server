@@ -179,6 +179,9 @@ func (n *node) transact(rlog log.Ext1FieldLogger, fn func(*sqlx.Tx) error) (bool
 	if err != nil {
 		e := errorfmt.Error(err)
 		switch {
+		case e == "Error 1047 (08S01): WSREP has not yet prepared node for application use":
+			rlog.WithField("host", n.host).Error("WSREP error on node")
+			return true, err
 		case e == "sql: database is closed",
 			strings.HasPrefix(e, "dial tcp"),
 			strings.HasSuffix(e, "closing bad idle connection: EOF"):
