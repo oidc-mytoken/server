@@ -57,7 +57,7 @@ INSERT IGNORE INTO CryptPayloadTypes (payload_type)
 
 RENAME TABLE IF EXISTS RefreshTokens TO CryptStore;
 ALTER TABLE CryptStore
-    CHANGE rt crypt TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;
+    CHANGE rt crypt TEXT NOT NULL;
 ALTER TABLE CryptStore
     ADD COLUMN IF NOT EXISTS payload_type INT UNSIGNED NULL;
 ALTER TABLE CryptStore
