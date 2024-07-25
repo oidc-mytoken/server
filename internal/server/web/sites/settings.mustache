@@ -8,10 +8,12 @@
                    aria-controls="grants" aria-selected="true">Grant Types</a>
             </li>
 
+            {{#notifications}}
             <li class="nav-item">
                 <a class="nav-link" id="notifications-tab" data-toggle="tab" href="#notifications" role="tab"
                    aria-controls="notifications">Notifications</a>
             </li>
+            {{/notifications}}
         </ul>
     </div>
 
@@ -20,9 +22,11 @@
             {{> settings/grants}}
         </div>
 
+        {{#notifications}}
         <div class="tab-pane" id="notifications" role="tabpanel" aria-labelledby="notifications-tab">
             {{> settings/notifications}}
         </div>
+        {{/notifications}}
     </div>
 
 </div>

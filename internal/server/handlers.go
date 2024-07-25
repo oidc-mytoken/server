@@ -38,7 +38,7 @@ func homeBindingData() map[string]interface{} {
 		pp["fed"] = p.OIDCFed
 		providers = append(providers, pp)
 	}
-	return map[string]interface{}{
+	bindingData := map[string]interface{}{
 		templating.MustacheKeyLoggedIn:        true,
 		templating.MustacheKeyRestrictionsGUI: true,
 		templating.MustacheKeyHome:            true,
@@ -59,7 +59,11 @@ func homeBindingData() map[string]interface{} {
 			templating.MustacheKeyCreateWithProfiles: true,
 			templating.MustacheKeyProfiles:           profilesBindingData(),
 		},
-		templating.MustacheSubNotifications: map[string]interface{}{
+		"providers": providers,
+	}
+	if config.Get().Features.Notifications.ICS.Enabled || config.Get().
+		Features.Notifications.Mail.Enabled {
+		bindingData[templating.MustacheSubNotifications] = map[string]interface{}{
 			templating.MustacheKeyPrefix:              "notifications-",
 			templating.MustacheKeyNotificationClasses: webentities.AllWebNotificationClass(),
 			"modify": map[string]any{
@@ -71,9 +75,11 @@ func homeBindingData() map[string]interface{} {
 					templating.MustacheKeyPrefix: "new-notification-modal-",
 				},
 			},
-		},
-		"providers": providers,
+		}
+		bindingData[templating.MustacheKeyNotificationsMailEnabled] = config.Get().Features.Notifications.Mail.Enabled
+		bindingData[templating.MustacheKeyNotificationsCalendarEnabled] = config.Get().Features.Notifications.ICS.Enabled
 	}
+	return bindingData
 }
 
 type templateProfileData struct {
@@ -215,6 +221,12 @@ func handleSettings(ctx *fiber.Ctx) error {
 		templating.MustacheKeyRestrictions:      webentities.WebRestrictions{},
 		templating.MustacheKeyCapabilities:      webentities.AllWebCapabilities(),
 		templating.MustacheKeyPrefix:            "settings-",
+	}
+	if config.Get().Features.Notifications.ICS.Enabled || config.Get().
+		Features.Notifications.Mail.Enabled {
+		binding[templating.MustacheSubNotifications] = true
+		binding[templating.MustacheKeyNotificationsMailEnabled] = config.Get().Features.Notifications.Mail.Enabled
+		binding[templating.MustacheKeyNotificationsCalendarEnabled] = config.Get().Features.Notifications.ICS.Enabled
 	}
 	return ctx.Render("sites/settings", binding, templating.LayoutMain)
 }

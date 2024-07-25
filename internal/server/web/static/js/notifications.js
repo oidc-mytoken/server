@@ -21,6 +21,10 @@ $(function () {
 })
 
 function listNotifications(...next) {
+    if (!email_notifications_supported) {
+        doNext(...next);
+        return;
+    }
     let notificationIterator = function (n) {
         notificationsMap[n["management_code"]] = n;
         if (n["user_wide"]) {
@@ -414,6 +418,9 @@ function $newCalendarInput(prefix = "") {
 }
 
 function fillCalendarInfo(cals, calsSet, prefix = "") {
+    if (!calendar_notifications_supported) {
+        return;
+    }
     if (!calsSet) {
         $tokeninfoCalendarListing(prefix).hideB();
         $tokeninfoNoCalendars(prefix).showB();
@@ -428,6 +435,9 @@ function fillCalendarInfo(cals, calsSet, prefix = "") {
 }
 
 function fillNotificationInfo(notifications, notificationsSet, prefix = "") {
+    if (!email_notifications_supported) {
+        return;
+    }
     if (!notificationsSet || notifications.length === 0) {
         $tokeninfoNotificationsListing(prefix).hideB();
         $tokeninfoNoNotifications(prefix).showB();
@@ -541,12 +551,14 @@ function notificationModal(doesExpire) {
     nots = nots.concat(user_nots);
     fillNotificationAndCalendarInfo(cals, nots, $(prefixId("not-info-body", notificationPrefix)), notificationPrefix);
 
-    if (!doesExpire) {
+    if (!doesExpire || !calendar_notifications_supported) {
         $('#notifications-calendarinfo-alert').hideB();
     } else {
         $('#notifications-calendarinfo-alert').showB();
         notificationModalInitSubscribeCalendars(cals);
-        notificationModalCheckEmailOK();
+        if (email_notifications_supported) {
+            notificationModalCheckEmailOK();
+        }
     }
 
     $notificationsModal.modal();
@@ -612,6 +624,10 @@ let calendarURLs = {};
 let cachedNotificationsTypeData = {};
 
 function getCalendars(callback = undefined, ...next) {
+    if (!calendar_notifications_supported) {
+        doNext(...next);
+        return;
+    }
     $.ajax({
         type: "GET",
         url: storageGet('notifications_endpoint') + "/calendars",
