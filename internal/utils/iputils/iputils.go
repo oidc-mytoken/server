@@ -5,19 +5,24 @@ import (
 	"net"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
+	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/utils/cache"
 )
 
-func getHosts(ip string) []string {
-	cacheHost, found := cache.Get(cache.IPHostCache, ip)
-	if found {
-		return cacheHost.([]string)
+func getHosts(ip string) (hosts []string) {
+	found, err := cache.Get(cache.IPHostCache, ip, &hosts)
+	if err == nil && found {
+		return
 	}
-	hosts, err := net.LookupAddr(ip)
+	hosts, err = net.LookupAddr(ip)
 	if err != nil {
 		return nil
 	}
-	cache.Set(cache.IPHostCache, ip, hosts)
+	if err = cache.Set(cache.IPHostCache, ip, hosts); err != nil {
+		log.WithError(err).Error("error caching hosts")
+	}
 	return hosts
 }
 
@@ -31,21 +36,27 @@ func IPsAreSubSet(ipsA, ipsB []string) bool {
 	return true
 }
 
-func parseIP(ip string) (net.IP, *net.IPNet) {
-	ipA, ipNet, found := cache.GetIPParseResult(ip)
-	if found {
-		return ipA, ipNet
+func parseIP(ip string) model.IPParseResult {
+	result, found, err := cache.GetIPParseResult(ip)
+	if err != nil {
+		log.WithError(err).Error("error getting IP from cache")
 	}
-	var err error
-	ipA, ipNet, err = net.ParseCIDR(ip)
+	if err == nil && found {
+		return result
+	}
+	ipA, ipNet, err := net.ParseCIDR(ip)
 	if err != nil {
 		ipA = net.ParseIP(ip)
 	}
 	if ipNet != nil && !ipA.Equal(ipNet.IP) {
 		ipNet = nil
 	}
-	cache.SetIPParseResult(ip, ipA, ipNet)
-	return ipA, ipNet
+	result.IP = ipA
+	result.IPNet = ipNet
+	if err = cache.SetIPParseResult(ip, result); err != nil {
+		log.WithError(err).Error("error caching IP")
+	}
+	return result
 }
 
 // IPIsIn checks if an ip is in a slice of ip/hosts, it will also check ip subnets
@@ -59,18 +70,18 @@ func IPIsIn(ip string, ipOrHosts []string) bool {
 }
 
 func compareIPToIP(ip, ipp string) bool {
-	ipA, ipNetA := parseIP(ip)
-	ipB, ipNetB := parseIP(ipp)
-	if ipNetA == nil && ipNetB == nil {
-		if ipA.Equal(ipB) {
+	resA := parseIP(ip)
+	resB := parseIP(ipp)
+	if resA.IPNet == nil && resB.IPNet == nil {
+		if resA.IP.Equal(resB.IP) {
 			return true
 		}
-	} else if ipNetA == nil && ipNetB != nil {
-		if ipNetB.Contains(ipA) {
+	} else if resA.IPNet == nil && resB.IPNet != nil {
+		if resB.IPNet.Contains(resA.IP) {
 			return true
 		}
-	} else if ipNetA != nil && ipNetB != nil {
-		if ipNetB.Contains(ipA) && bytes.Compare(ipNetA.Mask, ipNetB.Mask) >= 0 {
+	} else if resA.IPNet != nil && resB.IPNet != nil {
+		if resB.IPNet.Contains(resA.IP) && bytes.Compare(resA.IPNet.Mask, resB.IPNet.Mask) >= 0 {
 			return true
 		}
 	}
@@ -103,18 +114,18 @@ func ipValid(ip net.IP) bool {
 }
 
 func compareIPToIPOrHost(ip, iphost string) bool {
-	ipA, _ := parseIP(ip)
-	ipHostA, _ := parseIP(iphost)
-	if ipValid(ipA) && !ipValid(ipHostA) {
+	res := parseIP(ip)
+	resHost := parseIP(iphost)
+	if ipValid(res.IP) && !ipValid(resHost.IP) {
 		return compareIPToHost(ip, iphost)
 	}
-	if ipValid(ipA) && ipValid(ipHostA) {
+	if ipValid(res.IP) && ipValid(resHost.IP) {
 		return compareIPToIP(ip, iphost)
 	}
-	if !ipValid(ipA) && !ipValid(ipHostA) {
+	if !ipValid(res.IP) && !ipValid(resHost.IP) {
 		return compareHostToHost(ip, iphost)
 	}
-	if !ipValid(ipA) && ipValid(ipHostA) {
+	if !ipValid(res.IP) && ipValid(resHost.IP) {
 		return compareHostToIP(ip, iphost)
 	}
 	return false

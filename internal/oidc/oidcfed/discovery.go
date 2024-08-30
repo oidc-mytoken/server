@@ -6,15 +6,15 @@ import (
 
 	"github.com/oidc-mytoken/api/v0"
 	log "github.com/sirupsen/logrus"
-	oidcfed "github.com/zachmann/go-oidcfed/pkg"
+	oidfed "github.com/zachmann/go-oidfed/pkg"
 
 	"github.com/oidc-mytoken/server/internal/config"
 )
 
-var discoverer = oidcfed.FilterableVerifiedChainsOPDiscoverer{
-	Filters: []oidcfed.OPDiscoveryFilter{
-		oidcfed.OPDiscoveryFilterSupportedGrantTypesIncludes("refresh_token"),
-		oidcfed.OPDiscoveryFilterSupportedScopesIncludes("offline_access"),
+var discoverer = oidfed.FilterableVerifiedChainsOPDiscoverer{
+	Filters: []oidfed.OPDiscoveryFilter{
+		oidfed.OPDiscoveryFilterSupportedGrantTypesIncludes("refresh_token"),
+		oidfed.OPDiscoveryFilterSupportedScopesIncludes("offline_access"),
 	},
 }
 

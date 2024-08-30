@@ -13,8 +13,8 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
+	"github.com/zachmann/go-oidfed/pkg/jwk"
 
 	"github.com/oidc-mytoken/server/internal/config"
 )
@@ -117,7 +117,7 @@ type signingKeys map[KeyUsage]signingKeyMaterial
 type signingKeyMaterial struct {
 	SK   crypto.Signer
 	PK   crypto.PublicKey
-	JWKS jwk.Set
+	JWKS jwk.JWKS
 }
 
 var keys signingKeys
@@ -145,7 +145,7 @@ func GetPublicKey(usage KeyUsage) (pk crypto.PublicKey) {
 }
 
 // GetJWKS returns the jwks
-func GetJWKS(usage KeyUsage) (jwks jwk.Set) {
+func GetJWKS(usage KeyUsage) (jwks jwk.JWKS) {
 	k, ok := keys[usage]
 	if ok {
 		jwks = k.JWKS
@@ -196,25 +196,10 @@ func loadKey(keyfile string, usage KeyUsage, alg jwa.SignatureAlgorithm) {
 	}
 	keyData, found := keys[usage]
 	if !found {
-		keyData = signingKeyMaterial{
-			JWKS: jwk.NewSet(),
-		}
+		keyData = signingKeyMaterial{}
 	}
 	keyData.SK = sk
 	keyData.PK = sk.Public()
-	key, err := jwk.New(keyData.PK)
-	if err != nil {
-		panic(err)
-	}
-	if err = jwk.AssignKeyID(key); err != nil {
-		panic(err)
-	}
-	if err = key.Set(jwk.KeyUsageKey, jwk.ForSignature); err != nil {
-		panic(err)
-	}
-	if err = key.Set(jwk.AlgorithmKey, alg); err != nil {
-		panic(err)
-	}
-	keyData.JWKS.Add(key)
+	keyData.JWKS = jwk.KeyToJWKS(keyData.PK, alg)
 	keys[usage] = keyData
 }

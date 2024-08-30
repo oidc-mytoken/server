@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
+	"github.com/vmihailenco/msgpack/v5"
 
 	"github.com/oidc-mytoken/server/internal/config"
 )
@@ -17,20 +18,24 @@ type redisCache struct {
 }
 
 // Get implements the Cache interface
-func (c redisCache) Get(key string) (any, bool) {
+func (c redisCache) Get(key string, target any) (bool, error) {
 	val, err := c.client.Get(c.ctx, key).Result()
 	if err != nil {
 		if !errors.Is(err, redis.Nil) {
-			log.WithError(err).Error("error while obtaining from cache")
+			return false, errors.Wrap(err, "error while obtaining from cache")
 		}
-		return nil, false
+		return false, nil
 	}
-	return val, true
+	return true, msgpack.Unmarshal([]byte(val), target)
 }
 
 // Set implements the Cache interface
-func (c redisCache) Set(key string, value any, expiration time.Duration) {
-	c.client.Set(c.ctx, key, value, expiration)
+func (c redisCache) Set(key string, value any, expiration time.Duration) error {
+	data, err := msgpack.Marshal(value)
+	if err != nil {
+		return err
+	}
+	return c.client.Set(c.ctx, key, data, expiration).Err()
 }
 
 func initRedisCache() {

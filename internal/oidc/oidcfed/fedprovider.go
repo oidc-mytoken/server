@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
-	fed "github.com/zachmann/go-oidcfed/pkg"
+	fed "github.com/zachmann/go-oidfed/pkg"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model"
