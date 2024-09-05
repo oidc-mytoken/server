@@ -99,4 +99,4 @@ deploy-prerel:
     - cp $KNOWN_HOSTS /root/.ssh/known_hosts
     - cp $DEPLOYMENT_SSH_KEY /root/.ssh/id_ed25519 && chmod 0600 /root/.ssh/id_ed25519
   script:
-    - ssh mytoken.data.kit.edu
+    - ssh -4 mytoken.data.kit.edu
