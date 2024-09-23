@@ -33,6 +33,9 @@
 
 - Fixed an issue with parallel access to refresh tokens if token rotation is used; this problem could for example
   occur with EGI-checkin.
+- Fixed unwanted behavior: If a profile was used and changes to the mytoken
+  spec would be made in the consent screen that would narrow it down, the
+  profile would still be applied.
 
 ### Other
 
