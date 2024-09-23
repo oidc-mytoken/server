@@ -12,7 +12,7 @@ import (
 	"github.com/oidc-mytoken/utils/utils/fileutil"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	oidcfed "github.com/zachmann/go-oidcfed/pkg"
+	oidfed "github.com/zachmann/go-oidfed/pkg"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v3"
 
@@ -530,12 +530,12 @@ func (so *ServiceOperatorConf) validate() error {
 }
 
 type federationConf struct {
-	Enabled                     bool                    `yaml:"enabled"`
-	TrustAnchors                oidcfed.TrustAnchors    `yaml:"trust_anchors"`
-	AuthorityHints              []string                `yaml:"authority_hints"`
-	EntityConfigurationLifetime int64                   `yaml:"entity_configuration_lifetime"`
-	Signing                     signingConf             `yaml:"signing"`
-	Entity                      *oidcfed.FederationLeaf `yaml:"-"`
+	Enabled                     bool                   `yaml:"enabled"`
+	TrustAnchors                oidfed.TrustAnchors    `yaml:"trust_anchors"`
+	AuthorityHints              []string               `yaml:"authority_hints"`
+	EntityConfigurationLifetime int64                  `yaml:"entity_configuration_lifetime"`
+	Signing                     signingConf            `yaml:"signing"`
+	Entity                      *oidfed.FederationLeaf `yaml:"-"`
 }
 
 func (f *federationConf) validate() (err error) {

@@ -1,7 +1,9 @@
+{{#notifications}}
 <div id="settings-notifications">
     <table class="table table-secondary">
         <tbody>
 
+        {{#notifications-mail-enabled}}
         <tr>
             <td style="width: 10%;"><h3 class="d-flex justify-content-between">Email</h3></td>
             <td class="smaller-lead">Manage settings about your notification email address.</td>
@@ -19,7 +21,9 @@
                 <div>{{> settings/notifications-email }}</div>
             </td>
         </tr>
+        {{/notifications-mail-enabled}}
 
+        {{#notifications-calendar-enabled}}
         <tr>
             <td style="width: 10%;"><h3 class="d-flex justify-content-between">Calendars</h3></td>
             <td class="smaller-lead">Manage your notification calendars.</td>
@@ -37,7 +41,9 @@
                 <div>{{> notifications/calendar-listing }}</div>
             </td>
         </tr>
+        {{/notifications-calendar-enabled}}
 
         </tbody>
     </table>
 </div>
+{{/notifications}}

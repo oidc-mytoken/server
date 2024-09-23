@@ -4,6 +4,7 @@
             aria-expanded="false" aria-controls="{{prefix}}subscribe-calendar-content">
         <i class="fas fa-calendar-alt"></i> Add to calendar
     </button>
+    {{#notifications-mail-enabled}}
     <button class="btn btn-info col mr-3 collapsed" data-toggle="collapse"
             data-target="#{{prefix}}subscribe-entry-content"
             aria-expanded="false" aria-controls="{{prefix}}subscribe-entry-content">
@@ -11,6 +12,7 @@
         <i class="fas fa-calendar-alt"></i>
         Send Calendar invitation
     </button>
+    {{/notifications-mail-enabled}}
 </div>
 
 <div id="{{prefix}}subscribe-contents">

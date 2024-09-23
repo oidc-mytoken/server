@@ -152,11 +152,14 @@ function _tokenTreeToHTML(tree, deleteClass, depth, parentID = "0", includeBtns 
     let isExpired = (expires_at !== 0 && new Date(expires_at * 1000) < new Date());
     let historyBtn = `<button id="history-${token['mom_id']}" class="btn ml-2" type="button" onclick="showHistoryForID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Event History' : 'Sign in to show event history.'}"><i class="fas fa-history"></i></button>`;
     let deleteBtn = `<button id="revoke-${token['mom_id']}" class="btn ${deleteClass}" type="button" onclick="startRevocateID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Revoke Token' : 'Sign in to revoke token.'}"><i class="fas fa-trash"></i></button>`;
-    let notificationsBtn = `<button id="notify-${token['mom_id']}" class="btn ${isExpired ? 'text-muted' : ''}" type="button" onclick="notificationModal.call(this, ${expires_at !== 0})" ${!loggedIn || isExpired ? "disabled" : ""}`;
-    if (!isExpired) {
-        notificationsBtn += ` data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Manage notifications' : 'Sign in to manage notifications.'}"`;
+    let notificationsBtn = "";
+    if (calendar_notifications_supported || email_notifications_supported) {
+        notificationsBtn = `<button id="notify-${token['mom_id']}" class="btn ${isExpired ? 'text-muted' : ''}" type="button" onclick="notificationModal.call(this, ${expires_at !== 0})" ${!loggedIn || isExpired ? "disabled" : ""}`;
+        if (!isExpired) {
+            notificationsBtn += ` data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Manage notifications' : 'Sign in to manage notifications.'}"`;
+        }
+        notificationsBtn += `><i class="fas fa-bell"></i></butoton>`;
     }
-    notificationsBtn += `><i class="fas fa-bell"></i></butoton>`;
     tableEntries = `<tr id="${thisID}" parent-id="${parentID}" mom-id="${token['mom_id']}" class="${depth > 0 ? 'd-none' : ''} ${isExpired ? 'text-muted' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td class="actions-td">${includeBtns ? historyBtn + notificationsBtn + deleteBtn : ""}</td></tr>` + tableEntries;
     return tableEntries
 }

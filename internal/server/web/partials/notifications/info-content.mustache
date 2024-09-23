@@ -1,9 +1,13 @@
 <div id="{{prefix}}not-info-body" class="{{#collapse.Notifications}}collapse{{/collapse.Notifications}}">
 
-    <div>
-        {{>notifications/info-content-notifications}}
-    </div>
-    <div>
-        {{>notifications/info-content-calendars}}
-    </div>
+    {{#notifications-mail-enabled}}
+        <div>
+            {{>notifications/info-content-notifications}}
+        </div>
+    {{/notifications-mail-enabled}}
+    {{#notifications-calendar-enabled}}
+        <div>
+            {{>notifications/info-content-calendars}}
+        </div>
+    {{/notifications-calendar-enabled}}
 </div>

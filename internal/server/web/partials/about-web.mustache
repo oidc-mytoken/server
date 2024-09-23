@@ -57,6 +57,17 @@
                 </button>
                 {{/logged-in}}
             </li>
+            {{#notifications-mail-enabled}}
+            <li>
+                {{#logged-in}}
+                <button role="button" class="btn btn-link" onclick="$('#notifications-tab').click()">
+                {{/logged-in}}
+                Manage notifications
+                {{#logged-in}}
+                </button>
+                {{/logged-in}}
+            </li>
+            {{/notifications-mail-enabled}}
             <li>
                 {{#logged-in}}
                 <button role="button" class="btn btn-link" onclick="document.getElementById('settings-link').click()">

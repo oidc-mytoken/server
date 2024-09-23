@@ -38,7 +38,7 @@ func homeBindingData() map[string]interface{} {
 		pp["fed"] = p.OIDCFed
 		providers = append(providers, pp)
 	}
-	return map[string]interface{}{
+	bindingData := map[string]interface{}{
 		templating.MustacheKeyLoggedIn:        true,
 		templating.MustacheKeyRestrictionsGUI: true,
 		templating.MustacheKeyHome:            true,
@@ -59,7 +59,11 @@ func homeBindingData() map[string]interface{} {
 			templating.MustacheKeyCreateWithProfiles: true,
 			templating.MustacheKeyProfiles:           profilesBindingData(),
 		},
-		templating.MustacheSubNotifications: map[string]interface{}{
+		"providers": providers,
+	}
+	if config.Get().Features.Notifications.ICS.Enabled || config.Get().
+		Features.Notifications.Mail.Enabled {
+		bindingData[templating.MustacheSubNotifications] = map[string]interface{}{
 			templating.MustacheKeyPrefix:              "notifications-",
 			templating.MustacheKeyNotificationClasses: webentities.AllWebNotificationClass(),
 			"modify": map[string]any{
@@ -71,9 +75,11 @@ func homeBindingData() map[string]interface{} {
 					templating.MustacheKeyPrefix: "new-notification-modal-",
 				},
 			},
-		},
-		"providers": providers,
+		}
+		bindingData[templating.MustacheKeyNotificationsMailEnabled] = config.Get().Features.Notifications.Mail.Enabled
+		bindingData[templating.MustacheKeyNotificationsCalendarEnabled] = config.Get().Features.Notifications.ICS.Enabled
 	}
+	return bindingData
 }
 
 type templateProfileData struct {
@@ -82,31 +88,33 @@ type templateProfileData struct {
 }
 
 // getWebProfileData returns the cached profile data for one of the profile types
-func getWebProfileData(t string) ([]templateProfileData, bool) {
-	data, found := cache.Get(cache.WebProfiles, t)
-	if !found {
-		return nil, found
+func getWebProfileData(t string) (data []templateProfileData, ok bool) {
+	found, err := cache.Get(cache.WebProfiles, t, &data)
+	if err != nil {
+		log.WithError(err).Error("failed to fetch web profile data")
 	}
-	d, ok := data.([]templateProfileData)
-	return d, ok
+	if err != nil || !found {
+		ok = false
+	}
+	return
 }
 
 func profilesBindingData() map[string]interface{} {
-	var ok bool
-	var err error
 	var groups []string
 
-	g, groupsFound := cache.Get(cache.WebProfiles, "groups")
-	if groupsFound {
-		groups, ok = g.([]string)
-	}
-	if !groupsFound || !ok {
+	groupsFound, err := cache.Get(cache.WebProfiles, "groups", &groups)
+	if err != nil || !groupsFound {
 		groups, err = profilerepo.GetGroups(log.StandardLogger(), nil)
 		if err != nil {
 			log.WithError(err).Error("error while retrieving profile groups for webinterface binding data")
 			return nil
 		}
-		cache.Set(cache.WebProfiles, "groups", groups, time.Hour)
+		if err = cache.Set(
+			cache.WebProfiles, "groups", groups,
+			time.Hour,
+		); err != nil {
+			log.WithError(err).Error("error while setting profile groups for webinterface binding data")
+		}
 	}
 
 	profileTypes := map[string]func(log.Ext1FieldLogger, *sqlx.Tx, string) (profiles []api.Profile, err error){
@@ -215,6 +223,12 @@ func handleSettings(ctx *fiber.Ctx) error {
 		templating.MustacheKeyRestrictions:      webentities.WebRestrictions{},
 		templating.MustacheKeyCapabilities:      webentities.AllWebCapabilities(),
 		templating.MustacheKeyPrefix:            "settings-",
+	}
+	if config.Get().Features.Notifications.ICS.Enabled || config.Get().
+		Features.Notifications.Mail.Enabled {
+		binding[templating.MustacheSubNotifications] = true
+		binding[templating.MustacheKeyNotificationsMailEnabled] = config.Get().Features.Notifications.Mail.Enabled
+		binding[templating.MustacheKeyNotificationsCalendarEnabled] = config.Get().Features.Notifications.ICS.Enabled
 	}
 	return ctx.Render("sites/settings", binding, templating.LayoutMain)
 }

@@ -30,6 +30,13 @@ ALTER TABLE Users
 ALTER TABLE Users
     ADD IF NOT EXISTS prefer_html_mail BOOL DEFAULT 1 NOT NULL;
 
+ALTER TABLE AccessTokens
+    MODIFY COLUMN ip_created VARCHAR(42) NOT NULL;
+ALTER TABLE MTokens
+    MODIFY COLUMN ip_created VARCHAR(42) NOT NULL;
+ALTER TABLE MT_Events
+    MODIFY COLUMN ip VARCHAR(42) NOT NULL;
+
 CREATE TABLE IF NOT EXISTS ActionReferencesUser
 (
     action_id BIGINT UNSIGNED NOT NULL, uid BIGINT UNSIGNED NOT NULL, CONSTRAINT ActionReferencesUser_FK
@@ -237,6 +244,18 @@ SELECT `fa`.`id`           AS `id`,
 ### Procedures
 
 DELIMITER ;;
+
+CREATE OR REPLACE PROCEDURE EncryptionKeys_GetRTKeyForMT(IN MTID VARCHAR(128))
+BEGIN
+    DECLARE rtid BIGINT UNSIGNED;
+    DECLARE keyid BIGINT UNSIGNED;
+    SELECT rt_id FROM MTokens WHERE id = MTID INTO rtid;
+    SELECT key_id FROM RT_EncryptionKeys WHERE MT_id = MTID AND rt_id = rtid INTO keyid;
+    SELECT *
+        FROM (SELECT ek.encryption_key, ek.id AS key_id FROM EncryptionKeys ek WHERE ek.id = keyid) encr
+                 JOIN
+             (SELECT crypt AS refresh_token, id AS rt_id FROM CryptStore WHERE id = rtid FOR UPDATE) rt;
+END;;
 
 CREATE OR REPLACE PROCEDURE ActionCodes_AddRecreateToken(IN MTID VARCHAR(128), IN CODE_ VARCHAR(128))
 BEGIN

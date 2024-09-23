@@ -90,7 +90,7 @@ func handleRecreate(ctx *fiber.Ctx, code string) (err error) {
 	if !found {
 		return ctxutils.RenderErrorPage(ctx, fiber.StatusNotFound, "recreation code not found")
 	}
-	return ctx.Redirect(fmt.Sprintf("/home?r=%s#mt", baseRequest), fiber.StatusSeeOther)
+	return ctx.Redirect(fmt.Sprintf("/?r=%s#mt", baseRequest), fiber.StatusSeeOther)
 }
 
 func handleVerifyEmail(ctx *fiber.Ctx, code string) error {

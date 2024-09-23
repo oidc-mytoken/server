@@ -5,7 +5,6 @@ import (
 	"time"
 
 	utils2 "github.com/oidc-mytoken/utils/utils"
-	gocache "github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -44,7 +43,7 @@ func (p Paths) Prefix(prefix string) (out Paths) {
 // InitStandalone initializes a standalone notifier server
 func InitStandalone(mailConf config.MailNotificationConf) {
 	initCommon(mailConf)
-	cache.SetCache(gocache.New(3*time.Minute, 5*time.Minute))
+	cache.SetCache(cache.NewInternalCache(3 * time.Minute))
 	startServer()
 }
 
@@ -66,12 +65,12 @@ func HandleEmailRequest(req pkg.EmailNotificationRequest) error {
 		return err
 	}
 	if sID != "" {
-		if _, found := cache.Get(cache.ScheduledNotifications, sID); found {
+		if found, err := cache.Get(cache.ScheduledNotifications, sID, &struct{}{}); err == nil && found {
 			return nil
 		} else {
 			returnError = func(err error) error {
 				if err == nil {
-					cache.Set(cache.ScheduledNotifications, sID, struct{}{})
+					return cache.Set(cache.ScheduledNotifications, sID, struct{}{})
 				}
 				return err
 			}

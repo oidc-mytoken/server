@@ -22,8 +22,9 @@ privileges.
 `Mytoken` focuses on integration with the command line through our
 [command line client](https://github.com/oidc-mytoken/client)
 <!-- and [oidc-agent](https://github.com/indigo-dc/oidc-agent) -->
-but also offers a web interface. A demo instance is available
+but also offers a web interface. A demo instance (using the prerel branch) is available
 at  [https://mytoken.data.kit.edu/](https://mytoken.data.kit.edu/).
+For Production use [https://mytok.eu](https://mytok.eu)
 `Mytoken` is a central web service with the goal to easily obtain OpenID Connect access tokens across devices.
 
 Documentation is available at [https://mytoken-docs.data.kit.edu/](https://mytoken-docs.data.kit.edu/).

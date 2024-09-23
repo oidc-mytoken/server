@@ -89,7 +89,7 @@ prerelease:
   after_script:
     - curl -d "repo=github.com/oidc-mytoken/server" https://goreportcard.com/checks
 
-deploy-dev:
+deploy-prerel:
   stage: deploy
   only:
     refs:
@@ -99,4 +99,4 @@ deploy-dev:
     - cp $KNOWN_HOSTS /root/.ssh/known_hosts
     - cp $DEPLOYMENT_SSH_KEY /root/.ssh/id_ed25519 && chmod 0600 /root/.ssh/id_ed25519
   script:
-    - ssh mytoken-dev.vm.fedcloud.eu
+    - ssh -4 mytoken.data.kit.edu

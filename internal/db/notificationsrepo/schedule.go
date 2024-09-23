@@ -191,38 +191,47 @@ func DeleteScheduledExpirationNotificationsForMT(
 func AddScheduledExpirationNotifications(rlog log.Ext1FieldLogger, tx *sqlx.Tx, info NotificationInfoBase) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
+			var err error
 			if info.UserWide {
-				tokens, err := tree.AllTokensByUID(rlog, tx, info.UID)
-				if err != nil {
-					return err
-				}
-				for _, mt := range tokens {
-					if err = ScheduleExpirationNotifications(
-						rlog, tx, info.NotificationID, mt.ID, mt.ExpiresAt, mt.CreatedAt,
-					); err != nil {
-						return err
-					}
-				}
+				err = scheduleUserWideNotifications(rlog, tx, info)
 			} else {
-				var mtids []mtid.MTID
-				if err := tx.Select(
-					&mtids, `CALL Notifications_GetMTsForNotification(?)`, info.NotificationID,
-				); err != nil {
-					return err
-				}
-				for _, mtID := range mtids {
-					tokenEntry, err := tree.SingleTokenEntry(rlog, tx, mtID)
-					if err != nil {
-						return err
-					}
-					if err = ScheduleExpirationNotifications(
-						rlog, tx, info.NotificationID, mtID, tokenEntry.ExpiresAt, tokenEntry.CreatedAt,
-					); err != nil {
-						return err
-					}
-				}
+				err = scheduleTokenWideNotifications(rlog, tx, info)
 			}
-			return nil
+			return err
 		},
 	)
+}
+
+func scheduleUserWideNotifications(rlog log.Ext1FieldLogger, tx *sqlx.Tx, info NotificationInfoBase) error {
+	tokens, err := tree.AllTokensByUID(rlog, tx, info.UID)
+	if err != nil {
+		return err
+	}
+	for _, mt := range tokens {
+		if err = ScheduleExpirationNotifications(
+			rlog, tx, info.NotificationID, mt.ID, mt.ExpiresAt, mt.CreatedAt,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func scheduleTokenWideNotifications(rlog log.Ext1FieldLogger, tx *sqlx.Tx, info NotificationInfoBase) error {
+	var mtids []mtid.MTID
+	if err := tx.Select(&mtids, `CALL Notifications_GetMTsForNotification(?)`, info.NotificationID); err != nil {
+		return err
+	}
+	for _, mtID := range mtids {
+		tokenEntry, err := tree.SingleTokenEntry(rlog, tx, mtID)
+		if err != nil {
+			return err
+		}
+		if err = ScheduleExpirationNotifications(
+			rlog, tx, info.NotificationID, mtID, tokenEntry.ExpiresAt, tokenEntry.CreatedAt,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
 }

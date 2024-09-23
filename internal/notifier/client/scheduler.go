@@ -121,7 +121,7 @@ func handleDueMailNotification(
 		}
 		bindingData = map[string]any{
 			"expires_at":                     exp.Time().String(),
-			"token-name":                     name,
+			"token-name":                     name.String,
 			"mom_id":                         n.MTID.Hash(),
 			"management-url":                 routes.NotificationManagementURL(n.ManagementCode),
 			"recreate-url":                   recreateURL,

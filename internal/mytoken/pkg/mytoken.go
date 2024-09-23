@@ -80,7 +80,7 @@ func (mt *Mytoken) verifySubject() bool {
 
 // VerifyCapabilities verifies that this Mytoken has the required capabilities
 func (mt *Mytoken) VerifyCapabilities(required ...api.Capability) bool {
-	if mt.Capabilities == nil || len(mt.Capabilities) == 0 {
+	if len(mt.Capabilities) == 0 {
 		return false
 	}
 	for _, c := range required {
