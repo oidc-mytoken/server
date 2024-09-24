@@ -65,8 +65,8 @@ func newDBProfileReader(rlog log.Ext1FieldLogger) *dbProfileReader {
 }
 
 // NewDBProfileParser creates a new profile.ProfileParser that can read profiles from the db
-func NewDBProfileParser(rlog log.Ext1FieldLogger) *profile.ProfileParser {
-	return profile.NewProfileParser(newDBProfileReader(rlog))
+func NewDBProfileParser(rlog log.Ext1FieldLogger) *profile.Parser {
+	return profile.NewParser(newDBProfileReader(rlog))
 }
 
 func read(

@@ -20,7 +20,7 @@ import (
 
 // SimpleProvider implements the Provider interface for normal OIDC providers with a registered client
 type SimpleProvider struct {
-	config.ProviderConf
+	*config.ProviderConf
 }
 
 // Name implements the Provider interface
