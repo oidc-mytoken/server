@@ -460,15 +460,27 @@ type ProviderConf struct {
 // EnforcedRestrictionsConf is a type for holding configuration for enforced restrictions
 type EnforcedRestrictionsConf struct {
 	Enabled         bool              `yaml:"-"`
-	ClaimName       string            `yaml:"claim"`
+	ClaimSources    map[string]string `yaml:"claim_sources"`
 	DefaultTemplate string            `yaml:"default_template"`
 	ForbidOnDefault bool              `yaml:"forbid_on_default"`
+	HelpHTMLText    string            `yaml:"help_html"`
+	HelpHTMLFile    string            `yaml:"help_html_file"`
 	Mapping         map[string]string `yaml:"mapping"`
 }
 
 func (c *EnforcedRestrictionsConf) validate() error {
-	if c.ClaimName != "" {
+	if len(c.ClaimSources) >= 1 {
 		c.Enabled = true
+	}
+	if c.HelpHTMLFile != "" {
+		content, err := os.ReadFile(c.HelpHTMLFile)
+		if err != nil {
+			return errors.Wrapf(
+				err,
+				"error reading enforced restrictions help html file '%s'", c.HelpHTMLFile,
+			)
+		}
+		c.HelpHTMLText = string(content)
 	}
 	return nil
 }

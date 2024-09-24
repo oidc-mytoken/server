@@ -10,16 +10,16 @@ import (
 	"github.com/oidc-mytoken/server/internal/oidc/oidcreqres"
 )
 
-// Get obtains the userinfo response from the model.Provider's userinfo endpoint
+// Get obtains the userinfo response from the passed endpoint
 func Get(
-	provider model.Provider, at string,
+	endpoint string, at string,
 ) (map[string]any, *oidcreqres.OIDCErrorResponse, error) {
 
 	httpRes, err := httpclient.Do().R().
 		SetAuthToken(at).
 		SetResult(make(map[string]any)).
 		SetError(&oidcreqres.OIDCErrorResponse{}).
-		Get(provider.Endpoints().Userinfo)
+		Get(endpoint)
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
@@ -34,8 +34,16 @@ func Get(
 	return res, nil, nil
 }
 
+// GetFromProvider obtains the userinfo response from the model.Provider's
+// userinfo endpoint
+func GetFromProvider(
+	provider model.Provider, at string,
+) (map[string]any, *oidcreqres.OIDCErrorResponse, error) {
+	return Get(provider.Endpoints().Userinfo, at)
+}
+
 func getNonNilUserInfoMap(provider model.Provider, at string) map[string]any {
-	userinfoRes, errRes, err := Get(provider, at)
+	userinfoRes, errRes, err := GetFromProvider(provider, at)
 	if err == nil && errRes == nil {
 		return userinfoRes
 	}

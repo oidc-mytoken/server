@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"slices"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
@@ -41,40 +42,48 @@ import (
 // CodeExchange performs an OIDC code exchange, creates the mytoken, and stores it in the database.
 func CodeExchange(
 	rlog log.Ext1FieldLogger, oState *state.State, code string, networkData api.ClientMetaData,
-) *model.Response {
+) (*model.Response, string) {
 	rlog.Debug("Handle code exchange")
 	authInfo, errRes := fetchAuthInfo(rlog, oState)
 	if errRes != nil {
-		return errRes
+		return errRes, ""
 	}
 	p, errRes := fetchProvider(authInfo.Issuer)
 	if errRes != nil {
-		return errRes
+		return errRes, ""
 	}
 	oidcTokenRes, errRes := exchangeCodeForToken(rlog, p, authInfo, code)
 	if errRes != nil {
-		return errRes
+		return errRes, ""
 	}
 
 	updateAuthInfoScopesAndAudiences(rlog, authInfo, oidcTokenRes)
 	userInfos, errRes := fetchUserInfos(rlog, p, oidcTokenRes)
 	if errRes != nil {
-		return errRes
+		return errRes, ""
 	}
-	enforcedRestrictions, errRes := getEnforcedRestrictionTemplate(
-		provider2.GetEnforcedRestrictionsByIssuer(p.Issuer()), userInfos,
+	enforcedRestrictionsConfig := provider2.GetEnforcedRestrictionsByIssuer(p.Issuer())
+	enforcedRestrictions, forbiddenByEnforced, errRes := getEnforcedRestrictionTemplate(
+		enforcedRestrictionsConfig, userInfos, oidcTokenRes.AccessToken,
 	)
 	if errRes != nil {
-		return errRes
+		var additionlErrHTML string
+		if forbiddenByEnforced {
+			additionlErrHTML = enforcedRestrictionsConfig.HelpHTMLText
+		}
+		return errRes, additionlErrHTML
 	}
-	ste, errRes := storeTokenInDatabase(
+	ste, restrictionsWhereOK, errRes := storeTokenInDatabase(
 		rlog, oState, authInfo, enforcedRestrictions, oidcTokenRes, userInfos, networkData,
 	)
 	if errRes != nil {
-		return errRes
+		return errRes, ""
 	}
-
-	return generateResponse(rlog, authInfo, ste, networkData)
+	var additionlErrHTML string
+	if !restrictionsWhereOK {
+		additionlErrHTML = enforcedRestrictionsConfig.HelpHTMLText
+	}
+	return generateResponse(rlog, authInfo, ste, networkData), additionlErrHTML
 }
 
 func fetchAuthInfo(rlog log.Ext1FieldLogger, oState *state.State) (*authcodeinforepo.AuthFlowInfoOut, *model.Response) {
@@ -174,7 +183,11 @@ func fetchUserInfos(rlog log.Ext1FieldLogger, p model.Provider, oidcTokenRes *oi
 	}
 	enforcedRestrictionsConf := provider2.GetEnforcedRestrictionsByIssuer(p.Issuer())
 	if enforcedRestrictionsConf.Enabled {
-		attrs = append(attrs, enforcedRestrictionsConf.ClaimName)
+		for endpoint, claimName := range enforcedRestrictionsConf.ClaimSources {
+			if slices.Contains(enforcedRestrictionsClaimSourcesUserInfoKeys, endpoint) {
+				attrs = append(attrs, claimName)
+			}
+		}
 	}
 
 	userInfos := userinfo.GetUserAttributes(rlog, oidcTokenRes, p, attrs...)
@@ -193,12 +206,13 @@ func storeTokenInDatabase(
 	rlog log.Ext1FieldLogger, oState *state.State, authInfo *authcodeinforepo.AuthFlowInfoOut,
 	enforcedRestrictions string, oidcTokenRes *oidcreqres.OIDCTokenResponse, userInfos map[string]any,
 	networkData api.ClientMetaData,
-) (*mytokenrepo.MytokenEntry, *model.Response) {
+) (*mytokenrepo.MytokenEntry, bool, *model.Response) {
 	var ste *mytokenrepo.MytokenEntry
+	var restrictionsWhereOK bool
 	err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
 			var err error
-			ste, err = createMytokenEntry(
+			ste, restrictionsWhereOK, err = createMytokenEntry(
 				rlog, tx, authInfo, enforcedRestrictions, oidcTokenRes.RefreshToken,
 				iutils.GetStringFromAnyMap(userInfos, "sub"), networkData,
 			)
@@ -224,9 +238,9 @@ func storeTokenInDatabase(
 	)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return nil, model.ErrorToInternalServerErrorResponse(err)
+		return nil, restrictionsWhereOK, model.ErrorToInternalServerErrorResponse(err)
 	}
-	return ste, nil
+	return ste, restrictionsWhereOK, nil
 }
 
 func storeAccessToken(
@@ -303,19 +317,20 @@ func generateResponse(
 func createMytokenEntry(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, authFlowInfo *authcodeinforepo.AuthFlowInfoOut,
 	enforcedRestrictionsTemplate, rt, oidcSub string, networkData api.ClientMetaData,
-) (*mytokenrepo.MytokenEntry, error) {
+) (*mytokenrepo.MytokenEntry, bool, error) {
 	var rot *api.Rotation
 	if authFlowInfo.Rotation != nil {
 		rot = &authFlowInfo.Rotation.Rotation
 	}
 	restr := authFlowInfo.Restrictions.Restrictions
+	restrictionsWhereOK := true
 	if enforcedRestrictionsTemplate != "" {
 		parser := profilerepo.NewDBProfileParser(rlog)
 		enforced, err := parser.ParseRestrictionsTemplate([]byte(enforcedRestrictionsTemplate))
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
-		restr, _ = restrictions.Tighten(rlog, restrictions.NewRestrictionsFromAPI(enforced), restr)
+		restr, restrictionsWhereOK = restrictions.Tighten(rlog, restrictions.NewRestrictionsFromAPI(enforced), restr)
 	}
 	mt, err := mytoken.NewMytoken(
 		oidcSub,
@@ -327,20 +342,20 @@ func createMytokenEntry(
 		unixtime.Now(),
 	)
 	if err != nil {
-		return nil, err
+		return nil, restrictionsWhereOK, err
 	}
 	mte := mytokenrepo.NewMytokenEntry(mt, authFlowInfo.Name, networkData)
 	mte.Token.AuthTime = unixtime.Now()
 	if err = mte.InitRefreshToken(rt); err != nil {
-		return nil, err
+		return nil, restrictionsWhereOK, err
 	}
 	if err = mte.Store(rlog, tx, "Used grant_type oidc_flow authorization_code"); err != nil {
-		return nil, err
+		return nil, restrictionsWhereOK, err
 	}
 	if err = notificationsrepo.ScheduleExpirationNotificationsIfNeeded(
 		rlog, tx, mte.ID, mte.Token.ExpiresAt, mte.Token.IssuedAt,
 	); err != nil {
-		return nil, err
+		return nil, restrictionsWhereOK, err
 	}
-	return mte, nil
+	return mte, restrictionsWhereOK, nil
 }

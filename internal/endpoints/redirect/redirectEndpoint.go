@@ -46,10 +46,12 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 		)
 	}
 	code := ctx.Query("code")
-	res := authcode.CodeExchange(rlog, oState, code, *ctxutils.ClientMetaData(ctx))
+	res, additionErrHTML := authcode.CodeExchange(rlog, oState, code, *ctxutils.ClientMetaData(ctx))
 
 	if fasthttp.StatusCodeIsRedirect(res.Status) {
 		return res.Send(ctx)
 	}
-	return ctxutils.RenderErrorPage(ctx, res.Status, res.Response.(api.Error).CombinedMessage())
+	return ctxutils.RenderExtendedErrorPage(
+		ctx, res.Status, res.Response.(api.Error).CombinedMessage(), "", additionErrHTML,
+	)
 }

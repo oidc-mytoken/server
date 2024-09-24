@@ -1,7 +1,6 @@
 package authcode
 
 import (
-	"fmt"
 	"slices"
 
 	"github.com/gofiber/fiber/v2"
@@ -9,22 +8,48 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model"
+	"github.com/oidc-mytoken/server/internal/oidc/userinfo"
 	"github.com/oidc-mytoken/server/internal/server/httpstatus"
 )
 
-func getEnforcedRestrictionTemplate(conf config.EnforcedRestrictionsConf, userInfos map[string]any) (
-	string, *model.Response,
+var enforcedRestrictionsClaimSourcesUserInfoKeys = []string{
+	"op",
+	"issuer",
+	"default",
+	"userinfo",
+}
+
+func getEnforcedRestrictionTemplate(
+	conf config.EnforcedRestrictionsConf,
+	userInfos map[string]any, at string,
+) (
+	string, bool, *model.Response,
 ) {
 	if !conf.Enabled {
-		return "", nil
+		return "", false, nil
 	}
 
-	entitlements, found := userInfos[conf.ClaimName]
+	var claimValue any
+	var found bool
+	for endpoint, claimName := range conf.ClaimSources {
+		if slices.Contains(enforcedRestrictionsClaimSourcesUserInfoKeys, endpoint) {
+			claimValue, found = userInfos[claimName]
+		} else {
+			userAttributes, errRes, err := userinfo.Get(endpoint, at)
+			if err != nil || errRes != nil || userAttributes == nil {
+				continue
+			}
+			claimValue, found = userAttributes[claimName]
+		}
+		if found {
+			break
+		}
+	}
 	if !found {
 		return handleDefaultEnforcedRestrictionsTemplate(conf)
 	}
 
-	switch e := entitlements.(type) {
+	switch e := claimValue.(type) {
 	case string:
 		return matchEnforcedRestrictionsTemplate(conf, e)
 	case []any:
@@ -33,11 +58,11 @@ func getEnforcedRestrictionTemplate(conf config.EnforcedRestrictionsConf, userIn
 			var ok bool
 			strEntitlements[i], ok = entitlement.(string)
 			if !ok {
-				return "", &model.Response{
+				return "", false, &model.Response{
 					Status: httpstatus.StatusOIDPError,
 					Response: model.OIDCError(
-						"invalid_op_response",
-						fmt.Sprintf("cannot understand type of claim '%s'", conf.ClaimName),
+						"invalid_claim_source_response",
+						"cannot understand claim type",
 					),
 				}
 			}
@@ -46,19 +71,19 @@ func getEnforcedRestrictionTemplate(conf config.EnforcedRestrictionsConf, userIn
 	case []string:
 		return matchAnyEnforcedRestrictionsTemplate(conf, e)
 	default:
-		return "", &model.Response{
+		return "", false, &model.Response{
 			Status: httpstatus.StatusOIDPError,
 			Response: model.OIDCError(
-				"invalid_op_response",
-				fmt.Sprintf("cannot understand type of claim '%s'", conf.ClaimName),
+				"invalid_claim_source_response",
+				"cannot understand claim type",
 			),
 		}
 	}
 }
 
-func handleDefaultEnforcedRestrictionsTemplate(conf config.EnforcedRestrictionsConf) (string, *model.Response) {
+func handleDefaultEnforcedRestrictionsTemplate(conf config.EnforcedRestrictionsConf) (string, bool, *model.Response) {
 	if conf.ForbidOnDefault {
-		return "", &model.Response{
+		return "", true, &model.Response{
 			Status: fiber.StatusForbidden,
 			Response: api.Error{
 				Error:            api.ErrorStrAccessDenied,
@@ -66,24 +91,24 @@ func handleDefaultEnforcedRestrictionsTemplate(conf config.EnforcedRestrictionsC
 			},
 		}
 	}
-	return conf.DefaultTemplate, nil
+	return conf.DefaultTemplate, false, nil
 }
 
 func matchEnforcedRestrictionsTemplate(conf config.EnforcedRestrictionsConf, entitlement string) (
-	string, *model.Response,
+	string, bool, *model.Response,
 ) {
 	if template, ok := conf.Mapping[entitlement]; ok {
-		return template, nil
+		return template, false, nil
 	}
 	return handleDefaultEnforcedRestrictionsTemplate(conf)
 }
 
 func matchAnyEnforcedRestrictionsTemplate(conf config.EnforcedRestrictionsConf, entitlements []string) (
-	string, *model.Response,
+	string, bool, *model.Response,
 ) {
 	for k, v := range conf.Mapping {
 		if slices.Contains(entitlements, k) {
-			return v, nil
+			return v, false, nil
 		}
 	}
 	return handleDefaultEnforcedRestrictionsTemplate(conf)
