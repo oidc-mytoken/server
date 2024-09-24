@@ -112,38 +112,34 @@ func getRestrictionsTemplates(rlog log.Ext1FieldLogger, tx *sqlx.Tx, group strin
 }
 
 func profileGetAndParse(
-	rlog log.Ext1FieldLogger, tx *sqlx.Tx, group string,
+	rlog log.Ext1FieldLogger, _ *sqlx.Tx, group string,
 	readAllFnc func(string, *dbProfileReader) (map[string]profileData, error),
 	parseFnc func([]byte, *profile.Parser) (interface{}, error),
-) (profiles []api.Profile, err error) {
-	err = db.RunWithinTransaction(
-		rlog, tx, func(tx *sqlx.Tx) error {
-			dbReader := newDBProfileReader(rlog)
-			p := profile.NewParser(dbReader)
-			groupData, err := readAllFnc(group, dbReader)
-			if err != nil {
-				return err
-			}
-			for _, d := range groupData {
-				rot, err := parseFnc([]byte(d.Payload), p)
-				if err != nil {
-					return err
-				}
-				parsedPayload, err := json.Marshal(rot)
-				if err != nil {
-					return errors.WithStack(err)
-				}
-				d.Payload = string(parsedPayload)
-				profiles = append(
-					profiles, api.Profile{
-						ID:      d.ID.String(),
-						Name:    d.Name,
-						Payload: json.RawMessage(d.Payload),
-					},
-				)
-			}
-			return nil
-		},
-	)
-	return
+) ([]api.Profile, error) {
+	dbReader := newDBProfileReader(rlog)
+	p := profile.NewParser(dbReader)
+	groupData, err := readAllFnc(group, dbReader)
+	if err != nil {
+		return nil, err
+	}
+	var profiles []api.Profile
+	for _, d := range groupData {
+		rot, err := parseFnc([]byte(d.Payload), p)
+		if err != nil {
+			return nil, err
+		}
+		parsedPayload, err := json.Marshal(rot)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		d.Payload = string(parsedPayload)
+		profiles = append(
+			profiles, api.Profile{
+				ID:      d.ID.String(),
+				Name:    d.Name,
+				Payload: json.RawMessage(d.Payload),
+			},
+		)
+	}
+	return profiles, nil
 }
