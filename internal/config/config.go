@@ -150,7 +150,7 @@ type Config struct {
 	Logging              loggingConf         `yaml:"logging"`
 	ServiceDocumentation string              `yaml:"service_documentation"`
 	Features             featuresConf        `yaml:"features"`
-	Providers            []ProviderConf      `yaml:"providers"`
+	Providers            []*ProviderConf     `yaml:"providers"`
 	ServiceOperator      ServiceOperatorConf `yaml:"service_operator"`
 	Caching              cacheConf           `yaml:"cache"`
 }
@@ -667,7 +667,7 @@ func validateProviders() error {
 	return nil
 }
 
-func validateProvider(p ProviderConf, i int) error {
+func validateProvider(p *ProviderConf, i int) error {
 	if p.Issuer == "" {
 		return errors.Errorf("invalid config: provider.issuer not set (Index %d)", i)
 	}
@@ -678,7 +678,10 @@ func validateProvider(p ProviderConf, i int) error {
 	if err != nil {
 		return errors.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
 	}
-	p.Endpoints, _ = oc.Endpoints()
+	p.Endpoints, err = oc.Endpoints()
+	if err != nil {
+		return errors.Errorf("error '%s' for provider.issuer '%s' (Index %d)", err, p.Issuer, i)
+	}
 	if p.ClientID == "" {
 		return errors.Errorf("invalid config: provider.clientid not set (Index %d)", i)
 	}
@@ -702,7 +705,7 @@ func validateProvider(p ProviderConf, i int) error {
 
 func addGuestModeProvider() {
 	iss := utils2.CombineURLPath(conf.IssuerURL, paths.GetCurrentAPIPaths().GuestModeOP)
-	p := ProviderConf{
+	p := &ProviderConf{
 		Issuer: iss,
 		Name:   "Guest Mode",
 		Scopes: []string{"openid"},
