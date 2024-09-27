@@ -35,7 +35,7 @@ func handleGetProfiles(
 	ctx *fiber.Ctx, dbReader func(log.Ext1FieldLogger, *sqlx.Tx, string) ([]api.Profile, error),
 ) error {
 	rlog := logger.GetRequestLogger(ctx)
-	group := ctx.Params("group", "_")
+	group := ctxutils.Params(ctx, "group", "_")
 	data, err := dbReader(rlog, nil, group)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
@@ -52,7 +52,7 @@ func handleUpsertProfiles(
 	returnStatus int,
 ) error {
 	rlog := logger.GetRequestLogger(ctx)
-	group := ctx.Params("group", "_")
+	group := ctxutils.Params(ctx, "group", "_")
 
 	var req api.Profile
 	err := errors.WithStack(json.Unmarshal(ctx.Body(), &req))
@@ -73,7 +73,7 @@ func handleDeleteProfiles(
 	ctx *fiber.Ctx, dbDo func(log.Ext1FieldLogger, *sqlx.Tx, string, uuid.UUID) error, returnStatus int,
 ) error {
 	rlog := logger.GetRequestLogger(ctx)
-	group := ctx.Params("group", "_")
+	group := ctxutils.Params(ctx, "group", "_")
 	id, err := ctxutils.GetID(ctx)
 	if err != nil {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)

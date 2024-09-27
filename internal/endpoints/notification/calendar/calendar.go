@@ -156,7 +156,7 @@ func HandleAdd(ctx *fiber.Ctx) *model.Response {
 // HandleDelete deletes a calendar
 func HandleDelete(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
-	name := ctx.Params("name")
+	name := ctxutils.Params(ctx, "name")
 	rlog.WithField("calendar", name).Debug("Handle delete calendar request")
 	var umt universalmytoken.UniversalMytoken
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
@@ -202,7 +202,7 @@ func HandleDelete(ctx *fiber.Ctx) *model.Response {
 func HandleGet(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle get calendar request")
-	calendarName := ctx.Params("name")
+	calendarName := ctxutils.Params(ctx, "name")
 	var umt universalmytoken.UniversalMytoken
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
 	if errRes != nil {
@@ -350,7 +350,7 @@ func HandleAddMytoken(ctx *fiber.Ctx) *model.Response {
 	rlog.Debug("Handle add mytoken to calendar request")
 
 	clientMetadata := ctxutils.ClientMetaData(ctx)
-	calendarName := ctx.Params("name")
+	calendarName := ctxutils.Params(ctx, "name")
 	var umt universalmytoken.UniversalMytoken
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
 	if errRes != nil {
