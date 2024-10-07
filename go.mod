@@ -38,7 +38,7 @@ require (
 	golang.org/x/crypto v0.27.0
 	golang.org/x/mod v0.21.0
 	golang.org/x/oauth2 v0.23.0
-	golang.org/x/term v0.24.0
+	golang.org/x/term v0.25.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -74,7 +74,7 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/net v0.29.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
 	tideland.dev/go/slices v0.2.0 // indirect
 )
 
