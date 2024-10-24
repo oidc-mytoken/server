@@ -224,10 +224,8 @@ func sendNotificationsForNotificationInfos(
 						tableData["Event"] = e.Event.String()
 						tableData["Comment"] = e.Comment
 					}
-					if additionalData != nil {
-						for _, kv := range additionalData {
-							tableData[kv.Key] = fmt.Sprintf("%v", kv.Value)
-						}
+					for _, kv := range additionalData {
+						tableData[kv.Key] = fmt.Sprintf("%v", kv.Value)
 					}
 					txtTable := generateSimpleTable(nil, tableData)
 					bindingData["txt-table"] = txtTable
