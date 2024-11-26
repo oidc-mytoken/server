@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 DEVSTRING="pr"
 VERSION_FILE=internal/model/version/VERSION
@@ -38,9 +38,17 @@ for R in $REMOTES; do
     MASTER_BRANCH="refs/remotes/${R}/${MASTER}"
     #echo "Master-branch: ${MASTER_BRANCH}"
     [ "x${R}" = "xorigin" ] && break
+    [ "x${R}" = "xcodebase" ] && break
 done
 
-PREREL=$(git rev-list --count HEAD ^"$MASTER_BRANCH")
+[[ "${DEVSTRING}" == "dev" ]] && {
+    [[ -z ${CI_JOB_ID} ]] || {
+        PREREL=${CI_JOB_ID}
+    }
+}
+[[ -z ${PREREL} ]] && {
+    PREREL=$(git rev-list --count HEAD ^"$MASTER_BRANCH")
+}
 
 # use version file:
 VERSION=$(cat "$VERSION_FILE")
