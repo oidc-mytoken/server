@@ -38,7 +38,7 @@ require (
 	github.com/zachmann/go-oidfed v0.1.1-0.20240830095406-169de417a975
 	golang.org/x/crypto v0.28.0
 	golang.org/x/mod v0.21.0
-	golang.org/x/oauth2 v0.23.0
+	golang.org/x/oauth2 v0.24.0
 	golang.org/x/term v0.26.0
 	gopkg.in/yaml.v3 v3.0.1
 )
