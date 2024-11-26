@@ -119,3 +119,23 @@ func OR(bools ...bool) bool {
 	}
 	return false
 }
+
+// GetStringFromAnyMap returns a string value from a map[string]any
+func GetStringFromAnyMap(m map[string]any, key string) string {
+	v, found := m[key]
+	if !found {
+		return ""
+	}
+	s, _ := v.(string)
+	return s
+}
+
+// GetBoolFromAnyMap returns a bool value from a map[string]any
+func GetBoolFromAnyMap(m map[string]any, key string) bool {
+	v, found := m[key]
+	if !found {
+		return false
+	}
+	b, _ := v.(bool)
+	return b
+}

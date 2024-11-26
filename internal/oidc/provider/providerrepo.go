@@ -30,3 +30,12 @@ func GetProvider(issuer string) model.Provider {
 	}
 	return nil
 }
+
+// GetEnforcedRestrictionsByIssuer returns the config.EnforcedRestrictionsConf for the passed issuer
+func GetEnforcedRestrictionsByIssuer(issuer string) (c config.EnforcedRestrictionsConf) {
+	if p, ok := fileProviderByIssuer[issuer]; ok {
+		pp := p.(SimpleProvider)
+		c = pp.EnforcedRestrictions
+	}
+	return
+}

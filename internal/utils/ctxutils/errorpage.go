@@ -11,15 +11,28 @@ import (
 
 // RenderErrorPage renders an error page
 func RenderErrorPage(ctx *fiber.Ctx, status int, errorMsg string, optionalErrorHeading ...string) error {
-	errorHeading := http.StatusText(status)
+	var errorHeading string
 	if len(optionalErrorHeading) > 0 {
 		errorHeading = optionalErrorHeading[0]
 	}
+	return RenderExtendedErrorPage(ctx, status, errorMsg, errorHeading, "")
+}
+
+// RenderExtendedErrorPage renders an error page with additional html content
+func RenderExtendedErrorPage(
+	ctx *fiber.Ctx, status int, errorMsg,
+	optionalErrorHeading, additionalHTML string,
+) error {
+	errorHeading := http.StatusText(status)
+	if optionalErrorHeading != "" {
+		errorHeading = optionalErrorHeading
+	}
 	return ctx.Status(status).Render(
 		"sites/error", map[string]interface{}{
-			"empty-navbar":  true,
-			"error-heading": errorHeading,
-			"msg":           errorMsg,
+			"empty-navbar":    true,
+			"error-heading":   errorHeading,
+			"msg":             errorMsg,
+			"additional-html": additionalHTML,
 		}, "layouts/main",
 	)
 }
