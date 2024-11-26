@@ -23,6 +23,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/server/apipath"
 	"github.com/oidc-mytoken/server/internal/server/paths"
+	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/fileio"
 	"github.com/oidc-mytoken/server/internal/utils/iputils"
 	loggerUtils "github.com/oidc-mytoken/server/internal/utils/logger"
@@ -179,14 +180,14 @@ func userIsGroupMiddleware(c *fiber.Ctx) error {
 	rlog := loggerUtils.GetRequestLogger(c)
 	rlog.WithFields(
 		log.Fields{
-			"group":         c.Params("group", "_"),
+			"group":         ctxutils.Params(c, "group", "_"),
 			"username":      c.Locals(basicauth.ConfigDefault.ContextUsername),
 			"path":          c.Path(),
 			"original_path": c.Route().Path,
 			"params":        c.Route().Params,
 		},
 	).Error()
-	if c.Params("group", "_") != c.Locals(basicauth.ConfigDefault.ContextUsername) {
+	if ctxutils.Params(c, "group", "_") != c.Locals(basicauth.ConfigDefault.ContextUsername) {
 		return fiber.ErrForbidden
 	}
 	return c.Next()

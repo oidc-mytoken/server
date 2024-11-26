@@ -191,20 +191,44 @@ func sendNotificationsForNotificationInfos(
 					return err
 				}
 				bindingData := map[string]any{
-					"ip":                 clientData.IP,
-					"user-agent":         clientData.UserAgent,
-					"country":            geoip.Country(clientData.IP),
-					"notification-class": notificationClassName,
-					"mom_id":             mtID.Hash(),
-					"token-name":         tokenName.String,
-					"management-url":     routes.NotificationManagementURL(n.ManagementCode),
+					"management-url": routes.NotificationManagementURL(n.ManagementCode),
 				}
-				if e != nil {
-					bindingData["event"] = e.Event.String()
-					bindingData["comment"] = e.Comment
-				}
-				if additionalData != nil {
-					bindingData["additional-data"] = additionalData
+				if emailInfo.PreferHTMLMail {
+					bindingData["ip"] = clientData.IP
+					bindingData["user-agent"] = clientData.UserAgent
+					bindingData["country"] = geoip.Country(clientData.IP)
+					bindingData["notification-class"] = notificationClassName
+					bindingData["mom_id"] = mtID.Hash()
+					bindingData["token-name"] = tokenName.String
+					if e != nil {
+						bindingData["event"] = e.Event.String()
+						bindingData["comment"] = e.Comment
+					}
+					if additionalData != nil {
+						bindingData["additional-data"] = additionalData
+					}
+				} else {
+					tableData := map[string]string{}
+					if tokenName.Valid {
+						tableData["Mytoken Name"] = tokenName.String
+					}
+					tableData["Mytoken Mom ID"] = mtID.Hash()
+					tableData["IP"] = clientData.IP
+					tableData["User-Agent"] = clientData.UserAgent
+					if country := geoip.Country(clientData.IP); country != "" {
+						tableData["Location"] = country
+					}
+					tableData["Notification Reason"] = notificationClassName
+
+					if e != nil {
+						tableData["Event"] = e.Event.String()
+						tableData["Comment"] = e.Comment
+					}
+					for _, kv := range additionalData {
+						tableData[kv.Key] = fmt.Sprintf("%v", kv.Value)
+					}
+					txtTable := generateSimpleTable(nil, tableData)
+					bindingData["txt-table"] = txtTable
 				}
 				rlog.Debug("sending notification mail")
 				SendTemplateEmail(

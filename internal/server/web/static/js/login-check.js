@@ -24,13 +24,13 @@ function _checkIfLoggedIn(...next) {
             let scopes = extractMaxScopesFromToken(token);
             storageSet('token_scopes', scopes);
             if (window.location.pathname === "/") {
-                window.location.href = "/home";
+                window.location.href = "/home" + window.location.search + window.location.hash;
             }
             doNext(...next);
         },
         error: function (res) {
             if (window.location.pathname !== "/") {
-                window.location.href = "/";
+                window.location.href = "/" + window.location.search + window.location.hash;
             }
         },
         dataType: "json",

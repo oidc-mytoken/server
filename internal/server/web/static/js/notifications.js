@@ -570,7 +570,7 @@ function notificationModalInitSubscribeCalendars(cals) {
     let filtered = cals === undefined ? all_cals : all_cals.filter(c => !cals.some(cc => c["name"] === cc["name"]));
     filtered.forEach(function (c) {
         let name = c["name"];
-        options += `<option value=${name}>${name}</option>`;
+        options += `<option value="${name}">${name}</option>`;
     });
     options += `<option value="${new_calendar_option_value}" class="text-secondary">New calendar ...</option>`;
     $calendarSelector.html(options);

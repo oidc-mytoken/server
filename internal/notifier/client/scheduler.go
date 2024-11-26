@@ -120,12 +120,23 @@ func handleDueMailNotification(
 			return err
 		}
 		bindingData = map[string]any{
-			"expires_at":                     exp.Time().String(),
-			"token-name":                     name.String,
-			"mom_id":                         n.MTID.Hash(),
 			"management-url":                 routes.NotificationManagementURL(n.ManagementCode),
 			"recreate-url":                   recreateURL,
 			"unsubscribe-exp-this-token-url": unsubscribeURL,
+		}
+		if emailInfo.MailVerified {
+			bindingData["token-name"] = name.String
+			bindingData["mom_id"] = n.MTID.Hash()
+			bindingData["expires_at"] = exp.Time().String()
+		} else {
+			tableData := map[string]string{}
+			if name.Valid {
+				tableData["Mytoken Name"] = name.String
+			}
+			tableData["Mytoken Mom ID"] = n.MTID.Hash()
+			tableData["Expires"] = exp.Time().String()
+			txtTable := generateSimpleTable(nil, tableData)
+			bindingData["txt-table"] = txtTable
 		}
 	default:
 		return nil
