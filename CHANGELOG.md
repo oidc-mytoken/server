@@ -22,6 +22,9 @@
   - Allows to calendar invites for token expirations
   - Allows to create calendars and add token expirations to it; the ics feed can be subscribed to
   - Allows to manage notifications on the web-interface
+- Add "Enforceable Restrictions"
+  - Depending on a user attribute different restriction templates can be
+    enforced
 
 ### Enhancements
 
@@ -36,6 +39,7 @@
 - Fixed unwanted behavior: If a profile was used and changes to the mytoken
   spec would be made in the consent screen that would narrow it down, the
   profile would still be applied.
+- Fixed problems with the caching implementation.
 
 ### Other
 
@@ -44,18 +48,21 @@
 ### Dependencies
 
 - Bump go version from 1.19 to 1.22
-- Bump github.com/coreos/go-oidc/v3 from 3.9.0 to 3.10.0
+- Bump github.com/coreos/go-oidc/v3 from 3.9.0 to 3.11.0
 - Bump github.com/gliderlabs/ssh from 0.3.6 to 0.3.7
-- Bump github.com/go-resty/resty/v2 from 2.11.0 to 2.13.1
+- Bump github.com/go-resty/resty/v2 from 2.11.0 to 2.16.2
 - Bump github.com/go-sql-driver/mysql from 1.8.0 to 1.8.1
-- Bump github.com/gofiber/fiber/v2 from 2.52.2 to 2.52.4
-- Bump github.com/gofiber/template/mustache/v2 from 2.0.9 to 2.0.11
+- Bump github.com/gofiber/fiber/v2 from 2.52.2 to 2.52.5
+- Bump github.com/gofiber/template/mustache/v2 from 2.0.9 to 2.0.12
 - Bump github.com/jmoiron/sqlx from 1.3.5 to 1.4.0
-- Bump github.com/valyala/fasthttp from 1.52.0 to 1.54.0
-- Bump golang.org/x/crypto from 0.21.0 to 0.23.0
-- Bump golang.org/x/mod from 0.16.0 to 0.17.0
-- Bump golang.org/x/oauth2 from 0.18.0 to 0.20.0
-- Bump golang.org/x/term from 0.18.0 to 0.20.0
+- Bump github.com/lestrrat-go/jwx from 1.2.29 to 1.2.30
+- Bump github.com/pires/go-proxyproto from 0.7.0 to 0.8.0
+- Bump github.com/redis/go-redis/v9 from 9.5.1 to 9.7.0
+- Bump github.com/valyala/fasthttp from 1.52.0 to 1.57.0
+- Bump golang.org/x/crypto from 0.21.0 to 0.29.0
+- Bump golang.org/x/mod from 0.16.0 to 0.22.0
+- Bump golang.org/x/oauth2 from 0.18.0 to 0.24.0
+- Bump golang.org/x/term from 0.18.0 to 0.26.0
 
 ## mytoken 0.9.2
 
