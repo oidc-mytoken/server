@@ -28,7 +28,7 @@ func Start() {
 		"", handleHealthCheck,
 	)
 	addr := fmt.Sprintf(":%d", config.Get().Server.Healthcheck.Port)
-	log.Info("Healthcheck endpoint started on %s", addr)
+	log.Infof("Healthcheck endpoint started on %s", addr)
 	go func() {
 		log.WithError(httpServer.Listen(addr)).Fatal()
 	}()
