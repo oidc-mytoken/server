@@ -25,6 +25,7 @@
 - Add "Enforceable Restrictions"
   - Depending on a user attribute different restriction templates can be
     enforced
+- Add possibility to have an healthcheck endpoint
 
 ### Enhancements
 
