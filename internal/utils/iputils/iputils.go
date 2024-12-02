@@ -102,7 +102,7 @@ func compareIPToHost(ip, host string) bool {
 			if strings.HasSuffix(ipHost, host[1:]) {
 				return true
 			}
-		} else if strings.Compare(ipHost, host) == 0 {
+		} else if ipHost == host {
 			return true
 		}
 	}

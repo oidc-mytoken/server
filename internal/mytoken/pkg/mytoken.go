@@ -303,7 +303,7 @@ func parseJWT(token string, skipCalimsValidation bool) (*Mytoken, error) {
 		SkipClaimsValidation: skipCalimsValidation,
 	}
 	tok, err := parser.ParseWithClaims(
-		token, &Mytoken{}, func(t *jwt.Token) (interface{}, error) {
+		token, &Mytoken{}, func(_ *jwt.Token) (interface{}, error) {
 			return jws.GetPublicKey(jws.KeyUsageMytokenSigning), nil
 		},
 	)

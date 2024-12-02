@@ -81,7 +81,7 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 		return calendarNotFoundError.Send(ctx)
 	}
 	ctx.Set(fiber.HeaderContentType, "text/calendar")
-	ctx.Set(fiber.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, info.Name))
+	ctx.Set(fiber.HeaderContentDisposition, fmt.Sprintf(`attachment; filename=%q`, info.Name))
 	return ctx.SendString(info.ICS)
 }
 
