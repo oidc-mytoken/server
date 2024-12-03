@@ -18,6 +18,7 @@ var (
 	CalendarDownloadEndpoint       string
 	ActionsEndpoint                string
 	NotificationManagementEndpoint string
+	ConfigEndpoint                 string
 )
 
 // Init initializes the authcode component
@@ -31,6 +32,7 @@ func Init() {
 		config.Get().IssuerURL,
 		generalPaths.NotificationManagementEndpoint,
 	)
+	ConfigEndpoint = utils.CombineURLPath(config.Get().IssuerURL, generalPaths.ConfigurationEndpoint)
 }
 
 // ActionsURL builds an action url from a pkg.ActionInfo

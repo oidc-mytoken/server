@@ -46,6 +46,9 @@ server:
     # hostnames including wildcards.
     always_allow:
       - "127.0.0.1"
+  healthcheck:
+    enabled: true
+    port: 9876
 
 # The database file for ip geolocation. Will be installed by setup to this location.
 geo_ip_db_file: "/IP2LOCATION-LITE-DB1.IPV6.BIN"

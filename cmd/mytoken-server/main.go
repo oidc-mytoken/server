@@ -20,6 +20,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/oidc/oidcfed"
 	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
 	"github.com/oidc-mytoken/server/internal/server"
+	"github.com/oidc-mytoken/server/internal/server/healthcheck"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/cache"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
@@ -44,6 +45,7 @@ func main() {
 	settings.InitSettings()
 	cookies.Init()
 	notifier.Init()
+	healthcheck.Start()
 	server.Start()
 }
 

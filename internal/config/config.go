@@ -414,9 +414,15 @@ type serverConf struct {
 	TLS    tlsConf `yaml:"tls"`
 	Secure bool    `yaml:"-"` // Secure indicates if the connection to the mytoken server is secure. This is
 	// independent of TLS, e.g. a Proxy can be used.
-	ProxyHeader        string      `yaml:"proxy_header"`
-	Limiter            limiterConf `yaml:"request_limits"`
-	DistributedServers bool        `yaml:"distributed_servers"`
+	ProxyHeader        string           `yaml:"proxy_header"`
+	Limiter            limiterConf      `yaml:"request_limits"`
+	DistributedServers bool             `yaml:"distributed_servers"`
+	Healthcheck        healtcheckConfig `yaml:"healthcheck"`
+}
+
+type healtcheckConfig struct {
+	Enabled bool `yaml:"enabled"`
+	Port    int  `yaml:"port"`
 }
 
 type limiterConf struct {
