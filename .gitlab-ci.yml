@@ -6,6 +6,7 @@ include:
 variables:
   USE_GORELEASER: "true"
   UPSTREAM_PROJECT: oidc-mytoken/server
+  CI_DEFAULT_BRANCH: "master"
 
 image: golang:1.22
 stages:
