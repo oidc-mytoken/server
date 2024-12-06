@@ -28,6 +28,8 @@ func defaultAPIPaths(api string) APIPaths {
 		UserSettingEndpoint:   utils.CombineURLPath(api, "/settings"),
 		ProfilesEndpoint:      utils.CombineURLPath(api, "/pt"),
 		GuestModeOP:           utils.CombineURLPath(api, "/guests"),
+		NotificationEndpoint:  utils.CombineURLPath(api, "/notifications"),
+		CalendarEndpoint:      utils.CombineURLPath(api, "/notifications/calendars"),
 	}
 }
 
@@ -38,12 +40,15 @@ func init() {
 			0: defaultAPIPaths(apipath.V0),
 		},
 		other: GeneralPaths{
-			ConfigurationEndpoint: WellknownMytokenConfiguration,
-			FederationEndpoint:    WellknownOpenIDFederation,
-			OIDCRedirectEndpoint:  "/redirect",
-			JWKSEndpoint:          "/jwks",
-			ConsentEndpoint:       "/c",
-			Privacy:               "/privacy",
+			ConfigurationEndpoint:          WellknownMytokenConfiguration,
+			FederationEndpoint:             WellknownOpenIDFederation,
+			OIDCRedirectEndpoint:           "/redirect",
+			JWKSEndpoint:                   "/jwks",
+			ConsentEndpoint:                "/c",
+			Privacy:                        "/privacy",
+			CalendarEndpoint:               "/calendars",
+			ActionsEndpoint:                "/actions",
+			NotificationManagementEndpoint: "/notifications",
 		},
 	}
 }
@@ -55,12 +60,15 @@ type paths struct {
 
 // GeneralPaths holds all non-api route paths
 type GeneralPaths struct {
-	ConfigurationEndpoint string
-	FederationEndpoint    string
-	OIDCRedirectEndpoint  string
-	JWKSEndpoint          string
-	ConsentEndpoint       string
-	Privacy               string
+	ConfigurationEndpoint          string
+	FederationEndpoint             string
+	OIDCRedirectEndpoint           string
+	JWKSEndpoint                   string
+	ConsentEndpoint                string
+	Privacy                        string
+	CalendarEndpoint               string
+	ActionsEndpoint                string
+	NotificationManagementEndpoint string
 }
 
 // APIPaths holds all api route paths
@@ -73,6 +81,8 @@ type APIPaths struct {
 	UserSettingEndpoint   string
 	ProfilesEndpoint      string
 	GuestModeOP           string
+	NotificationEndpoint  string
+	CalendarEndpoint      string
 }
 
 // GetCurrentAPIPaths returns the api paths for the most recent major version

@@ -15,7 +15,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	pkg2 "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
@@ -24,11 +24,12 @@ import (
 )
 
 func doTokenInfoList(
-	rlog log.Ext1FieldLogger, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken,
+	clientMetadata *api.ClientMetaData,
 	usedRestriction *restrictions.Restriction,
 ) (tokenList []*tree.MytokenEntryTree, tokenUpdate *response.MytokenResponse, err error) {
-	err = db.Transact(
-		rlog, func(tx *sqlx.Tx) error {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
 			tokenList, err = tree.AllTokens(rlog, tx, mt.ID)
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				return err
@@ -46,10 +47,11 @@ func doTokenInfoList(
 				return err
 			}
 			return eventService.LogEvent(
-				rlog, tx, eventService.MTEvent{
-					Event: event.FromNumber(event.TokenInfoListMTs, ""),
-					MTID:  mt.ID,
-				}, *clientMetadata,
+				rlog, tx, pkg2.MTEvent{
+					Event:          api.EventTokenInfoListMTs,
+					MTID:           mt.ID,
+					ClientMetaData: *clientMetadata,
+				},
 			)
 		},
 	)
@@ -58,19 +60,20 @@ func doTokenInfoList(
 
 // HandleTokenInfoList handles a tokeninfo list request
 func HandleTokenInfoList(
-	rlog log.Ext1FieldLogger, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken, clientMetadata *api.ClientMetaData,
-) model.Response {
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req *pkg.TokenInfoRequest, mt *mytoken.Mytoken,
+	clientMetadata *api.ClientMetaData,
+) *model.Response {
 	// If we call this function it means the token is valid.
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
-		rlog, nil, mt, clientMetadata.IP, nil, nil, api.CapabilityListMT,
+	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
+		rlog, tx, mt, clientMetadata, api.CapabilityListMT,
 	)
 	if errRes != nil {
-		return *errRes
+		return errRes
 	}
-	tokenList, tokenUpdate, err := doTokenInfoList(rlog, req, mt, clientMetadata, usedRestriction)
+	tokenList, tokenUpdate, err := doTokenInfoList(rlog, tx, req, mt, clientMetadata, usedRestriction)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return *model.ErrorToInternalServerErrorResponse(err)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	rsp := pkg.NewTokeninfoListResponse(tokenList, tokenUpdate)
 	return makeTokenInfoResponse(rsp, tokenUpdate)

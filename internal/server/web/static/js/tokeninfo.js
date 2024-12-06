@@ -1,5 +1,8 @@
 const $tokenInput = $('#tokeninfo-token');
 
+const $notificationsModal = $('#notifications-subscribe-modal');
+const $notificationMOMID = $('#notify-id');
+
 let tokeninfoEndpointToUse;
 
 function _tokeninfo(action, successFnc, errorFnc, token = undefined, mom_id = undefined) {
@@ -106,7 +109,7 @@ function historyToHTML(events) {
             '<td>' + event['ip'] + '</td>' +
             '<td class="text-center" style="white-space: nowrap;">' + agentIcons + '</td>' +
             '</tr>';
-        tableEntries.unshift(entry);
+        tableEntries.push(entry);
     });
     return '<table class="table table-hover table-grey">' +
         '<thead><tr>' +
@@ -124,7 +127,7 @@ function historyToHTML(events) {
 
 let tokenTreeIDCounter = 1;
 
-function _tokenTreeToHTML(tree, deleteClass, depth, parentID = 0) {
+function _tokenTreeToHTML(tree, deleteClass, depth, parentID = "0", includeBtns = true, filter_tokens = undefined, filter_out = false) {
     let token = tree['token'];
     let name = token['name'] || 'unnamed token';
     let nameClass = name === 'unnamed token' ? ' text-muted' : '';
@@ -137,17 +140,27 @@ function _tokenTreeToHTML(tree, deleteClass, depth, parentID = 0) {
     let hasChildren = false;
     if (children !== undefined) {
         children.forEach(function (child) {
-            tableEntries = _tokenTreeToHTML(child, deleteClass, depth + 1, thisID) + tableEntries;
+            tableEntries = _tokenTreeToHTML(child, deleteClass, depth + 1, thisID, includeBtns, filter_tokens, filter_out) + tableEntries;
             hasChildren = true;
         })
     }
+    if (filter_tokens !== undefined) {
+        if (filter_out === filter_tokens.some(momid => momid === token["mom_id"])) {
+            return tableEntries;
+        }
+    }
+    let isExpired = (expires_at !== 0 && new Date(expires_at * 1000) < new Date());
     let historyBtn = `<button id="history-${token['mom_id']}" class="btn ml-2" type="button" onclick="showHistoryForID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Event History' : 'Sign in to show event history.'}"><i class="fas fa-history"></i></button>`;
     let deleteBtn = `<button id="revoke-${token['mom_id']}" class="btn ${deleteClass}" type="button" onclick="startRevocateID.call(this)" ${loggedIn ? "" : "disabled"} data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Revoke Token' : 'Sign in to revoke token.'}"><i class="fas fa-trash"></i></button>`;
-    let tr_class = depth > 0 ? 'd-none' : '';
-    if (expires_at !== 0 && new Date(expires_at * 1000) < new Date()) {
-        tr_class += " text-muted";
+    let notificationsBtn = "";
+    if (calendar_notifications_supported || email_notifications_supported) {
+        notificationsBtn = `<button id="notify-${token['mom_id']}" class="btn ${isExpired ? 'text-muted' : ''}" type="button" onclick="notificationModal.call(this, ${expires_at !== 0})" ${!loggedIn || isExpired ? "disabled" : ""}`;
+        if (!isExpired) {
+            notificationsBtn += ` data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Manage notifications' : 'Sign in to manage notifications.'}"`;
+        }
+        notificationsBtn += `><i class="fas fa-bell"></i></butoton>`;
     }
-    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" class="${tr_class}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td>${historyBtn}${deleteBtn}</td></tr>` + tableEntries;
+    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" mom-id="${token['mom_id']}" class="${depth > 0 ? 'd-none' : ''} ${isExpired ? 'text-muted' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td class="actions-td">${includeBtns ? historyBtn + notificationsBtn + deleteBtn : ""}</td></tr>` + tableEntries;
     return tableEntries
 }
 
@@ -161,15 +174,23 @@ function tokenlistToHTML(tokenTrees, deleteClass) {
     }
     return '<table class="table table-hover table-grey">' +
         '<thead><tr>' +
-        '<th style="min-width: 40%;">Token Name</th>' +
+        '<th style="min-width: 35%;">Token Name</th>' +
         '<th>Created</th>' +
         '<th>Created from IP</th>' +
         '<th>Expires</th>' +
         '<th></th>' +
         '</tr></thead>' +
-        '<tbody>' +
+        '<tbody id="token-list-table">' +
         tableEntries +
         '</tbody></table>';
+}
+
+function tokenFoldCollapse() {
+    let $tokenfolds = $('.token-fold');
+    $tokenfolds.find('i').removeClass('fa-caret-down').addClass('fa-caret-right');
+    $tokenfolds.parent().each(function (_, tr) {
+        $(tr).parent().find(`tr[parent-id="${tr.id}"]`).hideB();
+    });
 }
 
 function activateTokenList() {
@@ -248,7 +269,7 @@ function _getSubtokensInfo() {
 const listMsg = $('#list-msg');
 const listCopy = $('#list-copy');
 
-function _getListTokenInfo(token) {
+function _getListTokenInfo(token, ...next) {
     tokeninfoEndpointToUse = storageGet("tokeninfo_endpoint");
     _tokeninfo('list_mytokens',
         function (infoRes) {
@@ -256,6 +277,11 @@ function _getListTokenInfo(token) {
             activateTokenList();
             listMsg.removeClass('text-danger');
             listCopy.addClass('d-none');
+            doNext(...next, function (...next) {
+                getCalendars(function (_) {
+                    listNotifications();
+                }, ...next)
+            });
         },
         function (errRes) {
             listMsg.text(getErrorMessage(errRes));
@@ -264,9 +290,12 @@ function _getListTokenInfo(token) {
         }, token);
 }
 
+let loadedTokenList = false;
+
 function getListTokenInfo(e) {
     e.preventDefault();
     _getListTokenInfo();
+    loadedTokenList = true;
     return false;
 }
 

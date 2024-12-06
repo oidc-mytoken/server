@@ -1,0 +1,17 @@
+
+.fc-list-day {
+    color: var(--primary);
+}
+
+.fc-event-main-frame {
+    display: block !important;
+}
+
+.fc-daygrid-event {
+    white-space: normal;
+    align-items: normal;
+}
+
+:root {
+    --fc-list-event-hover-bg-color: var(--secondary);
+}

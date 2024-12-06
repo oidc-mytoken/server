@@ -26,6 +26,9 @@ func (r Response) Send(ctx *fiber.Ctx) error {
 	if fasthttp.StatusCodeIsRedirect(r.Status) {
 		return ctx.Redirect(r.Response.(string), r.Status)
 	}
+	if r.Response == nil {
+		return ctx.SendStatus(r.Status)
+	}
 	return ctx.Status(r.Status).JSON(r.Response)
 }
 
@@ -42,6 +45,25 @@ func ErrorToBadRequestErrorResponse(err error) *Response {
 	return &Response{
 		Status:   fiber.StatusBadRequest,
 		Response: BadRequestError(errorfmt.Error(err)),
+	}
+}
+
+// NotFoundErrorResponse returns a error response for a not found error
+func NotFoundErrorResponse(msg string) *Response {
+	return &Response{
+		Status: fiber.StatusNotFound,
+		Response: api.Error{
+			Error:            "not_found",
+			ErrorDescription: msg,
+		},
+	}
+}
+
+// BadRequestErrorResponse returns a error response for a not found error
+func BadRequestErrorResponse(msg string) *Response {
+	return &Response{
+		Status:   fiber.StatusBadRequest,
+		Response: BadRequestError(msg),
 	}
 }
 

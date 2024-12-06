@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ResponseType is a enum like type for response types
+// ResponseType is an enum like type for response types
 type ResponseType int
 
 var responseTypes = [...]string{

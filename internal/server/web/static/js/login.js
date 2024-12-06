@@ -2,11 +2,11 @@ $(function () {
     checkIfLoggedIn();
 })
 
-$('#login-op-selector').on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
+function login(issuer, new_tab = false) {
     let data = {
         "grant_Type": "oidc_flow",
         "oidc_flow": "authorization_code",
-        "oidc_issuer": $(this).val(),
+        "oidc_issuer": issuer,
         'restrictions': [
             {
                 "exp": Math.floor(Date.now() / 1000) + cookieLifetime,
@@ -47,10 +47,18 @@ $('#login-op-selector').on('changed.bs.select', function (e, clickedIndex, isSel
             } else {
                 console.error("Unexpected response: ", res);
             }
-            window.location.href = uri;
+            if (new_tab) {
+                window.open(uri, '_blank').focus();
+            } else {
+                window.location.href = uri;
+            }
         },
         dataType: "json",
         contentType: "application/json"
     });
     return false;
+}
+
+$('#login-op-selector').on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
+    login($(this).val());
 });

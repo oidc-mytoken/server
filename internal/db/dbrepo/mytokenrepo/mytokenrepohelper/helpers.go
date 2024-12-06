@@ -1,8 +1,6 @@
 package mytokenrepohelper
 
 import (
-	"database/sql"
-
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
@@ -112,6 +110,29 @@ func UpdateSeqNo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID, seqno uint
 	)
 }
 
+// MytokenDBMetadata is a type for metadata about a mytoken
+type MytokenDBMetadata struct {
+	Capabilities db.NullString
+	Rotation     db.NullString
+	Restrictions db.NullString
+}
+
+// SetMetadata adds a mytoken's metadata (capabilities, rotation,
+// restrictions) to the database. This is needed for legacy mytokens where the metadata was not yet stored on
+// creation. token version <0.7
+func SetMetadata(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID, meta MytokenDBMetadata,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(
+				`CALL MTokens_SetMetadata(?,?,?,?)`, id, meta.Capabilities, meta.Rotation, meta.Restrictions,
+			)
+			return errors.WithStack(err)
+		},
+	)
+}
+
 // revokeMT revokes the passed mytoken but no children
 func revokeMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id interface{}) error {
 	return db.RunWithinTransaction(
@@ -157,11 +178,8 @@ func GetTokenUsagesAT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID, res
 			return errors.WithStack(tx.Get(&usageCount, `CALL TokenUsages_GetAT(?,?)`, myID, restrictionHash))
 		},
 	); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			// No usage entry -> was not used before -> usages=nil
-			err = nil // This is fine
-			return
-		}
+		_, err = db.ParseError(err)
+		// No usage entry -> was not used before -> usages=nil
 		return
 	}
 	usages = &usageCount
@@ -179,11 +197,8 @@ func GetTokenUsagesOther(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myID mtid.MTID, 
 			return errors.WithStack(tx.Get(&usageCount, `CALL TokenUsages_GetOther(?,?)`, myID, restrictionHash))
 		},
 	); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			// No usage entry -> was not used before -> usages=nil
-			err = nil // This is fine
-			return
-		}
+		_, err = db.ParseError(err)
+		// No usage entry -> was not used before -> usages=nil
 		return
 	}
 	usages = &usageCount

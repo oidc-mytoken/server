@@ -1,0 +1,9 @@
+<h4>Notifications</h4>
+{{#collapse.Notifications}}
+    <button class="btn btn-info my-expand" type="button" data-toggle="collapse"
+            data-target="#{{prefix}}not-info-body"
+            aria-expanded="false" aria-controls="{{prefix}}not-info-body" id="{{prefix}}not-info-expand">Expand
+    </button>
+{{/collapse.Notifications}}
+
+{{>notifications/info-content}}

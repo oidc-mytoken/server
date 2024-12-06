@@ -20,6 +20,7 @@ const ( // assert that these are in the same order as api.AllTokeninfoActions
 	TokeninfoActionEventHistory
 	TokeninfoActionSubtokenTree
 	TokeninfoActionListMytokens
+	TokeninfoActionNotifications
 	maxTokeninfoAction
 )
 

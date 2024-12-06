@@ -6,7 +6,7 @@ service_operator:
   # The name of the service operator
   name: "Example Foundation"
   homepage: "https://example.com"
-  # An email address where users can contact the service operator. It is recommend to use a email list for this
+  # An email address where users can contact the service operator. It is recommended to use an email list for this
   mail_contact: "mytoken@example.com"
   # A dedicated email address for privacy related topics can be given.
   # If you do not have a dedicated mail for privacy, it can be omitted.
@@ -25,9 +25,14 @@ server:
     cert:
     # The TLS certificate key file
     key:
+  # If behind a load balancer or reverse proxy and TLS is set on that and not on the mytoken server set this option
+  # to 'true'
+  ##secure: true
   # If behind a load balancer or reverse proxy, set this option.
   # Mytoken will read the client's ip address from this header.
-  # proxy_header: "X-FORWARDED-FOR"
+  ##proxy_header: "X-FORWARDED-FOR"
+  # If you run the mytoken server in a distributed setup with multiple instances set this option to 'true'
+  distributed_servers: false
   # Configure the request limits (these are per IP)
   request_limits:
     # Unless false request limits are enabled
@@ -41,8 +46,11 @@ server:
     # hostnames including wildcards.
     always_allow:
       - "127.0.0.1"
+  healthcheck:
+    enabled: true
+    port: 9876
 
-# The database file for ip geo location. Will be installed by setup to this location.
+# The database file for ip geolocation. Will be installed by setup to this location.
 geo_ip_db_file: "/IP2LOCATION-LITE-DB1.IPV6.BIN"
 
 # Configuration of the mytoken API
@@ -120,7 +128,7 @@ logging:
     # The minimal log level that should be logged
     level: "error"
     # Configuration for 'smart' logging. If enabled internal logging is usually logged from the minimal log level as
-    # usual, but if an error occurs an special error log is logged to a dedicated file that contains all log entries
+    # usual, but if an error occurs a special error log is logged to a dedicated file that contains all log entries
     # (with all log levels, also levels that normally wouldn't be logged) for that particular request.
     smart:
       # Unless false smart logging is enabled
@@ -230,6 +238,30 @@ features:
     groups:
     # _: admin
 
+  # If true a guest mode is enabled that allows to obtain mytokens without further auth, ATs are obviously dummy
+  guest_mode: false
+
+  # Settings related to the notifications feature
+  notifications:
+    # If a standalone notifier server is used (required in a distributed setup), specify the base url here
+    notifier_server_url:
+    # Enables calendar support
+    ics:
+      enabled: true
+    # Email notifications
+    email:
+      enabled: true
+      # Settings for the used mailserver, only used if the integrated notifier is used
+      mail_server:
+        host:
+        port: 25
+        user:
+        password:
+        from_address:
+    # Not yet implemented
+    ws:
+      enabled: true
+
   # Configuration for usage of OpenID Federations
   federation:
     enabled: false
@@ -265,4 +297,34 @@ providers:
       request_parameter: "resource"
       # Defines how multiple audience values in a request are handled;
       space_separate_auds: false
+    # Settings related to restrictions that should be enforced for different user groups depending on an OP attribute
+    enforced_restrictions:
+      # A mapping for claim sources: Mapping between an url and claim name; defines how the claim value is obtained
+      # on which the decision which restriction template is enforced is based on
+      # The key should be an url, that behaves in line with an OP's userinfo endpoint
+      # The special keys 'issuer', 'op', 'default', and 'userinfo' can be used;
+      # if one of these keys is used, the claim name is looked up in the
+      # id token, access token, and userinfo endpoint
+      claim_sources:
+      #issuer: "eduperson_entitlements"
+      # If true, indicates that access should be completely forbidden if no value from 'mapping' matches
+      #forbid_on_default: false
+      # The default restriction template that will be enforced for all users where no value from 'mapping' matches;
+      # only used if 'forbid_on_default=false'; the restriction template must be configured on the server or be
+      # provided as json (but as a string)
+      # The help_html content is displayed if forbid_on_default=true and a user tries to log in and does not have
+      # access. The html should contain information about why the user does not have access and what to do in order
+      # to get access. The html can also be given in the help_html_file. This should only be a html snippet, no
+      # complete html page.
+      #help_html:
+      #help_html_file:
+      #default_template: web-default
+      # A mapping between claim values and the enforced restriction template; the templates must be configured on the
+      # server or be provided as json (but as a string); an entry matches if the attribute is a string array and the
+      # mapping key is included in the array or the attribute is a single value and equals the mapping key;
+      # the mapping MUST be given in order such that the highest privileged template is listed first
+      mapping:
+      #admin: ""
+      #urn:geant:mytoken:advanced: "advanced"
+      #urn:geant:mytoken:medium: "medium"
 

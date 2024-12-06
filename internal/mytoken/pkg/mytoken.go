@@ -1,6 +1,7 @@
 package mytoken
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/golang-jwt/jwt"
@@ -13,12 +14,14 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/shorttokenrepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/jws"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
@@ -77,7 +80,7 @@ func (mt *Mytoken) verifySubject() bool {
 
 // VerifyCapabilities verifies that this Mytoken has the required capabilities
 func (mt *Mytoken) VerifyCapabilities(required ...api.Capability) bool {
-	if mt.Capabilities == nil || len(mt.Capabilities) == 0 {
+	if len(mt.Capabilities) == 0 {
 		return false
 	}
 	for _, c := range required {
@@ -182,7 +185,7 @@ func (mt *Mytoken) toMytokenResponse(jwt string) response.MytokenResponse {
 }
 
 func (mt *Mytoken) toShortMytokenResponse(rlog log.Ext1FieldLogger, jwt string) (response.MytokenResponse, error) {
-	shortToken, err := transfercoderepo.NewShortToken(jwt, mt.ID)
+	shortToken, err := shorttokenrepo.NewShortToken(jwt, mt.ID)
 	if err != nil {
 		return response.MytokenResponse{}, err
 	}
@@ -222,12 +225,12 @@ func CreateTransferCode(
 				return err
 			}
 			return eventService.LogEvent(
-				rlog, tx, eventService.MTEvent{
-					Event: event.FromNumber(
-						event.TransferCodeCreated, fmt.Sprintf("token type: %s", responseType.String()),
-					),
-					MTID: myID,
-				}, clientMetaData,
+				rlog, tx, pkg.MTEvent{
+					Event:          api.EventTransferCodeCreated,
+					Comment:        fmt.Sprintf("token type: %s", responseType.String()),
+					MTID:           myID,
+					ClientMetaData: clientMetaData,
+				},
 			)
 		},
 	)
@@ -300,7 +303,7 @@ func parseJWT(token string, skipCalimsValidation bool) (*Mytoken, error) {
 		SkipClaimsValidation: skipCalimsValidation,
 	}
 	tok, err := parser.ParseWithClaims(
-		token, &Mytoken{}, func(t *jwt.Token) (interface{}, error) {
+		token, &Mytoken{}, func(_ *jwt.Token) (interface{}, error) {
 			return jws.GetPublicKey(jws.KeyUsageMytokenSigning), nil
 		},
 	)
@@ -310,7 +313,54 @@ func parseJWT(token string, skipCalimsValidation bool) (*Mytoken, error) {
 
 	if mt, ok := tok.Claims.(*Mytoken); ok && tok.Valid {
 		mt.jwt = token
-		return mt, nil
+		return mt, specialTokenHandling(mt)
 	}
 	return nil, errors.New("token not valid")
+}
+
+// DBMetadata return the mytokenrepohelper.MytokenDBMetadata for a Mytoken
+func (mt *Mytoken) DBMetadata() (meta mytokenrepohelper.MytokenDBMetadata, err error) {
+	creator := func(i any) (db.NullString, error) {
+		data := ""
+		if i != nil {
+			dataBytes, err := json.Marshal(i)
+			if err != nil {
+				return db.NullString{}, errors.WithStack(err)
+			}
+			data = string(dataBytes)
+		}
+		return db.NewNullString(data), nil
+	}
+
+	meta.Capabilities, err = creator(mt.Capabilities)
+	if err != nil {
+		return
+	}
+	meta.Rotation, err = creator(mt.Rotation)
+	if err != nil {
+		return
+	}
+	meta.Restrictions, err = creator(mt.Restrictions)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func specialTokenHandling(mt *Mytoken) error {
+	if mt.Version.Before(
+		api.TokenVersion{
+			Major: 0,
+			Minor: 7,
+		},
+	) {
+		meta, err := mt.DBMetadata()
+		if err != nil {
+			return err
+		}
+		return mytokenrepohelper.SetMetadata(
+			log.StandardLogger(), nil, mt.ID, meta,
+		)
+	}
+	return nil
 }

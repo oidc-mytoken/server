@@ -1,3 +1,4 @@
+#!/bin/bash
 
 REPO_TARGET="/prerel"
 if [ -n "$CI_COMMIT_TAG" ] && echo "$CI_COMMIT_TAG" | grep -qv '~'; then

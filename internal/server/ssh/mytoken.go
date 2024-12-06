@@ -23,7 +23,7 @@ func handleSSHMytoken(reqData []byte, s ssh.Session) error {
 			return err
 		}
 	}
-	clientMetaData := api.ClientMetaData{
+	clientMetaData := &api.ClientMetaData{
 		IP:        ctx.Value("ip").(string),
 		UserAgent: ctx.Value("user_agent").(string),
 	}
@@ -31,11 +31,11 @@ func handleSSHMytoken(reqData []byte, s ssh.Session) error {
 	rlog := logger.GetSSHRequestLogger(ctx.Value("session").(string))
 	rlog.Debug("Handle mytoken from ssh")
 
-	usedRestriction, mt, errRes := mytoken2.HandleMytokenFromMytokenReqChecks(rlog, req, clientMetaData.IP, nil)
+	usedRestriction, mt, errRes := mytoken2.HandleMytokenFromMytokenReqChecks(rlog, req, clientMetaData, nil)
 	if errRes != nil {
 		return writeErrRes(s, errRes)
 	}
-	res := mytoken2.HandleMytokenFromMytokenReq(rlog, mt, req, &clientMetaData, usedRestriction)
+	res := mytoken2.HandleMytokenFromMytokenReq(rlog, mt, req, clientMetaData, usedRestriction)
 	if res.Status >= 400 {
 		return writeErrRes(s, res)
 	}

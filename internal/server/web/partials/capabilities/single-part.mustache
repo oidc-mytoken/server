@@ -1,0 +1,39 @@
+<div class="d-flex justify-content-between">
+    <div class="mr-2">
+        <input class="capability-check mr-1" id="{{prefix}}cp-{{Name}}"
+               type="checkbox" value="{{Name}}" instance-prefix="{{prefix}}" {{#read-only}}disabled{{/read-only}}>
+    </div>
+    <div class="flex-fill">
+        <div class="d-flex justify-content-between">
+            <h6>
+                {{Name}}
+                <span class="pl-1" style="font-size: 1rem;" data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="">
+                    {{#ReadOnlyCapability}}
+                        <input id="{{prefix}}cp-{{Name}}-mode" class="rw-cap-mode" type="checkbox" checked
+                               {{#read-only}}disabled{{/read-only}}
+                               data-size="sm"
+                               instance-prefix="{{prefix}}"
+                               data-toggle="toggle"
+                               data-onstyle="dark" data-offstyle="dark" data-style="round"
+                               data-on='<i class="fas fa-pencil-alt"></i>'
+                               data-off='<i class="fas fa-book-open"></i>'>
+                    {{/ReadOnlyCapability}}
+                </span>
+            </h6>
+            {{#CapabilityLevel}}
+                <i class="fas fa-exclamation-circle {{ColorClass}} rw-cap-write" data-toggle="tooltip"
+                   data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
+                {{#ReadOnlyCapability}}
+                    <i class="fas fa-exclamation-circle {{ColorClass}} rw-cap-read d-none" data-toggle="tooltip"
+                       data-placement="right" title="" data-original-title="{{CapabilityLevel}}"></i>
+                {{/ReadOnlyCapability}}
+            {{/CapabilityLevel}}
+        </div>
+        <small class="rw-cap-write">{{Description}}</small>
+        {{#ReadOnlyCapability}}
+            <small class="rw-cap-read d-none">{{Description}}</small>
+        {{/ReadOnlyCapability}}
+
+    </div>
+</div>

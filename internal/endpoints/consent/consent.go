@@ -16,6 +16,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	pkg2 "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/endpoints/webentities"
 	"github.com/oidc-mytoken/server/internal/model/profiled"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcfed"
@@ -45,8 +46,8 @@ func handleConsent(ctx *fiber.Ctx, info *pkg2.OIDCFlowRequest, includeConsentCal
 		templating.MustacheKeyEmptyNavbar:         true,
 		templating.MustacheKeyRestrictionsGUI:     true,
 		templating.MustacheKeyCollapse:            templating.Collapsable{All: true},
-		templating.MustacheKeyRestrictions:        pkg.WebRestrictions{Restrictions: info.Restrictions.Restrictions},
-		templating.MustacheKeyCapabilities:        pkg.AllWebCapabilities(),
+		templating.MustacheKeyRestrictions:        webentities.WebRestrictions{Restrictions: info.Restrictions.Restrictions},
+		templating.MustacheKeyCapabilities:        webentities.AllWebCapabilities(),
 		templating.MustacheKeyCheckedCapabilities: c.Strings(),
 		templating.MustacheKeyIss:                 info.Issuer,
 
@@ -74,7 +75,7 @@ func getAuthInfoFromConsentCodeStr(rlog log.Ext1FieldLogger, code string) (
 ) {
 	consentCode := state.ConsentCodeFromStr(code)
 	oState := state.NewState(consentCode.GetState())
-	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(rlog, oState)
+	authInfo, err := authcodeinforepo.GetAuthFlowInfoByState(rlog, nil, oState)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = fiber.ErrNotFound
@@ -92,10 +93,7 @@ func HandleCreateConsent(ctx *fiber.Ctx) error {
 		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
 	}
 	if req.Issuer == "" {
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("required parameter 'oidc_issuer' missing"),
-		}.Send(ctx)
+		return model.BadRequestErrorResponse("required parameter 'oidc_issuer' missing").Send(ctx)
 	}
 	rlog := logger.GetRequestLogger(ctx)
 	mt, _ := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
@@ -123,7 +121,10 @@ func HandleConsent(ctx *fiber.Ctx) error {
 	return handleConsent(ctx, &(authInfo.AuthCodeFlowRequest.OIDCFlowRequest), true)
 }
 
-func handleConsentDecline(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut, oState *state.State) error {
+func handleConsentDecline(
+	ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInfoOut,
+	oState *state.State,
+) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	url := "/"
 	if authInfo.PollingCode {
@@ -138,19 +139,19 @@ func handleConsentDecline(ctx *fiber.Ctx, authInfo *authcodeinforepo.AuthFlowInf
 		m := utils.StructToStringMapUsingJSONTags(res.Response)
 		m["url"] = url
 		res.Response = m
-		return res.Send(ctx)
+		return res
 	}
 	if authInfo.PollingCode {
 		if err := transfercoderepo.DeclineConsentByState(rlog, nil, oState); err != nil {
 			rlog.Errorf("%s", errorfmt.Full(err))
 		}
 	}
-	return model.Response{
+	return &model.Response{
 		Status: httpstatus.StatusOKForward,
 		Response: map[string]string{
 			"url": url,
 		},
-	}.Send(ctx)
+	}
 }
 
 // handleConsentAccept handles the acceptance of a consent code
@@ -160,10 +161,7 @@ func handleConsentAccept(
 ) *model.Response {
 	for _, c := range req.Capabilities {
 		if !api.AllCapabilities.Has(c) {
-			return &model.Response{
-				Status:   fiber.StatusBadRequest,
-				Response: model.BadRequestError(fmt.Sprintf("unknown capability '%s'", c)),
-			}
+			return model.BadRequestErrorResponse(fmt.Sprintf("unknown capability '%s'", c))
 		}
 	}
 	p := provider2.GetProvider(req.Issuer)
@@ -200,19 +198,19 @@ func handleConsentAccept(
 }
 
 // HandleConsentPost handles consent confirmation requests
-func HandleConsentPost(ctx *fiber.Ctx) error {
+func HandleConsentPost(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	authInfo, oState, err := getAuthInfoFromConsentCodeStr(rlog, ctx.Params("consent_code"))
 	if err != nil {
 		// Don't log error here, it was already logged
-		return err
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
 	if len(ctx.Body()) == 0 {
 		return handleConsentDecline(ctx, authInfo, oState)
 	}
 	req := pkg.ConsentApprovalRequest{}
 	if err = json.Unmarshal(ctx.Body(), &req); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err).Send(ctx)
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
-	return handleConsentAccept(rlog, &req, oState).Send(ctx)
+	return handleConsentAccept(rlog, &req, oState)
 }

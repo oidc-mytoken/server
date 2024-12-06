@@ -13,6 +13,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/hashutils"
 )
 
+// Init initializes the guest mode
 func Init(s fiber.Router) {
 	if !config.Get().Features.GuestMode.Enabled {
 		return

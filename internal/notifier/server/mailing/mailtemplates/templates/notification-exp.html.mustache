@@ -1,0 +1,51 @@
+<p>Your mytoken will expire soon. Here are the details:</p>
+
+<style>
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+</style>
+
+<table>
+    {{#token-name}}
+        <tr>
+            <td>Mytoken Name</td>
+            <td>{{.}}</td>
+        </tr>
+    {{/token-name}}
+    <tr>
+        <td>Mytoken Mom ID</td>
+        <td>{{mom_id}}</td>
+    </tr>
+    <tr>
+        <td style="font-weight:bold;">Expires At</td>
+        <td style="font-weight:bold;">{{expires_at}}</td>
+    </tr>
+
+    {{#additional-data}}
+        <tr>
+            <td style="font-weight:bold;">{{Key}}</td>
+            <td style="font-weight:bold;">{{Value}}</td>
+        </tr>
+    {{/additional-data}}
+</table>
+
+
+<p>
+To re-create a mytoken with similar properties, follow this link: <a href="{{recreate-url}}">{{recreate-url}}</a>
+</p>
+
+<p>
+If you created a new mytoken or do not need it anymore, you might want to unsubscribe from further expiration
+notifications for this mytoken:
+    <a href="{{unsubscribe-exp-this-token-url}}">{{unsubscribe-exp-this-token-url}}</a>
+</p>
+
+<p>
+    If you want to manage the whole notification subscription, you can do so at:
+    <a href="{{management-url}}">{{management-url}}</a>
+</p>
+
+Sincerly,<br>
+the mytoken notification bot.

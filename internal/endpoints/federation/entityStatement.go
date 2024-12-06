@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/valyala/fasthttp"
-	oidcfed "github.com/zachmann/go-oidcfed/pkg"
+	oidfed "github.com/zachmann/go-oidfed/pkg"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/jws"
@@ -15,6 +15,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/server/paths"
 )
 
+// InitEntityConfiguration initializes the entity configuration if enabled
 func InitEntityConfiguration() {
 	if config.Get().Features.Federation.Entity != nil {
 		return
@@ -22,12 +23,13 @@ func InitEntityConfiguration() {
 	otherPaths := paths.GetGeneralPaths()
 	privacyURI := utils.CombineURLPath(config.Get().IssuerURL, otherPaths.Privacy)
 	var err error
-	config.Get().Features.Federation.Entity, err = oidcfed.NewFederationLeaf(
+	jwks := jws.GetJWKS(jws.KeyUsageOIDCSigning)
+	config.Get().Features.Federation.Entity, err = oidfed.NewFederationLeaf(
 		config.Get().IssuerURL,
 		config.Get().Features.Federation.AuthorityHints,
 		config.Get().Features.Federation.TrustAnchors,
-		&oidcfed.Metadata{
-			RelyingParty: &oidcfed.OpenIDRelyingPartyMetadata{
+		&oidfed.Metadata{
+			RelyingParty: &oidfed.OpenIDRelyingPartyMetadata{
 				RedirectURIS: []string{
 					utils.CombineURLPath(
 						config.Get().IssuerURL, otherPaths.OIDCRedirectEndpoint,
@@ -44,13 +46,13 @@ func InitEntityConfiguration() {
 				ClientURI:               config.Get().IssuerURL,
 				PolicyURI:               privacyURI,
 				TOSURI:                  privacyURI,
-				JWKS:                    jws.GetJWKS(jws.KeyUsageOIDCSigning),
+				JWKS:                    &jwks,
 				SoftwareID:              version.SOFTWAREID,
 				SoftwareVersion:         version.VERSION,
 				OrganizationName:        config.Get().ServiceOperator.Name,
-				ClientRegistrationTypes: []string{oidcfed.ClientRegistrationTypeAutomatic},
+				ClientRegistrationTypes: []string{oidfed.ClientRegistrationTypeAutomatic},
 			},
-			FederationEntity: &oidcfed.FederationEntityMetadata{
+			FederationEntity: &oidfed.FederationEntityMetadata{
 				OrganizationName: config.Get().ServiceOperator.Name,
 				Contacts:         []string{config.Get().ServiceOperator.Contact},
 				LogoURI:          utils.CombineURLPath(config.Get().IssuerURL, "static/img/mytoken.png"),
@@ -58,8 +60,10 @@ func InitEntityConfiguration() {
 				HomepageURI:      "https://mytoken-docs.data.kit.edu",
 			},
 		},
-		jws.GetSigningKey(jws.KeyUsageFederation),
-		config.Get().Features.Federation.Signing.Alg,
+		oidfed.NewEntityStatementSigner(
+			jws.GetSigningKey(jws.KeyUsageFederation),
+			config.Get().Features.Federation.Signing.Alg,
+		),
 		config.Get().Features.Federation.EntityConfigurationLifetime,
 		jws.GetSigningKey(jws.KeyUsageOIDCSigning),
 		config.Get().Signing.OIDC.Alg,
@@ -79,7 +83,7 @@ func (r entityStatementResponse) Send(ctx *fiber.Ctx) error {
 
 // HandleEntityConfiguration handles calls to the oidc federation entity configuration endpoint
 func HandleEntityConfiguration(ctx *fiber.Ctx) error {
-	entityConfigurationJWT, err := config.Get().Features.Federation.Entity.EntityConfiguration().JWT()
+	entityConfigurationJWT, err := config.Get().Features.Federation.Entity.EntityConfigurationJWT()
 	if err != nil {
 		err = errors.Wrap(err, "could not create entity configuration JWT")
 		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)

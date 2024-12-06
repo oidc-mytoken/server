@@ -1,8 +1,6 @@
 package redirect
 
 import (
-	"net/http"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
@@ -40,25 +38,20 @@ func HandleOIDCRedirect(ctx *fiber.Ctx) error {
 			}
 		}
 		oidcErrorDescription := ctx.Query("error_description")
-		return ctx.Status(httpstatus.StatusOIDPError).Render(
-			"sites/error", map[string]interface{}{
-				"empty-navbar":  true,
-				"error-heading": "OIDC error",
-				"msg":           pkgModel.OIDCError(oidcError, oidcErrorDescription).CombinedMessage(),
-			}, "layouts/main",
+		return ctxutils.RenderErrorPage(
+			ctx, httpstatus.StatusOIDPError, pkgModel.OIDCError(
+				oidcError,
+				oidcErrorDescription,
+			).CombinedMessage(), "OIDC error",
 		)
 	}
 	code := ctx.Query("code")
-	res := authcode.CodeExchange(rlog, oState, code, *ctxutils.ClientMetaData(ctx))
+	res, additionErrHTML := authcode.CodeExchange(rlog, oState, code, *ctxutils.ClientMetaData(ctx))
 
 	if fasthttp.StatusCodeIsRedirect(res.Status) {
 		return res.Send(ctx)
 	}
-	return ctx.Status(res.Status).Render(
-		"sites/error", map[string]interface{}{
-			"empty-navbar":  true,
-			"error-heading": http.StatusText(res.Status),
-			"msg":           res.Response.(api.Error).CombinedMessage(),
-		}, "layouts/main",
+	return ctxutils.RenderExtendedErrorPage(
+		ctx, res.Status, res.Response.(api.Error).CombinedMessage(), "", additionErrHTML,
 	)
 }

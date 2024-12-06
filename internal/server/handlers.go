@@ -16,7 +16,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/profilerepo"
 	configurationEndpoint "github.com/oidc-mytoken/server/internal/endpoints/configuration"
-	consent "github.com/oidc-mytoken/server/internal/endpoints/consent/pkg"
+	"github.com/oidc-mytoken/server/internal/endpoints/webentities"
 	"github.com/oidc-mytoken/server/internal/utils/cache"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/templating"
@@ -38,17 +38,21 @@ func homeBindingData() map[string]interface{} {
 		pp["fed"] = p.OIDCFed
 		providers = append(providers, pp)
 	}
-	return map[string]interface{}{
+	bindingData := map[string]interface{}{
 		templating.MustacheKeyLoggedIn:        true,
 		templating.MustacheKeyRestrictionsGUI: true,
 		templating.MustacheKeyHome:            true,
-		templating.MustacheKeyCapabilities:    consent.AllWebCapabilities(),
+		templating.MustacheKeyCapabilities:    webentities.AllWebCapabilities(),
 		templating.MustacheSubTokeninfo: map[string]interface{}{
 			templating.MustacheKeyCollapse: templating.Collapsable{
 				CollapseRestr: true,
 			},
-			templating.MustacheKeyPrefix:   "tokeninfo-",
-			templating.MustacheKeyReadOnly: true,
+			templating.MustacheKeyPrefix:            "tokeninfo-",
+			templating.MustacheKeyReadOnly:          true,
+			templating.MustacheKeyCalendarsEditable: false,
+		},
+		templating.MustacheSubMTListing: map[string]interface{}{
+			templating.MustacheKeySubscribeNotifications: true,
 		},
 		templating.MustacheSubCreateMT: map[string]interface{}{
 			templating.MustacheKeyPrefix:             "createMT-",
@@ -57,6 +61,25 @@ func homeBindingData() map[string]interface{} {
 		},
 		"providers": providers,
 	}
+	if config.Get().Features.Notifications.ICS.Enabled || config.Get().
+		Features.Notifications.Mail.Enabled {
+		bindingData[templating.MustacheSubNotifications] = map[string]interface{}{
+			templating.MustacheKeyPrefix:              "notifications-",
+			templating.MustacheKeyNotificationClasses: webentities.AllWebNotificationClass(),
+			"modify": map[string]any{
+				templating.MustacheKeyPrefix: "notifications-modify-",
+			},
+			templating.MustacheSubNotificationListing: map[string]any{
+				templating.MustacheKeyPrefix: "notification-listing-",
+				templating.MustacheSubNewNotificationModal: map[string]any{
+					templating.MustacheKeyPrefix: "new-notification-modal-",
+				},
+			},
+		}
+		bindingData[templating.MustacheKeyNotificationsMailEnabled] = config.Get().Features.Notifications.Mail.Enabled
+		bindingData[templating.MustacheKeyNotificationsCalendarEnabled] = config.Get().Features.Notifications.ICS.Enabled
+	}
+	return bindingData
 }
 
 type templateProfileData struct {
@@ -65,31 +88,33 @@ type templateProfileData struct {
 }
 
 // getWebProfileData returns the cached profile data for one of the profile types
-func getWebProfileData(t string) ([]templateProfileData, bool) {
-	data, found := cache.Get(cache.WebProfiles, t)
-	if !found {
-		return nil, found
+func getWebProfileData(t string) (data []templateProfileData, ok bool) {
+	found, err := cache.Get(cache.WebProfiles, t, &data)
+	if err != nil {
+		log.WithError(err).Error("failed to fetch web profile data")
 	}
-	d, ok := data.([]templateProfileData)
-	return d, ok
+	if err != nil || !found {
+		ok = false
+	}
+	return
 }
 
 func profilesBindingData() map[string]interface{} {
-	var ok bool
-	var err error
 	var groups []string
 
-	g, groupsFound := cache.Get(cache.WebProfiles, "groups")
-	if groupsFound {
-		groups, ok = g.([]string)
-	}
-	if !groupsFound || !ok {
+	groupsFound, err := cache.Get(cache.WebProfiles, "groups", &groups)
+	if err != nil || !groupsFound {
 		groups, err = profilerepo.GetGroups(log.StandardLogger(), nil)
 		if err != nil {
 			log.WithError(err).Error("error while retrieving profile groups for webinterface binding data")
 			return nil
 		}
-		cache.Set(cache.WebProfiles, "groups", groups, time.Hour)
+		if err = cache.Set(
+			cache.WebProfiles, "groups", groups,
+			time.Hour,
+		); err != nil {
+			log.WithError(err).Error("error while setting profile groups for webinterface binding data")
+		}
 	}
 
 	profileTypes := map[string]func(log.Ext1FieldLogger, *sqlx.Tx, string) (profiles []api.Profile, err error){
@@ -148,6 +173,15 @@ func handleHome(ctx *fiber.Ctx) error {
 	return ctx.Render("sites/home", homeBindingData(), templating.LayoutMain)
 }
 
+func handleViewCalendar(ctx *fiber.Ctx) error {
+	return ctx.Render(
+		"sites/calendar", map[string]any{
+			"calendar-view":                   true,
+			templating.MustacheKeyEmptyNavbar: true,
+		}, templating.LayoutMain,
+	)
+}
+
 func handleSettings(ctx *fiber.Ctx) error {
 	type bindData struct {
 		DisplayName string
@@ -167,8 +201,8 @@ func handleSettings(ctx *fiber.Ctx) error {
 			partialName: "sites/settings-ssh",
 			bindingData: map[string]interface{}{
 				templating.MustacheKeyRestrictionsGUI: true,
-				templating.MustacheKeyRestrictions:    consent.WebRestrictions{},
-				templating.MustacheKeyCapabilities:    consent.AllWebCapabilities(),
+				templating.MustacheKeyRestrictions:    webentities.WebRestrictions{},
+				templating.MustacheKeyCapabilities:    webentities.AllWebCapabilities(),
 			},
 		},
 	}
@@ -180,13 +214,21 @@ func handleSettings(ctx *fiber.Ctx) error {
 		g.EmbedBody = embed.String()
 	}
 	binding := map[string]interface{}{
-		templating.MustacheKeyGrants:          grants,
-		templating.MustacheKeyLoggedIn:        true,
-		templating.MustacheKeySettings:        true,
-		templating.MustacheKeySettingsSSH:     true,
-		templating.MustacheKeyRestrictionsGUI: true,
-		templating.MustacheKeyRestrictions:    consent.WebRestrictions{},
-		templating.MustacheKeyCapabilities:    consent.AllWebCapabilities(),
+		templating.MustacheKeyGrants:            grants,
+		templating.MustacheKeyLoggedIn:          true,
+		templating.MustacheKeySettings:          true,
+		templating.MustacheKeySettingsSSH:       true,
+		templating.MustacheKeyRestrictionsGUI:   true,
+		templating.MustacheKeyCalendarsEditable: true,
+		templating.MustacheKeyRestrictions:      webentities.WebRestrictions{},
+		templating.MustacheKeyCapabilities:      webentities.AllWebCapabilities(),
+		templating.MustacheKeyPrefix:            "settings-",
+	}
+	if config.Get().Features.Notifications.ICS.Enabled || config.Get().
+		Features.Notifications.Mail.Enabled {
+		binding[templating.MustacheSubNotifications] = true
+		binding[templating.MustacheKeyNotificationsMailEnabled] = config.Get().Features.Notifications.Mail.Enabled
+		binding[templating.MustacheKeyNotificationsCalendarEnabled] = config.Get().Features.Notifications.ICS.Enabled
 	}
 	return ctx.Render("sites/settings", binding, templating.LayoutMain)
 }
@@ -217,4 +259,18 @@ func handlePrivacy(ctx *fiber.Ctx) error {
 		templating.MustacheKeyPrivacyContact: so.Privacy,
 	}
 	return ctx.Render("sites/privacy", binding, templating.LayoutMain)
+}
+
+func handleNotificationManagement(ctx *fiber.Ctx) error {
+	return ctx.Render(
+		"sites/manage-notification", map[string]any{
+			"notification-management":                  true,
+			"empty-navbar":                             true,
+			templating.MustacheSubNewNotificationModal: true,
+			templating.MustacheKeyNotificationClasses:  webentities.AllWebNotificationClass(),
+			templating.MustacheKeyCollapse: map[string]bool{
+				"NotificationManagement": true,
+			},
+		}, templating.LayoutMain,
+	)
 }

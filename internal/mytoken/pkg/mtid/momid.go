@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// MOMID is a type for the mom-id (manage-other-mytokens)-id
 type MOMID struct {
 	MTID
 }

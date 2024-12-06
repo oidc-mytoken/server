@@ -1,0 +1,79 @@
+<div class="pb-3 row">
+    <h4 class="col-md">Restrictions</h4>
+    {{#create-with-profiles}}
+        <span class="form-row mr-3 pl-3">
+            <span class="input-group"
+                  data-toggle="tooltip" data-placement="top"
+                  title="Prefill values from a predefined template" data-original-title="">
+                <span class="input-group-prepend">
+                     <span class="input-group-text bg-my_grey">
+                             <i class="fas fa-bookmark"></i>
+                    </span>
+                </span>
+                <select id="{{prefix}}restr-template" class="form-control custom-select form-inline any-profile-input"
+                        instance-prefix="{{prefix}}">
+                    <option value="">Custom</option>
+                    {{#profiles.restrictions}}
+                        <option value="{{Payload}}">{{Name}}</option>
+                    {{/profiles.restrictions}}
+                </select>
+            </span>
+        </span>
+    {{/create-with-profiles}}
+    <div>
+    <span id="{{prefix}}restr-editor-wrap" class="{{#collapse.Restrictions}} d-none{{/collapse.Restrictions}}">
+        <input id="{{prefix}}restr-editor-mode" type="checkbox" checked data-size="sm" data-toggle="toggle"
+               data-style="restr-editor"
+               data-onstyle="success" data-offstyle="info" data-on="Easy Editor" data-off="JSON Editor"></span>
+        {{#collapse.Restrictions}}
+            <button class="btn btn-info my-expand ml-2 restr-expand" type="button" data-toggle="collapse"
+                    data-target="#{{prefix}}restr-body"
+                    aria-expanded="false" aria-controls="restr-body" id="{{prefix}}restr-expand"
+                    instance-prefix="{{prefix}}">Expand
+            </button>
+        {{/collapse.Restrictions}}
+    </div>
+</div>
+
+<div class="d-flex justify-content-between mb-3" id="{{prefix}}restr-summary">
+    <i id="{{prefix}}r-icon-time" class="fas fa-clock fa-2x" data-toggle="tooltip" data-placement="bottom" title=""
+       data-original-title=""></i>
+    <i id="{{prefix}}r-icon-host" class="fas fa-network-wired fa-2x" data-toggle="tooltip" data-placement="bottom"
+       title=""
+       data-original-title=""></i>
+    <i id="{{prefix}}r-icon-scope" class="fas fa-shield-alt fa-2x" data-toggle="tooltip" data-placement="bottom"
+       title=""
+       data-original-title=""></i>
+    <i id="{{prefix}}r-icon-aud" class="fas fa-server fa-2x" data-toggle="tooltip" data-placement="bottom" title=""
+       data-original-title=""></i>
+    <i id="{{prefix}}r-icon-usages" class="fas fa-less-than-equal fa-2x" data-toggle="tooltip" data-placement="bottom"
+       title=""
+       data-original-title=""></i>
+</div>
+
+
+<div id="{{prefix}}restr-body" class="{{#collapse.Restrictions}}collapse{{/collapse.Restrictions}}">
+    {{>restrictions/gui-editor}}
+
+    <div id="{{prefix}}restr-json-editor" class="justify-content-center d-none">
+        <small class="mt-4">{{#read-only}}
+            Read{{/read-only}}{{^read-only}}Write{{/read-only}} restrictions as JSON</small>
+        <textarea class="form-control any-restr-input" id="{{prefix}}restrictionsArea" autocomplete="off" cols=50
+                  rows=20
+                  onkeyup="updateRestrFromJSONEditor('{{prefix}}')"
+                  onauxclick="triggerUpdateRestrFromJSONEditorAuxclick(event, '{{prefix}}')"
+                  {{#read-only}}disabled{{/read-only}}></textarea>
+    </div>
+</div>
+
+<script>
+    {
+        let data = getPrefixData("{{prefix}}");
+        if (!('restrictions' in data)) {
+            data['restrictions'] = {
+            'read-only': {{#read-only}}true{{/read-only}}{{^read-only}}false{{/read-only}},
+            'restrictions': {{#restrictions}}{{&Text}}?{{&Text}}:[{}]{{/restrictions}}{{^restrictions}}[{}]{{/restrictions}} ,
+            };
+        }
+    }
+</script>

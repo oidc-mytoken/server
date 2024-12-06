@@ -19,10 +19,11 @@ import (
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
+	"github.com/oidc-mytoken/server/internal/db/notificationsrepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
@@ -111,10 +112,10 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 
 // HandleMytokenFromMytokenReqChecks handles the necessary req checks for a pkg.MytokenFromMytokenRequest
 func HandleMytokenFromMytokenReqChecks(
-	rlog log.Ext1FieldLogger, req *response.MytokenFromMytokenRequest, ip string,
+	rlog log.Ext1FieldLogger, req *response.MytokenFromMytokenRequest, clientData *api.ClientMetaData,
 	ctx *fiber.Ctx,
 ) (*restrictions.Restriction, *mytoken.Mytoken, *model.Response) {
-	req.Restrictions.ReplaceThisIP(ip)
+	req.Restrictions.ReplaceThisIP(clientData.IP)
 	req.Restrictions.ClearUnsupportedKeys()
 	rlog.Trace("Parsed mytoken request")
 
@@ -124,8 +125,8 @@ func HandleMytokenFromMytokenReqChecks(
 	if errRes != nil {
 		return nil, nil, errRes
 	}
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
-		rlog, nil, mt, ip, nil, nil, api.CapabilityCreateMT,
+	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
+		rlog, nil, mt, clientData, api.CapabilityCreateMT,
 	)
 	if errRes != nil {
 		return nil, nil, errRes
@@ -144,7 +145,7 @@ func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
 	if err := errors.WithStack(json.Unmarshal(ctx.Body(), &req)); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
-	usedRestriction, mt, errRes := HandleMytokenFromMytokenReqChecks(rlog, req, ctx.IP(), ctx)
+	usedRestriction, mt, errRes := HandleMytokenFromMytokenReqChecks(rlog, req, ctxutils.ClientMetaData(ctx), ctx)
 	if errRes != nil {
 		return errRes
 	}
@@ -178,20 +179,31 @@ func HandleMytokenFromMytokenReq(
 			if err = ste.Store(rlog, tx, "Used grant_type mytoken"); err != nil {
 				return
 			}
+			if err = notificationsrepo.ExpandNotificationsToChildrenIfApplicable(
+				rlog, tx, parent.ID, ste.ID,
+			); err != nil {
+				return err
+			}
+			if err = notificationsrepo.ScheduleExpirationNotificationsIfNeeded(
+				rlog, tx, ste.ID, ste.Token.ExpiresAt, ste.Token.IssuedAt,
+			); err != nil {
+				return err
+			}
 			return eventService.LogEvents(
-				rlog, tx, []eventService.MTEvent{
+				rlog, tx, []pkg.MTEvent{
 					{
-						Event: event.FromNumber(event.InheritedRT, "Got RT from parent"),
-						MTID:  ste.ID,
+						Event:          api.EventInheritedRT,
+						Comment:        "Got RT from parent",
+						MTID:           ste.ID,
+						ClientMetaData: *networkData,
 					},
 					{
-						Event: event.FromNumber(
-							event.SubtokenCreated,
-							strings.TrimSpace(fmt.Sprintf("Created MT %s", req.GeneralMytokenRequest.Name)),
-						),
-						MTID: parent.ID,
+						Event:          api.EventSubtokenCreated,
+						Comment:        strings.TrimSpace(fmt.Sprintf("Created MT %s", req.GeneralMytokenRequest.Name)),
+						MTID:           parent.ID,
+						ClientMetaData: *networkData,
 					},
-				}, *networkData,
+				},
 			)
 		},
 	); err != nil {
@@ -235,24 +247,15 @@ func createMytokenEntry(
 		}
 	}
 	if changed := req.Restrictions.EnforceMaxLifetime(parent.OIDCIssuer); changed && req.FailOnRestrictionsNotTighter {
-		return nil, &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("requested restrictions do not respect maximum mytoken lifetime"),
-		}
+		return nil, model.BadRequestErrorResponse("requested restrictions do not respect maximum mytoken lifetime")
 	}
 	r, ok := restrictions.Tighten(rlog, parent.Restrictions, req.Restrictions.Restrictions)
 	if !ok && req.FailOnRestrictionsNotTighter {
-		return nil, &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("requested restrictions are not subset of original restrictions"),
-		}
+		return nil, model.BadRequestErrorResponse("requested restrictions are not subset of original restrictions")
 	}
 	c := api.TightenCapabilities(parent.Capabilities, req.Capabilities.Capabilities)
 	if len(c) == 0 {
-		return nil, &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError("mytoken to be issued cannot have any of the requested capabilities"),
-		}
+		return nil, model.BadRequestErrorResponse("mytoken to be issued cannot have any of the requested capabilities")
 	}
 	var rot *api.Rotation
 	if req.Rotation != nil {

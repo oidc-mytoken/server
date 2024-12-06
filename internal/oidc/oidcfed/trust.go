@@ -1,7 +1,7 @@
 package oidcfed
 
 import (
-	fed "github.com/zachmann/go-oidcfed/pkg"
+	fed "github.com/zachmann/go-oidfed/pkg"
 )
 
 // getOPMetadata returns the fed.OpenIDProviderMetadata for an oidcfed issuer

@@ -13,6 +13,7 @@ import (
 
 var geoDB *ip2location.DB
 var privateCountryCode string
+var privateCountry string
 
 // Init initializes the geo ip db
 func Init() {
@@ -34,6 +35,7 @@ func Init() {
 	myIP := strings.TrimSpace(string(res.Body()))
 	log.WithField("public_ip", myIP).Debug("Obtained public ip")
 	privateCountryCode = CountryCode(myIP)
+	privateCountry = Country(myIP)
 	log.WithField("private_country_code", privateCountryCode).Debug("Determined server location")
 }
 
@@ -45,4 +47,14 @@ func CountryCode(ip string) string {
 	}
 	res, _ := geoDB.Get_country_short(ip)
 	return res.Country_short
+}
+
+// Country returns the country name for a given ip
+func Country(ip string) string {
+	netIP := net.ParseIP(ip)
+	if netIP != nil && (netIP.IsPrivate() || netIP.IsLoopback()) {
+		return privateCountry
+	}
+	res, _ := geoDB.Get_country_long(ip)
+	return res.Country_long
 }

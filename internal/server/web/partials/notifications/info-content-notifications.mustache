@@ -1,0 +1,11 @@
+<p id="{{prefix}}tokeninfo-notifications-no" class="d-none">
+    This mytoken does not have any active notifications.
+</p>
+<div id="{{prefix}}tokeninfo-notifications-listing">
+    <p>The following notifications are defined for this mytoken:</p>
+    <div id="{{prefix}}tokeninfo-notifications-listing-table-container"></div>
+</div>
+
+{{#subscribe-notifications}}
+    {{>notifications/subscribe-notification}}
+{{/subscribe-notifications}}

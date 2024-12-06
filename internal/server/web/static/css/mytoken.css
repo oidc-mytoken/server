@@ -140,3 +140,8 @@ span.user-agent i + i {
 .fontawesome {
     font-family: 'FontAwesome', Lato, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
 }
+
+.sticky-center {
+    position: sticky;
+    top: 50%;
+}

@@ -1,28 +1,24 @@
 package settings
 
 import (
-	"fmt"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/utils/utils"
+	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
 	my "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	serverModel "github.com/oidc-mytoken/server/internal/model"
-	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	event "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
-	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	"github.com/oidc-mytoken/server/internal/server/paths"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
-	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
+	"github.com/oidc-mytoken/server/internal/utils/mytokenutils"
 )
 
 // InitSettings initializes the settings metadata
@@ -31,104 +27,78 @@ func InitSettings() {
 	settingsMetadata.GrantTypeEndpoint = utils.CombineURLPath(
 		config.Get().IssuerURL, apiPaths.UserSettingEndpoint, "grants",
 	)
+	settingsMetadata.EmailEndpoint = utils.CombineURLPath(
+		config.Get().IssuerURL, apiPaths.UserSettingEndpoint, "email",
+	)
 }
 
-var settingsMetadata = api.SettingsMetaData{
-	GrantTypeEndpoint: "grants",
-}
+var settingsMetadata = api.SettingsMetaData{}
 
 // HandleSettings handles Metadata requests to the settings endpoint
-func HandleSettings(ctx *fiber.Ctx) error {
-	res := serverModel.Response{
+func HandleSettings(*fiber.Ctx) *serverModel.Response {
+	return &serverModel.Response{
 		Status:   fiber.StatusOK,
 		Response: settingsMetadata,
 	}
-	return res.Send(ctx)
 }
 
 // HandleSettingsHelper is a helper wrapper function that handles various settings request with the help of a callback
 func HandleSettingsHelper(
 	ctx *fiber.Ctx,
+	tx *sqlx.Tx,
 	reqMytoken *universalmytoken.UniversalMytoken,
 	requiredCapability api.Capability,
-	logEvent *event.Event,
+	logEvent *api.Event,
+	eventComment string,
 	okStatus int,
 	callback func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *serverModel.Response),
 	tokenGoneAfterCallback bool,
-) error {
+) *serverModel.Response {
 	rlog := logger.GetRequestLogger(ctx)
-	mt, errRes := auth.RequireValidMytoken(rlog, nil, reqMytoken, ctx)
-	if errRes != nil {
-		return errRes.Send(ctx)
-	}
-	usedRestriction, errRes := auth.CheckCapabilityAndRestriction(
-		rlog, nil, mt, ctx.IP(), nil, nil, requiredCapability,
-	)
-	if errRes != nil {
-		return errRes.Send(ctx)
-	}
-	var tokenUpdate *my.MytokenResponse
-	var rsp my.TokenUpdatableResponse
-	if err := db.Transact(
-		rlog, func(tx *sqlx.Tx) (err error) {
-			rsp, errRes = callback(tx, mt)
+
+	var res *serverModel.Response
+	if err := db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			mt, errRes := auth.RequireValidMytoken(rlog, tx, reqMytoken, ctx)
 			if errRes != nil {
-				return fmt.Errorf("dummy")
+				res = errRes
+				return errors.New("rollback")
+			}
+			usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
+				rlog, tx, mt, ctxutils.ClientMetaData(ctx), requiredCapability,
+			)
+			if errRes != nil {
+				res = errRes
+				return errors.New("rollback")
+			}
+			rsp, errRes := callback(tx, mt)
+			if errRes != nil {
+				res = errRes
+				return errors.New("rollback")
+			}
+			if okStatus == 0 {
+				okStatus = fiber.StatusOK
+			}
+			res = &serverModel.Response{
+				Status:   okStatus,
+				Response: rsp,
 			}
 			if tokenGoneAfterCallback {
-				return
+				return nil
 			}
-			clientMetaData := ctxutils.ClientMetaData(ctx)
-			if logEvent != nil {
-				if err = eventService.LogEvent(
-					rlog, tx, eventService.MTEvent{
-						Event: logEvent,
-						MTID:  mt.ID,
-					}, *clientMetaData,
-				); err != nil {
-					return
-				}
-			}
-			if usedRestriction != nil {
-				if err = usedRestriction.UsedOther(rlog, tx, mt.ID); err != nil {
-					return
-				}
-			}
-			tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(
-				rlog, tx, reqMytoken.JWT, mt, *clientMetaData, reqMytoken.OriginalTokenType,
+			var rollback bool
+			res, rollback = mytokenutils.DoAfterRequestThingsOther(
+				rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
+				*logEvent, eventComment, usedRestriction, reqMytoken.JWT, reqMytoken.OriginalTokenType,
 			)
-			return
+			if rollback {
+				return errors.New("rollback")
+			}
+			return nil
 		},
-	); err != nil {
-		if errRes != nil {
-			return errRes.Send(ctx)
-		}
+	); err != nil && res == nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return serverModel.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		res = serverModel.ErrorToInternalServerErrorResponse(err)
 	}
-
-	var cake []*fiber.Cookie
-	if tokenUpdate != nil {
-		if rsp == nil {
-			rsp = &onlyTokenUpdateRes{}
-		}
-		rsp.SetTokenUpdate(tokenUpdate)
-		cake = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
-		okStatus = fiber.StatusOK
-	}
-	return serverModel.Response{
-		Status:   okStatus,
-		Response: rsp,
-		Cookies:  cake,
-	}.Send(ctx)
-}
-
-type onlyTokenUpdateRes struct {
-	api.OnlyTokenUpdateResponse
-	TokenUpdate *my.MytokenResponse `json:"token_update,omitempty"`
-}
-
-// SetTokenUpdate implements the pkg.TokenUpdatableResponse interface
-func (res *onlyTokenUpdateRes) SetTokenUpdate(tokenUpdate *my.MytokenResponse) {
-	res.TokenUpdate = tokenUpdate
+	return res
 }

@@ -41,8 +41,8 @@ disableGrantCallbacks['ssh'] = function disableSSHCallback() {
 function initSSH(...next) {
     initRestr();
     initCapabilities();
-    checkCapability("tokeninfo", mtPrefix);
-    checkCapability("AT", mtPrefix);
+    checkCapability("tokeninfo");
+    checkCapability("AT");
     clearSSHKeyTable();
     $.ajax({
         type: "GET",

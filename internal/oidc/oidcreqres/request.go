@@ -4,6 +4,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/coreos/go-oidc/v3/oidc"
+
 	"github.com/oidc-mytoken/server/internal/model"
 	iutils "github.com/oidc-mytoken/server/internal/utils"
 )
@@ -35,13 +37,17 @@ func NewRefreshRequest(rt string, aud *model.AudienceConf) *RefreshRequest {
 	}
 }
 
-// ToURLValues formats the RefreshRequest as a url.Values
+// ToURLValues formats the RefreshRequest as an url.Values
 func (r *RefreshRequest) ToURLValues() url.Values {
 	m := make(url.Values)
 	m["grant_type"] = []string{r.GrantType}
 	m["refresh_token"] = []string{r.RefreshToken}
 	if r.Scopes != "" {
-		m["scope"] = []string{r.Scopes}
+		scopes := r.Scopes
+		if !strings.Contains(scopes, oidc.ScopeOfflineAccess) {
+			scopes += " " + oidc.ScopeOfflineAccess
+		}
+		m["scope"] = []string{scopes}
 	}
 	if len(r.Audiences) > 0 && r.Audiences[0] != "" {
 		if r.spaceDelimited {

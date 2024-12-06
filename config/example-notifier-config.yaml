@@ -1,0 +1,14 @@
+# This config file is used by a standalone notifier server
+# It is not required for usage of the integrated notifier
+# Obviously this has to be placed on the machine running the standalone notifier server
+
+email:
+  enabled: true
+  mail_server:
+    host:
+    port: 25
+    user:
+    password:
+    from_address:
+  # Directory path to overwrite email templates
+  overwrite_dir:

@@ -67,7 +67,7 @@ func (c *Cluster) AddNodes() {
 	}
 }
 
-// AddNode adds the passed host a a db node to the cluster
+// AddNode adds the passed host to a db node to the cluster
 func (c *Cluster) AddNode(host string) error {
 	log.WithField("host", host).Debug("Adding node to db cluster")
 	return c.addNode(
@@ -179,6 +179,9 @@ func (n *node) transact(rlog log.Ext1FieldLogger, fn func(*sqlx.Tx) error) (bool
 	if err != nil {
 		e := errorfmt.Error(err)
 		switch {
+		case e == "Error 1047 (08S01): WSREP has not yet prepared node for application use":
+			rlog.WithField("host", n.host).Error("WSREP error on node")
+			return true, err
 		case e == "sql: database is closed",
 			strings.HasPrefix(e, "dial tcp"),
 			strings.HasSuffix(e, "closing bad idle connection: EOF"):
@@ -204,12 +207,12 @@ func (n *node) trans(rlog log.Ext1FieldLogger, fn func(*sqlx.Tx) error) error {
 }
 
 func (c *Cluster) next(rlog log.Ext1FieldLogger) *node {
-	rlog.Trace("Selecting a node")
+	// rlog.Trace("Selecting a node")
 	select {
 	case n := <-c.active:
 		if n.active {
 			c.active <- n
-			rlog.WithField("host", n.host).Trace("Selected active node")
+			// rlog.WithField("host", n.host).Trace("Selected active node")
 			return n
 		}
 		rlog.WithField("host", n.host).Trace("Found inactive node")

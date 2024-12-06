@@ -16,18 +16,15 @@ import (
 )
 
 // HandleCreateTransferCodeForExistingMytoken handles request to create a transfer code for an existing mytoken
-func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
+func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	var req pkg.CreateTransferCodeRequest
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
-		return model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.BadRequestError(errorfmt.Error(err)),
-		}.Send(ctx)
+		return model.BadRequestErrorResponse(errorfmt.Error(err))
 	}
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
 	if errRes != nil {
-		return errRes.Send(ctx)
+		return errRes
 	}
 
 	transferCode, expiresIn, err := mytoken.CreateTransferCode(
@@ -35,9 +32,9 @@ func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
 	)
 	if err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+		return model.ErrorToInternalServerErrorResponse(err)
 	}
-	res := &model.Response{
+	return &model.Response{
 		Status: fiber.StatusOK,
 		Response: pkg.TransferCodeResponse{
 			MytokenType: model.ResponseTypeTransferCode,
@@ -47,5 +44,4 @@ func HandleCreateTransferCodeForExistingMytoken(ctx *fiber.Ctx) error {
 			},
 		},
 	}
-	return res.Send(ctx)
 }

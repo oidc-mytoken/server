@@ -17,7 +17,7 @@ func CreateMytokenSubject(oidcSub, oidcIss string) string {
 }
 
 // CompareNullableIntsWithNilAsInfinity compare two *int64 and handles nil as infinity. It returns 0 if both are equal,
-// a positive value if a is greater than b, a negative value is a is less than b
+// a positive value if a is greater than b, a negative value if a is less than b
 func CompareNullableIntsWithNilAsInfinity(a, b *int64) int {
 	if a == nil && b == nil {
 		return 0
@@ -100,28 +100,6 @@ func StructToStringMapUsingJSONTags(st interface{}) map[string]string {
 	return StructToStringMap(st, "json")
 }
 
-// MinInt returns the smallest of the passed integers
-func MinInt(a int, ints ...int) int {
-	min := a
-	for _, i := range ints {
-		if i < min {
-			min = i
-		}
-	}
-	return min
-}
-
-// MinInt64 returns the smallest of the passed integers
-func MinInt64(a int64, ints ...int64) int64 {
-	min := a
-	for _, i := range ints {
-		if i < min {
-			min = i
-		}
-	}
-	return min
-}
-
 // ORErrors returns the first passed error that is not nil
 func ORErrors(errs ...error) error {
 	for _, err := range errs {
@@ -140,4 +118,24 @@ func OR(bools ...bool) bool {
 		}
 	}
 	return false
+}
+
+// GetStringFromAnyMap returns a string value from a map[string]any
+func GetStringFromAnyMap(m map[string]any, key string) string {
+	v, found := m[key]
+	if !found {
+		return ""
+	}
+	s, _ := v.(string)
+	return s
+}
+
+// GetBoolFromAnyMap returns a bool value from a map[string]any
+func GetBoolFromAnyMap(m map[string]any, key string) bool {
+	v, found := m[key]
+	if !found {
+		return false
+	}
+	b, _ := v.(bool)
+	return b
 }

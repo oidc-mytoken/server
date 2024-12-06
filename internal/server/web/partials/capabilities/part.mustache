@@ -1,0 +1,10 @@
+<li class="list-group-item capability">
+    {{#ReadWriteCapability}}
+        {{> capabilities/single-part}}
+    {{/ReadWriteCapability}}
+    <ul class="list-group">
+        {{#Children}}
+            {{> capabilities/part}}
+        {{/Children}}
+    </ul>
+</li>

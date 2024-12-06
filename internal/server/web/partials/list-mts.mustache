@@ -1,3 +1,4 @@
+{{#mt-listing}}
 <h4>All My Mytokens</h4>
 <button class="btn btn-reload" id="list-reload" data-toggle="tooltip" data-placement="bottom"
         title="Reload data">
@@ -9,4 +10,23 @@
 </button>
 <p class="card-text" id="list-msg"></p>
 
-{{>history-modal}}
+<script>
+    const email_notifications_supported =
+        {{#notifications-mail-enabled}}
+        true;
+        {{/notifications-mail-enabled}}
+        {{^notifications-mail-enabled}}
+        false;
+        {{/notifications-mail-enabled}}
+    const calendar_notifications_supported =
+        {{#notifications-calendar-enabled}}
+        true;
+        {{/notifications-calendar-enabled}}
+        {{^notifications-calendar-enabled}}
+        false;
+        {{/notifications-calendar-enabled}}
+</script>
+{{#notifications}}
+{{>notifications/info-subscribe-modal}}
+{{/notifications}}
+{{/mt-listing}}

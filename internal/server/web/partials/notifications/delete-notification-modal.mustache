@@ -1,0 +1,27 @@
+<div class="modal fade" id="delete-notification-modal" tabindex="-1" role="dialog"
+     aria-labelledby="delete-notifications-modal-title"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal" role="document">
+        <div class="modal-content bg-my_grey">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delete-notifications-modal-title">Delete Notification</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    <span class="d-none"
+                          id="last-token-hint">This is the last token subscribed to this notification.</span>
+                    You are going to delete this notification. Are you sure?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal"
+                        onclick="deleteNotification()">Delete Notification
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
