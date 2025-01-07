@@ -8,7 +8,7 @@ require (
 	github.com/Songmu/prompter v0.5.1
 	github.com/TwiN/gocache/v2 v2.2.2
 	github.com/arran4/golang-ical v0.3.1
-	github.com/coreos/go-oidc/v3 v3.11.0
+	github.com/coreos/go-oidc/v3 v3.12.0
 	github.com/evanphx/json-patch/v5 v5.9.0
 	github.com/fatih/structs v1.1.0
 	github.com/gliderlabs/ssh v0.3.8
