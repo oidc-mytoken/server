@@ -12,7 +12,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.9.0
 	github.com/fatih/structs v1.1.0
 	github.com/gliderlabs/ssh v0.3.8
-	github.com/go-resty/resty/v2 v2.16.2
+	github.com/go-resty/resty/v2 v2.16.4
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/gofiber/fiber/v2 v2.52.6
 	github.com/gofiber/template/mustache/v2 v2.0.12
@@ -74,7 +74,7 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
-	golang.org/x/net v0.31.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	tideland.dev/go/slices v0.2.0 // indirect
 )
