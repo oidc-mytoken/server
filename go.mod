@@ -15,7 +15,7 @@ require (
 	github.com/go-resty/resty/v2 v2.16.2
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/gofiber/fiber/v2 v2.52.6
-	github.com/gofiber/template/mustache/v2 v2.0.12
+	github.com/gofiber/template/mustache/v2 v2.0.13
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/ip2location/ip2location-go v8.3.0+incompatible
