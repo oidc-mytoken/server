@@ -5,10 +5,13 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/Songmu/prompter"
 	"github.com/oidc-mytoken/utils/utils/fileutil"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
@@ -114,7 +117,7 @@ var app = &cli.App{
 			Email: "gabriel.zachmann@kit.edu",
 		},
 	},
-	Copyright:              "Karlsruhe Institute of Technology 2020-2022",
+	Copyright:              "Karlsruhe Institute of Technology 2020-2025",
 	UseShortOptionHandling: true,
 	Commands: cli.Commands{
 		&cli.Command{
@@ -147,6 +150,12 @@ var app = &cli.App{
 					Usage:       "Generates a new oidc signing key",
 					Description: "Generates a new oidc signing key according to the properties specified in the config file and stores it.",
 					Action:      createOIDCSigningKey,
+				},
+				&cli.Command{
+					Name:        "ssh",
+					Usage:       "Generates new ssh host key pairs",
+					Description: "Generates new ssh host key paris to the location specified in the config file.",
+					Action:      createSSHHostKeys,
 				},
 			},
 			Flags: []cli.Flag{
@@ -219,7 +228,24 @@ var app = &cli.App{
 			},
 		},
 	},
+	Action: guidedSetup,
+	Flags: append(
+		dbFlags,
+		&cli.BoolFlag{
+			Name: "ask-overwrites",
+			Aliases: []string{
+				"prompt-overwrites",
+				"no-overwrite-skip",
+			},
+			Usage:       "If a file already exist, ask if it should be overwritten instead of skipping it.",
+			Destination: &askOverwriteFlag,
+		},
+	),
 }
+
+var askOverwriteFlag bool
+var noOverwritePrompt bool
+var guidedMode bool
 
 func main() {
 	config.LoadForSetup()
@@ -229,18 +255,64 @@ func main() {
 	}
 }
 
+func guidedSetup(ctx *cli.Context) error {
+	guidedMode = true
+	noOverwritePrompt = !askOverwriteFlag
+	fcs := []func(*cli.Context) error{
+		installGEOIPDB,
+		createMytokenSigningKey,
+		createOIDCSigningKey,
+		createFederationSigningKey,
+		createSSHHostKeys,
+		func(context *cli.Context) error {
+			fmt.Println("Setting up database...")
+			return nil
+		},
+		createDB,
+		createUser,
+	}
+
+	for _, f := range fcs {
+		if err := f(ctx); err != nil {
+			return err
+		}
+		// fmt.Println()
+	}
+	fmt.Println("Setup done!")
+	fmt.Println("You might continue with migrating the database.")
+	return nil
+}
+
 func installGEOIPDB(_ *cli.Context) error {
+	f := config.Get().GeoIPDBFile
+	if f == "" {
+		fmt.Fprintln(os.Stderr, "No geoip database file specified")
+		if !guidedMode {
+			os.Exit(1)
+		}
+		return nil
+	}
+	if fileutil.FileExists(f) {
+		fmt.Printf("Geo IP Database file '%s' already exists.\n", f)
+		if noOverwritePrompt {
+			return nil
+		}
+		if !prompter.YesNo(
+			"Do you  want to re-download the geo ip database?", false,
+		) {
+			return nil
+		}
+	}
 	archive, err := zipdownload.DownloadZipped("https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.IPV6.BIN.ZIP")
 	if err != nil {
 		return err
 	}
-	log.Debug("Downloaded zip file")
-	err = os.WriteFile(config.Get().GeoIPDBFile, archive["IP2LOCATION-LITE-DB1.IPV6.BIN"], 0600)
-	if err == nil {
-		log.WithField("file", config.Get().GeoIPDBFile).Debug("Installed geo ip database")
-		fmt.Printf("Installed geo ip database file to '%s'.\n", config.Get().GeoIPDBFile)
+	fmt.Println("Downloaded geo ip database")
+	if err = os.WriteFile(config.Get().GeoIPDBFile, archive["IP2LOCATION-LITE-DB1.IPV6.BIN"], 0600); err != nil {
+		return err
 	}
-	return err
+	fmt.Printf("Geo IP Database file '%s' successfully installed.\n", f)
+	return nil
 }
 
 func createMytokenSigningKey(_ *cli.Context) error {
@@ -248,39 +320,87 @@ func createMytokenSigningKey(_ *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return writeSigningKey(sk, config.Get().Signing.Mytoken.KeyFile)
+	return writeSigningKey(sk, config.Get().Signing.Mytoken.KeyFile, "mytoken")
 }
 func createOIDCSigningKey(_ *cli.Context) error {
 	sk, _, err := jws.GenerateOIDCSigningKeyPair()
 	if err != nil {
 		return err
 	}
-	return writeSigningKey(sk, config.Get().Signing.OIDC.KeyFile)
+	return writeSigningKey(sk, config.Get().Signing.OIDC.KeyFile, "oidc")
 }
 func createFederationSigningKey(_ *cli.Context) error {
+	if !config.Get().Features.Federation.Enabled && guidedMode {
+		return nil
+	}
 	sk, _, err := jws.GenerateFederationSigningKeyPair()
 	if err != nil {
 		return err
 	}
-	return writeSigningKey(sk, config.Get().Features.Federation.Signing.KeyFile)
+	return writeSigningKey(sk, config.Get().Features.Federation.Signing.KeyFile, "openid federations")
 }
 
-func writeSigningKey(sk crypto.Signer, keyFileFromConfig string) error {
+func writeSigningKey(sk crypto.Signer, keyPathFromConfig, purpose string) error {
 	str := jws.ExportPrivateKeyAsPemStr(sk)
+	if sigKeyFile == "" || guidedMode {
+		sigKeyFile = keyPathFromConfig
+	}
 	if sigKeyFile == "" {
-		sigKeyFile = keyFileFromConfig
+		if guidedMode && purpose != "mytoken" {
+			return nil
+		}
+		return errors.New("no signing key file specified")
 	}
 	if fileutil.FileExists(sigKeyFile) {
-		log.WithField("filepath", sigKeyFile).Debug("File already exists")
-		if !prompter.YesNo(fmt.Sprintf("File '%s' already exists. Do you  want to overwrite it?", sigKeyFile), false) {
-			os.Exit(1)
+		fmt.Printf("%s signing key file '%s' already exists.\n", purpose, sigKeyFile)
+		if noOverwritePrompt {
+			return nil
+		}
+		if !prompter.YesNo("Do you  want to overwrite it?", false) {
+			return nil
 		}
 	}
 	if err := os.WriteFile(sigKeyFile, []byte(str), 0600); err != nil {
 		return err
 	}
-	log.WithField("filepath", sigKeyFile).Debug("Wrote key to file")
-	fmt.Printf("Wrote key to file '%s'.\n", sigKeyFile)
+	fmt.Printf("Wrote %s signing key to file '%s'.\n", purpose, sigKeyFile)
+	return nil
+}
+
+func createSSHHostKeys(_ *cli.Context) error {
+	if guidedMode && !config.Get().Features.SSH.Enabled {
+		return nil
+	}
+	for _, keyFile := range config.Get().Features.SSH.KeyFiles {
+		if fileutil.FileExists(keyFile) {
+			fmt.Printf("ssh host key file '%s' already exists.\n", keyFile)
+			if noOverwritePrompt || !prompter.YesNo(
+				"Do you  want to overwrite it?", false,
+			) {
+				continue
+			}
+		}
+		var typ string
+		var additionalArgs []string
+		switch {
+		case strings.HasSuffix(keyFile, "_rsa_key"):
+			typ = "rsa"
+			additionalArgs = append(additionalArgs, "-b", "4096")
+		case strings.HasSuffix(keyFile, "_ed25519_key"):
+			typ = "ed25519"
+		case strings.HasSuffix(keyFile, "_ecdsa_key"):
+			typ = "ecdsa"
+			additionalArgs = append(additionalArgs, "-b", "521")
+		}
+		keygenCmd := fmt.Sprintf(`ssh-keygen -t %s %s -f %s -N ""`, typ, strings.Join(additionalArgs, " "), keyFile)
+		cmd := exec.Command("sh", "-c", keygenCmd)
+		if err := cmd.Run(); err != nil {
+			log.WithField("filepath", keyFile).WithError(err).Error("Failed to generate key")
+			return err
+		} else {
+			fmt.Printf("Generated ssh host key '%s'.\n", keyFile)
+		}
+	}
 	return nil
 }
 
