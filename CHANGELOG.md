@@ -12,6 +12,21 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.11.0
+
+### Important Changes
+
+- The `mytoken-migratedb` utility is dropped! Its functionalty is now
+  included in `mytoken-setup`. The drop-in replacement for
+  `mytoken-migratedb` is `mytoken-setup db migrate`
+
+### Features
+
+- Improved the `mytoken-setup` utility:
+  - Added possibility to generate ssh host keys
+  - Integrated `mytoken-migratedb`
+  - Added guided mode (this is the default) that guides through / does all
+    necessary setups.
 
 ## mytoken 0.10.0
 

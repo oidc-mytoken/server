@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/jws"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/utils/dbcl"
@@ -30,6 +32,18 @@ type _rootDBCredentials struct {
 }
 
 var rootDBCredentials _rootDBCredentials
+
+var askOverwriteFlag bool
+var noOverwritePrompt bool
+var guidedMode bool
+var skipDB bool
+
+var migrateDBConf struct {
+	config.DBConf
+	Hosts    cli.StringSlice
+	force    bool
+	confFile string
+}
 
 func (cred _rootDBCredentials) toDBConf() config.DBConf {
 	return config.DBConf{
@@ -192,6 +206,88 @@ var app = &cli.App{
 					Action: createUser,
 					Flags:  append([]cli.Flag{}, dbFlags...),
 				},
+				&cli.Command{
+					Name:  "migrate",
+					Usage: "Migrates the database to the latest version",
+					Flags: []cli.Flag{
+						&cli.StringFlag{
+							Name: "nodes",
+							Aliases: []string{
+								"n",
+								"s",
+								"server",
+							},
+							Usage:       "The passed file lists the mytoken nodes / servers (one server per line)",
+							EnvVars:     []string{"MYTOKEN_NODES_FILE"},
+							TakesFile:   true,
+							Placeholder: "FILE",
+							Destination: &migrateDBConf.confFile,
+						},
+						&cli.BoolFlag{
+							Name:    "force",
+							Aliases: []string{"f"},
+							Usage: "Force a complete database migration. It is not checked if mytoken servers are " +
+								"compatible with the changes.",
+							Destination:      &migrateDBConf.force,
+							HideDefaultValue: true,
+						},
+
+						&cli.StringFlag{
+							Name:        "db",
+							Usage:       "The name of the database",
+							EnvVars:     []string{"DB_DATABASE"},
+							Value:       "mytoken",
+							Destination: &migrateDBConf.DB,
+							Placeholder: "DB",
+						},
+						&cli.StringFlag{
+							Name:        "user",
+							Aliases:     []string{"u"},
+							Usage:       "The user for connecting to the database (Needs correct privileges)",
+							EnvVars:     []string{"DB_USER"},
+							Value:       "root",
+							Destination: &migrateDBConf.User,
+							Placeholder: "USER",
+						},
+						&cli.StringFlag{
+							Name:    "password",
+							Aliases: []string{"p"},
+							Usage:   "The password for connecting to the database",
+							EnvVars: []string{
+								"DB_ROOT_PASSWORD",
+								"DB_ROOT_PW",
+							},
+							Destination: &migrateDBConf.Password,
+							Placeholder: "PASSWORD",
+						},
+						&cli.StringFlag{
+							Name:    "password-file",
+							Aliases: []string{"pw-file"},
+							Usage:   "Read the password for connecting to the database from this file",
+							EnvVars: []string{
+								"DB_PASSWORD_FILE",
+								"DB_PW_FILE",
+							},
+							Destination: &migrateDBConf.PasswordFile,
+							Placeholder: "FILE",
+						},
+						&cli.StringSliceFlag{
+							Name:    "host",
+							Aliases: []string{"hosts"},
+							Usage:   "The hostnames of the database nodes",
+							EnvVars: []string{
+								"DB_HOST",
+								"DB_HOSTS",
+								"DB_NODES",
+							},
+							Value:       cli.NewStringSlice("localhost"),
+							Destination: &migrateDBConf.Hosts,
+							Placeholder: "HOST",
+							TakesFile:   true,
+						},
+					},
+					Action: migrateDBAction,
+				},
 			},
 		},
 		&cli.Command{
@@ -240,15 +336,18 @@ var app = &cli.App{
 			Usage:       "If a file already exist, ask if it should be overwritten instead of skipping it.",
 			Destination: &askOverwriteFlag,
 		},
+		&cli.BoolFlag{
+			Name:        "skip-db",
+			Usage:       "Skips db-related setups",
+			Destination: &skipDB,
+		},
 	),
 }
 
-var askOverwriteFlag bool
-var noOverwritePrompt bool
-var guidedMode bool
-
 func main() {
+	log.SetLevel(log.ErrorLevel)
 	config.LoadForSetup()
+	config.Get().Logging.Internal.Level = "error"
 	loggerUtils.Init()
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -264,12 +363,25 @@ func guidedSetup(ctx *cli.Context) error {
 		createOIDCSigningKey,
 		createFederationSigningKey,
 		createSSHHostKeys,
-		func(context *cli.Context) error {
-			fmt.Println("Setting up database...")
-			return nil
-		},
-		createDB,
-		createUser,
+	}
+	if !skipDB {
+		fcs = append(
+			fcs,
+			func(context *cli.Context) error {
+				fmt.Println("Setting up database...")
+				return nil
+			},
+			createDB,
+			createUser,
+			func(context *cli.Context) error {
+				fmt.Println("Migrating database...")
+				migrateDBConf.DBConf = rootDBCredentials.toDBConf()
+				migrateDBConf.DBConf.DB = config.Get().DB.DB
+				migrateDBConf.force = true
+				db.ConnectConfig(migrateDBConf.DBConf)
+				return migrateDB(nil)
+			},
+		)
 	}
 
 	for _, f := range fcs {
@@ -279,7 +391,6 @@ func guidedSetup(ctx *cli.Context) error {
 		// fmt.Println()
 	}
 	fmt.Println("Setup done!")
-	fmt.Println("You might continue with migrating the database.")
 	return nil
 }
 
@@ -360,6 +471,9 @@ func writeSigningKey(sk crypto.Signer, keyPathFromConfig, purpose string) error 
 			return nil
 		}
 	}
+	if err := mkdir(filepath.Dir(sigKeyFile)); err != nil {
+		return err
+	}
 	if err := os.WriteFile(sigKeyFile, []byte(str), 0600); err != nil {
 		return err
 	}
@@ -379,6 +493,9 @@ func createSSHHostKeys(_ *cli.Context) error {
 			) {
 				continue
 			}
+		}
+		if err := mkdir(filepath.Dir(keyFile)); err != nil {
+			return err
 		}
 		var typ string
 		var additionalArgs []string
@@ -418,20 +535,28 @@ func readSQLFile(path string) (string, error) {
 func _getSetVars() (string, error) {
 	return readSQLFile("scripts/vars.sql")
 }
+func _getSetVarsAfterExec() (string, error) {
+	return readSQLFile("scripts/vars_after.sql")
+}
 func getSetVarsCommands(db, user, password string) (string, error) {
 	cmds, err := _getSetVars()
 	if err != nil {
 		return "", err
 	}
 	if db != "" {
-		cmds += fmt.Sprintf(`EXECUTE setDB USING '%s';\n`, db)
+		cmds += "\n" + fmt.Sprintf(`EXECUTE setDB USING '%s';`, db)
 	}
 	if user != "" {
-		cmds += fmt.Sprintf(`EXECUTE setUser USING '%s';\n`, user)
+		cmds += "\n" + fmt.Sprintf(`EXECUTE setUser USING '%s';`, user)
 	}
 	if password != "" {
-		cmds += fmt.Sprintf(`EXECUTE setPassword USING '%s';\n`, password)
+		cmds += "\n" + fmt.Sprintf(`EXECUTE setPassword USING '%s';`, password)
 	}
+	after, err := _getSetVarsAfterExec()
+	if err != nil {
+		return "", err
+	}
+	cmds += after
 	return cmds, nil
 }
 func getDBCmds() (string, error) {
@@ -441,7 +566,23 @@ func getUserCmds() (string, error) {
 	return readSQLFile("scripts/user.sql")
 }
 
+func dbEnsureRootPW() {
+	dbconf := rootDBCredentials.toDBConf()
+	user := rootDBCredentials.User
+	if user == "" {
+		user = "root"
+	}
+	if dbconf.GetPassword() == "" {
+		rootDBCredentials.Password = prompter.Password(
+			fmt.Sprintf(
+				"Enter db password for user '%s'", user,
+			),
+		)
+	}
+}
+
 func createDB(_ *cli.Context) error {
+	dbEnsureRootPW()
 	cmds, err := getSetVarsCommands(config.Get().DB.DB, config.Get().DB.User, config.Get().DB.GetPassword())
 	if err != nil {
 		return err
@@ -455,6 +596,7 @@ func createDB(_ *cli.Context) error {
 }
 
 func createUser(_ *cli.Context) error {
+	dbEnsureRootPW()
 	cmds, err := getSetVarsCommands(config.Get().DB.DB, config.Get().DB.User, config.Get().DB.GetPassword())
 	if err != nil {
 		return err
@@ -465,4 +607,41 @@ func createUser(_ *cli.Context) error {
 	}
 	cmds += userCmds
 	return dbcl.RunDBCommands(cmds, rootDBCredentials.toDBConf(), true)
+}
+
+func migrateDBAction(context *cli.Context) error {
+	var mytokenNodes []string
+	if context.Args().Len() > 0 {
+		mytokenNodes = context.Args().Slice()
+	} else if migrateDBConf.confFile != "" {
+		data := string(fileutil.MustReadFile(migrateDBConf.confFile))
+		mytokenNodes = strings.Split(data, "\n")
+	} else if os.Getenv("MYTOKEN_NODES") != "" {
+		mytokenNodes = strings.Split(os.Getenv("MYTOKEN_NODES"), ",")
+	} else if !migrateDBConf.force {
+		fmt.Fprintln(
+			os.Stderr,
+			"No mytoken servers specified. Please provide mytoken servers or use '-f' to "+
+				"force database migration.",
+		)
+		os.Exit(1)
+	}
+	if migrateDBConf.GetPassword() == "" {
+		migrateDBConf.Password = prompter.Password(
+			fmt.Sprintf(
+				"Enter db password for user '%s'", migrateDBConf.User,
+			),
+		)
+	}
+	migrateDBConf.ReconnectInterval = 60
+	migrateDBConf.DBConf.Hosts = migrateDBConf.Hosts.Value()
+	tmpScheduleEnabled := migrateDBConf.DBConf.EnableScheduledCleanup
+	migrateDBConf.DBConf.EnableScheduledCleanup = false
+	db.ConnectConfig(migrateDBConf.DBConf)
+	migrateDBConf.DBConf.EnableScheduledCleanup = tmpScheduleEnabled
+	return migrateDB(mytokenNodes)
+}
+
+func mkdir(path string) error {
+	return os.MkdirAll(path, 0750)
 }

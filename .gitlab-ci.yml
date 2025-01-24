@@ -60,11 +60,6 @@ build_setup:
   script:
     - go build github.com/oidc-mytoken/server/cmd/mytoken-server/mytoken-setup
 
-build_migratedb:
-  stage: build
-  script:
-    - go build github.com/oidc-mytoken/server/cmd/mytoken-server/mytoken-migratedb
-
 package:
   stage: package
   image:

@@ -24,16 +24,6 @@ builds:
     flags:
       - -trimpath
     mod_timestamp: '{{ .CommitTimestamp }}'
-  - id: migratedb
-    main: ./cmd/mytoken-server/mytoken-migratedb
-    binary: mytoken-migratedb
-    env:
-      - CGO_ENABLED=0
-    goos:
-      - linux
-    flags:
-      - -trimpath
-    mod_timestamp: '{{ .CommitTimestamp }}'
   - id: notifier-server
     main: ./cmd/mytoken-server/mytoken-notifier-server
     binary: mytoken-notifier-server
@@ -105,32 +95,6 @@ nfpms:
         file_name_template: >-
           {{ .PackageName }}-{{ .Version }}.
           {{- if eq .Arch "386" }}i386{{- else if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
-  - id: migratedb-pkg
-    package_name: mytoken-server-migratedb
-    file_name_template: >-
-      {{ .PackageName }}_{{ .Version }}_
-      {{- if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}
-    builds:
-      - migratedb
-    homepage: https://mytoken-docs.data.kit.edu/server
-    maintainer: Gabriel Zachmann <gabriel.zachmann@kit.edu>
-    description: A tool for migrating the database between versions
-    license: MIT
-    dependencies:
-      - mariadb-client
-    formats:
-      - deb
-      - rpm
-    release: "1"
-    section: misc
-    bindir: /usr/bin
-    overrides:
-      rpm:
-        dependencies:
-          - MariaDB-client
-        file_name_template: >-
-          {{ .PackageName }}-{{ .Version }}.
-          {{- if eq .Arch "386" }}i386{{- else if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
   - id: notifier-pkg
     package_name: mytoken-notifier-server
     file_name_template: >-
@@ -182,21 +146,6 @@ dockers:
       - "--pull"
       - "--label=org.opencontainers.image.created={{.Date}}"
       - "--label=org.opencontainers.image.title=mytoken-setup"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-  - goos: linux
-    goarch: amd64
-    ids:
-      - migratedb
-    image_templates:
-      - "oidcmytoken/mytoken-migratedb:unstable"
-      - "oidcmytoken/mytoken-migratedb:prerel"
-      - "oidcmytoken/mytoken-migratedb:{{ .Tag }}"
-    dockerfile: cmd/mytoken-server/mytoken-migratedb/Dockerfile
-    build_flag_templates:
-      - "--pull"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title=mytoken-migratedb"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - "--label=org.opencontainers.image.version={{.Version}}"
   - goos: linux
