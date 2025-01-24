@@ -367,13 +367,13 @@ func guidedSetup(ctx *cli.Context) error {
 	if !skipDB {
 		fcs = append(
 			fcs,
-			func(context *cli.Context) error {
+			func(_ *cli.Context) error {
 				fmt.Println("Setting up database...")
 				return nil
 			},
 			createDB,
 			createUser,
-			func(context *cli.Context) error {
+			func(_ *cli.Context) error {
 				fmt.Println("Migrating database...")
 				migrateDBConf.DBConf = rootDBCredentials.toDBConf()
 				migrateDBConf.DBConf.DB = config.Get().DB.DB
