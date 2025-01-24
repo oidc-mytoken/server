@@ -747,6 +747,7 @@ func validateWebInterface() error {
 }
 
 var possibleConfigLocations = []string{
+	".",
 	"config",
 	"/etc/mytoken",
 }
