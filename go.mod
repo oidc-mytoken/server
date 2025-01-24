@@ -12,7 +12,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.9.0
 	github.com/fatih/structs v1.1.0
 	github.com/gliderlabs/ssh v0.3.8
-	github.com/go-resty/resty/v2 v2.16.4
+	github.com/go-resty/resty/v2 v2.16.5
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/gofiber/fiber/v2 v2.52.6
 	github.com/gofiber/template/mustache/v2 v2.0.13
