@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -93,15 +94,15 @@ func updateCallback(
 	cmds, version string, done map[string]bool,
 	dbUpdateCallback func(log.Ext1FieldLogger, *sqlx.Tx, string) error,
 ) error {
-	log.WithField("version", version).Info("Updating DB to version")
+	fmt.Printf("Updating DB to version %s\n", version)
 	if cmds == "" {
 		return nil
 	}
 	if done[version] {
-		log.WithField("version", version).Info("Skipping Update; DB already has this version.")
+		fmt.Printf("Skipping Update; DB already has version %s\n", version)
 		return nil
 	}
-	if err := dbcl.RunDBCommands(cmds, dbConfig.DBConf, true); err != nil {
+	if err := dbcl.RunDBCommands(cmds, migrateDBConf.DBConf, true); err != nil {
 		return err
 	}
 	return db.Transact(

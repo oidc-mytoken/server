@@ -2,7 +2,7 @@ FROM oidcmytoken/debian-wait-for:latest
 WORKDIR /mytoken
 COPY mytoken-setup /usr/bin/mytoken-setup
 RUN apt-get update && \
-    apt-get install mariadb-client -y && \
+    apt-get install mariadb-client openssh-client -y && \
     apt-get autoremove -y && \
     apt-get clean -y && \
     rm -rf /var/lib/apt/lists/*

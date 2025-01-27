@@ -175,8 +175,13 @@ func (c *Cluster) Transact(rlog log.Ext1FieldLogger, fn func(*sqlx.Tx) error) er
 }
 
 func (n *node) transact(rlog log.Ext1FieldLogger, fn func(*sqlx.Tx) error) (bool, error) {
-	err := n.trans(rlog, fn)
-	if err != nil {
+	const maxRetry = 3
+	var err error
+	for i := 0; i < maxRetry; i++ {
+		err = n.trans(rlog, fn)
+		if err == nil {
+			return false, nil
+		}
 		e := errorfmt.Error(err)
 		switch {
 		case e == "Error 1047 (08S01): WSREP has not yet prepared node for application use":
@@ -187,6 +192,8 @@ func (n *node) transact(rlog log.Ext1FieldLogger, fn func(*sqlx.Tx) error) (bool
 			strings.HasSuffix(e, "closing bad idle connection: EOF"):
 			rlog.WithField("host", n.host).Error("Node is down")
 			return true, err
+		case strings.Contains(e, "try restarting transaction"):
+			continue
 		}
 	}
 	return false, err
