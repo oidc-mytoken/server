@@ -7,7 +7,7 @@ toolchain go1.22.5
 require (
 	github.com/Songmu/prompter v0.5.1
 	github.com/TwiN/gocache/v2 v2.2.2
-	github.com/arran4/golang-ical v0.3.1
+	github.com/arran4/golang-ical v0.3.2
 	github.com/coreos/go-oidc/v3 v3.12.0
 	github.com/evanphx/json-patch/v5 v5.9.0
 	github.com/fatih/structs v1.1.0
@@ -39,7 +39,6 @@ require (
 	golang.org/x/crypto v0.32.0
 	golang.org/x/mod v0.22.0
 	golang.org/x/oauth2 v0.25.0
-	golang.org/x/term v0.28.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -76,6 +75,7 @@ require (
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
+	golang.org/x/term v0.28.0 // indirect
 	tideland.dev/go/slices v0.2.0 // indirect
 )
 
