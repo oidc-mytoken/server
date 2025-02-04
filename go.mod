@@ -35,7 +35,7 @@ require (
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
 	github.com/valyala/fasthttp v1.58.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
-	github.com/zachmann/go-oidfed v0.2.0
+	github.com/zachmann/go-oidfed v0.2.1
 	golang.org/x/crypto v0.32.0
 	golang.org/x/mod v0.22.0
 	golang.org/x/oauth2 v0.25.0
@@ -70,7 +70,7 @@ require (
 	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/scylladb/go-set v1.0.2 // indirect
+	github.com/scylladb/go-set v1.0.3-0.20200225121959-cc7b2070d91e // indirect
 	github.com/tinylib/msgp v1.2.5 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
