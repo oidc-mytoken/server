@@ -7,15 +7,15 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/oidc-mytoken/utils/httpclient"
+	"github.com/oidc-mytoken/utils/unixtime"
 	"github.com/oidc-mytoken/utils/utils"
 	log "github.com/sirupsen/logrus"
-	"github.com/zachmann/go-oidfed/pkg"
-	"github.com/zachmann/go-oidfed/pkg/cache"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/versionrepo"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/routes"
+	"github.com/oidc-mytoken/server/internal/utils/cache"
 )
 
 // Start starts the healthcheck endpoint on the configured port if enabled
@@ -35,11 +35,11 @@ func Start() {
 }
 
 type status struct {
-	Healthy     bool             `json:"healthy"`
-	Operational bool             `json:"operational"`
-	Components  componentsStatus `json:"components"`
-	Version     string           `json:"version"`
-	Timestamp   pkg.Unixtime     `json:"timestamp"`
+	Healthy     bool              `json:"healthy"`
+	Operational bool              `json:"operational"`
+	Components  componentsStatus  `json:"components"`
+	Version     string            `json:"version"`
+	Timestamp   unixtime.UnixTime `json:"timestamp"`
 }
 
 type componentsStatus struct {
@@ -76,7 +76,7 @@ func healthcheck() status {
 		Operational: components.operational(),
 		Components:  components,
 		Version:     version.VERSION,
-		Timestamp:   pkg.Unixtime{Time: time.Now()},
+		Timestamp:   unixtime.Now(),
 	}
 }
 
@@ -105,12 +105,12 @@ func checkCache() bool {
 	defer cacheMutex.Unlock()
 	k := "healthcheck"
 	v := utils.RandASCIIString(64)
-	if err := cache.Set(k, v, time.Second); err != nil {
+	if err := cache.Set(cache.HealthcheckTest, k, v, time.Second); err != nil {
 		log.WithError(err).WithField("healthcheck", "cache").Error("error caching healthcheck")
 		return false
 	}
 	var cached string
-	set, err := cache.Get(k, &cached)
+	set, err := cache.Get(cache.HealthcheckTest, k, &cached)
 	if err != nil {
 		log.WithError(err).WithField("healthcheck", "cache").
 			Error("error obtaining cached healthcheck")

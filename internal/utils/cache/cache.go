@@ -45,7 +45,7 @@ const (
 	invalidated2
 	WebProfiles
 	FederationLib
-	FederationOPMetadata
+	HealthcheckTest
 	ScheduledNotifications
 	IPCache
 )
