@@ -172,8 +172,8 @@ github.com/zachmann/cli/v2 v2.3.1-0.20211220102037-d619fd40a704 h1:dpR/K16zQgc/5
 github.com/zachmann/cli/v2 v2.3.1-0.20211220102037-d619fd40a704/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/XcUArI=
 github.com/zachmann/go-oidfed v0.2.1 h1:9GqNAeKz4C5oIRCjgICvZR+QFmhFILdg2M03PjY8WyQ=
 github.com/zachmann/go-oidfed v0.2.1/go.mod h1:MLDspTwfvYbxt8FJjB+RrQ/vKRTGP4cCxC9m/9DIvXk=
-golang.org/x/crypto v0.33.0 h1:IOBPskki6Lysi0lo9qQvbxiQ+FvsCC/YWOecCHAixus=
-golang.org/x/crypto v0.33.0/go.mod h1:bVdXmD7IV/4GdElGPozy6U7lWdRXA4qyRVGJV57uQ5M=
+golang.org/x/crypto v0.34.0 h1:+/C6tk6rf/+t5DhUketUbD1aNGqiSX3j15Z6xuIDlBA=
+golang.org/x/crypto v0.34.0/go.mod h1:dy7dXNW32cAb/6/PRuTNsix8T+vJAqvuIy5Bli/x0YQ=
 golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e h1:+WEEuIdZHnUeJJmEUjyYC2gfUMj69yZXw17EnHg/otA=
 golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e/go.mod h1:Kr81I6Kryrl9sr8s2FK3vxD90NdsKWRuOIl2O4CvYbA=
 golang.org/x/mod v0.23.0 h1:Zb7khfcRGKk+kqfxFaP5tZqCnDZMjC5VtUBs87Hr6QM=
