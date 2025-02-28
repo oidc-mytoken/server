@@ -80,3 +80,8 @@ func (i MTID) MarshalJSON() ([]byte, error) {
 func (i *MTID) UnmarshalJSON(data []byte) error {
 	return errors.WithStack(json.Unmarshal(data, &i.UUID))
 }
+
+// MomID returns a MOMID for a MTID
+func (i MTID) MomID() MOMID {
+	return MOMID{i}
+}

@@ -150,10 +150,10 @@ function clearCalendarTable(prefix = "") {
 
 function addCalendarToTable(cal, prefix = "", with_delete = true) {
     $noCalendarsEntry(prefix).hideB();
-    let name = cal['name'];
+    let tags = cal['tags'];
     let ics_path = cal['ics_path'];
     let viewCalendarHtml = `<td><a href="${ics_path}/view"><i class="fas fa-calendar-alt"></i></a></td>`;
-    const html = `<tr class="calendar-entry"><td>${name}</td>${viewCalendarHtml}<td><a href="${ics_path}" target="_blank" rel="noopener noreferrer">${ics_path}</a></td>${with_delete ? deleteCalendarHtml(prefix) : ""}</tr>`;
+    const html = `<tr class="calendar-entry">${viewCalendarHtml}<td><a href="${ics_path}" target="_blank" rel="noopener noreferrer">${ics_path}</a></td><td>${createTags(tags)}</td>${with_delete ? deleteCalendarHtml(prefix) : ""}</tr>`;
     $calendarTable(prefix).prepend(html);
 }
 

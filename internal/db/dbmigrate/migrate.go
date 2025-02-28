@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"slices"
 
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/mod/semver"
@@ -38,7 +39,10 @@ func init() {
 				return nil
 			}
 			name := d.Name()
-			Versions = append(Versions, utils.RSplitN(name, ".", 3)[0])
+			v := utils.RSplitN(name, ".", 3)[0]
+			if !slices.Contains(Versions, v) {
+				Versions = append(Versions, v)
+			}
 			return nil
 		},
 	); err != nil {

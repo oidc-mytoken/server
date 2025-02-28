@@ -155,7 +155,7 @@ func CreateRecreateToken(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID) 
 }
 
 // CreateRemoveFromCalendar creates an action url for removing a token from a calendar
-func CreateRemoveFromCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarName string) (
+func CreateRemoveFromCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarID string) (
 	string,
 	error,
 ) {
@@ -163,7 +163,7 @@ func CreateRemoveFromCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.M
 		Action: pkg.ActionRemoveFromCalendar,
 		Code:   pkg.NewCode(),
 	}
-	if err := actionrepo.AddRemoveFromCalendarCode(rlog, tx, mtID, code.Code, calendarName); err != nil {
+	if err := actionrepo.AddRemoveFromCalendarCode(rlog, tx, mtID, code.Code, calendarID); err != nil {
 		return "", err
 	}
 	return routes.ActionsURL(code), nil

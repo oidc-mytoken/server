@@ -13,47 +13,64 @@ import (
 
 // CalendarInfo is a type holding the information stored in the database related to a calendar
 type CalendarInfo struct {
-	ID      string `db:"id" json:"id"`
-	Name    string `db:"name" json:"name"`
-	ICSPath string `db:"ics_path" json:"ics_path"`
-	ICS     string `db:"ics" json:"-"`
+	ID          string        `db:"id" json:"id"`
+	ICS         string        `db:"ics" json:"-"`
+	Description db.NullString `db:"description" json:"description"`
 }
 
 // Insert inserts a calendar for the given user (given by the mytoken) into the database
 func Insert(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, info CalendarInfo) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			_, err := tx.Exec(`CALL Calendar_Insert(?,?,?,?,?)`, mtID, info.ID, info.Name, info.ICSPath, info.ICS)
+			_, err := tx.Exec(`CALL Calendar_Insert(?,?,?)`, mtID, info.ID, info.ICS)
 			return errors.WithStack(err)
 		},
 	)
 }
 
 // Delete deletes a calendar for the given user (given by the mytoken) from the database
-func Delete(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID, name string) error {
+func Delete(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID, calendarID string) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			_, err := tx.Exec(`CALL Calendar_Delete(?,?)`, myid, name)
+			_, err := tx.Exec(`CALL Calendar_Delete(?,?)`, myid, calendarID)
 			return errors.WithStack(err)
 		},
 	)
 }
 
-// Update updates a calendar entry in the database
-func Update(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, info CalendarInfo) error {
+// UpdateICS updates a calendar entry in the database
+func UpdateICS(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarID string, ics string) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			_, err := tx.Exec(`CALL Calendar_Update(?,?,?,?)`, mtID, info.ID, info.Name, info.ICS)
+			_, err := tx.Exec(`CALL Calendar_Update(?,?,?)`, mtID, calendarID, ics)
 			return errors.WithStack(err)
 		},
 	)
 }
 
-// UpdateInternal updates a calendar entry in the database and does not require a mtid.MTID
-func UpdateInternal(rlog log.Ext1FieldLogger, tx *sqlx.Tx, info CalendarInfo) error {
+func LinkTags(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID string, tags []string) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			_, err := tx.Exec(`CALL Calendar_UpdateInternal(?,?,?)`, info.ID, info.Name, info.ICS)
+			_, err := tx.Exec(`CALL Calendar_ClearTags(?)`, calendarID)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			for _, tag := range tags {
+				_, err = tx.Exec(`CALL Calendar_LinkTag(?,?)`, calendarID, tag)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+			}
+			return nil
+		},
+	)
+}
+
+// UpdateICSInternal updates a calendar entry in the database	 and does not require a mtid.MTID
+func UpdateICSInternal(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID string, ics string) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Calendar_UpdateInternal(?,?)`, calendarID, ics)
 			return errors.WithStack(err)
 		},
 	)
@@ -69,21 +86,21 @@ func GetMTsInCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID string) 
 	return
 }
 
-// Get returns a calendar entry for a user and name
-func Get(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID any, name string) (info CalendarInfo, err error) {
-	err = db.RunWithinTransaction(
-		rlog, tx, func(tx *sqlx.Tx) error {
-			return errors.WithStack(tx.Get(&info, `CALL Calendar_Get(?,?)`, mtID, name))
-		},
-	)
-	return
-}
-
 // GetByID returns a calendar entry for a certain calendar id
 func GetByID(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id string) (info CalendarInfo, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			return errors.WithStack(tx.Get(&info, `CALL Calendar_GetByID(?)`, id))
+		},
+	)
+	return
+}
+
+// GetCalendarTags returns the api.TagInfos for a calendar
+func GetCalendarTags(rlog log.Ext1FieldLogger, tx *sqlx.Tx, id string) (tags []api.TagInfo, err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Select(&tags, `CALL Calendar_GetTags(?)`, id))
 		},
 	)
 	return
@@ -115,9 +132,13 @@ func (i CalendarInfo) toAPICalendarInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (
 		rlog, tx, func(tx *sqlx.Tx) error {
 			out = api.CalendarInfo{
 				NotificationCalendar: api.NotificationCalendar{
-					Name:    i.Name,
-					ICSPath: i.ICSPath,
+					ICSPath:     pkg.GetICSPath(i.ID),
+					Description: i.Description.String,
 				},
+			}
+			out.Tags, err = GetCalendarTags(rlog, tx, i.ID)
+			if err != nil {
+				return err
 			}
 			out.SubscribedTokens, err = GetMTsInCalendar(rlog, tx, i.ID)
 			return err
@@ -178,4 +199,16 @@ func AddMytokenToCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
 			return errors.WithStack(err)
 		},
 	)
+}
+
+func MTIsForSameUserAsCalendar(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx,
+	calendarID string, mtID mtid.MTID,
+) (ok bool, err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return tx.Select(&ok, `CALL Calendar_IDForSameUserAsCalendar(?, ?)`, calendarID, mtID)
+		},
+	)
+	return
 }

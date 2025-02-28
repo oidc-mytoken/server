@@ -3,6 +3,7 @@ package notificationsrepo
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -337,6 +338,50 @@ func Delete(rlog log.Ext1FieldLogger, tx *sqlx.Tx, managementCode string) error 
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL Notifications_DeleteByManagementCode(?)`, managementCode)
 			return errors.WithStack(err)
+		},
+	)
+}
+
+// MytokenSubscribeOrCreateNotificationWithClasses checks if a notification
+// already exists with the request type and api.
+// NotificationClasses; if yes the mytoken subscribes to this notification,
+// if not a new notification is created.
+func MytokenSubscribeOrCreateNotificationWithClasses(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx,
+	req api.CreateMytokenSubscribeNotificationInfos,
+	mtID mtid.MTID,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			notifications, err := GetNotificationsForUser(rlog, tx, mtID)
+			if err != nil {
+				return err
+			}
+			for _, n := range notifications {
+				if n.UserWide {
+					continue
+				}
+				if n.Type != req.NotificationType {
+					continue
+				}
+				if n.Classes.Equals(req.NotificationClasses) {
+					return AddTokenToNotification(
+						rlog, tx, n.NotificationID, mtID.MomID(), req.IncludeChildren,
+					)
+				}
+			}
+			// No existing notification found with the requested classes,
+			// create a new one
+			var nid uint64
+			if err = errors.WithStack(
+				tx.Get(
+					&nid, `CALL Notifications_CreateForMT(?,?,?,?,?)`, mtID, req.IncludeChildren, req.NotificationType,
+					utils.RandASCIIString(64), db.NewNullString(""),
+				),
+			); err != nil {
+				return err
+			}
+			return linkNotificationClasses(rlog, tx, nid, req.NotificationClasses)
 		},
 	)
 }

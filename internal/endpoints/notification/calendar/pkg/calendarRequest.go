@@ -2,9 +2,11 @@ package pkg
 
 import (
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/utils"
 
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/server/routes"
 )
 
 // AddMytokenToCalendarRequest is type holding the request to add a mytoken to a calendar
@@ -29,4 +31,9 @@ type CalendarListResponse struct {
 type CalendarInfoResponse struct {
 	api.CalendarInfo
 	pkg.OnlyTokenUpdateRes
+}
+
+// GetICSPath returns the calendar ics download url for a calendar id
+func GetICSPath(calendarID string) string {
+	return utils.CombineURLPath(routes.CalendarDownloadEndpoint, calendarID)
 }

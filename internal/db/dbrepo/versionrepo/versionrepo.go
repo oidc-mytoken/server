@@ -26,6 +26,16 @@ func SetVersionBefore(rlog log.Ext1FieldLogger, tx *sqlx.Tx, version string) err
 	)
 }
 
+// SetVersionGo sets that the go db migration commands for the passed version were executed
+func SetVersionGo(rlog log.Ext1FieldLogger, tx *sqlx.Tx, version string) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Version_SetGo(?)`, version)
+			return errors.WithStack(err)
+		},
+	)
+}
+
 // SetVersionAfter sets that the after db migration commands for the passed version were executed
 func SetVersionAfter(rlog log.Ext1FieldLogger, tx *sqlx.Tx, version string) error {
 	return db.RunWithinTransaction(
@@ -40,6 +50,7 @@ func SetVersionAfter(rlog log.Ext1FieldLogger, tx *sqlx.Tx, version string) erro
 type UpdateTimes struct {
 	Version string
 	Before  sql.NullTime `db:"bef"`
+	Go      sql.NullTime `db:"go"`
 	After   sql.NullTime `db:"aft"`
 }
 

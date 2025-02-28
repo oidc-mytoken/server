@@ -184,6 +184,12 @@ func HandleMytokenFromMytokenReq(
 			); err != nil {
 				return err
 			}
+			for _, sub := range req.SubscribeNotificationRequests {
+				if err = notificationsrepo.
+					MytokenSubscribeOrCreateNotificationWithClasses(rlog, tx, sub, ste.ID); err != nil {
+					return err
+				}
+			}
 			if err = notificationsrepo.ScheduleExpirationNotificationsIfNeeded(
 				rlog, tx, ste.ID, ste.Token.ExpiresAt, ste.Token.IssuedAt,
 			); err != nil {

@@ -40,9 +40,7 @@ var skipDB bool
 
 var migrateDBConf struct {
 	config.DBConf
-	Hosts    cli.StringSlice
-	force    bool
-	confFile string
+	Hosts cli.StringSlice
 }
 
 func (cred _rootDBCredentials) toDBConf() config.DBConf {
@@ -211,28 +209,6 @@ var app = &cli.App{
 					Usage: "Migrates the database to the latest version",
 					Flags: []cli.Flag{
 						&cli.StringFlag{
-							Name: "nodes",
-							Aliases: []string{
-								"n",
-								"s",
-								"server",
-							},
-							Usage:       "The passed file lists the mytoken nodes / servers (one server per line)",
-							EnvVars:     []string{"MYTOKEN_NODES_FILE"},
-							TakesFile:   true,
-							Placeholder: "FILE",
-							Destination: &migrateDBConf.confFile,
-						},
-						&cli.BoolFlag{
-							Name:    "force",
-							Aliases: []string{"f"},
-							Usage: "Force a complete database migration. It is not checked if mytoken servers are " +
-								"compatible with the changes.",
-							Destination:      &migrateDBConf.force,
-							HideDefaultValue: true,
-						},
-
-						&cli.StringFlag{
 							Name:        "db",
 							Usage:       "The name of the database",
 							EnvVars:     []string{"DB_DATABASE"},
@@ -377,9 +353,8 @@ func guidedSetup(ctx *cli.Context) error {
 				fmt.Println("Migrating database...")
 				migrateDBConf.DBConf = rootDBCredentials.toDBConf()
 				migrateDBConf.DBConf.DB = config.Get().DB.DB
-				migrateDBConf.force = true
 				db.ConnectConfig(migrateDBConf.DBConf)
-				return migrateDB(nil)
+				return migrateDB()
 			},
 		)
 	}
@@ -609,23 +584,7 @@ func createUser(_ *cli.Context) error {
 	return dbcl.RunDBCommands(cmds, rootDBCredentials.toDBConf(), true)
 }
 
-func migrateDBAction(context *cli.Context) error {
-	var mytokenNodes []string
-	if context.Args().Len() > 0 {
-		mytokenNodes = context.Args().Slice()
-	} else if migrateDBConf.confFile != "" {
-		data := string(fileutil.MustReadFile(migrateDBConf.confFile))
-		mytokenNodes = strings.Split(data, "\n")
-	} else if os.Getenv("MYTOKEN_NODES") != "" {
-		mytokenNodes = strings.Split(os.Getenv("MYTOKEN_NODES"), ",")
-	} else if !migrateDBConf.force {
-		fmt.Fprintln(
-			os.Stderr,
-			"No mytoken servers specified. Please provide mytoken servers or use '-f' to "+
-				"force database migration.",
-		)
-		os.Exit(1)
-	}
+func migrateDBAction(_ *cli.Context) error {
 	if migrateDBConf.GetPassword() == "" {
 		migrateDBConf.Password = prompter.Password(
 			fmt.Sprintf(
@@ -639,7 +598,7 @@ func migrateDBAction(context *cli.Context) error {
 	migrateDBConf.DBConf.EnableScheduledCleanup = false
 	db.ConnectConfig(migrateDBConf.DBConf)
 	migrateDBConf.DBConf.EnableScheduledCleanup = tmpScheduleEnabled
-	return migrateDB(mytokenNodes)
+	return migrateDB()
 }
 
 func mkdir(path string) error {

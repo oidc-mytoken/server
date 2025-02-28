@@ -145,3 +145,7 @@ span.user-agent i + i {
     position: sticky;
     top: 50%;
 }
+
+.tag {
+    font-size: 100%;
+}
