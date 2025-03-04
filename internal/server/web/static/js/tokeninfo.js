@@ -160,7 +160,7 @@ function _tokenTreeToHTML(tree, deleteClass, depth, parentID = "0", includeBtns 
         }
         notificationsBtn += `><i class="fas fa-bell"></i></butoton>`;
     }
-    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" mom-id="${token['mom_id']}" class="${depth > 0 ? 'd-none' : ''} ${isExpired ? 'text-muted' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td class="actions-td">${includeBtns ? historyBtn + notificationsBtn + deleteBtn : ""}</td></tr>` + tableEntries;
+    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" mom-id="${token['mom_id']}" class="${depth > 0 ? 'd-none' : ''} ${isExpired ? 'text-muted' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${createTags(token['tags'])}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td class="actions-td">${includeBtns ? historyBtn + notificationsBtn + deleteBtn : ""}</td></tr>` + tableEntries;
     return tableEntries
 }
 
@@ -170,11 +170,12 @@ function tokenlistToHTML(tokenTrees, deleteClass) {
         tableEntries = _tokenTreeToHTML(tokenTree, deleteClass, 0) + tableEntries;
     });
     if (tableEntries === "") {
-        tableEntries = `<tr><td colSpan="4" class="text-muted text-center">No subtokens</td></tr>`;
+        tableEntries = `<tr><td colSpan="5" class="text-muted text-center">No subtokens</td></tr>`;
     }
     return '<table class="table table-hover table-grey">' +
         '<thead><tr>' +
         '<th style="min-width: 35%;">Token Name</th>' +
+        '<th>Tags</th>' +
         '<th>Created</th>' +
         '<th>Created from IP</th>' +
         '<th>Expires</th>' +

@@ -37,11 +37,25 @@ func (ste *MytokenEntry) Root() bool {
 
 // SingleTokenEntry obtains the MytokenEntry for a single mytoken
 func SingleTokenEntry(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) (m MytokenEntry, err error) {
+	var tokens []*MytokenEntry
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			return errors.WithStack(tx.Get(&m, `CALL MTokens_GetInfo(?)`, tokenID))
+			rows, err := tx.Queryx(`CALL Mtokens_GetInfo(?)`, tokenID)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			tokens, err = tokensForQuery(rows)
+			return errors.WithStack(err)
 		},
 	)
+	if err != nil {
+		return
+	}
+	if len(tokens) != 1 {
+		err = errors.New("unexpected number of token entries")
+		return
+	}
+	m = *tokens[0]
 	return
 
 }
@@ -51,7 +65,12 @@ func AllTokens(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) ([]*Myt
 	var tokens []*MytokenEntry
 	if err := db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			return errors.WithStack(tx.Select(&tokens, `CALL MTokens_GetAllForSameUser(?)`, tokenID))
+			rows, err := tx.Queryx(`CALL MTokens_GetAllForSameUser(?)`, tokenID)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			tokens, err = tokensForQuery(rows)
+			return errors.WithStack(err)
 		},
 	); err != nil {
 		return nil, err
@@ -63,10 +82,63 @@ func AllTokens(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) ([]*Myt
 func AllTokensByUID(rlog log.Ext1FieldLogger, tx *sqlx.Tx, uid uint64) (tokens []*MytokenEntry, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			return errors.WithStack(tx.Select(&tokens, `CALL MTokens_GetForUser(?)`, uid))
+			rows, err := tx.Queryx(`CALL MTokens_GetForUser(?)`, uid)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			tokens, err = tokensForQuery(rows)
+			return errors.WithStack(err)
 		},
 	)
 	return
+}
+
+func tokensForQuery(rows *sqlx.Rows) ([]*MytokenEntry, error) {
+	defer rows.Close()
+	tokens := make(map[string]*MytokenEntry)
+	var tokenOrder []string
+
+	for rows.Next() {
+
+		var entry struct {
+			MytokenEntry
+			Tag                db.NullString `db:"tag"`
+			Color              db.NullString `db:"tag_color"`
+			TagIncludeChildren db.BitBool    `db:"tag_include_children"`
+		}
+
+		// Scan row
+		err := rows.StructScan(&entry)
+		if err != nil {
+			return nil, err
+		}
+		id := entry.ID.Hash()
+
+		if _, exists := tokens[id]; !exists {
+			tokens[id] = &entry.MytokenEntry
+			tokenOrder = append(tokenOrder, id)
+		}
+
+		if entry.Tag.Valid && entry.Color.Valid {
+			tokens[id].Tags = append(
+				tokens[id].Tags,
+				api.MTTagInfo{
+					TagInfo: api.TagInfo{
+						Tag:   api.Tag(entry.Tag.String),
+						Color: entry.Color.String,
+					},
+					IncludeChildren: bool(entry.TagIncludeChildren),
+				},
+			)
+		}
+	}
+
+	// Convert map to slice
+	var result []*MytokenEntry
+	for _, id := range tokenOrder {
+		result = append(result, tokens[id])
+	}
+	return result, nil
 }
 
 // TokenSubTree returns information about all subtokens for the passed mytoken

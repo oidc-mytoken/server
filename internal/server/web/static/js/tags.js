@@ -1,4 +1,7 @@
 function createTags(tags) {
+    if (!tags) {
+        return "";
+    }
     return tags.map(function (tag) {
         return getTagPill(tag);
     }).join("")

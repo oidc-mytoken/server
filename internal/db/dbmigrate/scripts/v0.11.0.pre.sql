@@ -227,6 +227,48 @@ BEGIN
     ON DUPLICATE KEY UPDATE go=CURRENT_TIMESTAMP();
 END;;
 
+CREATE OR REPLACE PROCEDURE MTokens_GetForUser(IN UID BIGINT UNSIGNED)
+BEGIN
+    SELECT m.id,
+           m.parent_id,
+           m.id         AS mom_id,
+           m.name,
+           m.created,
+           m.expires_at,
+           m.ip_created AS ip,
+           t.tag,
+           t.color      AS
+                           tag_color,
+           mt.include_children
+                        AS tag_include_children
+        FROM MTokens m
+                 LEFT JOIN MTTags mt ON m.id = mt.MT_id
+                 LEFT JOIN Tags t ON mt.tag_id = t.id
+        WHERE m.user_id = UID
+        ORDER BY created;
+END;;
+
+CREATE OR REPLACE PROCEDURE Mtokens_GetInfo(IN MTID VARCHAR(128))
+BEGIN
+    SELECT m.id,
+           m.parent_id,
+           m.id         AS mom_id,
+           m.name,
+           m.created,
+           m.expires_at,
+           m.ip_created AS ip,
+           t.tag,
+           t.color      AS
+                           tag_color,
+           mt.include_children
+                        AS tag_include_children
+        FROM MTokens m
+                 LEFT JOIN MTTags mt ON m.id = mt.MT_id
+                 LEFT JOIN Tags t ON mt.tag_id = t.id
+        WHERE m.id = MTID;
+
+END;;
+
 
 DELIMITER ;
 
