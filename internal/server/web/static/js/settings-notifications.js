@@ -141,7 +141,7 @@ function loadCalendars(prefix = "") {
 }
 
 function deleteCalendarHtml(prefix = "") {
-    return `<td><a href="#" role="button" onclick="deleteCalendar(this, '${prefix}')"><i class="fas fa-trash-alt text-danger"></i></a></td>`;
+    return `<td><button class="btn" role="button" onclick="deleteCalendar(this, '${prefix}')"><i class="fas fa-trash-alt text-danger"></i></button></td>`;
 }
 
 function clearCalendarTable(prefix = "") {

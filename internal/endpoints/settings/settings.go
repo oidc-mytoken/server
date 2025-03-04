@@ -30,6 +30,9 @@ func InitSettings() {
 	settingsMetadata.EmailEndpoint = utils.CombineURLPath(
 		config.Get().IssuerURL, apiPaths.UserSettingEndpoint, "email",
 	)
+	settingsMetadata.TagsEndpoint = utils.CombineURLPath(
+		config.Get().IssuerURL, apiPaths.UserSettingEndpoint, "tags",
+	)
 }
 
 var settingsMetadata = api.SettingsMetaData{}

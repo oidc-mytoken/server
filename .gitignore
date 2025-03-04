@@ -3,7 +3,6 @@
 /mytoken
 /mytoken-setup
 /mytoken-server
-tags
 client.config
 config/config.yaml
 config/notifier-config.yaml

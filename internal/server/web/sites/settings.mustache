@@ -14,6 +14,10 @@
                    aria-controls="notifications">Notifications</a>
             </li>
             {{/notifications}}
+            <li class="nav-item">
+                <a class="nav-link" id="tags-tab" data-toggle="tab" href="#tags" role="tab"
+                   aria-controls="tags">Tags</a>
+            </li>
         </ul>
     </div>
 
@@ -27,6 +31,10 @@
             {{> settings/notifications}}
         </div>
         {{/notifications}}
+
+        <div class="tab-pane" id="tags" role="tabpanel" aria-labelledby="tags-tab">
+            {{> settings/tags}}
+        </div>
     </div>
 
 </div>

@@ -14,6 +14,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/settings/email"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings/grants"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings/grants/ssh"
+	"github.com/oidc-mytoken/server/internal/endpoints/settings/tags"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/access"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo"
@@ -92,6 +93,10 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 			s.Put(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "email"), toFiberHandler(email.HandlePut))
 		}
 	}
+	s.Get(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "tags"), toFiberHandler(tags.HandleGet))
+	s.Post(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "tags", ":tag"), toFiberHandler(tags.HandlePost))
+	s.Put(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "tags", ":tag"), toFiberHandler(tags.HandlePut))
+	s.Delete(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "tags", ":tag"), toFiberHandler(tags.HandleDelete))
 }
 
 func addProfileEndpointRoutes(r fiber.Router, apiPaths paths.APIPaths) {

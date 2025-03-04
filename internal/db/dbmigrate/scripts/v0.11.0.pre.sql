@@ -171,11 +171,31 @@ BEGIN
     SET p_tag_id = LAST_INSERT_ID();
 END;;
 
-CREATE OR REPLACE PROCEDURE Tags_Create(IN USERID BIGINT UNSIGNED, IN NAME VARCHAR(64), IN COLOR_ CHAR(6))
+CREATE OR REPLACE PROCEDURE Tags_Create(IN MTID VARCHAR(128), IN NAME VARCHAR(64), IN COLOR_ CHAR(6))
 BEGIN
-    INSERT IGNORE INTO Tags (uid, tag, color) VALUES (USERID, NAME, TagColor(NAME, COLOR_));
+    INSERT IGNORE INTO Tags (uid, tag, color)
+        VALUES ((SELECT user_id FROM MTokens WHERE id = MTID), NAME, TagColor(NAME,
+                                                                              COLOR_));
 END;;
 
+
+CREATE OR REPLACE PROCEDURE Tags_Delete(IN MTID VARCHAR(128), IN p_TAG VARCHAR(64))
+BEGIN
+    DELETE FROM Tags WHERE uid = (SELECT user_id FROM MTokens WHERE id = MTID) AND tag = p_TAG;
+END;;
+
+CREATE OR REPLACE PROCEDURE Tags_List(IN MTID VARCHAR(128))
+BEGIN
+    SELECT tag, color FROM Tags WHERE uid = (SELECT user_id FROM MTokens WHERE id = MTID);
+END;;
+
+CREATE OR REPLACE PROCEDURE Tags_Update(IN MTID VARCHAR(128), IN OLD_TAG VARCHAR(64), IN NEW_TAG VARCHAR(64),
+                                        IN p_COLOR CHAR(6))
+BEGIN
+    UPDATE Tags
+    SET tag=NEW_TAG, color=p_COLOR
+        WHERE uid = (SELECT user_id FROM MTokens WHERE id = MTID) AND tag = OLD_TAG;
+END;;
 
 
 CREATE OR REPLACE PROCEDURE ActionCodes_AddRemoveFromCalendar(IN MTID VARCHAR(128), IN CALENDARID VARCHAR(128),
@@ -209,3 +229,14 @@ END;;
 
 
 DELIMITER ;
+
+# Values
+
+INSERT IGNORE INTO Events (event)
+    VALUES ('tags_listed');
+INSERT IGNORE INTO Events (event)
+    VALUES ('tag_created');
+INSERT IGNORE INTO Events (event)
+    VALUES ('tag_updated');
+INSERT IGNORE INTO Events (event)
+    VALUES ('tag_deleted');

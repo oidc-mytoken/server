@@ -1,7 +1,11 @@
 function createTags(tags) {
     return tags.map(function (tag) {
-        return `<span class="badge badge-pill ${textClassForBackgroundColor(tag.color)} tag" style="background-color: #${tag.color};">${tag.tag}</span>`;
+        return getTagPill(tag);
     }).join("")
+}
+
+function getTagPill(tag) {
+    return `<span class="badge badge-pill ${textClassForBackgroundColor(tag.color)} tag" style="background-color: #${tag.color};">${tag.tag}</span>`;
 }
 
 function textClassForBackgroundColor(backgroundColor) {
