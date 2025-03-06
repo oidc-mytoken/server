@@ -13,8 +13,6 @@ builds:
       - linux
     goarch:
       - amd64
-      - arm
-      - arm64
     flags:
       - -trimpath
     mod_timestamp: '{{ .CommitTimestamp }}'
@@ -27,8 +25,6 @@ builds:
       - linux
     goarch:
       - amd64
-      - arm
-      - arm64
     flags:
       - -trimpath
     mod_timestamp: '{{ .CommitTimestamp }}'
@@ -41,8 +37,6 @@ builds:
       - linux
     goarch:
       - amd64
-      - arm
-      - arm64
     flags:
       - -trimpath
     mod_timestamp: '{{ .CommitTimestamp }}'
