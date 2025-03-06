@@ -11,6 +11,10 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
+    goarch:
+      - amd64
+      - arm
+      - arm64
     flags:
       - -trimpath
     mod_timestamp: '{{ .CommitTimestamp }}'
@@ -21,6 +25,10 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
+    goarch:
+      - amd64
+      - arm
+      - arm64
     flags:
       - -trimpath
     mod_timestamp: '{{ .CommitTimestamp }}'
@@ -31,6 +39,10 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
+    goarch:
+      - amd64
+      - arm
+      - arm64
     flags:
       - -trimpath
     mod_timestamp: '{{ .CommitTimestamp }}'
