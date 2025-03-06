@@ -1,8 +1,8 @@
 module github.com/oidc-mytoken/server
 
-go 1.22.0
+go 1.23.0
 
-toolchain go1.22.5
+toolchain go1.24.0
 
 require (
 	github.com/Songmu/prompter v0.5.1
@@ -38,7 +38,7 @@ require (
 	github.com/zachmann/go-oidfed v0.2.1
 	golang.org/x/crypto v0.33.0
 	golang.org/x/mod v0.23.0
-	golang.org/x/oauth2 v0.26.0
+	golang.org/x/oauth2 v0.28.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
