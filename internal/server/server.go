@@ -40,6 +40,7 @@ var serverConfig = fiber.Config{
 	// WriteBufferSize: 4096,
 	ErrorHandler: handleError,
 	// ProxyHeader is set later from config
+	Network: "tcp",
 }
 
 //go:embed web/sites web/layouts
