@@ -53,7 +53,11 @@ function listMytokensForManagementNotification(tokens, ...next) {
             let tableEntries = "";
             let all_mytokens = res["mytokens"];
             all_mytokens.forEach(function (tokenTree) {
-                tableEntries = _tokenTreeToHTML(tokenTree, "", 0, 0, false, tokens) + tableEntries;
+                tableEntries = _tokenTreeToHTML({
+                    tree: tokenTree,
+                    includeBtns: false,
+                    filter_tokens: tokens
+                }) + tableEntries;
             });
             if (tableEntries === "") {
                 tableEntries = `<tr><td colSpan="4" class="text-muted text-center">No tokens subscribed</td></tr>`;
@@ -66,7 +70,12 @@ function listMytokensForManagementNotification(tokens, ...next) {
             } else {
                 tableEntries = "";
                 all_mytokens.forEach(function (tokenTree) {
-                    tableEntries = _tokenTreeToHTML(tokenTree, "", 0, 0, false, tokens, true) + tableEntries;
+                    tableEntries = _tokenTreeToHTML({
+                        tree: tokenTree,
+                        includeBtns: false,
+                        filter_tokens: tokens,
+                        filter_out: true
+                    }) + tableEntries;
                 });
                 $('#notifications-all-tokens-to-subscribe-table').html(tableEntries);
                 $('#notifications-all-tokens-to-subscribe-table').find('tr').each((_, tr) => {

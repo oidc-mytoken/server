@@ -127,7 +127,16 @@ function historyToHTML(events) {
 
 let tokenTreeIDCounter = 1;
 
-function _tokenTreeToHTML(tree, deleteClass, depth, parentID = "0", includeBtns = true, filter_tokens = undefined, filter_out = false) {
+function _tokenTreeToHTML({
+                              tree,
+                              deleteClass = "",
+                              depth = 0,
+                              parentID = "0",
+                              includeBtns = true,
+                              filter_tokens,
+                              filter_out = false,
+                              tags
+                          }) {
     let token = tree['token'];
     let name = token['name'] || 'unnamed token';
     let nameClass = name === 'unnamed token' ? ' text-muted' : '';
@@ -140,7 +149,15 @@ function _tokenTreeToHTML(tree, deleteClass, depth, parentID = "0", includeBtns 
     let hasChildren = false;
     if (children !== undefined) {
         children.forEach(function (child) {
-            tableEntries = _tokenTreeToHTML(child, deleteClass, depth + 1, thisID, includeBtns, filter_tokens, filter_out) + tableEntries;
+            tableEntries = _tokenTreeToHTML({
+                tree: child,
+                depth: depth + 1,
+                parentID: thisID,
+                includeBtns: includeBtns,
+                filter_tokens: filter_tokens,
+                filter_out: filter_out,
+                tags: tags
+            }) + tableEntries;
             hasChildren = true;
         })
     }
@@ -160,30 +177,69 @@ function _tokenTreeToHTML(tree, deleteClass, depth, parentID = "0", includeBtns 
         }
         notificationsBtn += `><i class="fas fa-bell"></i></butoton>`;
     }
-    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" mom-id="${token['mom_id']}" class="${depth > 0 ? 'd-none' : ''} ${isExpired ? 'text-muted' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${createTags(token['tags'])}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td class="actions-td">${includeBtns ? historyBtn + notificationsBtn + deleteBtn : ""}</td></tr>` + tableEntries;
+    let tokenTags = token['tags'];
+    if (tokenTags && tags) {
+        tokenTags.forEach(function (tag) {
+            tags[tag.tag] = tag;
+        })
+    }
+    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" mom-id="${token['mom_id']}" class="token-listing-entry ${depth > 0 ? 'd-none' : ''} ${isExpired ? 'text-muted' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${createTags(tokenTags)}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td class="actions-td">${includeBtns ? historyBtn + notificationsBtn + deleteBtn : ""}</td></tr>` + tableEntries;
     return tableEntries
+}
+
+function filterTokenByName(el) {
+    let value = $(el).val().toLowerCase();
+    let $table = $(el).parents('table');
+    $table.find('tr.token-listing-entry').filter(function () {
+        $(this).toggle(!value || $(this).find("td:nth-child(1)").text().toLowerCase().indexOf(value) > -1);
+    })
+}
+
+function filterTokenByTag(el) {
+    let value = $(el).val().toLowerCase();
+    let $table = $(el).parents('table');
+    $table.find('tr.token-listing-entry').filter(function () {
+        $(this).toggle(!value || $(this).find("td:nth-child(2) .tag").filter(function () {
+            return $(this).text().toLowerCase() === value
+        }).length > 0);
+    })
 }
 
 function tokenlistToHTML(tokenTrees, deleteClass) {
     let tableEntries = "";
+    let tags = {};
     tokenTrees.forEach(function (tokenTree) {
-        tableEntries = _tokenTreeToHTML(tokenTree, deleteClass, 0) + tableEntries;
+        tableEntries = _tokenTreeToHTML({tree: tokenTree, deleteClass: deleteClass, tags: tags}) + tableEntries;
     });
     if (tableEntries === "") {
         tableEntries = `<tr><td colSpan="5" class="text-muted text-center">No subtokens</td></tr>`;
     }
-    return '<table class="table table-hover table-grey">' +
-        '<thead><tr>' +
-        '<th style="min-width: 35%;">Token Name</th>' +
-        '<th>Tags</th>' +
-        '<th>Created</th>' +
-        '<th>Created from IP</th>' +
-        '<th>Expires</th>' +
-        '<th></th>' +
-        '</tr></thead>' +
-        '<tbody id="token-list-table">' +
-        tableEntries +
-        '</tbody></table>';
+    return `
+
+    
+    <table class="table table-hover table-grey">
+        <thead><tr>
+        <th style="min-width: 35%;">
+        <span>Token Name</span>
+    <input type="text" id="token-list-filter-name" class="form-control d-inline-block w-auto ml-2" placeholder="Search by name" onkeyup="filterTokenByName(this)">
+        </th>
+        <th>
+        <span>Tags</span>
+    <select id="token-list-filter-tags" class="form-control d-inline-block w-auto ml-2" onchange="filterTokenByTag(this)">
+        <option value="" selected >All</option>
+        ${Object.values(tags).map(function (tag) {
+        return `<option value="${tag.tag}">${tag.tag}</option>`;
+    })}
+    </select>
+        </th>
+        <th>Created</th>
+        <th>Created from IP</th>
+        <th>Expires</th>
+        <th></th>
+        </tr></thead>
+        <tbody id="token-list-table">
+        ${tableEntries}
+        </tbody></table>`;
 }
 
 function tokenFoldCollapse() {
