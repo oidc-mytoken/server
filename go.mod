@@ -8,7 +8,7 @@ require (
 	github.com/Songmu/prompter v0.5.1
 	github.com/TwiN/gocache/v2 v2.2.2
 	github.com/arran4/golang-ical v0.3.2
-	github.com/coreos/go-oidc/v3 v3.12.0
+	github.com/coreos/go-oidc/v3 v3.13.0
 	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/fatih/structs v1.1.0
 	github.com/gliderlabs/ssh v0.3.8
@@ -75,7 +75,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
-	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/net v0.37.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/term v0.30.0 // indirect
 	tideland.dev/go/slices v0.2.0 // indirect
