@@ -22,7 +22,7 @@ require (
 	github.com/jinzhu/copier v0.4.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
-	github.com/lestrrat-go/jwx v1.2.30
+	github.com/lestrrat-go/jwx v1.2.31
 	github.com/oidc-mytoken/api v0.11.2-0.20240426092102-fa4d583a79ad
 	github.com/oidc-mytoken/lib v0.7.1
 	github.com/oidc-mytoken/utils v0.1.3-0.20240527155944-26103774a5aa
@@ -49,7 +49,7 @@ require (
 	github.com/cbroglie/mustache v1.4.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
