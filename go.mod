@@ -35,7 +35,7 @@ require (
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
 	github.com/valyala/fasthttp v1.60.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
-	github.com/zachmann/go-oidfed v0.2.1
+	github.com/zachmann/go-oidfed v0.2.2
 	golang.org/x/crypto v0.37.0
 	golang.org/x/mod v0.24.0
 	golang.org/x/oauth2 v0.29.0
