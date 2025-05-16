@@ -33,7 +33,7 @@ require (
 	github.com/sethvargo/go-limiter v1.0.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
-	github.com/valyala/fasthttp v1.60.0
+	github.com/valyala/fasthttp v1.62.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	github.com/zachmann/go-oidfed v0.2.1
 	golang.org/x/crypto v0.38.0
@@ -75,7 +75,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
-	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	tideland.dev/go/slices v0.2.0 // indirect
