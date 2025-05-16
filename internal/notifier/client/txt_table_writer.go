@@ -34,8 +34,8 @@ func fPrintTable(out io.Writer, headers []string, data [][]string) {
 	t := tablewriter.NewTable(out, tableWriteOptions...)
 	t.Header(headers)
 	// t.SetRowLine(true)
-	t.Bulk(data)
-	t.Render()
+	_ = t.Bulk(data)
+	_ = t.Render()
 }
 
 func fPrintSimpleTable(out io.Writer, headers []string, data map[string]string) {
