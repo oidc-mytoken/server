@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestTable(t *testing.T) {
+func TestTable(*testing.T) {
 	table := generateSimpleTable(
 		nil, map[string]string{
 			"foo": "bar",
