@@ -5,15 +5,37 @@ import (
 	"io"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/renderer"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
+var tableWriteOptions []tablewriter.Option
+
+func init() {
+	tableWriteOptions = append(
+		tableWriteOptions, tablewriter.WithRenderer(
+			renderer.NewBlueprint(
+				tw.Rendition{
+					Symbols: tw.NewSymbolCustom("my-symbols").
+						WithColumn("I").
+						WithBottomRight("+").
+						WithBottomLeft("+").
+						WithMidRight("+").
+						WithMidLeft("+").
+						WithTopRight("+").
+						WithTopLeft("+"),
+				},
+			),
+		),
+	)
+}
+
 func fPrintTable(out io.Writer, headers []string, data [][]string) {
-	t := tablewriter.NewWriter(out)
-	t.SetHeader(headers)
+	t := tablewriter.NewTable(out, tableWriteOptions...)
+	t.Header(headers)
 	// t.SetRowLine(true)
-	t.SetColumnSeparator("I")
-	t.AppendBulk(data)
-	t.Render()
+	_ = t.Bulk(data)
+	_ = t.Render()
 }
 
 func fPrintSimpleTable(out io.Writer, headers []string, data map[string]string) {
