@@ -17,6 +17,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/settings/tags"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/access"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken"
+	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/tagging"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/paths"
@@ -32,6 +33,8 @@ func addAPIRoutes(s fiber.Router) {
 func addAPIvXRoutes(s fiber.Router, version int) {
 	apiPaths := paths.GetAPIPaths(version)
 	s.Post(apiPaths.MytokenEndpoint, toFiberHandler(mytoken.HandleMytokenEndpoint))
+	s.Post(utils.CombineURLPath(apiPaths.MytokenEndpoint, "tags"), tagging.HandleAddTagToMytoken)
+	s.Delete(utils.CombineURLPath(apiPaths.MytokenEndpoint, "tags"), tagging.HandleRemoveTagFromMytoken)
 	s.Post(apiPaths.AccessTokenEndpoint, toFiberHandler(access.HandleAccessTokenEndpoint))
 	if config.Get().Features.TokenRevocation.Enabled {
 		s.Post(apiPaths.RevocationEndpoint, toFiberHandler(revocation.HandleRevoke))

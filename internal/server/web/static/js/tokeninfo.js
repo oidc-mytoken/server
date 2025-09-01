@@ -175,7 +175,7 @@ function _tokenTreeToHTML({
         if (!isExpired) {
             notificationsBtn += ` data-toggle="tooltip" data-placement="right" title="${loggedIn ? 'Manage notifications' : 'Sign in to manage notifications.'}"`;
         }
-        notificationsBtn += `><i class="fas fa-bell"></i></butoton>`;
+        notificationsBtn += `><i class="fas fa-bell"></i></button>`;
     }
     let tokenTags = token['tags'];
     if (tokenTags && tags) {
@@ -183,8 +183,64 @@ function _tokenTreeToHTML({
             tags[tag.tag] = tag;
         })
     }
-    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" mom-id="${token['mom_id']}" class="token-listing-entry ${depth > 0 ? 'd-none' : ''} ${isExpired ? 'text-muted' : ''}"><td class="${hasChildren ? 'token-fold' : ''}${nameClass}"><span style="margin-right: ${1.5 * depth}rem;"></span><i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}</td><td>${createTags(tokenTags)}</td><td>${created}</td><td>${token['ip']}</td><td>${expires}</td><td class="actions-td">${includeBtns ? historyBtn + notificationsBtn + deleteBtn : ""}</td></tr>` + tableEntries;
+    tableEntries = `<tr id="${thisID}" parent-id="${parentID}" mom-id="${token['mom_id']}" class="token-listing-entry ${depth > 0 ? 'd-none' : ''} ${isExpired ? 'text-muted' : ''}">
+                        <td class="${hasChildren ? 'token-fold' : ''}${nameClass}">
+                            <span style="margin-right: ${1.5 * depth}rem;"></span>
+                            <i class="mr-2 fas fa-caret-right${hasChildren ? "" : " d-none"}"></i>${name}
+                        </td>
+                        <td>${createTags(tokenTags, true, "removeTagFromMytoken", `, '${token['mom_id']}'`)} <span class="badge badge-pill badge-success tag"><button class="btn tag-btn  type="button" onclick="addTagModal('${token['mom_id']}')"><i class="fas fa-plus-circle"></i></button></span></td>
+                        <td>${created}</td>
+                        <td>${token['ip']}</td>
+                        <td>${expires}</td>
+                        <td class="actions-td">${includeBtns ? historyBtn + notificationsBtn + deleteBtn : ""}</td>
+                    </tr>` + tableEntries;
     return tableEntries
+}
+
+function addTagModal(momID) {
+
+    showAddTagModal(function (tag) {
+        const data = JSON.stringify({
+            mom_id: momID,
+            tag: tag,
+        });
+        $.ajax({
+            type: "POST",
+            url: `${storageGet("mytoken_endpoint")}/tags`,
+            data: data,
+            success: function () {
+                _getListTokenInfo();
+                $('#add-tag-modal').modal('hide');
+            },
+            error: function (errRes) {
+                $errorModalMsg.text(getErrorMessage(errRes));
+                $errorModal.modal();
+            },
+            dataType: "json",
+            contentType: "application/json"
+        });
+    });
+}
+
+function removeTagFromMytoken(tag, momID) {
+    data = JSON.stringify({
+        mom_id: momID,
+        tag: tag,
+    });
+    $.ajax({
+        type: "DELETE",
+        url: `${storageGet("mytoken_endpoint")}/tags`,
+        data: data,
+        success: function () {
+            _getListTokenInfo();
+        },
+        error: function (errRes) {
+            $errorModalMsg.text(getErrorMessage(errRes));
+            $errorModal.modal();
+        },
+        dataType: "json",
+        contentType: "application/json"
+    });
 }
 
 function filterTokenByName(el) {
@@ -200,7 +256,7 @@ function filterTokenByTag(el) {
     let $table = $(el).parents('table');
     $table.find('tr.token-listing-entry').filter(function () {
         $(this).toggle(!value || $(this).find("td:nth-child(2) .tag").filter(function () {
-            return $(this).text().toLowerCase() === value
+            return $(this).text().toLowerCase().trim() === value
         }).length > 0);
     })
 }
@@ -229,7 +285,7 @@ function tokenlistToHTML(tokenTrees, deleteClass) {
         <option value="" selected >All</option>
         ${Object.values(tags).map(function (tag) {
         return `<option value="${tag.tag}">${tag.tag}</option>`;
-    })}
+    }).join('')}
     </select>
         </th>
         <th>Created</th>
@@ -351,7 +407,7 @@ let loadedTokenList = false;
 
 function getListTokenInfo(e) {
     e.preventDefault();
-    _getListTokenInfo();
+    _getListTokenInfo(undefined, getTagList);
     loadedTokenList = true;
     return false;
 }

@@ -282,3 +282,15 @@ INSERT IGNORE INTO Events (event)
     VALUES ('tag_updated');
 INSERT IGNORE INTO Events (event)
     VALUES ('tag_deleted');
+INSERT IGNORE INTO Events (event)
+    VALUES ('tag_added_to_token');
+INSERT IGNORE INTO Events (event)
+    VALUES ('tag_added_to_other_token');
+INSERT IGNORE INTO Events (event)
+    VALUES ('tag_removed_from_token');
+INSERT IGNORE INTO Events (event)
+    VALUES ('tag_removed_from_other_token');
+INSERT IGNORE INTO Events (event)
+    VALUES ('calendar_tags_updated');
+INSERT IGNORE INTO Events (event)
+    VALUES ('notification_tags_updated');
