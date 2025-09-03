@@ -22,7 +22,7 @@ type CalendarInfo struct {
 func Insert(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, info CalendarInfo) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			_, err := tx.Exec(`CALL Calendar_Insert(?,?,?)`, mtID, info.ID, info.ICS)
+			_, err := tx.Exec(`CALL Calendar_Insert(?,?,?,?)`, mtID, info.ID, info.Description, info.ICS)
 			return errors.WithStack(err)
 		},
 	)
@@ -42,7 +42,19 @@ func Delete(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID, calendarID st
 func UpdateICS(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarID string, ics string) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			_, err := tx.Exec(`CALL Calendar_Update(?,?,?)`, mtID, calendarID, ics)
+			_, err := tx.Exec(`CALL Calendar_UpdateICS(?,?,?)`, mtID, calendarID, ics)
+			return errors.WithStack(err)
+		},
+	)
+}
+
+// UpdateDescription updates the description of a calendar; requires a mytoken id for ownership check
+func UpdateDescription(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarID string, description string,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Calendar_UpdateDescription(?,?,?)`, mtID, calendarID, description)
 			return errors.WithStack(err)
 		},
 	)
@@ -66,11 +78,31 @@ func LinkTags(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID string, tags []s
 	)
 }
 
+// AddTag adds a tag to a calendar
+func AddTag(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID, tag string) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Calendar_LinkTag(?,?)`, calendarID, tag)
+			return errors.WithStack(err)
+		},
+	)
+}
+
+// RemoveTag removes a tag from a calendar
+func RemoveTag(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID, tag string) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Calendar_UnlinkTag(?,?)`, calendarID, tag)
+			return errors.WithStack(err)
+		},
+	)
+}
+
 // UpdateICSInternal updates a calendar entry in the database	 and does not require a mtid.MTID
 func UpdateICSInternal(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID string, ics string) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			_, err := tx.Exec(`CALL Calendar_UpdateInternal(?,?)`, calendarID, ics)
+			_, err := tx.Exec(`CALL Calendar_UpdateICSInternal(?,?)`, calendarID, ics)
 			return errors.WithStack(err)
 		},
 	)
@@ -204,11 +236,15 @@ func AddMytokenToCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
 func MTIsForSameUserAsCalendar(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx,
 	calendarID string, mtID mtid.MTID,
-) (ok bool, err error) {
-	err = db.RunWithinTransaction(
+) (bool, error) {
+	var ok bool
+	err := db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			return tx.Select(&ok, `CALL Calendar_IDForSameUserAsCalendar(?, ?)`, calendarID, mtID)
+			var count int
+			err := tx.Get(&count, `CALL Calendar_IDForSameUserAsMT(?, ?)`, calendarID, mtID)
+			ok = count > 0
+			return err
 		},
 	)
-	return
+	return ok, err
 }

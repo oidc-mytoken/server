@@ -18,6 +18,7 @@ function getTagPill(tag, includeDeleteBtn = false, deleteCallbackStr = "", addit
     }
     return `<span 
                 class="badge badge-pill ${textClass} tag mr-1" 
+                data-tag="${tag.tag}"
                 style="background-color: #${tag.color};">
                 ${tag.tag}
                 ${deleteBtn}
@@ -104,7 +105,7 @@ ${loadedTags.reduce((acc, tag) => acc + `<option value="${tag.tag}">${tag.tag}</
 
 let loadedTags = [];
 
-function getTagList(callback = undefined, ...next) {
+function getTagList(...next) {
     $.ajax({
         type: "GET",
         url: `${storageGet('usersettings_endpoint')}/tags`,
@@ -114,11 +115,6 @@ function getTagList(callback = undefined, ...next) {
                 loadedTags = [];
             } else {
                 loadedTags = tags;
-            }
-            if (callback !== undefined && callback !== null) {
-                next.unshift(function () {
-                    callback(cals);
-                });
             }
             doNext(...next);
         },

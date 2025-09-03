@@ -89,6 +89,18 @@ BEGIN
     INSERT IGNORE INTO CalendarTags (calendar_id, tag_id) VALUES (CID, v_tid);
 END;;
 
+
+CREATE OR REPLACE PROCEDURE Calendar_UnlinkTag(IN CID VARCHAR(128), IN TAG_ VARCHAR(64))
+BEGIN
+    DECLARE v_uid BIGINT UNSIGNED;
+    DECLARE v_tid BIGINT UNSIGNED;
+
+    SELECT uid INTO v_uid FROM Calendars WHERE id = CID;
+    SELECT id INTO v_tid FROM Tags WHERE tag = TAG_ AND uid = v_uid;
+
+    DELETE FROM CalendarTags WHERE calendar_id = CID AND tag_id = v_tid;
+END;;
+
 CREATE OR REPLACE PROCEDURE Calendar_Delete(IN MTID VARCHAR(128), IN CID VARCHAR(128))
 BEGIN
     DELETE FROM Calendars WHERE uid = (SELECT m.user_id FROM MTokens m WHERE m.id = MTID) AND id = CID;
@@ -104,12 +116,14 @@ BEGIN
     SELECT MT_id FROM CalendarMapping WHERE calendar_id = CALID;
 END;;
 
-CREATE OR REPLACE PROCEDURE Calendar_Insert(IN MTID VARCHAR(128), IN CID VARCHAR(128), IN ICS_ LONGTEXT)
+CREATE OR REPLACE PROCEDURE Calendar_Insert(IN MTID VARCHAR(128), IN CID VARCHAR(128), IN DESCR TEXT,
+                                            IN ICS_ LONGTEXT)
 BEGIN
     SET TIME_ZONE = "+0:00";
-    INSERT INTO Calendars (id, uid, ics)
-        VALUES (CID, (SELECT m.user_id FROM MTokens m WHERE m.id = MTID), ICS_);
+    INSERT INTO Calendars (id, uid, description, ics)
+        VALUES (CID, (SELECT m.user_id FROM MTokens m WHERE m.id = MTID), DESCR, ICS_);
 END;;
+
 
 CREATE OR REPLACE PROCEDURE Calendar_List(IN MTID VARCHAR(128))
 BEGIN
@@ -132,7 +146,11 @@ BEGIN
         WHERE id IN (SELECT calendar_id FROM CalendarMapping WHERE MT_id = MTID);
 END;;
 
-CREATE OR REPLACE PROCEDURE Calendar_Update(IN MTID VARCHAR(128), IN CID VARCHAR(128), IN ICS_ LONGTEXT)
+DROP PROCEDURE IF EXISTS Calendar_Update;
+DROP PROCEDURE IF EXISTS Calendar_UpdateInternal;
+
+CREATE OR REPLACE PROCEDURE Calendar_UpdateICS(IN MTID VARCHAR(128), IN CID
+    VARCHAR(128), IN ICS_ LONGTEXT)
 BEGIN
     SET TIME_ZONE = "+0:00";
     UPDATE Calendars
@@ -141,7 +159,17 @@ BEGIN
           AND id = CID;
 END;;
 
-CREATE OR REPLACE PROCEDURE Calendar_UpdateInternal(IN CID VARCHAR(128), IN ICS_ LONGTEXT)
+CREATE OR REPLACE PROCEDURE Calendar_UpdateDescription(IN MTID VARCHAR(128), IN
+    CID VARCHAR(128), IN DESCR TEXT)
+BEGIN
+    SET TIME_ZONE = "+0:00";
+    UPDATE Calendars
+    SET description=DESCR
+        WHERE uid = (SELECT m.user_id FROM MTokens m WHERE m.id = MTID)
+          AND id = CID;
+END;;
+
+CREATE OR REPLACE PROCEDURE Calendar_UpdateICSInternal(IN CID VARCHAR(128), IN ICS_ LONGTEXT)
 BEGIN
     SET TIME_ZONE = "+0:00";
     UPDATE Calendars SET ics=ICS_ WHERE id = CID;

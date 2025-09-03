@@ -100,7 +100,11 @@ func HandleAdd(ctx *fiber.Ctx) *model.Response {
 	if errRes != nil {
 		return errRes
 	}
-	var request api.CreateCalendarRequest
+	type createCalendarRequest struct {
+		api.CreateCalendarRequest
+		Tags []string `json:"tags"`
+	}
+	var request createCalendarRequest
 	if err := errors.WithStack(ctx.BodyParser(&request)); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
@@ -120,7 +124,6 @@ func HandleAdd(ctx *fiber.Ctx) *model.Response {
 		ICSPath:     icsPath,
 		Description: request.Description,
 	}
-	//TODO tags
 	dbInfo := calendarrepo.CalendarInfo{
 		ID:          id,
 		Description: db.NewNullString(calendarInfo.Description),
@@ -134,6 +137,12 @@ func HandleAdd(ctx *fiber.Ctx) *model.Response {
 		rlog, func(tx *sqlx.Tx) error {
 			if err := calendarrepo.Insert(rlog, tx, mt.ID, dbInfo); err != nil {
 				return err
+			}
+			// Link tags if provided
+			if len(request.Tags) > 0 {
+				if err := calendarrepo.LinkTags(rlog, tx, id, request.Tags); err != nil {
+					return err
+				}
 			}
 			var rollback bool
 			res, rollback = mytokenutils.DoAfterRequestThingsOther(
@@ -260,6 +269,104 @@ func HandleList(ctx *fiber.Ctx) *model.Response {
 	return res
 }
 
+// HandleUpdate updates a calendar's description and/or tags
+func HandleUpdate(ctx *fiber.Ctx) *model.Response {
+	rlog := logger.GetRequestLogger(ctx)
+	calendarID := ctxutils.Params(ctx, "id")
+	rlog.WithField("calendar", calendarID).Debug("Handle update calendar request")
+	var umt universalmytoken.UniversalMytoken
+	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
+	if errRes != nil {
+		return errRes
+	}
+	// Require modify capability like delete/create
+	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
+		rlog, nil, mt,
+		ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyToken,
+	)
+	if errRes != nil {
+		return errRes
+	}
+	ok, err := calendarrepo.MTIsForSameUserAsCalendar(rlog, nil, calendarID, mt.ID)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	if !ok {
+		return calendarNotFoundError
+	}
+	type updateCalendarRequest struct {
+		Description *string  `json:"description"`
+		Tags        []string `json:"tags"`
+	}
+	var req updateCalendarRequest
+	if err = errors.WithStack(ctx.BodyParser(&req)); err != nil {
+		return model.ErrorToBadRequestErrorResponse(err)
+	}
+
+	var res *model.Response
+	_ = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			if req.Tags != nil {
+				if err = calendarrepo.LinkTags(rlog, tx, calendarID, req.Tags); err != nil {
+					res = model.ErrorToInternalServerErrorResponse(err)
+					return err
+				}
+			}
+			// Get current info to (re)build ICS description if needed
+			info, err := calendarrepo.GetByID(rlog, tx, calendarID)
+			if err != nil {
+				_, e := db.ParseError(err)
+				if e == nil {
+					res = calendarNotFoundError
+				} else {
+					res = model.ErrorToInternalServerErrorResponse(err)
+				}
+				return err
+			}
+			if req.Description != nil {
+				if err = calendarrepo.UpdateDescription(rlog, tx, mt.ID, calendarID, *req.Description); err != nil {
+					res = model.ErrorToInternalServerErrorResponse(err)
+					return err
+				}
+				// Update ICS description accordingly
+				cal, err := ics.ParseCalendar(strings.NewReader(info.ICS))
+				if err == nil {
+					cal.SetDescription(
+						fmt.Sprintf(
+							"This calendar contains events and reminders for expiring mytokens issued from '%s'\n\n%s",
+							config.Get().IssuerURL, *req.Description,
+						),
+					)
+					info.ICS = cal.Serialize()
+					if err = calendarrepo.UpdateICS(rlog, tx, mt.ID, calendarID, info.ICS); err != nil {
+						res = model.ErrorToInternalServerErrorResponse(err)
+						return err
+					}
+				}
+			}
+			resInfo, err := info.ToCalendarInfoResponse(rlog, tx)
+			if err != nil {
+				res = model.ErrorToInternalServerErrorResponse(err)
+				return err
+			}
+			res = &model.Response{
+				Status:   http.StatusOK,
+				Response: resInfo,
+			}
+			var rollback bool
+			res, rollback = mytokenutils.DoAfterRequestThingsOther(
+				rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
+				api.EventCalendarListed, "", usedRestriction, umt.JWT, umt.OriginalTokenType,
+			)
+			if rollback {
+				return errors.New("rollback")
+			}
+			return nil
+		},
+	)
+	return res
+}
+
 // HandleCalendarEntryViaMail creates a calendar entry for a mytoken and sends it via mail
 func HandleCalendarEntryViaMail(
 	ctx *fiber.Ctx, rlog logrus.Ext1FieldLogger, mt *mytoken.Mytoken,
@@ -339,6 +446,122 @@ func HandleCalendarEntryViaMail(
 			return nil
 		},
 	)
+	return res
+}
+
+// HandleAddTag adds a tag to a calendar
+func HandleAddTag(ctx *fiber.Ctx) *model.Response {
+	rlog := logger.GetRequestLogger(ctx)
+	calendarID := ctxutils.Params(ctx, "id")
+	rlog.WithField("calendar", calendarID).Debug("Handle add tag to calendar request")
+	var umt universalmytoken.UniversalMytoken
+	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
+	if errRes != nil {
+		return errRes
+	}
+	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
+		rlog, nil, mt, ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyToken,
+	)
+	if errRes != nil {
+		return errRes
+	}
+	ok, err := calendarrepo.MTIsForSameUserAsCalendar(rlog, nil, calendarID, mt.ID)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	if !ok {
+		return calendarNotFoundError
+	}
+	type addTagRequest struct {
+		Tag string `json:"tag"`
+	}
+	var req addTagRequest
+	if err = errors.WithStack(ctx.BodyParser(&req)); err != nil {
+		return model.ErrorToBadRequestErrorResponse(err)
+	}
+	if req.Tag == "" {
+		return model.BadRequestErrorResponse("tag must not be empty")
+	}
+	var res *model.Response
+	if err = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			if err := calendarrepo.AddTag(rlog, tx, calendarID, req.Tag); err != nil {
+				return err
+			}
+			var rollback bool
+			res, rollback = mytokenutils.DoAfterRequestThingsOther(
+				rlog, tx, nil, mt, *ctxutils.ClientMetaData(ctx),
+				api.EventCalendarListed, "", usedRestriction, umt.JWT, umt.OriginalTokenType,
+			)
+			if rollback {
+				return errors.New("rollback")
+			}
+			return nil
+		},
+	); err != nil && res == nil {
+		res = model.ErrorToInternalServerErrorResponse(err)
+	}
+	if res == nil {
+		res = &model.Response{Status: http.StatusNoContent}
+	}
+	return res
+}
+
+// HandleRemoveTag removes a tag from a calendar
+func HandleRemoveTag(ctx *fiber.Ctx) *model.Response {
+	rlog := logger.GetRequestLogger(ctx)
+	calendarID := ctxutils.Params(ctx, "id")
+	rlog.WithField("calendar", calendarID).Debug("Handle remove tag from calendar request")
+	var umt universalmytoken.UniversalMytoken
+	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
+	if errRes != nil {
+		return errRes
+	}
+	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
+		rlog, nil, mt, ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyToken,
+	)
+	if errRes != nil {
+		return errRes
+	}
+	ok, err := calendarrepo.MTIsForSameUserAsCalendar(rlog, nil, calendarID, mt.ID)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	if !ok {
+		return calendarNotFoundError
+	}
+	type removeTagRequest struct {
+		Tag string `json:"tag"`
+	}
+	var req removeTagRequest
+	if err = errors.WithStack(ctx.BodyParser(&req)); err != nil {
+		return model.ErrorToBadRequestErrorResponse(err)
+	}
+	if req.Tag == "" {
+		return model.BadRequestErrorResponse("tag must not be empty")
+	}
+	var res *model.Response
+	if err = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			if err := calendarrepo.RemoveTag(rlog, tx, calendarID, req.Tag); err != nil {
+				return err
+			}
+			var rollback bool
+			res, rollback = mytokenutils.DoAfterRequestThingsOther(
+				rlog, tx, nil, mt, *ctxutils.ClientMetaData(ctx),
+				api.EventCalendarListed, "", usedRestriction, umt.JWT, umt.OriginalTokenType,
+			)
+			if rollback {
+				return errors.New("rollback")
+			}
+			return nil
+		},
+	); err != nil && res == nil {
+		res = model.ErrorToInternalServerErrorResponse(err)
+	}
+	if res == nil {
+		res = &model.Response{Status: http.StatusNoContent}
+	}
 	return res
 }
 

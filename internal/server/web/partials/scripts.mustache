@@ -38,6 +38,11 @@
         <script src="{{instance-url}}/static/js/tags.js"></script>
     {{/home}}
     {{#settings}}
+        {{#logged-in}}
+            <script>
+                let loggedIn = true;
+            </script>
+        {{/logged-in}}
         <script src="{{instance-url}}/static/js/tokeninfo.js"></script>
         <script src="{{instance-url}}/static/js/mt-helper.js"></script>
         <script src="{{instance-url}}/static/js/settings-helper.js"></script>
