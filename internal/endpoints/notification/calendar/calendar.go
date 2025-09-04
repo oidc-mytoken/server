@@ -42,6 +42,7 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 	rlog.Debug("Handle get ics calendar request")
 	cid := ctx.Params("id")
 	var info calendarrepo.CalendarInfo
+	var errRes *model.Response
 	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
 			var err error
@@ -58,13 +59,34 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 			if err != nil {
 				return err
 			}
+
+			// Track existing event IDs
+			existing := make(map[string]struct{})
 			for _, e := range cal.Events() {
 				id := e.Id()
 				if !utils.StringInSlice(id, mtids) {
 					cal.RemoveEvent(id)
 					cal.SetLastModified(time.Now())
+				} else {
+					existing[id] = struct{}{}
 				}
 			}
+
+			// Add missing events for tokens that should be included (directly or via tags
+			// (only from tags should be missing))
+			for _, mtidStr := range mtids {
+				if _, ok := existing[mtidStr]; ok {
+					continue
+				}
+				var event *ics.VEvent
+				event, errRes = eventForMytoken(rlog, tx, mtid.FromHash(mtidStr), "", false, info.ID)
+				if errRes != nil {
+					return errors.New("rollback")
+				}
+				cal.AddVEvent(event)
+				cal.SetLastModified(time.Now())
+			}
+
 			newICS := cal.Serialize()
 			if newICS != info.ICS {
 				info.ICS = newICS
@@ -73,6 +95,9 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 			return nil
 		},
 	); err != nil {
+		if errRes != nil {
+			return errRes.Send(ctx)
+		}
 		_, e := db.ParseError(err)
 		if e != nil {
 			return model.ErrorToInternalServerErrorResponse(err).Send(ctx)

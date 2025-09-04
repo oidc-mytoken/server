@@ -85,3 +85,9 @@ func (i *MTID) UnmarshalJSON(data []byte) error {
 func (i MTID) MomID() MOMID {
 	return MOMID{i}
 }
+
+// FromHash constructs an MTID from a known hash without requiring the UUID.
+// The resulting MTID can be used in DB calls that expect the hashed ID value.
+func FromHash(hash string) MTID {
+	return MTID{hash: hash}
+}

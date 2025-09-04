@@ -113,7 +113,15 @@ END;;
 
 CREATE OR REPLACE PROCEDURE Calendar_GetMTsInCalendar(IN CALID VARCHAR(128))
 BEGIN
-    SELECT MT_id FROM CalendarMapping WHERE calendar_id = CALID;
+    SELECT DISTINCT MT_id
+        FROM (SELECT cm.MT_id
+                  FROM CalendarMapping cm
+                  WHERE cm.calendar_id = CALID
+              UNION ALL
+              SELECT mt.MT_id
+                  FROM MTTags mt
+                           JOIN CalendarTags ct ON mt.tag_id = ct.tag_id
+                  WHERE ct.calendar_id = CALID) t;
 END;;
 
 CREATE OR REPLACE PROCEDURE Calendar_Insert(IN MTID VARCHAR(128), IN CID VARCHAR(128), IN DESCR TEXT,
