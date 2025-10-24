@@ -1,12 +1,10 @@
 module github.com/oidc-mytoken/server
 
-go 1.24.0
-
-toolchain go1.24.1
+go 1.24.4
 
 require (
 	github.com/Songmu/prompter v0.5.1
-	github.com/TwiN/gocache/v2 v2.2.2
+	github.com/TwiN/gocache/v2 v2.4.0
 	github.com/arran4/golang-ical v0.3.2
 	github.com/coreos/go-oidc/v3 v3.16.0
 	github.com/evanphx/json-patch/v5 v5.9.11
