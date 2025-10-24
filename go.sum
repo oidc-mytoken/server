@@ -3,8 +3,8 @@ filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Songmu/prompter v0.5.1 h1:IAsttKsOZWSDw7bV1mtGn9TAmLFAjXbp9I/eYmUUogo=
 github.com/Songmu/prompter v0.5.1/go.mod h1:CS3jEPD6h9IaLaG6afrl1orTgII9+uDWuw95dr6xHSw=
-github.com/TwiN/gocache/v2 v2.2.2 h1:4HToPfDV8FSbaYO5kkbhLpEllUYse5rAf+hVU/mSsuI=
-github.com/TwiN/gocache/v2 v2.2.2/go.mod h1:WfIuwd7GR82/7EfQqEtmLFC3a2vqaKbs4Pe6neB7Gyc=
+github.com/TwiN/gocache/v2 v2.4.0 h1:BZ/TqvhipDQE23MFFTjC0MiI1qZ7GEVtSdOFVVXyr18=
+github.com/TwiN/gocache/v2 v2.4.0/go.mod h1:Cl1c0qNlQlXzJhTpAARVqpQDSuGDM5RhtzPYAM1x17g=
 github.com/adam-hanna/arrayOperations v1.0.1 h1:iAot3I2p4yKrFk8eRhEkuHj0ttOrfFJMWAo7Is/rHwk=
 github.com/adam-hanna/arrayOperations v1.0.1/go.mod h1:nScFkGwh89OyLY/cnXdx/S1maSqxhSXz38so1JxsChQ=
 github.com/andybalholm/brotli v1.2.0 h1:ukwgCxwYrmACq68yiUqwIWnGY0cTPox/M94sVwToPjQ=
