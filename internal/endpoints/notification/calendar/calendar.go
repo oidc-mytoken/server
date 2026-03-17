@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -42,11 +43,17 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 	rlog.Debug("Handle get ics calendar request")
 	cid := ctx.Params("id")
 	var info calendarrepo.CalendarInfo
+	var tags []api.TagInfo
 	var errRes *model.Response
 	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
 			var err error
 			info, err = calendarrepo.GetByID(rlog, tx, cid)
+			if err != nil {
+				return err
+			}
+
+			tags, err = calendarrepo.GetCalendarTags(rlog, tx, cid)
 			if err != nil {
 				return err
 			}
@@ -106,6 +113,11 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 	}
 	ctx.Set(fiber.HeaderContentType, "text/calendar")
 	ctx.Set(fiber.HeaderContentDisposition, `attachment; filename=mytokens.ics`)
+	// Include tags as JSON in a custom header for the calendar view
+	if len(tags) > 0 {
+		tagsJSON, _ := json.Marshal(tags)
+		ctx.Set("X-Calendar-Tags", string(tagsJSON))
+	}
 	return ctx.SendString(info.ICS)
 }
 

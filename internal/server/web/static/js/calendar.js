@@ -61,9 +61,27 @@ $(document).ready(function () {
             format: 'ics'
         },
         eventSourceSuccess: function (_, response) {
-            let h = response.headers.get("content-disposition");
-            h = h.split('"')[1]
-            $('#navbar-center-content').html(`<h2>Calendar: ${h}</h2>`);
+            let tagsHeader = response.headers.get("X-Calendar-Tags");
+            let tagsHtml = "";
+            if (tagsHeader) {
+                try {
+                    let tags = JSON.parse(tagsHeader);
+                    if (tags && tags.length > 0) {
+                        tagsHtml = tags.map(function (tag) {
+                            const color = tag.color || generateColorFromString(tag.tag);
+                            const textClass = textClassForBackgroundColor(color);
+                            return `<span class="badge badge-pill ${textClass} tag mx-1" style="background-color: #${color};">${tag.tag}</span>`;
+                        }).join("");
+                    }
+                } catch (e) {
+                    console.error("Failed to parse calendar tags:", e);
+                }
+            }
+            if (tagsHtml) {
+                $('#navbar-center-content').html(`<h4 class="d-flex align-items-center">Calendar: ${tagsHtml}</h4>`);
+            } else {
+                $('#navbar-center-content').html(`<h4>Calendar</h4>`);
+            }
         }
     });
 
