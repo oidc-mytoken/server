@@ -336,6 +336,16 @@ func HandleUpdate(ctx *fiber.Ctx) *model.Response {
 					res = model.ErrorToInternalServerErrorResponse(err)
 					return err
 				}
+				var rollback bool
+				res, rollback = mytokenutils.DoAfterRequestThingsOther(
+					rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
+					api.EventCalendarTagsUpdated, "",
+					usedRestriction, umt.JWT,
+					umt.OriginalTokenType,
+				)
+				if rollback {
+					return errors.New("rollback")
+				}
 			}
 			// Get current info to (re)build ICS description if needed
 			info, err := calendarrepo.GetByID(rlog, tx, calendarID)
@@ -368,6 +378,16 @@ func HandleUpdate(ctx *fiber.Ctx) *model.Response {
 						return err
 					}
 				}
+				var rollback bool
+				res, rollback = mytokenutils.DoAfterRequestThingsOther(
+					rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
+					api.EventCalendarUpdated, "updated description",
+					usedRestriction, umt.JWT,
+					umt.OriginalTokenType,
+				)
+				if rollback {
+					return errors.New("rollback")
+				}
 			}
 			resInfo, err := info.ToCalendarInfoResponse(rlog, tx)
 			if err != nil {
@@ -377,14 +397,6 @@ func HandleUpdate(ctx *fiber.Ctx) *model.Response {
 			res = &model.Response{
 				Status:   http.StatusOK,
 				Response: resInfo,
-			}
-			var rollback bool
-			res, rollback = mytokenutils.DoAfterRequestThingsOther(
-				rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
-				api.EventCalendarListed, "", usedRestriction, umt.JWT, umt.OriginalTokenType,
-			)
-			if rollback {
-				return errors.New("rollback")
 			}
 			return nil
 		},

@@ -139,7 +139,7 @@ func HandlePost(ctx *fiber.Ctx) *model.Response {
 
 	return settings.HandleSettingsHelper(
 		ctx, nil, &reqMytoken, api.CapabilityTags,
-		&api.EventTagDeleted, tag, fiber.StatusNoContent,
+		&api.EventTagCreated, tag, fiber.StatusNoContent,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *model.Response) {
 			if err := tagrepo.CreateTag(rlog, tx, tag, mt.ID); err != nil {
 				return nil, model.ErrorToInternalServerErrorResponse(err)
