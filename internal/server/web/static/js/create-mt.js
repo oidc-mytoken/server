@@ -67,14 +67,25 @@ function initCreateMT(...next) {
     checkCapability("AT", mtPrefix);
     initRestr(mtPrefix);
     updateRotationIcon(mtPrefix);
-    initProfileSupport();
-    fillPropertiesFromQuery();
-    if ($mtOIDCIss.val() === "") {
-        disableCreateNewMytokenButtonBecauseOfMissingIssuer();
-    } else {
-        enableCreateNewMytokenButton();
+
+    function finishInit() {
+        initCreateMTTags(mtPrefix);
+        initProfileSupport();
+        fillPropertiesFromQuery();
+        if ($mtOIDCIss.val() === "") {
+            disableCreateNewMytokenButtonBecauseOfMissingIssuer();
+        } else {
+            enableCreateNewMytokenButton();
+        }
+        doNext(...next);
     }
-    doNext(...next);
+
+    // Load tag list if logged in, then initialize create MT tags UI
+    if (loggedIn) {
+        getTagList(finishInit);
+    } else {
+        finishInit();
+    }
 }
 
 function fillGUIWithMaybeTemplate(data, template_type, set_in_gui, prefix = "") {
@@ -137,6 +148,9 @@ function fillGUIFromRequestData(req) {
     fillGUIWithMaybeTemplate(req.restrictions, "restr", set_restrictions_in_gui, mtPrefix);
     fillGUIWithMaybeTemplate(req.rotation, "rot", set_rotation_in_gui, mtPrefix);
     fillGUIWithMaybeTemplate(req.capabilities, "cap", set_capabilities_in_gui, mtPrefix);
+    if (req.tags !== undefined) {
+        setCreateMTTagsFromData(req.tags, mtPrefix);
+    }
 }
 
 function fillPropertiesFromQuery() {
@@ -192,6 +206,10 @@ function sendCreateMTReq() {
     let rot = getRotationFromForm(mtPrefix);
     if (rot) {
         data["rotation"] = rot;
+    }
+    let tags = getCreateMTTags();
+    if (tags && tags.length > 0) {
+        data["tags"] = tags;
     }
     data = JSON.stringify(data);
     $.ajax({
