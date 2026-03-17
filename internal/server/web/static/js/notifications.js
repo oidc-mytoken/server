@@ -237,7 +237,7 @@ function _notificationAddAllTokenList($container, hide_tokens = undefined) {
             let new_parent = 'notifications-all-token-list-to-add-' + old_parent;
             $tr.attr("parent-id", new_parent);
         }
-        let mom_id = $tr.find('i.fa-trash').parent().attr("id").replace("revoke-", "");
+        let mom_id = $tr.attr("mom-id");
         if (hide_tokens !== undefined && hide_tokens.includes(mom_id)) {
             $tr.hideB();
         }
