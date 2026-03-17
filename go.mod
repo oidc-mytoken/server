@@ -53,7 +53,7 @@ require (
 	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/gofiber/template v1.8.3 // indirect
-	github.com/gofiber/utils v1.1.0 // indirect
+	github.com/gofiber/utils v1.2.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jarcoal/httpmock v1.3.1 // indirect
