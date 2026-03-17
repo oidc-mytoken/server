@@ -345,6 +345,7 @@ func createMytokenEntry(
 		return nil, restrictionsWhereOK, err
 	}
 	mte := mytokenrepo.NewMytokenEntry(mt, authFlowInfo.Name, networkData)
+	mte.Tags = authFlowInfo.Tags
 	mte.Token.AuthTime = unixtime.Now()
 	if err = mte.InitRefreshToken(rt); err != nil {
 		return nil, restrictionsWhereOK, err

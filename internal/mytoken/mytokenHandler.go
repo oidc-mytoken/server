@@ -275,6 +275,7 @@ func createMytokenEntry(
 		return nil, model.ErrorToInternalServerErrorResponse(err)
 	}
 	mte := mytokenrepo.NewMytokenEntry(mt, req.GeneralMytokenRequest.Name, networkData)
+	mte.Tags = req.GeneralMytokenRequest.Tags
 	encryptionKey, _, err := encryptionkeyrepo.GetEncryptionKey(rlog, nil, parent.ID, req.Mytoken.JWT)
 	if err != nil {
 		rlog.WithError(err).Error()

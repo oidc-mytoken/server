@@ -35,6 +35,7 @@ type MytokenEntry struct {
 	IP                     string `db:"ip_created"`
 	networkData            api.ClientMetaData
 	expiresAt              unixtime.UnixTime
+	Tags                   []api.CreateMytokenTag
 }
 
 // InitRefreshToken links a refresh token to this MytokenEntry
@@ -132,14 +133,25 @@ func (mte *MytokenEntry) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx, comment st
 			if err = storeEncryptionKey(tx, mte.encryptionKeyEncrypted, steStore.RefreshTokenID, mte.ID); err != nil {
 				return err
 			}
-			return eventService.LogEvent(
+			if err = eventService.LogEvent(
 				rlog, tx, pkg.MTEvent{
 					Event:          api.EventMTCreated,
 					Comment:        comment,
 					MTID:           mte.ID,
 					ClientMetaData: mte.networkData,
 				},
-			)
+			); err != nil {
+				return err
+			}
+			// Link tags to the newly created mytoken
+			for _, tag := range mte.Tags {
+				if _, err = tx.Exec(
+					`CALL MTokens_LinkTag(?,?,?)`, mte.ID, tag.Tag, tag.IncludeChildren,
+				); err != nil {
+					return errors.WithStack(err)
+				}
+			}
+			return nil
 		},
 	)
 }
