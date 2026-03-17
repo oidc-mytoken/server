@@ -42,6 +42,7 @@ const (
 	MustacheKeySubscribeNotifications       = "subscribe-notifications"
 	MustacheKeyNotificationsMailEnabled     = "notifications-mail-enabled"
 	MustacheKeyNotificationsCalendarEnabled = "notifications-calendar-enabled"
+	MustacheKeyTags                         = "tags"
 )
 
 // Keys for sub configs

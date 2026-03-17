@@ -49,6 +49,10 @@ function fillTokenInfo(tokenPayload) {
         setRestrictionsData([{}], tokeninfoPrefix);
         scopeTableBody(tokeninfoPrefix).html("");
         RestrToGUI(tokeninfoPrefix);
+
+        // clear and hide tags
+        $('#tokeninfo-token-tags').html('<span class="text-muted">No tags</span>');
+        $('#tokeninfo-tags-display').addClass('d-none');
         return;
     }
     msg.text(JSON.stringify(tokenPayload, null, 4));
@@ -80,6 +84,18 @@ function fillTokenInfo(tokenPayload) {
         _addScopeValueToGUI(scope, scopeTableBody(tokeninfoPrefix), "restr", tokeninfoPrefix);
     }
     RestrToGUI(tokeninfoPrefix);
+
+    // tags
+    const $tagsContainer = $('#tokeninfo-token-tags');
+    const $tagsDisplay = $('#tokeninfo-tags-display');
+    const tags = tokenPayload['tags'] || [];
+    if (tags.length > 0) {
+        displayTagsInContainer($tagsContainer, tags, true);
+        $tagsDisplay.removeClass('d-none');
+    } else {
+        $tagsContainer.html('<span class="text-muted">No tags</span>');
+        $tagsDisplay.addClass('d-none');
+    }
 }
 
 function userAgentToHTMLIcons(userAgent) {

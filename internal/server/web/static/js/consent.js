@@ -13,6 +13,8 @@ $(document).ready(function () {
     checkedCapabilities.forEach(function (value) {
         checkCapability(value);
     })
+    // Display tags if any
+    initConsentTags();
     chainFunctions(
         discovery,
         function (...next) {
@@ -20,6 +22,20 @@ $(document).ready(function () {
         },
     );
 })
+
+function initConsentTags() {
+    const $tagsSection = $('#consent-tags-section');
+    const $tagsContainer = $('#consent-tags-container');
+    const $noTags = $('#consent-no-tags');
+
+    if (typeof consentTags === 'undefined' || consentTags.length === 0) {
+        $noTags.show();
+        return;
+    }
+
+    $noTags.hide();
+    displayTagsInContainer($tagsContainer, consentTags, true);
+}
 
 function _approve() {
     let data = {
@@ -29,6 +45,10 @@ function _approve() {
         "name": $('#tokenName').val(),
         "rotation": getRotationFromForm()
     };
+    // Include tags if any were specified
+    if (typeof consentTags !== 'undefined' && consentTags.length > 0) {
+        data["tags"] = consentTags;
+    }
     approve(data);
 
 }

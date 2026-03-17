@@ -105,6 +105,50 @@ ${loadedTags.reduce((acc, tag) => acc + `<option value="${tag.tag}">${tag.tag}</
 
 let loadedTags = [];
 
+// Display tags in a container element (for tokeninfo, consent, etc.)
+function displayTagsInContainer($container, tags, showIncludeChildren = true) {
+    $container.empty();
+    if (!tags || tags.length === 0) {
+        $container.append('<span class="text-muted">No tags</span>');
+        return;
+    }
+    tags.forEach(function (tagInfo) {
+        const tag = typeof tagInfo === 'string' ? tagInfo : tagInfo.tag;
+        const includeChildren = typeof tagInfo === 'object' ? tagInfo.include_children : false;
+
+        // Try to find color from loadedTags, otherwise generate one
+        const loadedTag = loadedTags.find(t => t.tag === tag);
+        const color = loadedTag ? loadedTag.color : generateColorFromString(tag);
+        const textClass = textClassForBackgroundColor(color);
+
+        let childrenIcon = "";
+        if (showIncludeChildren && includeChildren) {
+            childrenIcon = `<i class="fas fa-sitemap ml-1" title="Includes children"></i>`;
+        }
+
+        const pill = `<span class="badge badge-pill ${textClass} tag mr-1" 
+                           data-tag="${tag}"
+                           style="background-color: #${color};">
+                           ${tag}${childrenIcon}
+                      </span>`;
+        $container.append(pill);
+    });
+}
+
+// Generate a deterministic color from a string
+function generateColorFromString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    let color = '';
+    for (let i = 0; i < 3; i++) {
+        const value = (hash >> (i * 8)) & 0xFF;
+        color += ('00' + value.toString(16)).slice(-2);
+    }
+    return color;
+}
+
 function getTagList(...next) {
     $.ajax({
         type: "GET",

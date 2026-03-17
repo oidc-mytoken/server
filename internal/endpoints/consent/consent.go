@@ -54,6 +54,7 @@ func handleConsent(ctx *fiber.Ctx, info *pkg2.OIDCFlowRequest, includeConsentCal
 		templating.MustacheKeyTokenName:   info.Name,
 		templating.MustacheKeyRotation:    info.Rotation,
 		templating.MustacheKeyApplication: info.ApplicationName,
+		templating.MustacheKeyTags:        info.Tags,
 	}
 	var scopes []string
 	if p := provider2.GetProvider(info.Issuer); p != nil {

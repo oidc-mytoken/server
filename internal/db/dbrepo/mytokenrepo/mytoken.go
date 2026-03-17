@@ -261,6 +261,42 @@ func RemoveTag(
 	)
 }
 
+// GetTags returns all tags for a mytoken
+func GetTags(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
+) ([]api.MTTagInfo, error) {
+	var tags []struct {
+		TagID              uint64     `db:"tag_id"`
+		Tag                string     `db:"tag"`
+		Color              string     `db:"tag_color"`
+		TagIncludeChildren db.BitBool `db:"tag_include_children"`
+	}
+	err := db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(
+				tx.Select(&tags, `CALL MTokens_GetTags(?)`, mtID),
+			)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(tags) == 0 {
+		return []api.MTTagInfo{}, nil
+	}
+	result := make([]api.MTTagInfo, len(tags))
+	for i, tag := range tags {
+		result[i] = api.MTTagInfo{
+			TagInfo: api.TagInfo{
+				Tag:   api.Tag(tag.Tag),
+				Color: tag.Color,
+			},
+			IncludeChildren: bool(tag.TagIncludeChildren),
+		}
+	}
+	return result, nil
+}
+
 // ClearTags removes all tags from a mytoken
 func ClearTags(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MOMID,

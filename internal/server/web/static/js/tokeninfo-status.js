@@ -93,6 +93,7 @@ async function update_tokeninfo() {
             }
         }
     }
+    let introspectTags = [];
     try {
         await $.ajax({
             type: "POST",
@@ -105,6 +106,7 @@ async function update_tokeninfo() {
             contentType: "application/json",
             success: function (res) {
                 payload = res['token'];
+                introspectTags = res['tags'] || [];
                 if (res['valid']) {
                     $tokeninfoBadgeValid.showB();
                     $tokeninfoBadgeInvalid.hideB();
@@ -127,6 +129,8 @@ async function update_tokeninfo() {
     } catch (e) {
         console.error(e);
     }
+    // Add tags to payload for fillTokenInfo
+    payload['tags'] = introspectTags;
 
     let oidcIss = payload['oidc_iss'];
     let mytokenIss = payload['iss'];

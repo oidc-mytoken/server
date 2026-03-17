@@ -16,6 +16,12 @@
                     <input type="text" class="form-control" id="tokenName" placeholder="Name">
                 </div>
             </div>
+            <div class="form-group alert border" id="consent-tags-section">
+                <h4>Tags</h4>
+                <div id="consent-tags-container">
+                    <span class="text-muted" id="consent-no-tags">No tags specified.</span>
+                </div>
+            </div>
         </div>
         <div class="col-md">
             <div class="alert border">
@@ -51,4 +57,8 @@
         {{#checked-capabilities}}
         checkedCapabilities.push("{{.}}");
         {{/checked-capabilities}}
+    let consentTags = [];
+        {{#tags}}
+        consentTags.push({tag: "{{tag}}", include_children: {{include_children}}});
+        {{/tags}}
 </script>
