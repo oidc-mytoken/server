@@ -31,7 +31,7 @@ require (
 	github.com/sethvargo/go-limiter v1.1.0
 	github.com/sirupsen/logrus v1.9.4
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
-	github.com/valyala/fasthttp v1.68.0
+	github.com/valyala/fasthttp v1.69.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	github.com/zachmann/go-oidfed v0.2.1
 	golang.org/x/crypto v0.49.0
@@ -59,7 +59,7 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jarcoal/httpmock v1.3.1 // indirect
-	github.com/klauspost/compress v1.18.1 // indirect
+	github.com/klauspost/compress v1.18.2 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
