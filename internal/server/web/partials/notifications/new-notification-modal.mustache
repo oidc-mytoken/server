@@ -33,12 +33,32 @@
                                 <div id="new-notification-tags-container" class="mb-2">
                                     <span class="text-muted" id="new-notification-no-tags">No tags added.</span>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-outline-success"
-                                        id="add-new-notification-tag-btn">
-                                    <i class="fas fa-plus"></i> Add Tag
-                                </button>
-                                <small class="form-text text-muted">Tags help you organize and filter your
-                                    notifications.</small>
+                                <div class="input-group" id="new-notification-tag-selector-group">
+                                    <select class="form-control custom-select" id="new-notification-tag-selector">
+                                        <option value="" disabled selected>Select a tag...</option>
+                                    </select>
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-success" id="add-new-notification-tag-btn">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="new-notification-new-tag-input-group" class="input-group mt-2 d-none">
+                                    <input type="text" class="form-control" id="new-notification-new-tag-input"
+                                           placeholder="Enter new tag name">
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-success"
+                                                id="add-new-notification-new-tag-btn">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-secondary"
+                                                id="cancel-new-notification-new-tag-btn">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted">Tags help you organize your notifications. Tokens
+                                    with matching tags are automatically subscribed.</small>
                             </div>
                             <div>
                                 <h5>Tokens</h5>

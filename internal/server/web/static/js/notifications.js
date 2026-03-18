@@ -953,6 +953,11 @@ $('#new-notification-user-wide-input').on('change', function () {
 // Store selected tags for new notification
 let newNotificationSelectedTags = [];
 
+const $newNotificationTagSelector = $('#new-notification-tag-selector');
+const $newNotificationNewTagInputGroup = $('#new-notification-new-tag-input-group');
+const $newNotificationNewTagInput = $('#new-notification-new-tag-input');
+const new_notification_new_tag_value = '$$$new-tag$$$';
+
 function renderNewNotificationTags() {
     const $container = $('#new-notification-tags-container');
     const $noTags = $('#new-notification-no-tags');
@@ -976,6 +981,20 @@ function renderNewNotificationTags() {
             $noTags.before(pill);
         });
     }
+    // Update selector to exclude already selected tags
+    updateNewNotificationTagSelector();
+}
+
+function updateNewNotificationTagSelector() {
+    const selectedTagNames = newNotificationSelectedTags.map(t => t.tag);
+    let options = '<option value="" disabled selected>Select a tag...</option>';
+    loadedTags.forEach(function (tag) {
+        if (!selectedTagNames.includes(tag.tag)) {
+            options += `<option value="${tag.tag}">${tag.tag}</option>`;
+        }
+    });
+    options += `<option value="${new_notification_new_tag_value}" class="text-secondary">+ Create new tag...</option>`;
+    $newNotificationTagSelector.html(options);
 }
 
 function removeNewNotificationTag(index) {
@@ -984,6 +1003,8 @@ function removeNewNotificationTag(index) {
 }
 
 function addNewNotificationTag(tag) {
+    if (!tag || tag.trim() === '') return;
+    tag = tag.trim();
     if (newNotificationSelectedTags.some(t => t.tag === tag)) {
         return; // Already added
     }
@@ -999,6 +1020,8 @@ function getNewNotificationTags() {
 function initNewNotificationTags() {
     newNotificationSelectedTags = [];
     renderNewNotificationTags();
+    $newNotificationNewTagInputGroup.hideB();
+    $newNotificationNewTagInput.val('');
 }
 
 // Initialize tags when modal opens
@@ -1006,12 +1029,50 @@ $newNotificationModal.on('show.bs.modal', function () {
     initNewNotificationTags();
 });
 
-// Add tag button click handler
+// Handle tag selector change - show new tag input if "create new" is selected
+$newNotificationTagSelector.on('change', function () {
+    if ($(this).val() === new_notification_new_tag_value) {
+        $newNotificationNewTagInputGroup.showB();
+        $newNotificationNewTagInput.focus();
+    }
+});
+
+// Add tag from selector button click
 $(document).on('click', '#add-new-notification-tag-btn', function () {
-    showAddTagModal(function (tag) {
-        addNewNotificationTag(tag);
-        $('#add-tag-modal').modal('hide');
-    });
+    const selectedValue = $newNotificationTagSelector.val();
+    if (selectedValue && selectedValue !== new_notification_new_tag_value) {
+        addNewNotificationTag(selectedValue);
+        $newNotificationTagSelector.val('');
+    } else if (selectedValue === new_notification_new_tag_value) {
+        $newNotificationNewTagInputGroup.showB();
+        $newNotificationNewTagInput.focus();
+    }
+});
+
+// Add new tag from input
+$(document).on('click', '#add-new-notification-new-tag-btn', function () {
+    const newTag = $newNotificationNewTagInput.val();
+    if (newTag && newTag.trim() !== '') {
+        addNewNotificationTag(newTag);
+        $newNotificationNewTagInput.val('');
+        $newNotificationNewTagInputGroup.hideB();
+        $newNotificationTagSelector.val('');
+    }
+});
+
+// Cancel new tag input
+$(document).on('click', '#cancel-new-notification-new-tag-btn', function () {
+    $newNotificationNewTagInput.val('');
+    $newNotificationNewTagInputGroup.hideB();
+    $newNotificationTagSelector.val('');
+});
+
+// Allow pressing Enter to add new tag
+$newNotificationNewTagInput.on('keypress', function (e) {
+    if (e.which === 13) { // Enter key
+        e.preventDefault();
+        $('#add-new-notification-new-tag-btn').click();
+    }
 });
 
 // ============ Notification Management Tags ============
