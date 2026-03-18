@@ -14,11 +14,6 @@ const $lastTokenInNotificationHint = $('#last-token-hint');
 const $newNotificationModal = $('#new-notification-modal');
 const $newNotificationContent = $('.new-notification-content');
 const $onlyAddTokensContent = $('.only-add-tokens-content');
-const $newNotificationUserWideInput = $('#new-notification-user-wide-input');
-
-$(function () {
-    $newNotificationUserWideInput.prop("checked", false);
-})
 
 function listNotifications(...next) {
     if (!email_notifications_supported) {
@@ -844,42 +839,71 @@ function newNotificationModal() {
         notificationAddAllTokenList($('#notifications-all-tokens-to-subscribe-table'));
     });
     $onlyAddTokensContent.hideB();
+    // Reset to first tab (By Tags)
+    $('#subscription-tags-tab').tab('show');
     $newNotificationModal.modal()
 }
 
 
 $('#btn-add-token-to-notification').on('click', function () {
     let tokens = $(this).closest('div').find('tbody tr').map((_, v) => $(v).attr('mom-id')).get();
-    notificationAddAllTokenList($('#notifications-all-tokens-to-subscribe-table'), tokens);
+    notificationAddAllTokenList($('#notifications-add-tokens-table'), tokens);
     $onlyAddTokensContent.showB();
     $newNotificationContent.hideB();
     $newNotificationModal.modal()
 });
 
-$('.new-notification-save-btn').on('click', function () {
+// Load token list when "Select Tokens" tab is shown
+$(document).on('shown.bs.tab', '#subscription-tokens-tab', function () {
+    notificationAddAllTokenList($('#notifications-all-tokens-to-subscribe-table'));
+});
+
+// Handle save button clicks based on which context we're in
+$(document).on('click', '.new-notification-save-btn', function () {
     if (!$onlyAddTokensContent.hasClass('d-none')) {
+        // Adding tokens to existing notification
         addTokensToNotification();
     } else {
+        // Creating new notification - determine type from active tab
         saveNewNotification();
     }
-})
+});
+
+function getActiveSubscriptionType() {
+    const activeTab = $('#new-notification-subscription-tabs .nav-link.active').attr('id');
+    if (activeTab === 'subscription-userwide-tab') {
+        return 'userwide';
+    } else if (activeTab === 'subscription-tokens-tab') {
+        return 'tokens';
+    } else {
+        return 'tags';
+    }
+}
 
 function saveNewNotification() {
-    let user_wide = $newNotificationUserWideInput.prop("checked");
+    const subscriptionType = getActiveSubscriptionType();
     let data = {
-        "user_wide": user_wide,
         "notification_type": "mail",
         "notification_classes": getCheckedCapabilities("new-notification-modal-"),
     };
-    // Include tags if any were added
-    let tags = getNewNotificationTags();
-    if (tags && tags.length > 0) {
-        data["tags"] = tags;
+
+    if (subscriptionType === 'userwide') {
+        data["user_wide"] = true;
+    } else if (subscriptionType === 'tags') {
+        data["user_wide"] = false;
+        let tags = getNewNotificationTags();
+        if (tags && tags.length > 0) {
+            data["tags"] = tags;
+        }
+    } else if (subscriptionType === 'tokens') {
+        data["user_wide"] = false;
+        let token_data = getSelectedTokensForNotification();
+        if (token_data.length > 0) {
+            Object.assign(data, token_data[0]);
+        }
     }
-    let token_data = getSelectedTokensForNotification();
-    if (!user_wide && token_data.length > 0) {
-        Object.assign(data, token_data[0]);
-    }
+
+    let token_data = (subscriptionType === 'tokens') ? getSelectedTokensForNotification() : [];
     data = JSON.stringify(data);
 
     function end() {
@@ -895,10 +919,11 @@ function saveNewNotification() {
         contentType: "application/json",
         url: storageGet('notifications_endpoint'),
         success: function (res) {
-            if (user_wide || token_data.length <= 1) {
+            if (subscriptionType !== 'tokens' || token_data.length <= 1) {
                 end();
                 return;
             }
+            // For token-based: add additional tokens after the first one
             let ajax_promises = [];
             let mc = res["management_code"];
             token_data.slice(1).forEach(function (data) {
@@ -943,10 +968,6 @@ function addTokensToNotification(callback = undefined) {
     }
     $.when(...ajax_promises).then(callback, standardErrorHandler);
 }
-
-$('#new-notification-user-wide-input').on('change', function () {
-    $('.user-wide-toggle-effected').toggleClass('d-none');
-})
 
 // ============ Notification Tags ============
 
@@ -1029,24 +1050,17 @@ $newNotificationModal.on('show.bs.modal', function () {
     initNewNotificationTags();
 });
 
-// Handle tag selector change - show new tag input if "create new" is selected
+// Handle tag selector change - auto-add tag or show new tag input
 $newNotificationTagSelector.on('change', function () {
-    if ($(this).val() === new_notification_new_tag_value) {
+    const selectedValue = $(this).val();
+    if (selectedValue === new_notification_new_tag_value) {
         $newNotificationNewTagInputGroup.showB();
         $newNotificationNewTagInput.focus();
-    }
-});
-
-// Add tag from selector button click
-$(document).on('click', '#add-new-notification-tag-btn', function () {
-    const selectedValue = $newNotificationTagSelector.val();
-    if (selectedValue && selectedValue !== new_notification_new_tag_value) {
+    } else if (selectedValue) {
         addNewNotificationTag(selectedValue);
-        $newNotificationTagSelector.val('');
-    } else if (selectedValue === new_notification_new_tag_value) {
-        $newNotificationNewTagInputGroup.showB();
-        $newNotificationNewTagInput.focus();
     }
+    // Reset selector to placeholder
+    $(this).val('');
 });
 
 // Add new tag from input

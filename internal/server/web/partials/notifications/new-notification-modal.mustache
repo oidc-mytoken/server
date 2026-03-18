@@ -28,83 +28,146 @@
                                     {{/notification-classes}}
                                 </ul>
                             </div>
+
                             <div class="alert border">
-                                <h5>Tags</h5>
-                                <div id="new-notification-tags-container" class="mb-2">
-                                    <span class="text-muted" id="new-notification-no-tags">No tags added.</span>
-                                </div>
-                                <div class="input-group" id="new-notification-tag-selector-group">
-                                    <select class="form-control custom-select" id="new-notification-tag-selector">
-                                        <option value="" disabled selected>Select a tag...</option>
-                                    </select>
-                                    <div class="input-group-append">
-                                        <button type="button" class="btn btn-success" id="add-new-notification-tag-btn">
-                                            <i class="fas fa-plus"></i>
+                                <h5>Token Subscription</h5>
+                                <small class="form-text text-muted mb-3">Choose how tokens are subscribed to this
+                                    notification.</small>
+
+                                <ul class="nav nav-tabs" id="new-notification-subscription-tabs" role="tablist">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" id="subscription-tags-tab" data-toggle="tab"
+                                           href="#subscription-tags-content" role="tab"
+                                           aria-controls="subscription-tags-content" aria-selected="true">
+                                            <i class="fas fa-tags"></i> By Tags
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="subscription-tokens-tab" data-toggle="tab"
+                                           href="#subscription-tokens-content" role="tab"
+                                           aria-controls="subscription-tokens-content" aria-selected="false">
+                                            <i class="fas fa-key"></i> Select Tokens
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="subscription-userwide-tab" data-toggle="tab"
+                                           href="#subscription-userwide-content" role="tab"
+                                           aria-controls="subscription-userwide-content" aria-selected="false">
+                                            <i class="fas fa-user"></i> User-Wide
+                                        </a>
+                                    </li>
+                                </ul>
+
+                                <div class="tab-content pt-3" id="new-notification-subscription-tabs-content">
+                                    <!-- By Tags Tab -->
+                                    <div class="tab-pane fade show active" id="subscription-tags-content"
+                                         role="tabpanel"
+                                         aria-labelledby="subscription-tags-tab">
+                                        <p class="text-muted small">Tokens with matching tags are automatically
+                                            subscribed to this notification.</p>
+                                        <div id="new-notification-tags-container" class="mb-2">
+                                            <span class="text-muted" id="new-notification-no-tags">No tags added.</span>
+                                        </div>
+                                        <div class="mb-3">
+                                            <select class="form-control custom-select"
+                                                    id="new-notification-tag-selector" style="max-width: 300px;">
+                                                <option value="" disabled selected>Select a tag to add...</option>
+                                            </select>
+                                        </div>
+                                        <div id="new-notification-new-tag-input-group" class="input-group mb-3 d-none"
+                                             style="max-width: 300px;">
+                                            <input type="text" class="form-control" id="new-notification-new-tag-input"
+                                                   placeholder="Enter new tag name">
+                                            <div class="input-group-append">
+                                                <button type="button" class="btn btn-success"
+                                                        id="add-new-notification-new-tag-btn">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-secondary"
+                                                        id="cancel-new-notification-new-tag-btn">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <button class="btn btn-success new-notification-save-btn"
+                                                    id="save-notification-tags-btn">
+                                                <i class="fas fa-plus"></i> Create Notification
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Select Tokens Tab -->
+                                    <div class="tab-pane fade" id="subscription-tokens-content" role="tabpanel"
+                                         aria-labelledby="subscription-tokens-tab">
+                                        <p class="text-muted small">Select specific tokens to subscribe to this
+                                            notification.</p>
+                                        <button class="btn btn-success new-notification-save-btn mb-2"
+                                                id="save-notification-tokens-btn-top">
+                                            <i class="fas fa-plus"></i> Create Notification
+                                        </button>
+                                        <div class="row mx-1" id="tokens-notifications-select-content">
+                                            <table class="col table table-hover table-grey">
+                                                <thead>
+                                                <tr>
+                                                    <th></th>
+                                                    <th style="min-width: 35%;">Token Name</th>
+                                                    <th>Created</th>
+                                                    <th>Created from IP</th>
+                                                    <th>Expires</th>
+                                                    <th></th>
+                                                </tr>
+                                                </thead>
+                                                <tbody id="notifications-all-tokens-to-subscribe-table">
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <button class="btn btn-success new-notification-save-btn"
+                                                id="save-notification-tokens-btn">
+                                            <i class="fas fa-plus"></i> Create Notification
+                                        </button>
+                                    </div>
+
+                                    <!-- User-Wide Tab -->
+                                    <div class="tab-pane fade" id="subscription-userwide-content" role="tabpanel"
+                                         aria-labelledby="subscription-userwide-tab">
+                                        <p class="text-muted small">User-wide notifications apply to all your current
+                                            and future mytokens.</p>
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle"></i> This notification will automatically
+                                            include all tokens for your user account.
+                                        </div>
+                                        <button class="btn btn-success new-notification-save-btn"
+                                                id="save-notification-userwide-btn">
+                                            <i class="fas fa-plus"></i> Create User-Wide Notification
                                         </button>
                                     </div>
                                 </div>
-                                <div id="new-notification-new-tag-input-group" class="input-group mt-2 d-none">
-                                    <input type="text" class="form-control" id="new-notification-new-tag-input"
-                                           placeholder="Enter new tag name">
-                                    <div class="input-group-append">
-                                        <button type="button" class="btn btn-success"
-                                                id="add-new-notification-new-tag-btn">
-                                            <i class="fas fa-plus"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-secondary"
-                                                id="cancel-new-notification-new-tag-btn">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <small class="form-text text-muted">Tags help you organize your notifications. Tokens
-                                    with matching tags are automatically subscribed.</small>
-                            </div>
-                            <div>
-                                <h5>Tokens</h5>
-                                <div class="custom-control custom-switch">
-                                    <input type="checkbox" class="custom-control-input"
-                                           id="new-notification-user-wide-input">
-                                    <label class="custom-control-label" for="new-notification-user-wide-input">User
-                                        Wide</label>
-                                </div>
-                                <small class="form-text text-muted mb-2">User wide notifications apply to all your
-                                    mytokens.</small>
-                            </div>
-                            <div class="row">
-                                <button class="btn-success btn mx-3 new-notification-save-btn user-wide-toggle-effected d-none col">
-                                    <i class="sticky-center mx-auto fas fa-plus"></i> Create User-Wide Notification
-                                </button>
                             </div>
                         </div>
                     </div>
 
                     <div class="only-add-tokens-content">
-                        <p>
-                            Select tokens to add to this notification.
-                        </p>
-                    </div>
-
-                    <div class="row mx-1 user-wide-toggle-effected notify-entry-content-normal notify-entry-content-element"
-                         id="tokens-notifications-select-content">
-                        <button class="btn-success btn col mr-2 d-inline-flex align-items-start new-notification-save-btn"
-                                style="max-width:5%;"
-                                data-toggle="tooltip" data-placement="top" data-original-title="Save">
-                            <i class="sticky-center mx-auto fas fa-save"></i></button>
-                        <table class="col table table-hover table-grey">
-                            <thead>
-                            <tr>
-                                <th></th>
-                                <th style="min-width: 35%;">Token Name</th>
-                                <th>Created</th>
-                                <th>Created from IP</th>
-                                <th>Expires</th>
-                                <th></th>
-                            </tr>
-                            </thead>
-                            <tbody id="notifications-all-tokens-to-subscribe-table">
-                            </tbody>
-                        </table>
+                        <p>Select tokens to add to this notification.</p>
+                        <div class="row mx-1">
+                            <table class="col table table-hover table-grey">
+                                <thead>
+                                <tr>
+                                    <th></th>
+                                    <th style="min-width: 35%;">Token Name</th>
+                                    <th>Created</th>
+                                    <th>Created from IP</th>
+                                    <th>Expires</th>
+                                    <th></th>
+                                </tr>
+                                </thead>
+                                <tbody id="notifications-add-tokens-table">
+                                </tbody>
+                            </table>
+                        </div>
+                        <button class="btn btn-success new-notification-save-btn">
+                            <i class="fas fa-plus"></i> Add Tokens
+                        </button>
                     </div>
                 </div>
             </div>
