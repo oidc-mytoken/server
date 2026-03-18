@@ -159,24 +159,32 @@ function calendarIDFromICSPath(ics_path) {
     return parts[parts.length - 1];
 }
 
-function addCalendarToTable(cal, prefix = "", with_delete = true) {
+function addCalendarToTable(cal, prefix = "", editable = true) {
     $noCalendarsEntry(prefix).hideB();
     let tags = cal['tags'];
     let ics_path = cal['ics_path'];
     let description = cal['description'] || '';
     let calID = calendarIDFromICSPath(ics_path);
     let viewCalendarHtml = `<td><a href="${ics_path}/view"><i class="fas fa-calendar-alt"></i></a></td>`;
-    const tagsHtml = `${createTags(tags, true, "removeTagFromCalendar", `, '${calID}', '${prefix}'`)} <span class="badge badge-pill badge-success tag"><button class="btn tag-btn" type="button" onclick="addTagToCalendar('${calID}', '${prefix}')"><i class="fas fa-plus-circle"></i></button></span>`;
-    const actionsHtml = with_delete ? actionsCalendarHtml(prefix, calID, description) : "";
-    const descriptionHtml = `<td class="cal-desc">
-        <div class="input-group">
-            <textarea class="form-control desc-input" id="desc-input-${calID}" rows="2" disabled>${escapeHTML(description)}</textarea>
-            <div class="input-group-append">
-                <button class="btn btn-outline-secondary edit-desc-btn" id="edit-desc-btn-${calID}" type="button" onclick="editCalendarDescription('${calID}', '${prefix}')"><i class="fas fa-pencil-alt"></i></button>
-                <button class="btn btn-outline-secondary save-desc-btn d-none" id="save-desc-btn-${calID}" type="button" onclick="saveCalendarDescription('${calID}', '${prefix}')"><i class="fas fa-save"></i></button>
+    let tagsHtml;
+    let descriptionHtml;
+    if (editable) {
+        tagsHtml = `${createTags(tags, true, "removeTagFromCalendar", `, '${calID}', '${prefix}'`)} <span class="badge badge-pill badge-success tag"><button class="btn tag-btn" type="button" onclick="addTagToCalendar('${calID}', '${prefix}')"><i class="fas fa-plus-circle"></i></button></span>`;
+        descriptionHtml = `<td class="cal-desc">
+            <div class="input-group">
+                <textarea class="form-control desc-input" id="desc-input-${calID}" rows="2" disabled>${escapeHTML(description)}</textarea>
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary edit-desc-btn" id="edit-desc-btn-${calID}" type="button" onclick="editCalendarDescription('${calID}', '${prefix}')"><i class="fas fa-pencil-alt"></i></button>
+                    <button class="btn btn-outline-secondary save-desc-btn d-none" id="save-desc-btn-${calID}" type="button" onclick="saveCalendarDescription('${calID}', '${prefix}')"><i class="fas fa-save"></i></button>
+                </div>
             </div>
-        </div>
-    </td>`;
+        </td>`;
+    } else {
+        // Read-only view: just display tags and description without edit controls
+        tagsHtml = createTags(tags, false) || '<span class="text-muted">-</span>';
+        descriptionHtml = `<td class="cal-desc">${escapeHTML(description) || '<span class="text-muted">-</span>'}</td>`;
+    }
+    const actionsHtml = editable ? actionsCalendarHtml(prefix, calID, description) : "";
     const html = `<tr class="calendar-entry" data-cal-id="${calID}">${viewCalendarHtml}<td><a href="${ics_path}" target="_blank" rel="noopener noreferrer">${ics_path}</a></td>${descriptionHtml}<td class="cal-tags">${tagsHtml}</td>${actionsHtml}</tr>`;
     $calendarTable(prefix).prepend(html);
 }
