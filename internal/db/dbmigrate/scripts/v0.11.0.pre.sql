@@ -147,11 +147,25 @@ BEGIN
     SELECT t.tag, t.color FROM Tags t WHERE id IN (SELECT c.tag_id FROM CalendarTags c WHERE c.calendar_id = CID);
 END;;
 
+## Override the procedure from v0.10.0 to include tag-based calendar subscriptions
+## This now returns calendars that are either:
+## 1. Directly mapped via CalendarMapping
+## 2. Have a tag that matches a tag on the token via CalendarTags/MTTags
 CREATE OR REPLACE PROCEDURE Calendar_ListForMT(IN MTID VARCHAR(128))
 BEGIN
     SELECT id, ics, description
         FROM Calendars
-        WHERE id IN (SELECT calendar_id FROM CalendarMapping WHERE MT_id = MTID);
+        WHERE id IN (
+            -- Direct mapping via CalendarMapping
+            SELECT calendar_id
+                FROM CalendarMapping
+                WHERE MT_id = MTID
+            UNION
+            -- Tag-based: calendars that share a tag with the token
+            SELECT ct.calendar_id
+                FROM CalendarTags ct
+                         JOIN MTTags mt ON ct.tag_id = mt.tag_id
+                WHERE mt.MT_id = MTID);
 END;;
 
 DROP PROCEDURE IF EXISTS Calendar_Update;
