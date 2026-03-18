@@ -27,7 +27,7 @@ require (
 	github.com/olekukonko/tablewriter v1.1.2
 	github.com/pires/go-proxyproto v0.8.1
 	github.com/pkg/errors v0.9.1
-	github.com/redis/go-redis/v9 v9.16.0
+	github.com/redis/go-redis/v9 v9.18.0
 	github.com/sethvargo/go-limiter v1.1.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
@@ -78,6 +78,7 @@ require (
 	github.com/tinylib/msgp v1.2.5 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
