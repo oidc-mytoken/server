@@ -360,6 +360,115 @@ BEGIN
 END;;
 
 
+## Notification Tags Procedures
+
+CREATE OR REPLACE PROCEDURE Notifications_ClearTags(IN NID BIGINT UNSIGNED)
+BEGIN
+    DELETE FROM NotificationTags WHERE notification_id = NID;
+END;;
+
+CREATE OR REPLACE PROCEDURE Notifications_LinkTag(IN NID BIGINT UNSIGNED, IN TAG_ VARCHAR(64))
+BEGIN
+    DECLARE v_uid BIGINT UNSIGNED;
+    DECLARE v_tid BIGINT UNSIGNED;
+
+    SELECT uid INTO v_uid FROM Notifications WHERE id = NID;
+    CALL Tags_Assert(v_uid, TAG_, NULL, v_tid);
+
+    INSERT IGNORE INTO NotificationTags (notification_id, tag_id) VALUES (NID, v_tid);
+END;;
+
+CREATE OR REPLACE PROCEDURE Notifications_UnlinkTag(IN NID BIGINT UNSIGNED, IN TAG_ VARCHAR(64))
+BEGIN
+    DECLARE v_uid BIGINT UNSIGNED;
+    DECLARE v_tid BIGINT UNSIGNED;
+
+    SELECT uid INTO v_uid FROM Notifications WHERE id = NID;
+    SELECT id INTO v_tid FROM Tags WHERE tag = TAG_ AND uid = v_uid;
+
+    DELETE FROM NotificationTags WHERE notification_id = NID AND tag_id = v_tid;
+END;;
+
+CREATE OR REPLACE PROCEDURE Notifications_GetTags(IN NID BIGINT UNSIGNED)
+BEGIN
+    SELECT t.tag, t.color
+        FROM Tags t
+        WHERE id IN (SELECT n.tag_id FROM NotificationTags n WHERE n.notification_id = NID);
+END;;
+
+## Override the procedure from v0.10.0 to include tag-based token subscriptions
+## This now returns tokens that are either:
+## 1. Directly subscribed via MTNotificationsMapping
+## 2. Have a tag that matches a tag linked to the notification via NotificationTags
+CREATE OR REPLACE PROCEDURE Notifications_GetMTsForNotification(IN NID BIGINT UNSIGNED)
+BEGIN
+    SELECT DISTINCT MT_id
+        FROM (
+                 -- Direct explicit notification mappings
+                 SELECT nm.MT_id
+                     FROM MTNotificationsMapping nm
+                     WHERE nm.notification_id = NID
+                 UNION ALL
+                 -- Tag-based auto-inclusion: tokens that share a tag with the notification
+                 SELECT mt.MT_id
+                     FROM MTTags mt
+                              JOIN NotificationTags nt ON mt.tag_id = nt.tag_id
+                     WHERE nt.notification_id = NID) t;
+END;;
+
+## Override the procedure from v0.10.0 to include tag-based notification subscriptions
+## This finds notifications that should be triggered for a given token and notification class
+## A notification matches if:
+## 1. The token is directly subscribed via MTNotificationsMapping, OR
+## 2. The token has a tag that matches a tag linked to the notification, OR
+## 3. The notification is user-wide for the token's user
+## AND the notification is subscribed to the given class
+CREATE OR REPLACE PROCEDURE Notifications_GetForMTAndClass(IN MTID VARCHAR(128), IN _CLASS VARCHAR(128))
+BEGIN
+    SELECT n.id, n.type, n.management_code, n.ws, n.user_wide, n.uid
+        FROM Notifications n
+        WHERE id IN ((
+                         -- Direct subscription via MTNotificationsMapping
+                             (SELECT notification_id FROM MTNotificationsMapping WHERE MT_id = MTID)
+                             UNION
+                             -- Tag-based subscription: notification has a tag that matches a token tag
+                             (SELECT nt.notification_id
+                                  FROM NotificationTags nt
+                                           JOIN MTTags mt ON nt.tag_id = mt.tag_id
+                                  WHERE mt.MT_id = MTID)
+                             UNION
+                             -- User-wide notifications
+                             (SELECT id
+                                  FROM Notifications
+                                  WHERE user_wide = 1
+                                    AND uid = (SELECT user_id FROM MTokens WHERE id = MTID)))
+                     INTERSECT
+                     (SELECT notificaton_id FROM SubscribedNotificationClasses WHERE class = _CLASS));
+END;;
+
+## Also need to update Notifications_GetForMT to include tag-based subscriptions
+## This is used when listing all notifications for a specific mytoken
+CREATE OR REPLACE PROCEDURE Notifications_GetForMT(IN MTID VARCHAR(128))
+BEGIN
+    SELECT n.id, n.type, n.management_code, n.ws, n.user_wide, snc.class, n.uid
+        FROM (
+                 (SELECT *
+                      FROM Notifications
+                      WHERE id IN (
+                          -- Direct subscription via MTNotificationsMapping
+                              (SELECT notification_id FROM MTNotificationsMapping WHERE MT_id = MTID)
+                              UNION
+                              -- Tag-based subscription
+                              (SELECT nt.notification_id
+                                   FROM NotificationTags nt
+                                            JOIN MTTags mt ON nt.tag_id = mt.tag_id
+                                   WHERE mt.MT_id = MTID))) n
+                     JOIN SubscribedNotificationClasses snc ON n.id = snc.notificaton_id
+                 )
+        ORDER BY n.id DESC;
+END;;
+
+
 DELIMITER ;
 
 # Values

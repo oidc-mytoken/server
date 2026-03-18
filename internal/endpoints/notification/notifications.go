@@ -176,13 +176,25 @@ func handleNewMailNotification(
 			if err = notificationsrepo.NewNotification(rlog, tx, req, mtID, managementCode, ""); err != nil {
 				return err
 			}
-			if req.NotificationClasses.Contains(api.NotificationClassExpiration) {
-				var withClass []notificationsrepo.NotificationInfoBaseWithClass
-				if err = tx.Select(
-					&withClass, `CALL Notifications_GetForManagementCode(?)`, managementCode,
-				); err != nil {
+			// Fetch the created notification to get its ID for linking tags and scheduling
+			var withClass []notificationsrepo.NotificationInfoBaseWithClass
+			if err = tx.Select(
+				&withClass, `CALL Notifications_GetForManagementCode(?)`, managementCode,
+			); err != nil {
+				return err
+			}
+			notificationID := withClass[0].NotificationInfoBase.NotificationID
+			// Link tags if provided
+			if len(req.Tags) > 0 {
+				tags := make([]api.Tag, len(req.Tags))
+				for i, t := range req.Tags {
+					tags[i] = api.Tag(t)
+				}
+				if err = notificationsrepo.LinkTags(rlog, tx, notificationID, tags); err != nil {
 					return err
 				}
+			}
+			if req.NotificationClasses.Contains(api.NotificationClassExpiration) {
 				if err = notificationsrepo.AddScheduledExpirationNotifications(
 					rlog, tx, withClass[0].NotificationInfoBase,
 				); err != nil {
@@ -260,15 +272,15 @@ func prepareNotificationWelcomeData(
 	return mtID, requiredCapability, welcomeData, nil, nil
 }
 
-// HandleNotificationUpdateClasses handles requests to update the NotificationClasses for a notification
+// HandleNotificationUpdateClasses handles requests to update the NotificationClasses and/or Tags for a notification
 func HandleNotificationUpdateClasses(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
-	rlog.Debug("Handle notification update classes request")
+	rlog.Debug("Handle notification update request")
 	managementCode := ctx.Params("code")
 	if managementCode == "" {
 		return missingManagementCodeError
 	}
-	var req api.NotificationUpdateNotificationClassesRequest
+	var req api.NotificationUpdateRequest
 	if err := ctx.BodyParser(&req); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
@@ -283,32 +295,41 @@ func HandleNotificationUpdateClasses(ctx *fiber.Ctx) *model.Response {
 				res = managementCodeNotValidError
 				return errors.New("rollback")
 			}
-			if err = notificationsrepo.UpdateNotificationClasses(
-				rlog, tx, info.NotificationID,
-				req.Classes,
-			); err != nil {
-				return err
-			}
-			includedExpBefore := info.Classes.Contains(api.NotificationClassExpiration)
-			includesExpNow := req.Classes.Contains(api.NotificationClassExpiration)
-			if includesExpNow && !includedExpBefore {
-				// exp class was added
-				if err = notificationsrepo.AddScheduledExpirationNotifications(
-					rlog, tx,
-					notificationsrepo.NotificationInfoBase{
-						NotificationInfoBase: info.NotificationInfoBase,
-						WebSocketPath:        db.NewNullString(info.WebSocketPath),
-						UID:                  info.UID,
-					},
+			// Update notification classes if provided
+			if req.Classes != nil {
+				if err = notificationsrepo.UpdateNotificationClasses(
+					rlog, tx, info.NotificationID,
+					*req.Classes,
 				); err != nil {
 					return err
 				}
+				includedExpBefore := info.Classes.Contains(api.NotificationClassExpiration)
+				includesExpNow := req.Classes.Contains(api.NotificationClassExpiration)
+				if includesExpNow && !includedExpBefore {
+					// exp class was added
+					if err = notificationsrepo.AddScheduledExpirationNotifications(
+						rlog, tx,
+						notificationsrepo.NotificationInfoBase{
+							NotificationInfoBase: info.NotificationInfoBase,
+							WebSocketPath:        db.NewNullString(info.WebSocketPath),
+							UID:                  info.UID,
+						},
+					); err != nil {
+						return err
+					}
+				}
+				if includedExpBefore && !includesExpNow {
+					// exp class was removed
+					if err = notificationsrepo.DeleteScheduledExpirationNotifications(
+						rlog, tx, info.NotificationID,
+					); err != nil {
+						return err
+					}
+				}
 			}
-			if includedExpBefore && !includesExpNow {
-				// exp class was removed
-				if err = notificationsrepo.DeleteScheduledExpirationNotifications(
-					rlog, tx, info.NotificationID,
-				); err != nil {
+			// Update tags if provided
+			if req.Tags != nil {
+				if err = notificationsrepo.LinkTags(rlog, tx, info.NotificationID, *req.Tags); err != nil {
 					return err
 				}
 			}

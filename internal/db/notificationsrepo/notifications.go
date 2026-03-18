@@ -135,6 +135,10 @@ func notificationInfoBaseWithClassToNotificationInfo(
 							return err
 						}
 					}
+					// Fetch tags for this notification
+					if nie.Tags, err = GetNotificationTags(rlog, tx, n.NotificationID); err != nil {
+						return err
+					}
 				}
 				notificationMap[nie.NotificationID] = nie
 			}
@@ -211,6 +215,10 @@ func GetNotificationForManagementCode(
 						return err
 					}
 				}
+			}
+			// Fetch tags for this notification
+			if info.Tags, err = GetNotificationTags(rlog, tx, info.NotificationID); err != nil {
+				return err
 			}
 			return errors.WithStack(tx.Get(&info.OIDCIssuer, `CALL GetOIDCIssForManagementCode(?)`, managementCode))
 		},
@@ -384,4 +392,53 @@ func MytokenSubscribeOrCreateNotificationWithClasses(
 			return linkNotificationClasses(rlog, tx, nid, req.NotificationClasses)
 		},
 	)
+}
+
+// LinkTags clears and links the provided tags to a notification
+func LinkTags(rlog log.Ext1FieldLogger, tx *sqlx.Tx, notificationID uint64, tags []api.Tag) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Notifications_ClearTags(?)`, notificationID)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			for _, tag := range tags {
+				_, err = tx.Exec(`CALL Notifications_LinkTag(?,?)`, notificationID, tag)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+			}
+			return nil
+		},
+	)
+}
+
+// AddTag adds a tag to a notification
+func AddTag(rlog log.Ext1FieldLogger, tx *sqlx.Tx, notificationID uint64, tag string) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Notifications_LinkTag(?,?)`, notificationID, tag)
+			return errors.WithStack(err)
+		},
+	)
+}
+
+// RemoveTag removes a tag from a notification
+func RemoveTag(rlog log.Ext1FieldLogger, tx *sqlx.Tx, notificationID uint64, tag string) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Notifications_UnlinkTag(?,?)`, notificationID, tag)
+			return errors.WithStack(err)
+		},
+	)
+}
+
+// GetNotificationTags returns the api.TagInfos for a notification
+func GetNotificationTags(rlog log.Ext1FieldLogger, tx *sqlx.Tx, notificationID uint64) (tags []api.TagInfo, err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Select(&tags, `CALL Notifications_GetTags(?)`, notificationID))
+		},
+	)
+	return
 }

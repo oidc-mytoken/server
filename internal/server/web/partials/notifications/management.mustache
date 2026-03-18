@@ -24,6 +24,31 @@
 </div>
 
 <div class="alert border">
+    <div class="row mb-2">
+        <h5 class="col">Tags</h5>
+        {{#collapse.NotificationManagement}}
+            <button class="btn btn-info my-expand" type="button" data-toggle="collapse"
+                    data-target="#notification-management-collapsable-content-tags"
+                    aria-expanded="false" aria-controls="notification-management-collapsable-content-tags"
+            >Expand
+            </button>
+        {{/collapse.NotificationManagement}}
+    </div>
+    <div id="notification-management-collapsable-content-tags"
+         class="{{#collapse.NotificationManagement}}collapse{{/collapse.NotificationManagement}}">
+        <div id="notification-management-tags-container" class="mb-2">
+            <span class="text-muted" id="notification-management-no-tags">No tags</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-success" id="btn-add-notification-tag">
+            <i class="fas fa-plus"></i> Add Tag
+        </button>
+        <button role="button" class="btn btn-primary mt-2 ml-2" id="btn-save-notification-tags"><i
+                class="fas fa-save"></i>
+        </button>
+    </div>
+</div>
+
+<div class="alert border">
     <div id="subscribed-tokens-details">
         <div class="row">
             <h5 class="col">Subscribed Tokens</h5>

@@ -126,19 +126,24 @@ function notificationsToTable(notifications, details = true, last_td = (n => "")
         let notification_classes_html = `<span data-toggle="tooltip"
               data-placement="bottom" title=""
               data-original-title="${notification_classes_str}">${notification_classes_icons}</span>`
+        let tagsHtml = createTags(n["tags"] || []);
+        if (!tagsHtml) {
+            tagsHtml = '<span class="text-muted">-</span>';
+        }
         let details_html = details ? `role="button" onclick="toggleSubscriptionDetails('${management_code}')"` : '';
-        tableEntries += `<tr management-code="${management_code}"><td ${details_html}>${typeIcon}</td><td ${details_html}>${notification_classes_html}</td><td ${details_html}>${tokens}</td><td>${last_td(n)}</td></tr>`;
+        tableEntries += `<tr management-code="${management_code}"><td ${details_html}>${typeIcon}</td><td ${details_html}>${notification_classes_html}</td><td ${details_html}>${tagsHtml}</td><td ${details_html}>${tokens}</td><td>${last_td(n)}</td></tr>`;
         if (details) {
-            tableEntries += `<tr><td colspan="4" management-code="${management_code}" class="notification-details-container d-none pl-5"></td></tr>`;
+            tableEntries += `<tr><td colspan="5" management-code="${management_code}" class="notification-details-container d-none pl-5"></td></tr>`;
         }
     });
     if (tableEntries === "") {
-        tableEntries = `<tr><td colSpan="4" class="text-muted text-center">No notifications created yet</td></tr>`;
+        tableEntries = `<tr><td colSpan="5" class="text-muted text-center">No notifications created yet</td></tr>`;
     }
     return '<table class="table table-hover table-grey">' +
         '<thead><tr>' +
         '<th>Type</th>' +
         '<th>Notification Classes</th>' +
+        '<th>Tags</th>' +
         '<th>Subscribed Tokens</th>' +
         '<th></th>' +
         '</tr></thead>' +
@@ -186,6 +191,8 @@ function _fillModifyNotification(managementCode) {
     n["notification_classes"].forEach(function (nc) {
         checkCapability(nc, notificationListPrefix);
     });
+    // Load tags for this notification
+    loadNotificationManagementTags(n["tags"]);
     if (n["user_wide"]) {
         $notificationSubscribedTokensDetailsUserWide.showB();
         $notificationSubscribedTokensDetails.hideB();
@@ -805,7 +812,10 @@ enableSaveNotificationClassesButton();
 function enableSaveNotificationClassesButton() {
     $('#btn-save-notification-classes').off('click').on('click', function () {
         let mc = $managementCodeInput.val();
-        let data = {"notification_classes": getCheckedCapabilities(notificationListPrefix)};
+        let data = {
+            "notification_classes": getCheckedCapabilities(notificationListPrefix),
+            "tags": getNotificationManagementTags()
+        };
         data = JSON.stringify(data);
         $.ajax({
             type: "PUT",
@@ -857,6 +867,11 @@ function saveNewNotification() {
         "notification_type": "mail",
         "notification_classes": getCheckedCapabilities("new-notification-modal-"),
     };
+    // Include tags if any were added
+    let tags = getNewNotificationTags();
+    if (tags && tags.length > 0) {
+        data["tags"] = tags;
+    }
     let token_data = getSelectedTokensForNotification();
     if (!user_wide && token_data.length > 0) {
         Object.assign(data, token_data[0]);
@@ -928,3 +943,162 @@ function addTokensToNotification(callback = undefined) {
 $('#new-notification-user-wide-input').on('change', function () {
     $('.user-wide-toggle-effected').toggleClass('d-none');
 })
+
+// ============ Notification Tags ============
+
+// Store selected tags for new notification
+let newNotificationSelectedTags = [];
+
+function renderNewNotificationTags() {
+    const $container = $('#new-notification-tags-container');
+    const $noTags = $('#new-notification-no-tags');
+
+    // Remove existing tag pills (but keep the "no tags" message)
+    $container.find('.tag').remove();
+
+    if (newNotificationSelectedTags.length === 0) {
+        $noTags.showB();
+    } else {
+        $noTags.hideB();
+        newNotificationSelectedTags.forEach(function (tagInfo, index) {
+            const color = tagInfo.color || generateColorFromString(tagInfo.tag);
+            const textClass = textClassForBackgroundColor(color);
+            const pill = `<span class="badge badge-pill ${textClass} tag mr-1" 
+                               data-tag="${tagInfo.tag}"
+                               style="background-color: #${color};">
+                               ${tagInfo.tag}
+                               <button class="btn tag-btn ${textClass}" type="button" onclick="removeNewNotificationTag(${index})"><i class="fas fa-times"></i></button>
+                          </span>`;
+            $noTags.before(pill);
+        });
+    }
+}
+
+function removeNewNotificationTag(index) {
+    newNotificationSelectedTags.splice(index, 1);
+    renderNewNotificationTags();
+}
+
+function addNewNotificationTag(tag) {
+    if (newNotificationSelectedTags.some(t => t.tag === tag)) {
+        return; // Already added
+    }
+    const tagData = loadedTags.find(t => t.tag === tag) || {tag: tag, color: generateColorFromString(tag)};
+    newNotificationSelectedTags.push(tagData);
+    renderNewNotificationTags();
+}
+
+function getNewNotificationTags() {
+    return newNotificationSelectedTags.map(t => t.tag);
+}
+
+function initNewNotificationTags() {
+    newNotificationSelectedTags = [];
+    renderNewNotificationTags();
+}
+
+// Initialize tags when modal opens
+$newNotificationModal.on('show.bs.modal', function () {
+    initNewNotificationTags();
+});
+
+// Add tag button click handler
+$(document).on('click', '#add-new-notification-tag-btn', function () {
+    showAddTagModal(function (tag) {
+        addNewNotificationTag(tag);
+        $('#add-tag-modal').modal('hide');
+    });
+});
+
+// ============ Notification Management Tags ============
+
+// Store selected tags for notification management
+let notificationManagementTags = [];
+
+function renderNotificationManagementTags() {
+    const $container = $('#notification-management-tags-container');
+    const $noTags = $('#notification-management-no-tags');
+
+    // Remove existing tag pills
+    $container.find('.tag').remove();
+
+    if (notificationManagementTags.length === 0) {
+        $noTags.showB();
+    } else {
+        $noTags.hideB();
+        notificationManagementTags.forEach(function (tagInfo, index) {
+            const color = tagInfo.color || generateColorFromString(tagInfo.tag);
+            const textClass = textClassForBackgroundColor(color);
+            const pill = `<span class="badge badge-pill ${textClass} tag mr-1" 
+                               data-tag="${tagInfo.tag}"
+                               style="background-color: #${color};">
+                               ${tagInfo.tag}
+                               <button class="btn tag-btn ${textClass}" type="button" onclick="removeNotificationManagementTag(${index})"><i class="fas fa-times"></i></button>
+                          </span>`;
+            $noTags.before(pill);
+        });
+    }
+}
+
+function removeNotificationManagementTag(index) {
+    notificationManagementTags.splice(index, 1);
+    renderNotificationManagementTags();
+}
+
+function addNotificationManagementTag(tag) {
+    if (notificationManagementTags.some(t => t.tag === tag)) {
+        return; // Already added
+    }
+    const tagData = loadedTags.find(t => t.tag === tag) || {tag: tag, color: generateColorFromString(tag)};
+    notificationManagementTags.push(tagData);
+    renderNotificationManagementTags();
+}
+
+function loadNotificationManagementTags(tags) {
+    notificationManagementTags = (tags || []).map(t => {
+        const loadedTag = loadedTags.find(lt => lt.tag === t.tag);
+        return loadedTag || t;
+    });
+    renderNotificationManagementTags();
+}
+
+function getNotificationManagementTags() {
+    return notificationManagementTags.map(t => t.tag);
+}
+
+// Add tag button click handler for management page (inline notification details)
+$(document).on('click', '#btn-add-notification-tag', function () {
+    showAddTagModal(function (tag) {
+        addNotificationManagementTag(tag);
+        $('#add-tag-modal').modal('hide');
+    });
+});
+
+// Fix scrolling when add-tag-modal is closed while any other modal is still open
+$(document).on('hidden.bs.modal', '#add-tag-modal', function () {
+    // Check if any other modal is still open
+    if ($('.modal.show').length > 0) {
+        $('body').addClass('modal-open');
+    }
+});
+
+// Save notification tags
+$(document).on('click', '#btn-save-notification-tags', function () {
+    let mc = $managementCodeInput.val();
+    let data = {"tags": getNotificationManagementTags()};
+    data = JSON.stringify(data);
+    $.ajax({
+        type: "PUT",
+        data: data,
+        dataType: "json",
+        contentType: "application/json",
+        url: `${storageGet('notifications_endpoint')}/${mc}/nc`,
+        success: function () {
+            listNotifications();
+        },
+        error: function (errRes) {
+            $errorModalMsg.text(getErrorMessage(errRes));
+            $errorModal.modal();
+        }
+    });
+});

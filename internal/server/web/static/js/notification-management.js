@@ -16,6 +16,8 @@ function loadNotificationManagement(...next) {
             ncs.forEach(function (nc) {
                 checkCapability(nc);
             });
+            // Load tags for this notification
+            loadNotificationManagementTags(res["tags"]);
             if (res["user_wide"]) {
                 $notificationSubscribedTokensDetailsUserWide.showB();
                 $notificationSubscribedTokensDetails.hideB();
@@ -117,7 +119,10 @@ $(function () {
 
 $('#btn-save-notification-classes').off('click').on('click', function () {
     let mc = $managementCodeInput.val();
-    let data = {"notification_classes": getCheckedCapabilities()};
+    let data = {
+        "notification_classes": getCheckedCapabilities(),
+        "tags": getNotificationManagementTags()
+    };
     data = JSON.stringify(data);
     $.ajax({
         type: "PUT",

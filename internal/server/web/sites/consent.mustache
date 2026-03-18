@@ -59,6 +59,6 @@
         {{/checked-capabilities}}
     let consentTags = [];
         {{#tags}}
-        consentTags.push({tag: "{{tag}}", include_children: {{include_children}}});
+        consentTags.push({tag: "{{Tag}}", include_children: {{#IncludeChildren}}true{{/IncludeChildren}}{{^IncludeChildren}}false{{/IncludeChildren}}});
         {{/tags}}
 </script>
