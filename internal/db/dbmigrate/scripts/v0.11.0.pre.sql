@@ -410,6 +410,14 @@ BEGIN
         WHERE id IN (SELECT n.tag_id FROM NotificationTags n WHERE n.notification_id = NID);
 END;;
 
+## Create a notification without linking any token (for tag-only notifications)
+CREATE OR REPLACE PROCEDURE Notifications_CreateWithoutMT(IN MTID VARCHAR(128), IN TYPE_ VARCHAR(32),
+                                                          IN MNGCODE VARCHAR(128), IN WS_ VARCHAR(128))
+BEGIN
+    CALL Notifications_Create(MTID, TYPE_, MNGCODE, WS_, 0, @ID);
+    SELECT @ID AS notification_id;
+END;;
+
 ## Override the procedure from v0.10.0 to include tag-based token subscriptions
 ## This now returns tokens that are either:
 ## 1. Directly subscribed via MTNotificationsMapping

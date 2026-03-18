@@ -234,6 +234,11 @@ func NewNotification(
 	if req.UserWide {
 		return newUserWideNotification(rlog, tx, req, mtID, managementCode, ws)
 	}
+	// If tags are provided and no explicit mom_id, create notification without linking a token
+	// The token will be associated via tags instead
+	if len(req.Tags) > 0 && !req.MomID.HashValid() {
+		return newTagOnlyNotification(rlog, tx, req, mtID, managementCode, ws)
+	}
 	return newMTNotification(rlog, tx, req, mtID, managementCode, ws)
 }
 
@@ -267,6 +272,26 @@ func newMTNotification(
 			if err := errors.WithStack(
 				tx.Get(
 					&nid, `CALL Notifications_CreateForMT(?,?,?,?,?)`, mtID, req.IncludeChildren, req.NotificationType,
+					managementCode, db.NewNullString(ws),
+				),
+			); err != nil {
+				return err
+			}
+			return linkNotificationClasses(rlog, tx, nid, req.NotificationClasses)
+		},
+	)
+}
+
+func newTagOnlyNotification(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req pkg.SubscribeNotificationRequest,
+	mtID mtid.MOMID, managementCode, ws string,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			var nid uint64
+			if err := errors.WithStack(
+				tx.Get(
+					&nid, `CALL Notifications_CreateWithoutMT(?,?,?,?)`, mtID, req.NotificationType,
 					managementCode, db.NewNullString(ws),
 				),
 			); err != nil {

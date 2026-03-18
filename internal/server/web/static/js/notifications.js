@@ -368,7 +368,11 @@ function deleteNotification() {
 
 function removeTokenFromNotificationFromMangement(mom_id) {
     let mc = $managementCodeInput.val();
-    if ($notificationsTokenTable.find('tr').length === 1) {
+    let n = notificationsMap[mc];
+    let hasTags = n && n["tags"] && n["tags"].length > 0;
+    // Only show delete modal if this is the last token AND there are no tags
+    // If there are tags, the notification can still work without explicit tokens
+    if ($notificationsTokenTable.find('tr').length === 1 && !hasTags) {
         $lastTokenInNotificationHint.showB();
         $deleteNotificationModal.modal();
         return;
