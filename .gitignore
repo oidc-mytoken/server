@@ -17,3 +17,7 @@ generateDDL.sh
 /docker/haproxy/haproxy.cfg
 /docker/.env
 /results/
+
+# SPA build output (built from frontend/)
+/internal/server/spa/dist/*
+!/internal/server/spa/dist/.gitkeep
