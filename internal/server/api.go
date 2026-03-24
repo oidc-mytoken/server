@@ -5,6 +5,7 @@ import (
 	"github.com/oidc-mytoken/utils/utils"
 
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/endpoints/consent"
 	"github.com/oidc-mytoken/server/internal/endpoints/guestmode"
 	"github.com/oidc-mytoken/server/internal/endpoints/notification"
 	"github.com/oidc-mytoken/server/internal/endpoints/notification/calendar"
@@ -19,6 +20,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/tagging"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo"
+	"github.com/oidc-mytoken/server/internal/endpoints/webentities"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/paths"
 )
@@ -33,6 +35,11 @@ func addAPIRoutes(s fiber.Router) {
 func addAPIvXRoutes(s fiber.Router, version int) {
 	apiPaths := paths.GetAPIPaths(version)
 	s.Post(apiPaths.MytokenEndpoint, toFiberHandler(mytoken.HandleMytokenEndpoint))
+	// Consent API endpoint for SPA
+	s.Get(utils.CombineURLPath(apiPaths.ConsentEndpoint, ":consent_code"), consent.HandleConsentAPI)
+	s.Post(utils.CombineURLPath(apiPaths.ConsentEndpoint, ":consent_code"), toFiberHandler(consent.HandleConsentPost))
+	// Capabilities API endpoint
+	s.Get(apiPaths.CapabilitiesEndpoint, webentities.HandleGetCapabilities)
 	s.Post(utils.CombineURLPath(apiPaths.MytokenEndpoint, "tags"), tagging.HandleAddTagToMytoken)
 	s.Delete(utils.CombineURLPath(apiPaths.MytokenEndpoint, "tags"), tagging.HandleRemoveTagFromMytoken)
 	s.Post(apiPaths.AccessTokenEndpoint, toFiberHandler(access.HandleAccessTokenEndpoint))

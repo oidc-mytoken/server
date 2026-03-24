@@ -9,8 +9,10 @@ import (
 	fiberUtils "github.com/gofiber/fiber/v2/utils"
 	"github.com/oidc-mytoken/api/v0"
 
+	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/server/apipath"
+	"github.com/oidc-mytoken/server/internal/server/spa"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
@@ -40,6 +42,16 @@ func handleError(ctx *fiber.Ctx, err error) error {
 }
 
 func handleErrorHTML(ctx *fiber.Ctx, code int, msg string) error {
+	// If SPA is enabled, serve the SPA and let client-side routing handle error display
+	if config.Get().Features.WebInterface.UseSPA && spa.Available {
+		handler := spa.HandleSPAFallback()
+		if handler != nil {
+			ctx.Status(code)
+			return handler(ctx)
+		}
+	}
+
+	// Fall back to Mustache templates
 	var err error
 	errorTemplateData := map[string]interface{}{
 		"empty-navbar": true,

@@ -108,11 +108,21 @@ func UpdateICSInternal(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID string,
 	)
 }
 
-// GetMTsInCalendar returns a list of mytoken ids that are in a certain calendar
+// GetMTsInCalendar returns a list of mytoken ids that are in a certain calendar (both direct and tag-based)
 func GetMTsInCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID string) (mtids []string, err error) {
 	err = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			return tx.Select(&mtids, `CALL Calendar_getMTsInCalendar(?)`, calendarID)
+		},
+	)
+	return
+}
+
+// GetDirectMTsInCalendar returns a list of mytoken ids that are directly subscribed to a calendar (not via tags)
+func GetDirectMTsInCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID string) (mtids []string, err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return tx.Select(&mtids, `CALL Calendar_GetDirectMTsInCalendar(?)`, calendarID)
 		},
 	)
 	return
@@ -157,6 +167,8 @@ func calendarInfosToAPICalendarInfos(rlog log.Ext1FieldLogger, tx *sqlx.Tx, in [
 }
 
 // toAPICalendarInfo transforms a CalendarInfo into an api.CalendarInfo
+// Note: SubscribedTokens only contains directly subscribed tokens (not tag-based)
+// Tag-based subscriptions can be determined client-side by comparing token tags with calendar tags
 func (i CalendarInfo) toAPICalendarInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (
 	out api.CalendarInfo, err error,
 ) {
@@ -164,6 +176,7 @@ func (i CalendarInfo) toAPICalendarInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (
 		rlog, tx, func(tx *sqlx.Tx) error {
 			out = api.CalendarInfo{
 				NotificationCalendar: api.NotificationCalendar{
+					ID:          i.ID,
 					ICSPath:     pkg.GetICSPath(i.ID),
 					Description: i.Description.String,
 				},
@@ -172,7 +185,8 @@ func (i CalendarInfo) toAPICalendarInfo(rlog log.Ext1FieldLogger, tx *sqlx.Tx) (
 			if err != nil {
 				return err
 			}
-			out.SubscribedTokens, err = GetMTsInCalendar(rlog, tx, i.ID)
+			// Only return directly subscribed tokens, not tag-based subscriptions
+			out.SubscribedTokens, err = GetDirectMTsInCalendar(rlog, tx, i.ID)
 			return err
 		},
 	)

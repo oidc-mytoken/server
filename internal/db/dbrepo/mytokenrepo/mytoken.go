@@ -190,6 +190,17 @@ func (e *mytokenEntryStore) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 	)
 }
 
+// ExpandTagsToChildrenIfApplicable copies tags with include_children=true from parent to child token.
+// This is called when creating a subtoken to ensure it inherits the parent's inheritable tags.
+func ExpandTagsToChildrenIfApplicable(rlog log.Ext1FieldLogger, tx *sqlx.Tx, parent, child mtid.MTID) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL MTTags_ExpandToChildren(?,?)`, parent, child)
+			return errors.WithStack(err)
+		},
+	)
+}
+
 // AddTag adds a tag to a mytoken
 func AddTag(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MOMID,

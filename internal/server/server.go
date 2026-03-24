@@ -26,6 +26,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/server/apipath"
 	"github.com/oidc-mytoken/server/internal/server/paths"
+	"github.com/oidc-mytoken/server/internal/server/spa"
 	"github.com/oidc-mytoken/server/internal/server/ssh"
 	"github.com/oidc-mytoken/server/internal/utils/fileio"
 )
@@ -77,17 +78,52 @@ func initTemplateEngine() {
 
 // Init initializes the server
 func Init() {
-	initTemplateEngine()
+	useSPA := config.Get().Features.WebInterface.UseSPA && spa.Available
+	if useSPA {
+		log.Info("Using Svelte SPA for web interface")
+		// Set the SPA handler for consent page
+		consent.SPAHandler = spa.HandleSPAFallback()
+	} else {
+		initTemplateEngine()
+	}
+
 	serverConfig.ProxyHeader = config.Get().Server.ProxyHeader
 	server = fiber.New(serverConfig)
 	addMiddlewares(server)
 	addRoutes(server)
+
+	// Add SPA routes if using SPA
+	if useSPA {
+		spa.AddRoutes(server)
+	}
+
+	// Add fallback handler (404 for API, SPA fallback or 404 page for web)
 	server.Use(
 		func(ctx *fiber.Ctx) error {
 			path := ctx.Path()
-			if !strings.HasPrefix(path, apipath.Prefix) && ctx.Accepts(
-				fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8,
-			) != "" {
+
+			// For API routes, return JSON error
+			if strings.HasPrefix(path, apipath.Prefix) {
+				return model.Response{
+					Status: fiber.StatusNotFound,
+					Response: api.Error{
+						Error:            "not_found",
+						ErrorDescription: path,
+					},
+				}.Send(ctx)
+			}
+
+			// For HTML requests
+			if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" {
+				// If using SPA, serve the SPA fallback (index.html for client-side routing)
+				if useSPA {
+					handler := spa.HandleSPAFallback()
+					if handler != nil {
+						return handler(ctx)
+					}
+				}
+
+				// Otherwise, render the 404 page using Mustache
 				ctx.Status(fiber.StatusNotFound)
 				return ctx.Render(
 					"sites/404", map[string]interface{}{
@@ -95,6 +131,8 @@ func Init() {
 					}, "layouts/main",
 				)
 			}
+
+			// For non-HTML requests, return JSON error
 			return model.Response{
 				Status: fiber.StatusNotFound,
 				Response: api.Error{
@@ -107,7 +145,13 @@ func Init() {
 }
 
 func addRoutes(s fiber.Router) {
-	addWebRoutes(s)
+	// Only add Mustache web routes if not using SPA
+	// SPA routes are handled by the fallback handler
+	useSPA := config.Get().Features.WebInterface.UseSPA && spa.Available
+	if !useSPA {
+		addWebRoutes(s)
+	}
+
 	generalPaths := paths.GetGeneralPaths()
 	s.Get(generalPaths.ConfigurationEndpoint, toFiberHandler(configuration.HandleConfiguration))
 	s.Get(paths.WellknownOpenIDConfiguration, toFiberHandler(configuration.HandleConfiguration))
@@ -116,13 +160,36 @@ func addRoutes(s fiber.Router) {
 	}
 	s.Get(generalPaths.JWKSEndpoint, endpoints.HandleJWKS)
 	s.Get(generalPaths.OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
+
+	// Consent routes - these still need server-side handling even with SPA
 	s.Get("/c/:consent_code", consent.HandleConsent)
 	s.Post("/c/:consent_code", toFiberHandler(consent.HandleConsentPost))
 	s.Post("/c", consent.HandleCreateConsent)
-	s.Get("/native", handleNativeCallback)
-	s.Get("/native/abort", handleNativeConsentAbortCallback)
-	s.Get(generalPaths.Privacy, handlePrivacy)
+
+	// Native app callbacks
+	if useSPA {
+		spaFallback := spa.HandleSPAFallback()
+		s.Get("/native", spaFallback)
+		s.Get("/native/abort", spaFallback)
+	} else {
+		s.Get("/native", handleNativeCallback)
+		s.Get("/native/abort", handleNativeConsentAbortCallback)
+	}
+
+	// Privacy page - can be handled by SPA or Mustache
+	if !useSPA {
+		s.Get(generalPaths.Privacy, handlePrivacy)
+	}
+
+	// Calendar ICS endpoint (always server-side)
 	s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id"), calendar.HandleGetICS)
+
+	// Calendar view and notification management - SPA handles these via client-side routing
+	if !useSPA {
+		s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id", "view"), handleViewCalendar)
+		s.Get(utils.CombineURLPath(generalPaths.NotificationManagementEndpoint, ":mc"), handleNotificationManagement)
+	}
+
 	s.Get(generalPaths.ActionsEndpoint, actions.HandleActions)
 	addAPIRoutes(s)
 }

@@ -124,6 +124,14 @@ BEGIN
                   WHERE ct.calendar_id = CALID) t;
 END;;
 
+## Get only directly subscribed tokens (via CalendarMapping, not via tags)
+CREATE OR REPLACE PROCEDURE Calendar_GetDirectMTsInCalendar(IN CALID VARCHAR(128))
+BEGIN
+    SELECT DISTINCT MT_id
+        FROM CalendarMapping
+        WHERE calendar_id = CALID;
+END;;
+
 CREATE OR REPLACE PROCEDURE Calendar_Insert(IN MTID VARCHAR(128), IN CID VARCHAR(128), IN DESCR TEXT,
                                             IN ICS_ LONGTEXT)
 BEGIN
@@ -275,6 +283,18 @@ BEGIN
     DELETE FROM MTTags WHERE MT_id = MTID;
 END;;
 
+-- Expand tags with include_children from parent to child token
+-- This is called when creating a subtoken to inherit parent's tags
+CREATE OR REPLACE PROCEDURE MTTags_ExpandToChildren(IN PARENT VARCHAR(128), IN CHILD VARCHAR(128))
+BEGIN
+    -- Insert all parent tags that have include_children=1 into the child
+    -- The child inherits the same include_children flag
+    INSERT IGNORE INTO MTTags (MT_id, tag_id, include_children)
+        SELECT CHILD, tag_id, include_children
+        FROM MTTags
+        WHERE MT_id = PARENT AND include_children = 1;
+END;;
+
 CREATE OR REPLACE PROCEDURE MTokens_GetTags(IN MTID VARCHAR(128))
 BEGIN
     SELECT t.id AS tag_id, t.tag, t.color AS tag_color, mt.include_children AS tag_include_children
@@ -373,6 +393,40 @@ BEGIN
 
 END;;
 
+-- Updated MTokens_GetSubtokens to include tags (original in v0.7.0 didn't have tags)
+CREATE OR REPLACE PROCEDURE MTokens_GetSubtokens(IN MTID VARCHAR(128))
+BEGIN
+    CREATE TEMPORARY TABLE IF NOT EXISTS effected_MTIDs (id VARCHAR(128));
+    TRUNCATE effected_MTIDs;
+    INSERT INTO effected_MTIDs
+    WITH RECURSIVE childs AS (SELECT id, parent_id
+                                  FROM MTokens
+                                  WHERE id = MTID
+                              UNION ALL
+                              SELECT mt.id, mt.parent_id
+                                  FROM MTokens mt
+                                           INNER JOIN childs c
+                                  WHERE mt.parent_id = c.id)
+    SELECT id
+        FROM childs;
+    SELECT m.id,
+           m.parent_id,
+           m.id         AS mom_id,
+           m.name,
+           m.created,
+           m.expires_at,
+           m.ip_created AS ip,
+           t.tag,
+           t.color      AS tag_color,
+           mt.include_children AS tag_include_children
+        FROM MTokens m
+                 LEFT JOIN MTTags mt ON m.id = mt.MT_id
+                 LEFT JOIN Tags t ON mt.tag_id = t.id
+        WHERE m.id IN (SELECT id FROM effected_MTIDs)
+        ORDER BY m.created;
+    DROP TABLE effected_MTIDs;
+END;;
+
 
 ## Notification Tags Procedures
 
@@ -436,6 +490,14 @@ BEGIN
                      FROM MTTags mt
                               JOIN NotificationTags nt ON mt.tag_id = nt.tag_id
                      WHERE nt.notification_id = NID) t;
+END;;
+
+## Get only directly subscribed tokens (via MTNotificationsMapping, not via tags)
+CREATE OR REPLACE PROCEDURE Notifications_GetDirectMTsForNotification(IN NID BIGINT UNSIGNED)
+BEGIN
+    SELECT DISTINCT MT_id
+        FROM MTNotificationsMapping
+        WHERE notification_id = NID;
 END;;
 
 ## Override the procedure from v0.10.0 to include tag-based notification subscriptions
@@ -513,5 +575,7 @@ INSERT IGNORE INTO Events (event)
     VALUES ('tag_removed_from_other_token');
 INSERT IGNORE INTO Events (event)
     VALUES ('calendar_tags_updated');
+INSERT IGNORE INTO Events (event)
+    VALUES ('calendar_updated');
 INSERT IGNORE INTO Events (event)
     VALUES ('notification_tags_updated');

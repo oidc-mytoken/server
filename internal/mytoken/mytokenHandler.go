@@ -184,6 +184,11 @@ func HandleMytokenFromMytokenReq(
 			); err != nil {
 				return err
 			}
+			if err = mytokenrepo.ExpandTagsToChildrenIfApplicable(
+				rlog, tx, parent.ID, ste.ID,
+			); err != nil {
+				return err
+			}
 			for _, sub := range req.SubscribeNotificationRequests {
 				if err = notificationsrepo.
 					MytokenSubscribeOrCreateNotificationWithClasses(rlog, tx, sub, ste.ID); err != nil {

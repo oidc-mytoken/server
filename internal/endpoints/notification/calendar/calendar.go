@@ -158,6 +158,7 @@ func HandleAdd(ctx *fiber.Ctx) *model.Response {
 	icsPath := pkg.GetICSPath(id)
 	cal.SetUrl(icsPath)
 	calendarInfo := api.NotificationCalendar{
+		ID:          id,
 		ICSPath:     icsPath,
 		Description: request.Description,
 	}
@@ -343,21 +344,15 @@ func HandleUpdate(ctx *fiber.Ctx) *model.Response {
 	var res *model.Response
 	_ = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
+			tagsUpdated := false
+			descriptionUpdated := false
+
 			if req.Tags != nil {
 				if err = calendarrepo.LinkTags(rlog, tx, calendarID, req.Tags); err != nil {
 					res = model.ErrorToInternalServerErrorResponse(err)
 					return err
 				}
-				var rollback bool
-				res, rollback = mytokenutils.DoAfterRequestThingsOther(
-					rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
-					api.EventCalendarTagsUpdated, "",
-					usedRestriction, umt.JWT,
-					umt.OriginalTokenType,
-				)
-				if rollback {
-					return errors.New("rollback")
-				}
+				tagsUpdated = true
 			}
 			// Get current info to (re)build ICS description if needed
 			info, err := calendarrepo.GetByID(rlog, tx, calendarID)
@@ -390,10 +385,26 @@ func HandleUpdate(ctx *fiber.Ctx) *model.Response {
 						return err
 					}
 				}
+				descriptionUpdated = true
+			}
+
+			// Log events and handle token rotation once at the end
+			if tagsUpdated || descriptionUpdated {
+				// Determine the event to log (prefer the more specific one)
+				event := api.EventCalendarUpdated
+				comment := ""
+				if tagsUpdated && descriptionUpdated {
+					comment = "updated tags and description"
+				} else if tagsUpdated {
+					event = api.EventCalendarTagsUpdated
+				} else {
+					comment = "updated description"
+				}
+
 				var rollback bool
 				res, rollback = mytokenutils.DoAfterRequestThingsOther(
 					rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
-					api.EventCalendarUpdated, "updated description",
+					event, comment,
 					usedRestriction, umt.JWT,
 					umt.OriginalTokenType,
 				)
@@ -401,14 +412,21 @@ func HandleUpdate(ctx *fiber.Ctx) *model.Response {
 					return errors.New("rollback")
 				}
 			}
+
 			resInfo, err := info.ToCalendarInfoResponse(rlog, tx)
 			if err != nil {
 				res = model.ErrorToInternalServerErrorResponse(err)
 				return err
 			}
+			// Preserve cookies from token rotation if present
+			var cookies []*fiber.Cookie
+			if res != nil {
+				cookies = res.Cookies
+			}
 			res = &model.Response{
 				Status:   http.StatusOK,
 				Response: resInfo,
+				Cookies:  cookies,
 			}
 			return nil
 		},

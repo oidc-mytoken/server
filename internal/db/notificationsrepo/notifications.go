@@ -128,8 +128,9 @@ func notificationInfoBaseWithClassToNotificationInfo(
 						Classes:              api.NotificationClasses{api.NewNotificationClass(n.Class)},
 					}
 					if !n.UserWide {
+						// Only return directly subscribed tokens (not tag-based)
 						if err = tx.Select(
-							&nie.SubscribedTokens, `CALL Notifications_GetMTsForNotification(?)`,
+							&nie.SubscribedTokens, `CALL Notifications_GetDirectMTsForNotification(?)`,
 							n.NotificationID,
 						); err != nil {
 							return err
@@ -205,9 +206,10 @@ func GetNotificationForManagementCode(
 				info.Classes = append(info.Classes, api.NewNotificationClass(n.Class))
 			}
 			if !info.UserWide {
+				// Only return directly subscribed tokens (not tag-based)
 				if err = errors.WithStack(
 					tx.Select(
-						&info.SubscribedTokens, `CALL Notifications_GetMTsForNotification(?)`,
+						&info.SubscribedTokens, `CALL Notifications_GetDirectMTsForNotification(?)`,
 						info.NotificationID,
 					),
 				); err != nil {

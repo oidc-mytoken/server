@@ -333,6 +333,7 @@ type tokeninfoConfig struct {
 type webConfig struct {
 	Enabled      bool   `yaml:"enabled"`
 	OverwriteDir string `yaml:"overwrite_dir"`
+	UseSPA       bool   `yaml:"use_spa"` // If true, use the Svelte SPA instead of Mustache templates
 }
 
 type shortTokenConfig struct {

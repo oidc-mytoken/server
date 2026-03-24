@@ -8,7 +8,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
-	utils2 "github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -19,7 +18,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/webentities"
 	"github.com/oidc-mytoken/server/internal/model/profiled"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/internal/oidc/oidcfed"
 	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
 	"github.com/oidc-mytoken/server/internal/server/httpstatus"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
@@ -111,7 +109,24 @@ func HandleCreateConsent(ctx *fiber.Ctx) error {
 	return handleConsent(ctx, info, false)
 }
 
-// HandleConsent displays a consent page
+// ConsentInfoResponse is the JSON response for consent data
+type ConsentInfoResponse struct {
+	Issuer          string                       `json:"oidc_issuer"`
+	ApplicationName string                       `json:"application_name,omitempty"`
+	TokenName       string                       `json:"token_name,omitempty"`
+	Capabilities    api.Capabilities             `json:"capabilities"`
+	Restrictions    restrictions.Restrictions    `json:"restrictions,omitempty"`
+	Rotation        *api.Rotation                `json:"rotation,omitempty"`
+	Tags            []api.CreateMytokenTag       `json:"tags,omitempty"`
+	SupportedScopes []string                     `json:"supported_scopes,omitempty"`
+	AllCapabilities []*webentities.WebCapability `json:"all_capabilities"`
+}
+
+// SPAHandler is set by the server package when SPA is enabled
+// This allows the consent handler to delegate to the SPA for HTML requests
+var SPAHandler fiber.Handler
+
+// HandleConsent displays a consent page or returns JSON for SPA
 func HandleConsent(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
 	authInfo, _, err := getAuthInfoFromConsentCodeStr(rlog, ctx.Params("consent_code"))
@@ -119,7 +134,57 @@ func HandleConsent(ctx *fiber.Ctx) error {
 		// Don't log error here, it was already logged
 		return err
 	}
+
+	// Check if client accepts JSON (SPA API request)
+	accept := ctx.Get("Accept")
+	if strings.Contains(accept, "application/json") {
+		return handleConsentJSON(ctx, &(authInfo.AuthCodeFlowRequest.OIDCFlowRequest))
+	}
+
+	// If SPA is enabled, serve the SPA for HTML requests (let client-side routing handle it)
+	if SPAHandler != nil {
+		return SPAHandler(ctx)
+	}
+
+	// Fall back to Mustache template
 	return handleConsent(ctx, &(authInfo.AuthCodeFlowRequest.OIDCFlowRequest), true)
+}
+
+// HandleConsentAPI returns consent data as JSON for SPA API requests
+func HandleConsentAPI(ctx *fiber.Ctx) error {
+	rlog := logger.GetRequestLogger(ctx)
+	authInfo, _, err := getAuthInfoFromConsentCodeStr(rlog, ctx.Params("consent_code"))
+	if err != nil {
+		return err
+	}
+	return handleConsentJSON(ctx, &(authInfo.AuthCodeFlowRequest.OIDCFlowRequest))
+}
+
+// handleConsentJSON returns consent data as JSON for SPA
+func handleConsentJSON(ctx *fiber.Ctx, info *pkg2.OIDCFlowRequest) error {
+	var scopes []string
+	if p := provider2.GetProvider(info.Issuer); p != nil {
+		scopes = p.Scopes()
+	}
+
+	var rotation *api.Rotation
+	if info.Rotation != nil {
+		rotation = &info.Rotation.Rotation
+	}
+
+	response := ConsentInfoResponse{
+		Issuer:          info.Issuer,
+		ApplicationName: info.ApplicationName,
+		TokenName:       info.Name,
+		Capabilities:    info.Capabilities.Capabilities,
+		Restrictions:    info.Restrictions.Restrictions,
+		Rotation:        rotation,
+		Tags:            info.Tags,
+		SupportedScopes: scopes,
+		AllCapabilities: webentities.AllWebCapabilities(),
+	}
+
+	return ctx.JSON(response)
 }
 
 func handleConsentDecline(
@@ -167,11 +232,9 @@ func handleConsentAccept(
 	}
 	p := provider2.GetProvider(req.Issuer)
 	if p == nil {
-		if !utils2.StringInSlice(req.Issuer, oidcfed.Issuers()) {
-			return &model.Response{
-				Status:   fiber.StatusBadRequest,
-				Response: api.ErrorUnknownIssuer,
-			}
+		return &model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: api.ErrorUnknownIssuer,
 		}
 	}
 	var authURI string
@@ -179,7 +242,7 @@ func handleConsentAccept(
 	if err = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
 			if err = authcodeinforepo.UpdateTokenInfoByState(
-				rlog, tx, oState, req.Restrictions, req.Capabilities, req.Rotation, req.TokenName,
+				rlog, tx, oState, req.Restrictions, req.Capabilities, req.Rotation, req.TokenName, req.Tags,
 			); err != nil {
 				return err
 			}

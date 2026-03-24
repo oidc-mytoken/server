@@ -146,7 +146,12 @@ func TokenSubTree(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tokenID mtid.MTID) (Myt
 	var tokens []*MytokenEntry
 	if err := db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			return errors.WithStack(tx.Select(&tokens, `CALL MTokens_GetSubtokens(?)`, tokenID))
+			rows, err := tx.Queryx(`CALL MTokens_GetSubtokens(?)`, tokenID)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			tokens, err = tokensForQuery(rows)
+			return errors.WithStack(err)
 		},
 	); err != nil {
 		return MytokenEntryTree{}, err
