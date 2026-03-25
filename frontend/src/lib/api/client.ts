@@ -1,29 +1,30 @@
-import { get } from 'svelte/store';
-import { dev } from '$app/environment';
-import { discovery } from '$lib/stores/discovery';
+import {get} from 'svelte/store';
+import {dev} from '$app/environment';
+import {discovery} from '$lib/stores/discovery';
 import type {
-	CreateMytokenRequest,
+	ApiError,
+	Calendar,
+	ConsentApprovalRequest,
+	ConsentData,
 	CreateAccessTokenRequest,
-	TransferCodeRequest,
-	TransferCodeResponse,
-	TokenInfoResponse,
+	CreateCalendarRequest,
+	CreateMytokenRequest,
+	CreateNotificationRequest,
+	EmailSettings,
 	EventHistoryEntry,
+	Grant,
+	Mytoken,
 	MytokenEntry,
 	MytokenEntryTree,
-	Mytoken,
-	PollingResponse,
-	ApiError,
-	EmailSettings,
-	Grant,
-	SSHKey,
 	Notification,
-	CreateNotificationRequest,
-	Calendar,
-	CreateCalendarRequest,
-	ConsentData,
-	ConsentApprovalRequest,
-	WebCapability,
-	ServerProfile
+	PollingResponse,
+	ServerProfile,
+	SSHInfoResponse,
+	SSHKeyInfo,
+	TokenInfoResponse,
+	TransferCodeRequest,
+	TransferCodeResponse,
+	WebCapability
 } from '$lib/types';
 
 class ApiClient {
@@ -405,7 +406,7 @@ class ApiClient {
 	/**
 	 * Update email settings
 	 */
-	async updateEmailSettings(settings: Partial<EmailSettings>): Promise<void> {
+    async updateEmailSettings(settings: { email_address?: string; prefer_html_mail?: boolean }): Promise<void> {
 		const endpoint = this.getEndpoint('usersettings_endpoint');
 		await this.request(`${endpoint}/email`, {
 			method: 'PUT',
@@ -418,10 +419,15 @@ class ApiClient {
 	 */
 	async getGrants(): Promise<Grant[]> {
 		const endpoint = this.getEndpoint('usersettings_endpoint');
-		const response = await this.request<{ grants: Grant[] }>(
+        // API returns { grant_types: [{ grant_type: string, enabled: boolean }] }
+        const response = await this.request<{ grant_types: { grant_type: string; enabled: boolean }[] }>(
 			`${endpoint}/grants`
 		);
-		return response.grants ?? [];
+        // Map to frontend Grant type
+        return (response.grant_types ?? []).map(g => ({
+            type: g.grant_type,
+            enabled: g.enabled
+        }));
 	}
 
 	/**
@@ -449,35 +455,64 @@ class ApiClient {
 	// ==================== SSH Keys ====================
 
 	/**
-	 * Get SSH keys
+     * Get SSH info including grant status and keys
 	 */
-	async getSSHKeys(): Promise<SSHKey[]> {
+    async getSSHInfo(): Promise<SSHInfoResponse> {
 		const endpoint = this.getEndpoint('usersettings_endpoint');
-		const response = await this.request<{ ssh_keys: SSHKey[] }>(
-			`${endpoint}/grants/ssh`
-		);
-		return response.ssh_keys ?? [];
+        return this.request<SSHInfoResponse>(`${endpoint}/grants/ssh`);
+    }
+
+    /**
+     * Get SSH keys (convenience method)
+     */
+    async getSSHKeys(): Promise<SSHKeyInfo[]> {
+        const info = await this.getSSHInfo();
+        return info.ssh_keys ?? [];
 	}
 
 	/**
 	 * Add an SSH key
+     * Returns authorization URL for OIDC flow completion
 	 */
-	async addSSHKey(key: SSHKey): Promise<void> {
+    async addSSHKey(key: {
+        name?: string;
+        ssh_key: string;
+        restrictions?: unknown[];
+        capabilities?: string[]
+    }): Promise<{ consent_uri?: string; polling_code?: string; interval?: number }> {
 		const endpoint = this.getEndpoint('usersettings_endpoint');
-		await this.request(`${endpoint}/grants/ssh`, {
+        return this.request(`${endpoint}/grants/ssh`, {
 			method: 'POST',
-			body: JSON.stringify(key)
+            body: JSON.stringify({
+                grant_type: 'mytoken',
+                application_name: 'mytoken webinterface',
+                ...key
+            })
 		});
 	}
 
 	/**
-	 * Delete an SSH key
+     * Poll for SSH key addition completion
 	 */
-	async deleteSSHKey(keyName: string): Promise<void> {
+    async pollSSHKey(pollingCode: string): Promise<{ status?: string; ssh_user?: string; ssh_host_config?: string }> {
+        const endpoint = this.getEndpoint('usersettings_endpoint');
+        return this.request(`${endpoint}/grants/ssh`, {
+            method: 'POST',
+            body: JSON.stringify({
+                grant_type: 'polling_code',
+                polling_code: pollingCode
+            })
+        });
+    }
+
+    /**
+     * Delete an SSH key by fingerprint
+     */
+    async deleteSSHKey(sshKeyFP: string): Promise<void> {
 		const endpoint = this.getEndpoint('usersettings_endpoint');
 		await this.request(`${endpoint}/grants/ssh`, {
 			method: 'DELETE',
-			body: JSON.stringify({ name: keyName })
+            body: JSON.stringify({ssh_key_fp: sshKeyFP})
 		});
 	}
 

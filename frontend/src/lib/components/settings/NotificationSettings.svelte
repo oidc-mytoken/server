@@ -13,10 +13,10 @@
 	let email = '';
 	let originalEmail = '';
 	let verified = false;
-	let mimetype: 'text/plain' | 'text/html' = 'text/html';
+	let preferHtml = true;
+	let originalPreferHtml = true;
 
-	$: hasChanges = email !== originalEmail || mimetype !== originalMimetype;
-	let originalMimetype: string = 'text/html';
+	$: hasChanges = email !== originalEmail || preferHtml !== originalPreferHtml;
 
 	onMount(async () => {
 		await loadSettings();
@@ -26,11 +26,11 @@
 		loading = true;
 		try {
 			const settings = await api.getEmailSettings();
-			email = settings.email ?? '';
+			email = settings.email_address ?? '';
 			originalEmail = email;
-			verified = settings.verified ?? false;
-			mimetype = (settings.mimetype as 'text/plain' | 'text/html') ?? 'text/html';
-			originalMimetype = mimetype;
+			verified = settings.email_verified ?? false;
+			preferHtml = settings.prefer_html_mail ?? true;
+			originalPreferHtml = preferHtml;
 		} catch (error) {
 			if (error instanceof ApiClientError) {
 				// Email might not be configured yet, that's okay
@@ -58,14 +58,23 @@
 
 		saving = true;
 		try {
-			await api.updateEmailSettings({
-				email: email.trim(),
-				mimetype
-			});
+			const emailChanged = email.trim() !== originalEmail;
+			const mimeChanged = preferHtml !== originalPreferHtml;
+			
+			// Build request with only changed fields
+			const request: { email_address?: string; prefer_html_mail?: boolean } = {};
+			if (emailChanged) {
+				request.email_address = email.trim();
+			}
+			if (mimeChanged) {
+				request.prefer_html_mail = preferHtml;
+			}
+			
+			await api.updateEmailSettings(request);
 			originalEmail = email.trim();
-			originalMimetype = mimetype;
+			originalPreferHtml = preferHtml;
 			// If email changed, it needs re-verification
-			if (email !== originalEmail) {
+			if (emailChanged) {
 				verified = false;
 			}
 			ui.success('Email settings saved');
@@ -86,9 +95,8 @@
 
 		sendingVerification = true;
 		try {
-			// The API might have a specific endpoint for this
-			// For now, we'll just update the email to trigger verification
-			await api.updateEmailSettings({ email: email.trim() });
+			// Updating the email address triggers a verification email
+			await api.updateEmailSettings({ email_address: email.trim() });
 			ui.success('Verification email sent! Please check your inbox.');
 		} catch (error) {
 			if (error instanceof ApiClientError) {
@@ -101,7 +109,7 @@
 
 	function cancelChanges() {
 		email = originalEmail;
-		mimetype = originalMimetype as 'text/plain' | 'text/html';
+		preferHtml = originalPreferHtml;
 	}
 </script>
 
@@ -113,121 +121,154 @@
 	{#if loading}
 		<LoadingSpinner message="Loading settings..." />
 	{:else}
-		<form on:submit|preventDefault={saveSettings}>
-			<!-- Email address -->
-			<div class="mb-4">
-				<label for="email-address" class="form-label">
-					<i class="fas fa-envelope me-1"></i>
-					Email Address
-				</label>
-				<div class="input-group">
-					<input
-						type="email"
-						id="email-address"
-						class="form-control"
-						placeholder="you@example.com"
-						bind:value={email}
-					/>
-					{#if email && originalEmail === email}
-						<span class="input-group-text">
-							{#if verified}
-								<i class="fas fa-check-circle text-success" title="Verified"></i>
-							{:else}
-								<i class="fas fa-exclamation-circle text-warning" title="Not verified"></i>
-							{/if}
-						</span>
+		<!-- Email Settings -->
+		<div class="card mb-4">
+			<div class="card-header">
+				<span class="fw-semibold">
+					<i class="fas fa-envelope me-2"></i>
+					Email Settings
+					{#if verified}
+						<span class="badge bg-success ms-2">Verified</span>
+					{:else if email}
+						<span class="badge bg-warning text-dark ms-2">Unverified</span>
 					{/if}
-				</div>
-				{#if email && originalEmail === email && !verified}
-					<div class="mt-2">
-						<button
-							type="button"
-							class="btn btn-sm btn-outline-primary"
-							disabled={sendingVerification}
-							on:click={sendVerificationEmail}
-						>
-							{#if sendingVerification}
-								<span class="spinner-border spinner-border-sm me-1"></span>
-							{:else}
-								<i class="fas fa-paper-plane me-1"></i>
+				</span>
+			</div>
+			<div class="card-body">
+				<form on:submit|preventDefault={saveSettings}>
+					<!-- Email address -->
+					<div class="mb-4">
+						<label for="email-address" class="form-label">
+							Email Address
+						</label>
+						<div class="input-group">
+							<input
+								type="email"
+								id="email-address"
+								class="form-control"
+								placeholder="you@example.com"
+								bind:value={email}
+							/>
+							{#if email && originalEmail === email}
+								<span class="input-group-text">
+									{#if verified}
+										<i class="fas fa-check-circle text-success" title="Verified"></i>
+									{:else}
+										<i class="fas fa-exclamation-circle text-warning" title="Not verified"></i>
+									{/if}
+								</span>
 							{/if}
-							Send Verification Email
-						</button>
-						<small class="text-muted ms-2">
-							You need to verify your email to receive notifications.
+						</div>
+						{#if email && originalEmail === email && !verified}
+							<div class="mt-2">
+							<button
+								type="button"
+								class="btn btn-sm btn-outline-primary"
+								disabled={sendingVerification}
+								on:click={sendVerificationEmail}
+							>
+									{#if sendingVerification}
+										<span class="spinner-border spinner-border-sm me-1"></span>
+									{:else}
+										<i class="fas fa-paper-plane me-1"></i>
+									{/if}
+									Send Verification Email
+								</button>
+								<small class="text-muted ms-2">
+									You need to verify your email to receive notifications.
+								</small>
+							</div>
+						{/if}
+					</div>
+
+					<!-- Email format -->
+					<div class="mb-4">
+						<span class="form-label d-block" id="email-format-label">
+							Email Format
+						</span>
+						<div class="btn-group" role="group" aria-labelledby="email-format-label">
+							<input
+								type="radio"
+								class="btn-check"
+								name="preferHtml"
+								id="format-html"
+								checked={preferHtml}
+								on:change={() => preferHtml = true}
+							/>
+							<label class="btn btn-outline-primary" for="format-html">
+								<i class="fas fa-code me-1"></i>
+								HTML
+							</label>
+
+							<input
+								type="radio"
+								class="btn-check"
+								name="preferHtml"
+								id="format-text"
+								checked={!preferHtml}
+								on:change={() => preferHtml = false}
+							/>
+							<label class="btn btn-outline-primary" for="format-text">
+								<i class="fas fa-align-left me-1"></i>
+								Plain Text
+							</label>
+						</div>
+						<small class="text-muted d-block mt-1">
+							HTML emails are formatted with colors and styling. Plain text emails are simpler.
 						</small>
 					</div>
-				{/if}
-			</div>
 
-			<!-- Email format -->
-			<div class="mb-4">
-				<span class="form-label d-block" id="email-format-label">
-					<i class="fas fa-file-alt me-1"></i>
-					Email Format
+					<!-- Actions -->
+					<div class="d-flex gap-2">
+						<button type="submit" class="btn btn-primary" disabled={saving || !hasChanges}>
+							{#if saving}
+								<span class="spinner-border spinner-border-sm me-1"></span>
+								Saving...
+							{:else}
+								<i class="fas fa-save me-1"></i>
+								Save Changes
+							{/if}
+						</button>
+						{#if hasChanges}
+							<button type="button" class="btn btn-outline-secondary" on:click={cancelChanges}>
+								Cancel
+							</button>
+						{/if}
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- Calendars Link -->
+		<div class="card mb-4">
+			<div class="card-header">
+				<span class="fw-semibold">
+					<i class="fas fa-calendar-alt me-2"></i>
+					Calendars
 				</span>
-				<div class="btn-group w-100" role="group" aria-labelledby="email-format-label">
-					<input
-						type="radio"
-						class="btn-check"
-						name="mimetype"
-						id="format-html"
-						value="text/html"
-						bind:group={mimetype}
-					/>
-					<label class="btn btn-outline-primary" for="format-html">
-						<i class="fas fa-code me-1"></i>
-						HTML
-					</label>
-
-					<input
-						type="radio"
-						class="btn-check"
-						name="mimetype"
-						id="format-text"
-						value="text/plain"
-						bind:group={mimetype}
-					/>
-					<label class="btn btn-outline-primary" for="format-text">
-						<i class="fas fa-align-left me-1"></i>
-						Plain Text
-					</label>
-				</div>
-				<small class="text-muted d-block mt-1">
-					HTML emails are formatted with colors and styling. Plain text emails are simpler and work in all email clients.
-				</small>
 			</div>
-
-			<!-- Actions -->
-			<div class="d-flex gap-2">
-				<button type="submit" class="btn btn-primary" disabled={saving || !hasChanges}>
-					{#if saving}
-						<span class="spinner-border spinner-border-sm me-1"></span>
-						Saving...
-					{:else}
-						<i class="fas fa-save me-1"></i>
-						Save Changes
-					{/if}
-				</button>
-				{#if hasChanges}
-					<button type="button" class="btn btn-outline-secondary" on:click={cancelChanges}>
-						Cancel
-					</button>
-				{/if}
+			<div class="card-body">
+			<p class="text-muted mb-3">
+				Create ICS calendars to track token expirations. Subscribe to these calendars in your calendar app.
+			</p>
+			<a href="/#calendars" class="btn btn-outline-primary">
+				<i class="fas fa-external-link-alt me-1"></i>
+				Manage Calendars
+			</a>
 			</div>
-		</form>
+		</div>
 
 		<!-- Info box -->
-		<div class="alert alert-info mt-4">
+		<div class="alert alert-info">
 			<h6 class="alert-heading">
 				<i class="fas fa-info-circle me-1"></i>
-				About Email Notifications
+				About Notifications
 			</h6>
-			<p class="mb-0">
+			<p class="mb-2">
 				Once you verify your email, you can create notification subscriptions on the 
 				<a href="/#notifications">Notifications tab</a> to receive alerts about:
 			</p>
-			<ul class="mb-0 mt-2">
+			<ul class="mb-0">
 				<li>Access token creations</li>
 				<li>Security events (blocked usages, unknown IPs)</li>
 				<li>Token expirations</li>

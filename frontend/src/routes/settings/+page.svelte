@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 	import { isLoggedIn, authInitialized } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 	import GrantsSettings from '$lib/components/settings/GrantsSettings.svelte';
@@ -6,6 +8,20 @@
 	import NotificationSettings from '$lib/components/settings/NotificationSettings.svelte';
 
 	let activeTab = 'grants';
+	let expandSSH = false;
+
+	// Check URL hash on mount to handle deep links like /settings#ssh
+	onMount(() => {
+		if (browser) {
+			const hash = window.location.hash.slice(1);
+			if (hash === 'ssh') {
+				activeTab = 'grants';
+				expandSSH = true;
+			} else if (hash === 'notifications' || hash === 'tags' || hash === 'grants') {
+				activeTab = hash;
+			}
+		}
+	});
 
 	// Redirect to home if not logged in (only after auth is initialized)
 	$: if ($authInitialized && !$isLoggedIn) {
@@ -65,17 +81,11 @@
 					Notifications
 				</button>
 			</li>
-			<li class="nav-item" role="presentation">
-				<a class="nav-link" href="/settings/ssh">
-					<i class="fas fa-key me-1"></i>
-					SSH Keys
-				</a>
-			</li>
 		</ul>
 
 		<div class="tab-content">
 			{#if activeTab === 'grants'}
-				<GrantsSettings />
+				<GrantsSettings initialExpandSSH={expandSSH} />
 			{:else if activeTab === 'tags'}
 				<TagsSettings />
 			{:else if activeTab === 'notifications'}

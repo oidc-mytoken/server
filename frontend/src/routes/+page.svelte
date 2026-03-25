@@ -19,6 +19,9 @@
 	// Token to pass to TransferCode when requested from TokenInfo
 	let tokenForTransfer = '';
 
+	// Notifications subtab (notifications or calendars)
+	let notificationsSubtab: 'notifications' | 'calendars' = 'notifications';
+
 	// Check if notifications are enabled
 	$: notificationsEnabled = !!$discovery.data?.notifications_endpoint;
 
@@ -32,8 +35,17 @@
 	onMount(() => {
 		const hash = window.location.hash.slice(1);
 		if (hash) {
+			// Handle #calendars as a shortcut to notifications tab with calendars subtab
+			if (hash === 'calendars') {
+				if ($isLoggedIn) {
+					activeTab = 'notifications';
+					notificationsSubtab = 'calendars';
+				} else {
+					activeTab = 'about';
+					window.history.replaceState(null, '', '#about');
+				}
 			// Check if it's a valid tab
-			if (publicTabs.includes(hash)) {
+			} else if (publicTabs.includes(hash)) {
 				activeTab = hash;
 			} else if (authTabs.includes(hash)) {
 				// Auth-required tabs - redirect to about if not logged in
@@ -53,6 +65,10 @@
 			return;
 		}
 		activeTab = tab;
+		// Reset notifications subtab when navigating to notifications tab normally
+		if (tab === 'notifications') {
+			notificationsSubtab = 'notifications';
+		}
 		window.history.replaceState(null, '', `#${tab}`);
 	}
 
@@ -225,7 +241,7 @@
 			</div>
 		{:else if activeTab === 'notifications' && $isLoggedIn && notificationsEnabled}
 			<div class="tab-pane active" role="tabpanel">
-				<Notifications />
+				<Notifications initialSubtab={notificationsSubtab} />
 			</div>
 		{/if}
 	</div>

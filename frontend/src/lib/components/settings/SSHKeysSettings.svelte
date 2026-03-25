@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { SSHKey, Capability, Restriction } from '$lib/types';
+	import type { SSHKeyInfo, Capability, Restriction } from '$lib/types';
 	import { api, ApiClientError } from '$lib/api/client';
 	import { ui } from '$lib/stores/ui';
 	import LoadingSpinner from '../LoadingSpinner.svelte';
@@ -8,7 +8,10 @@
 	import RestrictionsEditor from '../restrictions/RestrictionsEditor.svelte';
 	import CollapsibleSection from '../CollapsibleSection.svelte';
 
-	let sshKeys: SSHKey[] = [];
+	// NOTE: This component is deprecated. SSH key management is now part of GrantsSettings.
+	// Users accessing /settings/ssh will be redirected to /settings#ssh
+
+	let sshKeys: SSHKeyInfo[] = [];
 	let loading = true;
 	let adding = false;
 	let deleting: string | null = null;
@@ -60,9 +63,9 @@
 
 		adding = true;
 		try {
-			const key: SSHKey = {
+			const key: { name?: string; ssh_key: string; restrictions?: Restriction[]; capabilities?: string[] } = {
 				name: newKeyName.trim(),
-				key: newKeyValue.trim()
+				ssh_key: newKeyValue.trim()
 			};
 
 			// Add capabilities if any selected
@@ -259,33 +262,25 @@
 						{#each sshKeys as key}
 							<div class="list-group-item d-flex justify-content-between align-items-start">
 								<div class="flex-grow-1">
-									<h6 class="mb-1">{key.name}</h6>
-									<code class="small text-muted">{formatKeyPreview(key.key)}</code>
-									{#if key.capabilities && key.capabilities.length > 0}
-										<div class="mt-1">
-											<small class="text-muted">
-												<i class="fas fa-check-circle me-1"></i>
-												{key.capabilities.length} capabilities
-											</small>
-										</div>
-									{/if}
-									{#if key.restrictions && key.restrictions.length > 0}
-										<div class="mt-1">
-											<small class="text-muted">
-												<i class="fas fa-lock me-1"></i>
-												{key.restrictions.length} restrictions
-											</small>
-										</div>
-									{/if}
+									<h6 class="mb-1">{key.name || '(unnamed)'}</h6>
+									<code class="small text-muted">{key.ssh_key_fp || key.ssh_key || 'N/A'}</code>
+									<div class="mt-1">
+										<small class="text-muted">
+											Created: {new Date(key.created * 1000).toLocaleString()}
+											{#if key.last_used}
+												| Last used: {new Date(key.last_used * 1000).toLocaleString()}
+											{/if}
+										</small>
+									</div>
 								</div>
 								<button
 									type="button"
 									class="btn btn-sm btn-outline-danger"
 									title="Delete key"
-									disabled={deleting === key.name}
-									on:click={() => deleteSSHKey(key.name)}
+									disabled={deleting === (key.ssh_key_fp ?? key.name ?? '')}
+									on:click={() => deleteSSHKey(key.ssh_key_fp ?? '')}
 								>
-									{#if deleting === key.name}
+									{#if deleting === (key.ssh_key_fp ?? key.name ?? '')}
 										<span class="spinner-border spinner-border-sm"></span>
 									{:else}
 										<i class="fas fa-trash"></i>

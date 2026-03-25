@@ -11,11 +11,14 @@
 	import CalendarList from './CalendarList.svelte';
 	import LoadingSpinner from '../LoadingSpinner.svelte';
 
+	// Props
+	export let initialSubtab: 'notifications' | 'calendars' = 'notifications';
+
 	// State
 	let notifications: Notification[] = [];
 	let calendars: Calendar[] = [];
 	let loading = true;
-	let activeTab: 'notifications' | 'calendars' = 'notifications';
+	let activeTab: 'notifications' | 'calendars' = initialSubtab;
 	let loadError: string | null = null;
 	
 	// Modal states

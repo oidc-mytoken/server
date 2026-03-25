@@ -87,6 +87,13 @@
 		border-color: #c73500;
 	}
 
+	:global(.btn-primary:disabled),
+	:global(.btn-primary.disabled) {
+		background-color: #df691a;
+		border-color: #df691a;
+		opacity: 0.65;
+	}
+
 	:global(.btn-outline-primary) {
 		color: #df691a;
 		border-color: #df691a;
@@ -98,6 +105,25 @@
 		background-color: #df691a;
 		border-color: #df691a;
 		color: #fff;
+	}
+
+	:global(.btn-outline-primary:disabled),
+	:global(.btn-outline-primary.disabled) {
+		color: #df691a;
+		border-color: #df691a;
+		opacity: 0.65;
+	}
+
+	/* Radio button group with btn-check (used for toggle buttons) */
+	:global(.btn-check:checked + .btn-outline-primary) {
+		background-color: #df691a;
+		border-color: #df691a;
+		color: #fff;
+	}
+
+	:global(.btn-check:focus + .btn-outline-primary),
+	:global(.btn-check:active + .btn-outline-primary) {
+		box-shadow: 0 0 0 0.25rem rgba(223, 105, 26, 0.5);
 	}
 
 	:global(.bg-primary) {

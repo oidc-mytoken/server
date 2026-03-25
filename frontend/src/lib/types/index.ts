@@ -301,9 +301,9 @@ export type NotificationClassId = string;
 
 // User settings
 export interface EmailSettings {
-	email?: string;
-	verified?: boolean;
-	mimetype?: string;
+    email_address?: string;
+    email_verified?: boolean;
+    prefer_html_mail?: boolean;
 }
 
 export interface Grant {
@@ -316,6 +316,21 @@ export interface SSHKey {
 	key: string;
 	restrictions?: Restriction[];
 	capabilities?: string[];
+}
+
+// SSH key info from the server (read operations)
+export interface SSHKeyInfo {
+    name?: string;
+    ssh_key?: string;
+    ssh_key_fp?: string;
+    created: number;
+    last_used?: number;
+}
+
+// SSH info response from server
+export interface SSHInfoResponse {
+    grant_enabled: boolean;
+    ssh_keys: SSHKeyInfo[];
 }
 
 // API error response
