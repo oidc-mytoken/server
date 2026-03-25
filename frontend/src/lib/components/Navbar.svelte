@@ -9,6 +9,29 @@
 	export let empty: boolean = false;
 
 	let loggingIn = false;
+	let providerSearch = '';
+	let searchInput: HTMLInputElement | null = null;
+
+	$: filteredProviders = $providers.filter((provider) => {
+		if (!providerSearch) return true;
+		const search = providerSearch.toLowerCase();
+		const name = (provider.name ?? '').toLowerCase();
+		const issuer = provider.issuer.toLowerCase();
+		return name.includes(search) || issuer.includes(search);
+	});
+
+	function handleDropdownShow() {
+		providerSearch = '';
+		// Focus the search input when dropdown opens
+		setTimeout(() => searchInput?.focus(), 0);
+	}
+
+	function handleSearchKeydown(event: KeyboardEvent) {
+		if (event.key === 'Enter' && filteredProviders.length === 1) {
+			// If only one provider matches, select it on Enter
+			handleLogin(filteredProviders[0].issuer);
+		}
+	}
 
 	async function handleLogin(issuer: string) {
 		if (loggingIn) return;
@@ -110,6 +133,7 @@
 								data-bs-toggle="dropdown"
 								aria-expanded="false"
 								disabled={loggingIn}
+								on:click={handleDropdownShow}
 							>
 								{#if loggingIn}
 									<span class="spinner-border spinner-border-sm me-1"></span>
@@ -119,21 +143,43 @@
 								Login
 							</button>
 							<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="loginDropdown">
-								{#each $providers as provider}
-									<li>
-										<button
-											class="dropdown-item"
-											on:click={() => handleLogin(provider.issuer)}
-											disabled={loggingIn}
-										>
-											{provider.name ?? provider.issuer}
-										</button>
+								{#if $providers.length > 5}
+									<li class="px-2 pb-2">
+										<input
+											type="text"
+											class="form-control form-control-sm"
+											placeholder="Search providers..."
+											bind:value={providerSearch}
+											bind:this={searchInput}
+											on:keydown={handleSearchKeydown}
+											on:click|stopPropagation
+										/>
 									</li>
-								{:else}
-									<li>
-										<span class="dropdown-item text-muted">No providers available</span>
-									</li>
-								{/each}
+									<li><hr class="dropdown-divider" /></li>
+								{/if}
+								<div class="provider-list">
+									{#each filteredProviders as provider}
+										<li>
+											<button
+												class="dropdown-item"
+												on:click={() => handleLogin(provider.issuer)}
+												disabled={loggingIn}
+											>
+												{provider.name ?? provider.issuer}
+											</button>
+										</li>
+									{:else}
+										<li>
+											<span class="dropdown-item text-muted">
+												{#if providerSearch}
+													No providers match "{providerSearch}"
+												{:else}
+													No providers available
+												{/if}
+											</span>
+										</li>
+									{/each}
+								</div>
 							</ul>
 						</li>
 					{/if}
@@ -142,3 +188,10 @@
 		{/if}
 	</div>
 </nav>
+
+<style>
+	.provider-list {
+		max-height: 300px;
+		overflow-y: auto;
+	}
+</style>
