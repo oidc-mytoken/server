@@ -234,7 +234,6 @@ export interface Notification {
 	notification_classes: string[];
 	user_wide?: boolean;
 	subscribed_tokens?: string[];
-	mom_ids?: string[];
 	tags?: TagInfo[];
 	oidc_iss?: string;
 }

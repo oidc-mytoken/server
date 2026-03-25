@@ -282,10 +282,10 @@
 			);
 			
 			inviteSent = true;
-			ui.success('Calendar invitation sent');
+			ui.success('Calendar event sent');
 		} catch (err) {
 			if (err instanceof ApiClientError) {
-				ui.showError('Failed to send invitation', err.description ?? err.code);
+				ui.showError('Failed to send calendar event', err.description ?? err.code);
 			}
 		} finally {
 			saving = false;
@@ -645,14 +645,14 @@
 								</div>
 							{/if}
 
-							<!-- Send calendar invite form -->
+							<!-- Send calendar event form -->
 							{#if showSendInviteForm}
 								<div class="card mb-3">
 									<div class="card-body">
 										{#if inviteSent}
 											<div class="text-center text-success">
 												<i class="fas fa-check-circle fa-2x mb-2"></i>
-												<p>Calendar invitation sent successfully!</p>
+												<p>Calendar event sent successfully!</p>
 												<button
 													type="button"
 													class="btn btn-secondary btn-sm"
@@ -662,9 +662,9 @@
 												</button>
 											</div>
 										{:else}
-											<h6 class="card-title">Send Calendar Invitation</h6>
+											<h6 class="card-title">Send Calendar Event</h6>
 											<p class="text-muted small">
-												Send a single calendar invitation email with the token expiration date.
+												Send a single calendar event email with the token expiration date.
 											</p>
 											<div class="mb-3">
 												<label class="form-label small" for="inviteComment">Comment (optional):</label>
@@ -673,7 +673,7 @@
 													class="form-control form-control-sm"
 													id="inviteComment"
 													bind:value={calendarComment}
-													placeholder="Add a comment to the invitation"
+													placeholder="Add a comment to the event"
 												/>
 											</div>
 											<div class="d-flex gap-2">
@@ -687,7 +687,7 @@
 														<i class="fas fa-spinner fa-spin me-1"></i>
 													{/if}
 													<i class="fas fa-envelope me-1"></i>
-													Send Invitation
+													Send Event
 												</button>
 												<button
 													type="button"
@@ -721,7 +721,7 @@
 										onclick={() => showSendInviteForm = true}
 									>
 										<i class="fas fa-envelope me-1"></i>
-										Send Invite
+										Send Event
 									</button>
 								</div>
 							{/if}

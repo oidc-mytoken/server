@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Notification } from '$lib/types';
+	import type { Notification, MytokenEntry } from '$lib/types';
 	import {
 		getNotificationTypeIcon,
 		getNotificationTypeShortLabel,
@@ -11,6 +11,7 @@
 
 	interface Props {
 		notification: Notification;
+		tokens?: MytokenEntry[];
 		onAdd?: () => void;
 		onRemove?: () => void;
 		onEdit?: () => void;
@@ -21,6 +22,7 @@
 
 	let {
 		notification,
+		tokens = [],
 		onAdd,
 		onRemove,
 		onEdit,
@@ -32,7 +34,26 @@
 	const rootClasses = getRootNotificationClasses();
 
 	function getTokenCount(): number {
-		return notification.subscribed_tokens?.length ?? notification.mom_ids?.length ?? 0;
+		// Count directly subscribed tokens
+		const directCount = notification.subscribed_tokens?.length ?? 0;
+		
+		// Count tokens matching notification tags
+		const notificationTags = notification.tags?.map(t => t.tag) ?? [];
+		if (notificationTags.length === 0) {
+			return directCount;
+		}
+		
+		// Find tokens that have at least one matching tag (and aren't already directly subscribed)
+		const directTokenIds = new Set(notification.subscribed_tokens ?? []);
+		const tagMatchedCount = tokens.filter(token => {
+			// Skip if already directly subscribed
+			if (directTokenIds.has(token.mom_id)) return false;
+			// Check if token has any matching tag
+			const tokenTags = token.tags?.map(t => t.tag) ?? [];
+			return tokenTags.some(tt => notificationTags.includes(tt));
+		}).length;
+		
+		return directCount + tagMatchedCount;
 	}
 </script>
 
@@ -75,8 +96,9 @@
 				All
 			</span>
 		{:else}
-			<span class="badge bg-info">
-				{getTokenCount()} tokens
+			{@const count = getTokenCount()}
+			<span class="badge bg-info" title="{count} subscribed token{count !== 1 ? 's' : ''}">
+				{count} token{count !== 1 ? 's' : ''}
 			</span>
 		{/if}
 	</div>

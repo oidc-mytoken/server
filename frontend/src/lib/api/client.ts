@@ -268,7 +268,7 @@ class ApiClient {
 				method: 'POST',
 				body: JSON.stringify({
 					action: 'event_history',
-					mom_id: momId
+                    mom_ids: [momId]
 				})
 			}
 		);

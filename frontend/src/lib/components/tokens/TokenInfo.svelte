@@ -460,7 +460,7 @@
 		for (const n of allNotifications) {
 			if (n.user_wide) {
 				userWide.push(n);
-			} else if (n.subscribed_tokens?.includes(momId) || n.mom_ids?.includes(momId)) {
+			} else if (n.subscribed_tokens?.includes(momId)) {
 				direct.push(n);
 			} else if (tokenTags.length > 0 && n.tags?.some(nt => tokenTags.some(tt => tt.tag === nt.tag))) {
 				tagBased.push(n);

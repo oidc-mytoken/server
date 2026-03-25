@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
@@ -15,7 +14,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/actionrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/actions/pkg"
-	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
@@ -35,9 +33,8 @@ func HandleActions(ctx *fiber.Ctx) error {
 	case pkg.ActionUnsubscribeScheduled:
 		return handleUnsubscribeScheduled(ctx, actionInfo.Code)
 	}
-	return ctxutils.RenderErrorPage(
-		ctx, fiber.StatusBadRequest, model.BadRequestError("unknown action").
-			CombinedMessage(),
+	return ctxutils.RenderActionResultPage(
+		ctx, fiber.StatusBadRequest, "Unknown Action", "The requested action is not recognized.", false,
 	)
 }
 
@@ -85,10 +82,14 @@ func handleRecreate(ctx *fiber.Ctx, code string) (err error) {
 		},
 	)
 	if err != nil {
-		return ctxutils.RenderInternalServerErrorPage(ctx, err)
+		return ctxutils.RenderActionResultPage(
+			ctx, fiber.StatusInternalServerError, "Error", "An internal error occurred.", false,
+		)
 	}
 	if !found {
-		return ctxutils.RenderErrorPage(ctx, fiber.StatusNotFound, "recreation code not found")
+		return ctxutils.RenderActionResultPage(
+			ctx, fiber.StatusNotFound, "Not Found", "The recreation code was not found.", false,
+		)
 	}
 	return ctx.Redirect(fmt.Sprintf("/?r=%s#mt", baseRequest), fiber.StatusSeeOther)
 }
@@ -97,13 +98,17 @@ func handleVerifyEmail(ctx *fiber.Ctx, code string) error {
 	rlog := logger.GetRequestLogger(ctx)
 	verified, err := actionrepo.VerifyMail(rlog, nil, code)
 	if err != nil {
-		return ctxutils.RenderInternalServerErrorPage(ctx, err)
+		return ctxutils.RenderActionResultPage(
+			ctx, fiber.StatusInternalServerError, "Error", "An internal error occurred.", false,
+		)
 	}
 	if !verified {
-		return ctxutils.RenderErrorPage(ctx, http.StatusBadRequest, "code not valid or expired")
+		return ctxutils.RenderActionResultPage(
+			ctx, fiber.StatusBadRequest, "Invalid Code", "The verification code is not valid or has expired.", false,
+		)
 	}
-	return ctxutils.RenderErrorPage(
-		ctx, http.StatusOK, "The email address was successfully verified.", "Email Verified",
+	return ctxutils.RenderActionResultPage(
+		ctx, fiber.StatusOK, "Email Verified", "Your email address was successfully verified.", true,
 	)
 }
 
@@ -111,10 +116,12 @@ func handleRemoveFromCalendar(ctx *fiber.Ctx, code string) error {
 	rlog := logger.GetRequestLogger(ctx)
 	err := actionrepo.UseRemoveCalendarCode(rlog, nil, code)
 	if err != nil {
-		return ctxutils.RenderInternalServerErrorPage(ctx, err)
+		return ctxutils.RenderActionResultPage(
+			ctx, fiber.StatusInternalServerError, "Error", "An internal error occurred.", false,
+		)
 	}
-	return ctxutils.RenderErrorPage(
-		ctx, http.StatusOK, "The token was successfully removed from the calendar.", "Token Removed from Calendar",
+	return ctxutils.RenderActionResultPage(
+		ctx, fiber.StatusOK, "Token Removed", "The token was successfully removed from the calendar.", true,
 	)
 }
 
@@ -122,11 +129,13 @@ func handleUnsubscribeScheduled(ctx *fiber.Ctx, code string) error {
 	rlog := logger.GetRequestLogger(ctx)
 	err := actionrepo.UseUnsubscribeFurtherNotificationsCode(rlog, nil, code)
 	if err != nil {
-		return ctxutils.RenderInternalServerErrorPage(ctx, err)
+		return ctxutils.RenderActionResultPage(
+			ctx, fiber.StatusInternalServerError, "Error", "An internal error occurred.", false,
+		)
 	}
-	return ctxutils.RenderErrorPage(
-		ctx, http.StatusOK, "You have successfully unsubscribed from further notifications of this kind.",
-		"Unsubscribed",
+	return ctxutils.RenderActionResultPage(
+		ctx, fiber.StatusOK, "Unsubscribed",
+		"You have successfully unsubscribed from further notifications of this kind.", true,
 	)
 }
 

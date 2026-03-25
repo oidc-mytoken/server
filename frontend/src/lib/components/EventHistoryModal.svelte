@@ -61,16 +61,16 @@
 	}
 
 	function parseUserAgent(userAgent: string | undefined): { icon: string; title: string } {
-		if (!userAgent) return { icon: 'fa-question', title: 'Unknown' };
+		if (!userAgent) return { icon: 'fas fa-question', title: 'Unknown' };
 		
 		const ua = userAgent.toLowerCase();
 		
 		// Check for known clients
 		if (ua.includes('oidc-agent')) {
-			return { icon: 'fa-terminal', title: 'oidc-agent' };
+			return { icon: 'fas fa-terminal', title: 'oidc-agent' };
 		}
 		if (ua.includes('mytoken')) {
-			return { icon: 'fa-key', title: 'mytoken client' };
+			return { icon: 'fas fa-key', title: 'mytoken client' };
 		}
 		
 		// Browser detection
@@ -98,7 +98,7 @@
 			return { icon: 'fab fa-apple', title: 'macOS Client' };
 		}
 		
-		return { icon: 'fa-globe', title: userAgent };
+		return { icon: 'fas fa-globe', title: userAgent };
 	}
 </script>
 

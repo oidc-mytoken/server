@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Notification } from '$lib/types';
+	import type { Notification, MytokenEntry } from '$lib/types';
 	import { api, ApiClientError } from '$lib/api/client';
 	import { ui } from '$lib/stores/ui';
 	import LoadingSpinner from '../LoadingSpinner.svelte';
@@ -7,6 +7,7 @@
 	import NotificationModal from './NotificationModal.svelte';
 
 	export let notifications: Notification[] = [];
+	export let tokens: MytokenEntry[] = [];
 	export let loading = false;
 	export let onDelete: ((managementCode: string) => void) | undefined = undefined;
 	export let onUpdate: ((notification: Notification | void) => void) | undefined = undefined;
@@ -77,6 +78,7 @@
 			{#each notifications as notification}
 				<NotificationItem
 					{notification}
+					{tokens}
 					onEdit={() => openEditModal(notification)}
 					onDelete={() => handleDelete(notification.management_code)}
 				/>

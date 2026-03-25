@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Notification, Calendar } from '$lib/types';
+	import type { Notification, Calendar, MytokenEntry } from '$lib/types';
 	import { api, ApiClientError } from '$lib/api/client';
 	import { isLoggedIn } from '$lib/stores/auth';
 	import { tags } from '$lib/stores/tags';
@@ -17,6 +17,7 @@
 	// State
 	let notifications: Notification[] = [];
 	let calendars: Calendar[] = [];
+	let allTokens: MytokenEntry[] = [];
 	let loading = true;
 	let activeTab: 'notifications' | 'calendars' = initialSubtab;
 	let loadError: string | null = null;
@@ -40,14 +41,16 @@
 				}
 			}
 
-			// Load notifications and calendars
-			const [notifResult, calResult] = await Promise.all([
+			// Load notifications, calendars, and tokens
+			const [notifResult, calResult, tokensResult] = await Promise.all([
 				api.getNotifications(),
-				api.getCalendars()
+				api.getCalendars(),
+				api.listMytokens()
 			]);
 
 			notifications = notifResult;
 			calendars = calResult;
+			allTokens = tokensResult;
 		} catch (error) {
 			console.error('Failed to load notifications/calendars:', error);
 			if (error instanceof ApiClientError) {
@@ -85,7 +88,8 @@
 	}
 
 	function handleCalendarUpdated(updated: Calendar) {
-		calendars = calendars.map(c => c.id === updated.id ? updated : c);
+		// Reload to get the updated calendar data with all fields
+		loadData();
 	}
 
 	function handleCalendarCreated() {
@@ -159,6 +163,7 @@
 		{#if activeTab === 'notifications'}
 			<NotificationList 
 				{notifications}
+				tokens={allTokens}
 				onDelete={handleNotificationDeleted}
 				onUpdate={handleNotificationUpdated}
 			/>

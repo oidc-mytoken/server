@@ -353,6 +353,25 @@
 		return match ? match[1] : 'mytoken-host';
 	}
 
+	function extractSSHDetails(hostConfig: string): { host: string; hostname: string; port: string; user: string } {
+		// Extract all SSH connection details from the config
+		const hostMatch = hostConfig.match(/^Host\s+(\S+)/m);
+		const hostnameMatch = hostConfig.match(/HostName\s+(\S+)/m);
+		const portMatch = hostConfig.match(/Port\s+(\d+)/m);
+		const userMatch = hostConfig.match(/User\s+(\S+)/m);
+		return {
+			host: hostMatch?.[1] ?? 'mytoken-host',
+			hostname: hostnameMatch?.[1] ?? 'localhost',
+			port: portMatch?.[1] ?? '2222',
+			user: userMatch?.[1] ?? 'user'
+		};
+	}
+
+	function buildFullSSHCommand(hostConfig: string, command: string): string {
+		const details = extractSSHDetails(hostConfig);
+		return `ssh -p ${details.port} ${details.user}@${details.hostname} ${command}`;
+	}
+
 	function handleSSHKeyFileUpload(event: Event) {
 		const input = event.target as HTMLInputElement;
 		const file = input.files?.[0];
@@ -540,7 +559,30 @@
 																<p class="mb-1"><strong>Get an Access Token:</strong></p>
 																<pre class="bg-dark text-light p-2 rounded mb-2"><code>ssh {extractHostName(sshResult.ssh_host_config)} AT</code></pre>
 																<p class="mb-1"><strong>Get a Mytoken:</strong></p>
-																<pre class="bg-dark text-light p-2 rounded mb-0"><code>ssh {extractHostName(sshResult.ssh_host_config)} MT</code></pre>
+																<pre class="bg-dark text-light p-2 rounded mb-3"><code>ssh {extractHostName(sshResult.ssh_host_config)} MT</code></pre>
+																
+																<hr class="my-3" />
+																<p class="mb-2 text-muted small">Or use these full commands directly (without SSH config):</p>
+																<div class="position-relative mb-2">
+																	<pre class="bg-dark text-light p-2 rounded mb-0"><code>{buildFullSSHCommand(sshResult.ssh_host_config, 'AT')}</code></pre>
+																	<button 
+																		class="btn btn-sm btn-outline-light position-absolute top-0 end-0 m-1"
+																		title="Copy command"
+																		on:click={() => copyToClipboard(buildFullSSHCommand(sshResult?.ssh_host_config ?? '', 'AT'))}
+																	>
+																		<i class="fas fa-copy"></i>
+																	</button>
+																</div>
+																<div class="position-relative">
+																	<pre class="bg-dark text-light p-2 rounded mb-0"><code>{buildFullSSHCommand(sshResult.ssh_host_config, 'MT')}</code></pre>
+																	<button 
+																		class="btn btn-sm btn-outline-light position-absolute top-0 end-0 m-1"
+																		title="Copy command"
+																		on:click={() => copyToClipboard(buildFullSSHCommand(sshResult?.ssh_host_config ?? '', 'MT'))}
+																	>
+																		<i class="fas fa-copy"></i>
+																	</button>
+																</div>
 															</div>
 														{/if}
 														<button class="btn btn-primary" on:click={resetSSHForm}>
@@ -834,5 +876,11 @@
 		border-top: none;
 		font-weight: 600;
 		font-size: 0.875rem;
+	}
+
+	/* Dark mode: add border to code blocks for better contrast */
+	:global([data-bs-theme='dark']) pre.bg-dark {
+		background-color: #1a1d20 !important;
+		border: 1px solid #495057;
 	}
 </style>

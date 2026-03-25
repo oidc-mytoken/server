@@ -131,13 +131,13 @@
 			selectedTags = notification.tags?.map(t => t.tag) ?? [];
 			
 			// Determine subscription mode from notification
-			if ((notification as any).user_wide) {
+			if (notification.user_wide) {
 				subscriptionMode = 'user_wide';
 			} else if (notification.tags && notification.tags.length > 0) {
 				subscriptionMode = 'tags';
-			} else if ((notification as any).mom_ids && (notification as any).mom_ids.length > 0) {
+			} else if (notification.subscribed_tokens && notification.subscribed_tokens.length > 0) {
 				subscriptionMode = 'tokens';
-				selectedTokenIds = [...(notification as any).mom_ids];
+				selectedTokenIds = [...notification.subscribed_tokens];
 			} else {
 				subscriptionMode = 'tags';
 			}
