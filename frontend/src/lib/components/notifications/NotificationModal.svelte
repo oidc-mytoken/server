@@ -87,6 +87,11 @@
 
 	// Filter and get visible tokens based on search query and expanded state
 	$: visibleTokens = flattenedTokens.filter(item => {
+		// Exclude expired tokens, unless they are already subscribed
+		if (isExpired(item.token) && !selectedTokenIds.includes(item.token.mom_id)) {
+			return false;
+		}
+
 		// First check if token matches search query
 		if (tokenSearchQuery) {
 			const query = tokenSearchQuery.toLowerCase();
