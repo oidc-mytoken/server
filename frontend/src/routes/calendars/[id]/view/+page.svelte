@@ -241,4 +241,29 @@
 	:global(.tippy-box[data-theme~='translucent'] a:hover) {
 		color: #9ec5fe;
 	}
+
+	/* FullCalendar navigation button icons - use Font Awesome instead of Bootstrap Icons */
+	:global(.fc .bi) {
+		display: inline-block;
+		font-family: 'Font Awesome 5 Free';
+		font-weight: 900;
+		font-style: normal;
+		line-height: 1;
+	}
+
+	:global(.fc .bi-chevron-left::before) {
+		content: '\f053';
+	}
+
+	:global(.fc .bi-chevron-right::before) {
+		content: '\f054';
+	}
+
+	:global(.fc .bi-chevron-double-left::before) {
+		content: '\f100';
+	}
+
+	:global(.fc .bi-chevron-double-right::before) {
+		content: '\f101';
+	}
 </style>
