@@ -1099,7 +1099,7 @@
 								<tbody>
 									{#each visibleSubtokens as item (item.id)}
 										{@const expired = isExpired(item.token.expires_at)}
-										<tr class:text-muted={expired}>
+										<tr class:token-expired={expired}>
 											<td 
 												class:token-fold={item.hasChildren}
 												on:click={() => item.hasChildren && toggleSubtokenExpand(item.id)}
@@ -1130,6 +1130,9 @@
 											<td>{item.token.ip || '-'}</td>
 											<td class:text-muted={!item.token.expires_at || item.token.expires_at === 0}>
 												{formatExpiry(item.token.expires_at)}
+												{#if expired}
+													<span class="badge bg-secondary ms-1" title="This token has expired">Expired</span>
+												{/if}
 											</td>
 											<td>
 												<small class="text-muted font-monospace">
@@ -1249,5 +1252,19 @@
 
 	.notification-classes-icons .text-muted {
 		opacity: 0.4;
+	}
+
+	/* Expired token styling */
+	:global(tr.token-expired) {
+		opacity: 0.6;
+		background-color: rgba(var(--bs-secondary-rgb), 0.05);
+	}
+
+	:global(tr.token-expired td) {
+		color: var(--bs-secondary-color);
+	}
+
+	:global([data-bs-theme='dark'] tr.token-expired) {
+		background-color: rgba(0, 0, 0, 0.15);
 	}
 </style>
