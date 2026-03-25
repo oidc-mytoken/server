@@ -9,6 +9,12 @@ import (
 	"github.com/olekukonko/tablewriter/tw"
 )
 
+// TableRow represents a key-value pair for table generation with stable ordering
+type TableRow struct {
+	Key   string
+	Value string
+}
+
 var tableWriteOptions []tablewriter.Option
 
 func init() {
@@ -38,20 +44,20 @@ func fPrintTable(out io.Writer, headers []string, data [][]string) {
 	_ = t.Render()
 }
 
-func fPrintSimpleTable(out io.Writer, headers []string, data map[string]string) {
-	dataSlice := make([][]string, 0)
-	for k, v := range data {
+func fPrintSimpleTable(out io.Writer, headers []string, data []TableRow) {
+	dataSlice := make([][]string, 0, len(data))
+	for _, row := range data {
 		dataSlice = append(
 			dataSlice, []string{
-				k,
-				v,
+				row.Key,
+				row.Value,
 			},
 		)
 	}
 	fPrintTable(out, headers, dataSlice)
 }
 
-func generateSimpleTable(headers []string, data map[string]string) string {
+func generateSimpleTable(headers []string, data []TableRow) string {
 	buf := bytes.NewBufferString("")
 	fPrintSimpleTable(buf, headers, data)
 	return buf.String()

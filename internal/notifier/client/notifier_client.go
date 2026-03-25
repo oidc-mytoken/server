@@ -208,24 +208,68 @@ func sendNotificationsForNotificationInfos(
 						bindingData["additional-data"] = additionalData
 					}
 				} else {
-					tableData := map[string]string{}
-					if tokenName.Valid {
-						tableData["Mytoken Name"] = tokenName.String
-					}
-					tableData["Mytoken Mom ID"] = mtID.Hash()
-					tableData["IP"] = clientData.IP
-					tableData["User-Agent"] = clientData.UserAgent
-					if country := geoip.Country(clientData.IP); country != "" {
-						tableData["Location"] = country
-					}
-					tableData["Notification Reason"] = notificationClassName
-
+					var tableData []TableRow
+					tableData = append(
+						tableData, TableRow{
+							"Notification Reason",
+							notificationClassName,
+						},
+					)
 					if e != nil {
-						tableData["Event"] = e.Event.String()
-						tableData["Comment"] = e.Comment
+						tableData = append(
+							tableData, TableRow{
+								"Event",
+								e.Event.String(),
+							},
+						)
+						tableData = append(
+							tableData, TableRow{
+								"Comment",
+								e.Comment,
+							},
+						)
+					}
+					if tokenName.Valid {
+						tableData = append(
+							tableData, TableRow{
+								"Mytoken Name",
+								tokenName.String,
+							},
+						)
+					}
+					tableData = append(
+						tableData, TableRow{
+							"Mytoken Mom ID",
+							mtID.Hash(),
+						},
+					)
+					tableData = append(
+						tableData, TableRow{
+							"IP",
+							clientData.IP,
+						},
+					)
+					tableData = append(
+						tableData, TableRow{
+							"User-Agent",
+							clientData.UserAgent,
+						},
+					)
+					if country := geoip.Country(clientData.IP); country != "" {
+						tableData = append(
+							tableData, TableRow{
+								"Location",
+								country,
+							},
+						)
 					}
 					for _, kv := range additionalData {
-						tableData[kv.Key] = fmt.Sprintf("%v", kv.Value)
+						tableData = append(
+							tableData, TableRow{
+								kv.Key,
+								fmt.Sprintf("%v", kv.Value),
+							},
+						)
 					}
 					txtTable := generateSimpleTable(nil, tableData)
 					bindingData["txt-table"] = txtTable
