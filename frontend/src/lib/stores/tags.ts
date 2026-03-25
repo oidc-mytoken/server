@@ -1,8 +1,9 @@
-import { writable } from 'svelte/store';
-import type { Tag } from '$lib/types';
+import {writable} from 'svelte/store';
+import type {Tag, TagInfo} from '$lib/types';
+import {stripHashFromColor} from '$lib/utils/color';
 
 interface TagsState {
-	tags: Tag[];
+	tags: TagInfo[];
 	loading: boolean;
 	error: string | null;
 	loaded: boolean;
@@ -22,7 +23,7 @@ function createTagsStore() {
 		/**
 		 * Fetch tags from the user settings endpoint (uses cookie auth)
 		 */
-		async fetch(usersettingsEndpoint: string): Promise<Tag[]> {
+		async fetch(usersettingsEndpoint: string): Promise<TagInfo[]> {
 			update((state) => ({ ...state, loading: true, error: null }));
 
 			try {
@@ -51,7 +52,7 @@ function createTagsStore() {
 				}
 
 				const data = await response.json();
-				const tags: Tag[] = data.tags ?? [];
+				const tags: TagInfo[] = data.tags ?? [];
 
 				set({
 					tags,
@@ -74,29 +75,55 @@ function createTagsStore() {
 
 		/**
 		 * Create a new tag (uses cookie auth)
+		 * Note: The backend POST endpoint only creates the tag with default color.
+		 * We need to use PUT to set the color afterwards.
 		 */
 		async create(usersettingsEndpoint: string, tag: Tag): Promise<boolean> {
 			try {
-				const response = await fetch(
+				// First create the tag (color is not supported in POST)
+				const createResponse = await fetch(
 					`${usersettingsEndpoint}/tags/${encodeURIComponent(tag.tag)}`,
 					{
 						method: 'POST',
 						headers: {
 							'Content-Type': 'application/json'
 						},
-						credentials: 'include',
-						body: JSON.stringify(tag)
+						credentials: 'include'
 					}
 				);
 
-				if (!response.ok) {
-					throw new Error(`Failed to create tag: ${response.status}`);
+				if (!createResponse.ok) {
+					throw new Error(`Failed to create tag: ${createResponse.status}`);
 				}
 
-				// Add to local state
+				// If a color was specified, set it using PUT
+				if (tag.color) {
+					// Strip # from color for API (API expects color without #)
+					const updateResponse = await fetch(
+						`${usersettingsEndpoint}/tags/${encodeURIComponent(tag.tag)}`,
+						{
+							method: 'PUT',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							credentials: 'include',
+							body: JSON.stringify({color: stripHashFromColor(tag.color)})
+						}
+					);
+
+					if (!updateResponse.ok) {
+						console.warn(`Tag created but failed to set color: ${updateResponse.status}`);
+					}
+				}
+
+				// Add to local state as TagInfo (with color defaulting to gray if not specified)
+				const tagInfo: TagInfo = {
+					tag: tag.tag,
+					color: tag.color ?? '#6c757d'
+				};
 				update((state) => ({
 					...state,
-					tags: [...state.tags, tag]
+					tags: [...state.tags, tagInfo]
 				}));
 
 				return true;
@@ -132,6 +159,59 @@ function createTagsStore() {
 				return true;
 			} catch (e) {
 				console.error('Failed to delete tag:', e);
+				return false;
+			}
+		},
+
+		/**
+		 * Update a tag (uses cookie auth)
+		 * Can update name and/or color
+		 */
+		async update(usersettingsEndpoint: string, oldTagName: string, updates: {
+			tag?: string;
+			color?: string
+		}): Promise<boolean> {
+			try {
+				// Strip # from color for API (API expects color without #)
+				const apiUpdates = {
+					...updates,
+					color: updates.color ? stripHashFromColor(updates.color) : updates.color
+				};
+
+				const response = await fetch(
+					`${usersettingsEndpoint}/tags/${encodeURIComponent(oldTagName)}`,
+					{
+						method: 'PUT',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						credentials: 'include',
+						body: JSON.stringify(apiUpdates)
+					}
+				);
+
+				if (!response.ok) {
+					throw new Error(`Failed to update tag: ${response.status}`);
+				}
+
+				// Update local state (keep color with # for frontend)
+				update((state) => ({
+					...state,
+					tags: state.tags.map((t) => {
+						if (t.tag === oldTagName) {
+							return {
+								...t,
+								tag: updates.tag ?? t.tag,
+								color: updates.color ?? t.color
+							};
+						}
+						return t;
+					})
+				}));
+
+				return true;
+			} catch (e) {
+				console.error('Failed to update tag:', e);
 				return false;
 			}
 		},

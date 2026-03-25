@@ -6,6 +6,7 @@
 	import { api, ApiClientError } from '$lib/api/client';
 	import { ui } from '$lib/stores/ui';
 	import { tags } from '$lib/stores/tags';
+	import { generateTagColor } from '$lib/utils/color';
 	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
 	import CapabilityTree from '$lib/components/capabilities/CapabilityTree.svelte';
 	import RestrictionsEditor from '$lib/components/restrictions/RestrictionsEditor.svelte';
@@ -81,7 +82,8 @@
 	});
 
 	function getTagColor(tagName: string): string {
-		return tagColors.get(tagName) ?? '';
+		// Use color from user's tags store if available, otherwise generate from tag name hash
+		return tagColors.get(tagName) ?? generateTagColor(tagName);
 	}
 
 	async function handleApprove() {
