@@ -170,10 +170,10 @@
 				<i class="fas fa-download me-1"></i>
 				Download ICS
 			</a>
-			<button class="btn btn-outline-secondary" onclick={() => window.history.back()}>
+			<a href="/#calendars" class="btn btn-outline-secondary">
 				<i class="fas fa-arrow-left me-1"></i>
 				Back
-			</button>
+			</a>
 		</div>
 	</div>
 
