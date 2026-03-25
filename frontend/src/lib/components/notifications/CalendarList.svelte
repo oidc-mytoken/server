@@ -558,7 +558,7 @@
 
 	code {
 		font-size: 0.8em;
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 		padding: 0.2em 0.4em;
 		border-radius: 0.25rem;
 	}

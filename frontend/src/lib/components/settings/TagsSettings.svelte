@@ -395,7 +395,7 @@
 
 <style>
 	.card-header {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 	}
 
 	.form-control-color {
@@ -424,8 +424,8 @@
 	}
 
 	.color-preset.active {
-		border-color: #000;
-		box-shadow: 0 0 0 2px rgba(0,0,0,0.2);
+		border-color: var(--bs-body-color);
+		box-shadow: 0 0 0 2px rgba(var(--bs-body-color-rgb), 0.2);
 	}
 
 	.tags-list {
@@ -437,7 +437,7 @@
 	}
 
 	.tag-item:hover {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 	}
 
 	.tag-item:last-child {

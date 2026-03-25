@@ -513,7 +513,7 @@
 	.capabilities-container {
 		max-height: 400px;
 		overflow-y: auto;
-		border: 1px solid #dee2e6;
+		border: 1px solid var(--bs-border-color);
 		border-radius: 0.375rem;
 	}
 

@@ -184,10 +184,10 @@
 
 <style>
 	.nav-pills .nav-link {
-		color: #6c757d;
+		color: var(--bs-secondary-color);
 	}
 
 	.nav-pills .nav-link.active {
-		background-color: #df691a;
+		background-color: var(--mytoken-primary);
 	}
 </style>

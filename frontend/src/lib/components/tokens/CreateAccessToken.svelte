@@ -325,7 +325,7 @@
 
 <style>
 	.token-display {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 		padding: 1rem;
 		border-radius: 0.375rem;
 		max-height: 200px;
@@ -342,7 +342,7 @@
 	}
 
 	.scope-list {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 	}
 
 	.scope-list table {
@@ -355,7 +355,7 @@
 	}
 
 	.scope-row:hover {
-		background-color: #e9ecef !important;
+		background-color: var(--bs-secondary-bg) !important;
 	}
 
 	.scope-list tr:last-child td {

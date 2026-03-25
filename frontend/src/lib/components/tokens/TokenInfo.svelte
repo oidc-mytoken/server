@@ -1176,24 +1176,24 @@
 
 <style>
 	.nav-tabs .nav-link {
-		color: #6c757d;
+		color: var(--bs-secondary-color);
 		border: none;
 		border-bottom: 2px solid transparent;
 	}
 
 	.nav-tabs .nav-link:hover {
-		color: #df691a;
-		border-bottom-color: #dee2e6;
+		color: var(--mytoken-primary);
+		border-bottom-color: var(--bs-border-color);
 	}
 
 	.nav-tabs .nav-link.active {
-		color: #df691a;
+		color: var(--mytoken-primary);
 		background: transparent;
-		border-bottom: 2px solid #df691a;
+		border-bottom: 2px solid var(--mytoken-primary);
 	}
 
 	.card-header {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 		font-weight: 500;
 	}
 
@@ -1202,8 +1202,8 @@
 	}
 
 	.json-output {
-		background-color: #1e1e1e;
-		color: #d4d4d4;
+		background-color: var(--bs-dark);
+		color: var(--bs-light);
 		padding: 1rem;
 		margin: 0;
 		border-radius: 0 0 0.375rem 0.375rem;
@@ -1225,7 +1225,7 @@
 
 	.token-name-unnamed {
 		font-style: italic;
-		color: #6c757d;
+		color: var(--bs-secondary-color);
 	}
 
 	.token-fold {

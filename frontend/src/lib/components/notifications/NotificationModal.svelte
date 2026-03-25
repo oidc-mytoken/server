@@ -758,19 +758,19 @@
 	}
 
 	.notification-classes-list {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 	}
 
 	.nav-pills .nav-link {
-		color: #6c757d;
+		color: var(--bs-secondary-color);
 	}
 
 	.nav-pills .nav-link.active {
-		background-color: #df691a;
+		background-color: var(--mytoken-primary);
 	}
 
 	.subscription-content {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 	}
 
 	.selected-tags {
@@ -778,7 +778,7 @@
 		flex-wrap: wrap;
 		gap: 0.25rem;
 		padding: 0.5rem;
-		background-color: white;
+		background-color: var(--bs-body-bg);
 		border-radius: 0.375rem;
 		margin-bottom: 0.5rem;
 	}
@@ -794,7 +794,7 @@
 	.token-list-container {
 		max-height: 300px;
 		overflow-y: auto;
-		background-color: white;
+		background-color: var(--bs-body-bg);
 		border-radius: 0.375rem;
 	}
 
@@ -814,7 +814,7 @@
 
 	.token-name-unnamed {
 		font-style: italic;
-		color: #6c757d;
+		color: var(--bs-secondary-color);
 	}
 
 	.token-fold {
@@ -822,10 +822,10 @@
 	}
 
 	.token-fold:hover {
-		background-color: rgba(0, 0, 0, 0.05);
+		background-color: rgba(var(--bs-body-color-rgb), 0.05);
 	}
 
 	.table-active {
-		background-color: rgba(223, 105, 26, 0.1) !important;
+		background-color: rgba(var(--mytoken-primary-rgb), 0.1) !important;
 	}
 </style>

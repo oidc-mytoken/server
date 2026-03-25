@@ -258,11 +258,11 @@
 	.expand-btn {
 		width: 1.5rem;
 		text-decoration: none;
-		color: #6c757d;
+		color: var(--bs-secondary-color);
 	}
 
 	.expand-btn:hover {
-		color: #df691a;
+		color: var(--mytoken-primary);
 	}
 
 	.expand-placeholder {
@@ -272,7 +272,7 @@
 
 	.children-list {
 		margin-left: 0.5rem;
-		border-left: 2px solid #e9ecef;
+		border-left: 2px solid var(--bs-border-color);
 	}
 
 	.form-check-label {
@@ -300,7 +300,7 @@
 		cursor: pointer;
 		padding: 2px 6px !important;
 		border-radius: 4px;
-		background-color: #e9ecef;
+		background-color: var(--bs-secondary-bg);
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -309,12 +309,12 @@
 	}
 	
 	.rw-toggle:hover {
-		background-color: #dee2e6;
+		background-color: var(--bs-border-color);
 	}
 	
 	.rw-toggle i {
 		font-size: 0.75rem;
-		color: #333;
+		color: var(--bs-body-color);
 	}
 
 	.rw-indicator {
@@ -323,7 +323,7 @@
 		justify-content: center;
 		padding: 2px 6px;
 		border-radius: 4px;
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 		line-height: 1;
 	}
 

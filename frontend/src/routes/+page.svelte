@@ -249,19 +249,19 @@
 
 <style>
 	.nav-tabs .nav-link {
-		color: #6c757d;
+		color: var(--bs-secondary-color);
 		border: none;
 		border-bottom: 2px solid transparent;
 	}
 
 	.nav-tabs .nav-link:hover {
-		color: #df691a;
-		border-bottom-color: #dee2e6;
+		color: var(--mytoken-primary);
+		border-bottom-color: var(--bs-border-color);
 	}
 
 	.nav-tabs .nav-link.active {
-		color: #df691a;
+		color: var(--mytoken-primary);
 		background: transparent;
-		border-bottom: 2px solid #df691a;
+		border-bottom: 2px solid var(--mytoken-primary);
 	}
 </style>

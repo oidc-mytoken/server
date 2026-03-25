@@ -783,11 +783,11 @@
 	}
 
 	.grant-header.expandable:hover {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 	}
 
 	.expand-icon {
-		color: #6c757d;
+		color: var(--bs-secondary-color);
 		padding: 0.25rem 0.5rem;
 	}
 
@@ -806,16 +806,16 @@
 	}
 
 	.form-switch .form-check-input:checked {
-		background-color: #28a745;
-		border-color: #28a745;
+		background-color: var(--bs-success);
+		border-color: var(--bs-success);
 	}
 
 	.accordion-body {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 	}
 
 	.advanced-options {
-		background-color: #fff;
+		background-color: var(--bs-body-bg);
 	}
 
 	textarea.form-control {

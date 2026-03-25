@@ -150,7 +150,7 @@
 
 <style>
 	.capability-summary {
-		border-bottom: 1px solid #dee2e6;
+		border-bottom: 1px solid var(--bs-border-color);
 		margin-bottom: 0.5rem;
 	}
 

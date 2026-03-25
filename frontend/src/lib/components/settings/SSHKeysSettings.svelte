@@ -307,7 +307,7 @@
 
 <style>
 	.card-header {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 	}
 
 	textarea.form-control {
@@ -315,7 +315,7 @@
 	}
 
 	.advanced-options {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 	}
 
 	.list-group-item {

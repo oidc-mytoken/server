@@ -783,7 +783,7 @@
 
 <style>
 	.token-display {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 		padding: 1rem;
 		border-radius: 0.375rem;
 		max-height: 200px;

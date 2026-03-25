@@ -70,7 +70,7 @@
 	}
 
 	.content-inner {
-		border-left: 2px solid #dee2e6;
+		border-left: 2px solid var(--bs-border-color);
 		padding-left: 1rem;
 		margin-left: 0.5rem;
 	}

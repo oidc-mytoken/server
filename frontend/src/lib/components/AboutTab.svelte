@@ -138,16 +138,16 @@
 
 	.feature-list .btn-link {
 		text-decoration: none;
-		color: #df691a;
+		color: var(--mytoken-primary);
 		text-align: left;
 	}
 
 	.feature-list .btn-link:hover {
 		text-decoration: underline;
-		color: #be5a16;
+		color: var(--mytoken-primary-hover);
 	}
 
 	.card {
-		border: 1px solid #dee2e6;
+		border: 1px solid var(--bs-border-color);
 	}
 </style>

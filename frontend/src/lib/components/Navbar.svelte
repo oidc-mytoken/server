@@ -3,6 +3,7 @@
 	import { providers } from '$lib/stores/discovery';
 	import { api, ApiClientError } from '$lib/api/client';
 	import { ui } from '$lib/stores/ui';
+	import ThemeToggle from './ThemeToggle.svelte';
 
 	export let instanceUrl: string = '';
 	export let empty: boolean = false;
@@ -89,8 +90,11 @@
 					</li>
 				</ul>
 
-				<ul class="navbar-nav">
-					{#if $isLoggedIn}
+			<ul class="navbar-nav align-items-center">
+				<li class="nav-item">
+					<ThemeToggle />
+				</li>
+				{#if $isLoggedIn}
 						<li class="nav-item">
 							<button class="btn btn-outline-light" on:click={handleLogout}>
 								<i class="fas fa-sign-out-alt me-1"></i>

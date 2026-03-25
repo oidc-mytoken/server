@@ -525,7 +525,7 @@
 	}
 
 	.sortable-header:hover {
-		color: #df691a;
+		color: var(--mytoken-primary);
 	}
 
 	.sortable-header i {
@@ -536,12 +536,12 @@
 	.sortable-header i.fa-sort-up,
 	.sortable-header i.fa-sort-down {
 		opacity: 1;
-		color: #df691a;
+		color: var(--mytoken-primary);
 	}
 
 	.token-name-unnamed {
 		font-style: italic;
-		color: #6c757d;
+		color: var(--bs-secondary-color);
 	}
 
 	.token-fold {
@@ -549,7 +549,7 @@
 	}
 
 	.token-fold:hover {
-		background-color: rgba(0, 0, 0, 0.02);
+		background-color: rgba(var(--bs-body-color-rgb), 0.02);
 	}
 
 	.btn-group-sm .btn {

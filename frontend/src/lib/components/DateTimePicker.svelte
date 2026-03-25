@@ -82,21 +82,67 @@
 		font-family: inherit;
 		box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 		border-radius: 0.375rem;
+		background: var(--bs-body-bg);
+		color: var(--bs-body-color);
 	}
 
 	:global(.flatpickr-day.selected),
 	:global(.flatpickr-day.selected:hover) {
-		background: #df691a;
-		border-color: #df691a;
+		background: var(--mytoken-primary);
+		border-color: var(--mytoken-primary);
 	}
 
 	:global(.flatpickr-day:hover) {
-		background: #f8f9fa;
-		border-color: #dee2e6;
+		background: var(--bs-tertiary-bg);
+		border-color: var(--bs-border-color);
 	}
 
 	:global(.flatpickr-time input:hover),
 	:global(.flatpickr-time input:focus) {
-		background: #f8f9fa;
+		background: var(--bs-tertiary-bg);
+	}
+
+	/* Dark mode specific styles for flatpickr */
+	:global([data-bs-theme='dark'] .flatpickr-calendar) {
+		background: var(--bs-body-bg);
+		border-color: var(--bs-border-color);
+	}
+
+	:global([data-bs-theme='dark'] .flatpickr-months .flatpickr-month),
+	:global([data-bs-theme='dark'] .flatpickr-current-month .flatpickr-monthDropdown-months),
+	:global([data-bs-theme='dark'] .flatpickr-weekdays),
+	:global([data-bs-theme='dark'] span.flatpickr-weekday) {
+		background: var(--bs-body-bg);
+		color: var(--bs-body-color);
+	}
+
+	:global([data-bs-theme='dark'] .flatpickr-day) {
+		color: var(--bs-body-color);
+	}
+
+	:global([data-bs-theme='dark'] .flatpickr-day.prevMonthDay),
+	:global([data-bs-theme='dark'] .flatpickr-day.nextMonthDay) {
+		color: var(--bs-secondary-color);
+	}
+
+	:global([data-bs-theme='dark'] .flatpickr-day.today) {
+		border-color: var(--mytoken-primary);
+	}
+
+	:global([data-bs-theme='dark'] .numInputWrapper span) {
+		border-color: var(--bs-border-color);
+	}
+
+	:global([data-bs-theme='dark'] .numInputWrapper span:hover) {
+		background: var(--bs-tertiary-bg);
+	}
+
+	:global([data-bs-theme='dark'] .flatpickr-time input) {
+		color: var(--bs-body-color);
+	}
+
+	:global([data-bs-theme='dark'] .flatpickr-time .flatpickr-time-separator),
+	:global([data-bs-theme='dark'] .flatpickr-time .flatpickr-am-pm) {
+		color: var(--bs-body-color);
 	}
 </style>

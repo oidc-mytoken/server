@@ -532,11 +532,11 @@
 
 <style>
 	.restriction-clause {
-		border: 1px solid #dee2e6;
+		border: 1px solid var(--bs-border-color);
 	}
 
 	.card-header {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 	}
 
 	.tags-container {
@@ -553,7 +553,7 @@
 	}
 
 	.scope-list {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 	}
 
 	.scope-list table {
@@ -566,7 +566,7 @@
 	}
 
 	.scope-row:hover:not(.readonly) {
-		background-color: #e9ecef !important;
+		background-color: var(--bs-secondary-bg) !important;
 	}
 
 	.scope-row.readonly {

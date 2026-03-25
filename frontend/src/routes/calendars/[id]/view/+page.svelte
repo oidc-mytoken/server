@@ -211,18 +211,18 @@
 	}
 
 	:global(.fc-theme-bootstrap5 .fc-button-primary) {
-		background-color: #df691a;
-		border-color: #df691a;
+		background-color: var(--mytoken-primary);
+		border-color: var(--mytoken-primary);
 	}
 
 	:global(.fc-theme-bootstrap5 .fc-button-primary:hover) {
-		background-color: #c73500;
-		border-color: #c73500;
+		background-color: var(--mytoken-primary-hover);
+		border-color: var(--mytoken-primary-hover);
 	}
 
 	:global(.fc-theme-bootstrap5 .fc-button-primary:not(:disabled).fc-button-active) {
-		background-color: #c73500;
-		border-color: #c73500;
+		background-color: var(--mytoken-primary-hover);
+		border-color: var(--mytoken-primary-hover);
 	}
 
 	:global(.fc-event) {

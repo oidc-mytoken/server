@@ -327,7 +327,7 @@
 	}
 
 	.card-header {
-		background-color: #df691a;
+		background-color: var(--mytoken-primary);
 		color: white;
 	}
 

@@ -296,16 +296,16 @@
 
 <style>
 	.nav-pills .nav-link {
-		color: #6c757d;
+		color: var(--bs-secondary-color);
 	}
 
 	.nav-pills .nav-link.active {
-		background-color: #df691a;
+		background-color: var(--mytoken-primary);
 	}
 
 	.transfer-code-display {
 		padding: 1.5rem;
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 		border-radius: 0.5rem;
 	}
 
@@ -315,7 +315,7 @@
 	}
 
 	.token-display {
-		background-color: #f8f9fa;
+		background-color: var(--bs-tertiary-bg);
 		padding: 1rem;
 		border-radius: 0.375rem;
 		max-height: 200px;
