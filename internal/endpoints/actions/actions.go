@@ -73,6 +73,24 @@ func handleRecreate(ctx *fiber.Ctx, code string) (err error) {
 				}
 				req.Restrictions = restr
 			}
+			// Fetch and include tags
+			if data.MTID != "" {
+				tags, tagErr := actionrepo.GetTagsForMT(rlog, tx, data.MTID)
+				if tagErr != nil {
+					rlog.WithError(tagErr).Warn("Failed to fetch tags for token recreation")
+					// Continue without tags - not critical
+				} else if len(tags) > 0 {
+					// Convert MTTagInfo to CreateMytokenTag
+					createTags := make([]api.CreateMytokenTag, len(tags))
+					for i, t := range tags {
+						createTags[i] = api.CreateMytokenTag{
+							Tag:             t.Tag,
+							IncludeChildren: t.IncludeChildren,
+						}
+					}
+					req.Tags = createTags
+				}
+			}
 			j, err := json.Marshal(req)
 			if err != nil {
 				return err

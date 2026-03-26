@@ -116,7 +116,10 @@
 
 	function applyTemplate(template: RestrictionTemplate) {
 		// Deep clone the template restrictions
-		restrictions = JSON.parse(JSON.stringify(template.restrictions));
+		// Mutate the existing array to ensure the change propagates to the parent
+		restrictions.length = 0;
+		restrictions.push(...JSON.parse(JSON.stringify(template.restrictions)));
+		restrictions = restrictions; // Trigger Svelte reactivity
 	}
 
 	function handleTemplateChange(event: Event) {

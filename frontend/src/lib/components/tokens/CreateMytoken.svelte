@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, tick, createEventDispatcher } from 'svelte';
-	import type { Restriction, Rotation, WebCapability, CapabilityTemplate, RestrictionTemplate, RotationTemplate, MytokenProfile, CreateMytokenTag, CreateMytokenRequest } from '$lib/types';
+	import type { Restriction, Rotation, WebCapability, CapabilityTemplate, RestrictionTemplate, RotationTemplate, MytokenProfile, CreateMytokenTag, CreateMytokenRequest, InitialMytokenRequest } from '$lib/types';
 	import { api, ApiClientError } from '$lib/api/client';
 	import { discovery, providers } from '$lib/stores/discovery';
 	import { isLoggedIn, auth } from '$lib/stores/auth';
@@ -15,6 +15,9 @@
 	import LoadingSpinner from '../LoadingSpinner.svelte';
 
 	const dispatch = createEventDispatcher<{ created: { token: string; tokenType: string } }>();
+
+	// Props
+	export let initialRequest: InitialMytokenRequest | null = null;
 
 	// Form state
 	let selectedProvider = '';
@@ -59,6 +62,17 @@
 	}
 	const DEFAULT_PROFILE_NAME = 'web-default';
 	let defaultProfileApplied = false;
+
+	/**
+	 * Wait for providers to be loaded from discovery
+	 */
+	async function waitForProviders(maxWaitMs: number = 5000): Promise<boolean> {
+		const startTime = Date.now();
+		while ($providers.length === 0 && Date.now() - startTime < maxWaitMs) {
+			await new Promise(resolve => setTimeout(resolve, 50));
+		}
+		return $providers.length > 0;
+	}
 
 	// Initialize capabilities and templates
 	onMount(async () => {
@@ -121,14 +135,40 @@
 		} finally {
 			loadingData = false;
 			
-			// Apply default profile after data is loaded
-			await tick(); // Wait for DOM to update so capabilityTreeRef is available
-			applyDefaultProfile();
-		}
-		
-		// Load tags if user is logged in and tags not yet loaded
-		if ($isLoggedIn && $discovery.data?.usersettings_endpoint && !$tags.loaded) {
-			await tags.fetch($discovery.data.usersettings_endpoint);
+			// Wait for DOM to update so capabilityTreeRef is available
+			await tick();
+			// Wait again to ensure child component's reactive statements have processed
+			await tick();
+			
+			// Load tags before applying initial request so tag colors are available
+			// Wait for discovery if not yet loaded (might still be loading from layout)
+			if ($isLoggedIn && !$tags.loaded) {
+				// Wait for discovery endpoint to be available
+				let waitAttempts = 0;
+				while (!$discovery.data?.usersettings_endpoint && waitAttempts < 50) {
+					await new Promise(resolve => setTimeout(resolve, 50));
+					waitAttempts++;
+				}
+				
+				if ($discovery.data?.usersettings_endpoint) {
+					await tags.fetch($discovery.data.usersettings_endpoint);
+					// Wait for store update to propagate
+					await tick();
+				}
+			}
+			
+			// Apply initial request if provided (from URL parameter), otherwise apply default profile
+			if (initialRequest) {
+				// Wait for providers to be loaded before validating issuer
+				await waitForProviders();
+				const success = applyInitialRequest(initialRequest);
+				if (!success) {
+					// Validation failed (e.g., invalid issuer), apply default profile instead
+					applyDefaultProfile();
+				}
+			} else {
+				applyDefaultProfile();
+			}
 		}
 		
 		// Auto-select current session provider if logged in
@@ -146,6 +186,68 @@
 			applyProfile(defaultProfile);
 			defaultProfileApplied = true;
 		}
+	}
+
+	/**
+	 * Apply initial request data from URL parameter to populate form
+	 * Returns true if successful, false if there was an error (e.g., invalid issuer)
+	 */
+	function applyInitialRequest(request: InitialMytokenRequest): boolean {
+		// Validate oidc_issuer if provided
+		if (request.oidc_issuer) {
+			// Normalize URLs for comparison (remove trailing slash)
+			const normalizeUrl = (url: string) => url.replace(/\/+$/, '');
+			const requestIssuer = normalizeUrl(request.oidc_issuer);
+			const providerExists = $providers.some(p => normalizeUrl(p.issuer) === requestIssuer);
+			if (!providerExists) {
+				ui.showError(
+					'Unsupported OpenID Provider',
+					`The OpenID Provider "${request.oidc_issuer}" is not supported by this mytoken instance.`
+				);
+				return false;
+			}
+		}
+
+		// Clear selected profile since we're using custom values
+		selectedProfile = '';
+		defaultProfileApplied = true; // Prevent default profile from being applied
+		
+		if (request.name) {
+			tokenName = request.name;
+		}
+		
+		if (request.oidc_issuer) {
+			selectedProvider = request.oidc_issuer;
+		}
+		
+		if (request.response_type) {
+			tokenType = request.response_type;
+		}
+		
+		if (request.capabilities && request.capabilities.length > 0 && capabilityTreeRef) {
+			const unknownCaps = capabilityTreeRef.setCapabilities(request.capabilities);
+			if (unknownCaps.length > 0) {
+				ui.warning(`Unknown capabilities ignored: ${unknownCaps.join(', ')}`);
+			}
+		}
+		
+		if (request.restrictions) {
+			restrictions = JSON.parse(JSON.stringify(request.restrictions));
+		}
+		
+		if (request.rotation) {
+			rotation = { ...request.rotation };
+		}
+		
+		if (request.tags) {
+			selectedTags = request.tags.map(t => 
+				typeof t === 'string' 
+					? { tag: t, include_children: false }
+					: { tag: t.tag, include_children: t.include_children ?? false }
+			);
+		}
+
+		return true;
 	}
 
 	function applyProfile(profile: MytokenProfile) {
@@ -332,8 +434,10 @@
 		rotation = {};
 	}
 
-	function getTagColor(tagName: string): string {
-		const tagData = $tags.tags.find(t => t.tag === tagName);
+	// Reactive lookup of tag colors - returns color for a given tag name
+	// Using $tags.tags directly ensures reactivity when tags are loaded
+	function getTagColor(tagName: string, tagsArray: typeof $tags.tags): string {
+		const tagData = tagsArray.find(t => t.tag === tagName);
 		return tagData?.color ?? '';
 	}
 
@@ -589,10 +693,10 @@
 					
 					{#if selectedTags.length > 0}
 						<div class="selected-tags mb-2">
-							{#each selectedTags as tagInfo}
+							{#each selectedTags as tagInfo (tagInfo.tag)}
 								<TagPill 
 									tag={tagInfo.tag} 
-									color={getTagColor(tagInfo.tag)}
+									color={getTagColor(tagInfo.tag, $tags.tags)}
 									includeChildren={tagInfo.include_children}
 									removable
 									onRemove={() => toggleTag(tagInfo.tag)}

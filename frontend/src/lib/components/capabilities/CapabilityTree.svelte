@@ -24,12 +24,35 @@
 	// Track if we've done initial sync to avoid re-syncing on every change
 	let initialSyncDone = false;
 	
+	// Store pending capabilities to apply when normalizedCapabilities becomes available
+	let pendingCapabilities: string[] | null = null;
+	
 	// Initialize enabled state from selectedCapabilities (only once on mount/initial load)
 	$: {
 		if (!initialSyncDone && selectedCapabilities.length > 0 && normalizedCapabilities.length > 0) {
 			syncEnabledState(normalizedCapabilities, selectedCapabilities);
 			initialSyncDone = true;
 		}
+	}
+	
+	// Apply pending capabilities when normalizedCapabilities becomes available
+	$: {
+		if (pendingCapabilities !== null && normalizedCapabilities.length > 0) {
+			const caps = pendingCapabilities;
+			pendingCapabilities = null;
+			applyPendingCapabilities(caps);
+		}
+	}
+	
+	function applyPendingCapabilities(capNames: string[]) {
+		resetCapabilities(normalizedCapabilities);
+		for (const capName of capNames) {
+			const isReadOnly = capName.startsWith(READ_PREFIX);
+			const actualName = isReadOnly ? capName.substring(READ_PREFIX.length) : capName;
+			enableCapability(normalizedCapabilities, actualName, isReadOnly);
+		}
+		normalizedCapabilities = [...normalizedCapabilities];
+		emitChange();
 	}
 
 	$: enabledCount = countEnabled(normalizedCapabilities);
@@ -298,20 +321,44 @@
 		return filterRedundantCapabilities(enabled);
 	}
 
-	export function setEnabledCapabilities(capNames: string[]) {
+	/**
+	 * Set enabled capabilities by name.
+	 * Returns array of capability names that were not found.
+	 */
+	export function setEnabledCapabilities(capNames: string[]): string[] {
+		// If normalizedCapabilities is not yet available, store for later
+		if (normalizedCapabilities.length === 0) {
+			pendingCapabilities = capNames;
+			return [];
+		}
+		
 		// Reset all capabilities first
 		resetCapabilities(normalizedCapabilities);
+		
+		const unknownCapabilities: string[] = [];
 		
 		// Enable the specified capabilities
 		for (const capName of capNames) {
 			const isReadOnly = capName.startsWith(READ_PREFIX);
 			const actualName = isReadOnly ? capName.substring(READ_PREFIX.length) : capName;
-			enableCapability(normalizedCapabilities, actualName, isReadOnly);
+			const found = enableCapability(normalizedCapabilities, actualName, isReadOnly);
+			if (!found) {
+				unknownCapabilities.push(capName);
+			}
 		}
 		
 		// Force reactivity and emit change
 		normalizedCapabilities = [...normalizedCapabilities];
 		emitChange();
+		
+		return unknownCapabilities;
+	}
+
+	/**
+	 * Alias for setEnabledCapabilities for convenience.
+	 */
+	export function setCapabilities(capNames: string[]): string[] {
+		return setEnabledCapabilities(capNames);
 	}
 
 	function collectEnabled(caps: Capability[], enabled: string[]) {

@@ -395,3 +395,17 @@ export interface PollingResponse {
 	error?: string;
 	error_description?: string;
 }
+
+/**
+ * Request data structure for pre-populating Create Mytoken form via URL parameter (?r=<base64>)
+ * Used by token recreation and external tools
+ */
+export interface InitialMytokenRequest {
+    name?: string;
+    oidc_issuer?: string;
+    response_type?: 'token' | 'short_token' | 'auto';
+    capabilities?: string[];
+    restrictions?: Restriction[];
+    rotation?: Rotation;
+    tags?: (string | { tag: string; include_children?: boolean })[];
+}

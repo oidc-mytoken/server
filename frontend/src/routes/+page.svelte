@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { isLoggedIn } from '$lib/stores/auth';
 	import { discovery } from '$lib/stores/discovery';
+	import type { InitialMytokenRequest } from '$lib/types';
 	import AboutTab from '$lib/components/AboutTab.svelte';
 	import CreateMytoken from '$lib/components/tokens/CreateMytoken.svelte';
 	import CreateAccessToken from '$lib/components/tokens/CreateAccessToken.svelte';
@@ -22,6 +23,10 @@
 	// Notifications subtab (notifications or calendars)
 	let notificationsSubtab: 'notifications' | 'calendars' = 'notifications';
 
+	// Initial mytoken request from URL parameter (?r=<base64>)
+	let initialMytokenRequest: InitialMytokenRequest | null = null;
+	let requestParamError: string | null = null;
+
 	// Check if notifications are enabled
 	$: notificationsEnabled = !!$discovery.data?.notifications_endpoint;
 
@@ -31,8 +36,31 @@
 	// Tabs only available when logged in
 	const authTabs = ['list', 'notifications'];
 
-	// Handle URL hash for tab navigation
+	// Handle URL hash for tab navigation and ?r= parameter for Create Mytoken
 	onMount(() => {
+		// Parse ?r= parameter for Create Mytoken pre-population
+		const urlParams = new URLSearchParams(window.location.search);
+		const requestParam = urlParams.get('r');
+		
+		if (requestParam) {
+			try {
+				const decoded = atob(requestParam);
+				const parsed = JSON.parse(decoded) as InitialMytokenRequest;
+				
+				// Pass to CreateMytoken - validation happens there after providers are loaded
+				initialMytokenRequest = parsed;
+				activeTab = 'mt';
+			} catch (e) {
+				console.error('Failed to parse request parameter:', e);
+				requestParamError = 'Invalid request parameter format.';
+			}
+			
+			// Clean URL (remove ?r= parameter, keep hash)
+			const hash = window.location.hash;
+			window.history.replaceState(null, '', window.location.pathname + (hash || '#mt'));
+		}
+		
+		// Handle URL hash for tab navigation
 		const hash = window.location.hash.slice(1);
 		if (hash) {
 			// Handle #calendars as a shortcut to notifications tab with calendars subtab
@@ -213,6 +241,15 @@
 		{/if}
 	</ul>
 
+	<!-- Error alert for invalid request parameter -->
+	{#if requestParamError}
+		<div class="alert alert-danger alert-dismissible fade show" role="alert">
+			<i class="fas fa-exclamation-circle me-2"></i>
+			{requestParamError}
+			<button type="button" class="btn-close" aria-label="Close" on:click={() => requestParamError = null}></button>
+		</div>
+	{/if}
+
 	<!-- Tab content -->
 	<div class="tab-content">
 		{#if activeTab === 'about'}
@@ -221,7 +258,10 @@
 			</div>
 		{:else if activeTab === 'mt'}
 			<div class="tab-pane active" role="tabpanel">
-				<CreateMytoken on:created={handleTokenCreated} />
+				<CreateMytoken 
+					initialRequest={initialMytokenRequest}
+					on:created={handleTokenCreated} 
+				/>
 			</div>
 		{:else if activeTab === 'at'}
 			<div class="tab-pane active" role="tabpanel">

@@ -31,8 +31,9 @@
 		return Math.floor(d.getTime() / 1000);
 	}
 
-	let nbfDateTimeStr = timestampToDateTimeString(restriction.nbf);
-	let expDateTimeStr = timestampToDateTimeString(restriction.exp);
+	// Use reactive statements to update datetime strings when restriction changes (e.g., from template)
+	$: nbfDateTimeStr = timestampToDateTimeString(restriction.nbf);
+	$: expDateTimeStr = timestampToDateTimeString(restriction.exp);
 
 	// Location restriction type: 'hosts', 'geoip_allow', 'geoip_disallow'
 	let locationRestrictionType: 'hosts' | 'geoip_allow' | 'geoip_disallow' = 'geoip_allow';

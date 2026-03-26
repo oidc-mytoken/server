@@ -579,3 +579,11 @@ INSERT IGNORE INTO Events (event)
     VALUES ('calendar_updated');
 INSERT IGNORE INTO Events (event)
     VALUES ('notification_tags_updated');
+
+-- Update ActionCodes_GetRecreateData to include MT_id for fetching tags
+CREATE OR REPLACE PROCEDURE ActionCodes_GetRecreateData(IN CODE_ VARCHAR(128))
+BEGIN
+    SELECT MT_id, name, capabilities, restrictions, rotation, token_created AS created, issuer
+        FROM MytokenRecreateCodes
+        WHERE code = CODE_;
+END;;
