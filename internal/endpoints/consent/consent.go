@@ -23,9 +23,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
-	"github.com/oidc-mytoken/server/internal/utils/templating"
 
-	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
@@ -34,40 +32,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
 	"github.com/oidc-mytoken/server/internal/utils"
 )
-
-// handleConsent displays a consent page
-func handleConsent(ctx *fiber.Ctx, info *pkg2.OIDCFlowRequest, includeConsentCallbacks bool) error {
-	c := info.Capabilities
-	binding := map[string]interface{}{
-		templating.MustacheKeyConsent:             true,
-		templating.MustacheKeyConsentSend:         includeConsentCallbacks,
-		templating.MustacheKeyEmptyNavbar:         true,
-		templating.MustacheKeyRestrictionsGUI:     true,
-		templating.MustacheKeyCollapse:            templating.Collapsable{All: true},
-		templating.MustacheKeyRestrictions:        webentities.WebRestrictions{Restrictions: info.Restrictions.Restrictions},
-		templating.MustacheKeyCapabilities:        webentities.AllWebCapabilities(),
-		templating.MustacheKeyCheckedCapabilities: c.Strings(),
-		templating.MustacheKeyIss:                 info.Issuer,
-
-		templating.MustacheKeyTokenName:   info.Name,
-		templating.MustacheKeyRotation:    info.Rotation,
-		templating.MustacheKeyApplication: info.ApplicationName,
-		templating.MustacheKeyTags:        info.Tags,
-	}
-	var scopes []string
-	if p := provider2.GetProvider(info.Issuer); p != nil {
-		scopes = p.Scopes()
-	}
-	binding[templating.MustacheKeySupportedScopes] = strings.Join(scopes, " ")
-	if !includeConsentCallbacks {
-		iss := config.Get().IssuerURL
-		if iss[len(iss)-1] == '/' {
-			iss = iss[:len(iss)-1]
-		}
-		binding[templating.MustacheKeyInstanceURL] = iss
-	}
-	return ctx.Render("sites/consent", binding, "layouts/main")
-}
 
 func getAuthInfoFromConsentCodeStr(rlog log.Ext1FieldLogger, code string) (
 	*authcodeinforepo.AuthFlowInfoOut, *state.State, error,
@@ -85,7 +49,7 @@ func getAuthInfoFromConsentCodeStr(rlog log.Ext1FieldLogger, code string) (
 	return authInfo, oState, err
 }
 
-// HandleCreateConsent returns a consent page for the posted parameters
+// HandleCreateConsent returns consent data as JSON for the posted parameters
 func HandleCreateConsent(ctx *fiber.Ctx) error {
 	req := pkg2.NewMytokenRequest()
 	if err := json.Unmarshal(ctx.Body(), &req); err != nil {
@@ -106,7 +70,7 @@ func HandleCreateConsent(ctx *fiber.Ctx) error {
 		},
 	}
 	info.Rotation = req.Rotation
-	return handleConsent(ctx, info, false)
+	return handleConsentJSON(ctx, info)
 }
 
 // ConsentInfoResponse is the JSON response for consent data
@@ -141,13 +105,13 @@ func HandleConsent(ctx *fiber.Ctx) error {
 		return handleConsentJSON(ctx, &(authInfo.AuthCodeFlowRequest.OIDCFlowRequest))
 	}
 
-	// If SPA is enabled, serve the SPA for HTML requests (let client-side routing handle it)
+	// Serve the SPA for HTML requests (let client-side routing handle it)
 	if SPAHandler != nil {
 		return SPAHandler(ctx)
 	}
 
-	// Fall back to Mustache template
-	return handleConsent(ctx, &(authInfo.AuthCodeFlowRequest.OIDCFlowRequest), true)
+	// If SPA is not available, return JSON
+	return handleConsentJSON(ctx, &(authInfo.AuthCodeFlowRequest.OIDCFlowRequest))
 }
 
 // HandleConsentAPI returns consent data as JSON for SPA API requests

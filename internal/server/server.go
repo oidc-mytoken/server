@@ -1,15 +1,11 @@
 package server
 
 import (
-	"embed"
 	"fmt"
-	"io/fs"
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/template/mustache/v2"
 	"github.com/oidc-mytoken/utils/utils"
 	log "github.com/sirupsen/logrus"
 
@@ -28,7 +24,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/server/paths"
 	"github.com/oidc-mytoken/server/internal/server/spa"
 	"github.com/oidc-mytoken/server/internal/server/ssh"
-	"github.com/oidc-mytoken/server/internal/utils/fileio"
 )
 
 var server *fiber.App
@@ -44,60 +39,25 @@ var serverConfig = fiber.Config{
 	Network: "tcp",
 }
 
-//go:embed web/sites web/layouts
-var _webFiles embed.FS
-var webFiles fs.FS
-
-//go:embed web/partials
-var _partials embed.FS
-var partials fs.FS
-
-func init() {
-	var err error
-	webFiles, err = fs.Sub(_webFiles, "web")
-	if err != nil {
-		log.WithError(err).Fatal()
-	}
-	partials, err = fs.Sub(_partials, "web/partials")
-	if err != nil {
-		log.WithError(err).Fatal()
-	}
-}
-
-func initTemplateEngine() {
-	overWriteDir := config.Get().Features.WebInterface.OverwriteDir
-	engine := mustache.NewFileSystemPartials(
-		fileio.NewLocalAndOtherSearcherFilesystem(overWriteDir, http.FS(webFiles)),
-		".mustache",
-		fileio.NewLocalAndOtherSearcherFilesystem(
-			fileio.JoinIfFirstNotEmpty(overWriteDir, "partials"), http.FS(partials),
-		),
-	)
-	serverConfig.Views = engine
-}
-
 // Init initializes the server
 func Init() {
-	useSPA := config.Get().Features.WebInterface.UseSPA && spa.Available
-	if useSPA {
-		log.Info("Using Svelte SPA for web interface")
-		// Set the SPA handler for consent page
-		consent.SPAHandler = spa.HandleSPAFallback()
-	} else {
-		initTemplateEngine()
+	if !spa.Available {
+		log.Fatal("SPA distribution not available. Please build the frontend first.")
 	}
+
+	log.Info("Using Svelte SPA for web interface")
+	// Set the SPA handler for consent page
+	consent.SPAHandler = spa.HandleSPAFallback()
 
 	serverConfig.ProxyHeader = config.Get().Server.ProxyHeader
 	server = fiber.New(serverConfig)
 	addMiddlewares(server)
 	addRoutes(server)
 
-	// Add SPA routes if using SPA
-	if useSPA {
-		spa.AddRoutes(server)
-	}
+	// Add SPA routes
+	spa.AddRoutes(server)
 
-	// Add fallback handler (404 for API, SPA fallback or 404 page for web)
+	// Add fallback handler (404 for API, SPA fallback for web)
 	server.Use(
 		func(ctx *fiber.Ctx) error {
 			path := ctx.Path()
@@ -113,23 +73,12 @@ func Init() {
 				}.Send(ctx)
 			}
 
-			// For HTML requests
+			// For HTML requests, serve the SPA fallback (index.html for client-side routing)
 			if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" {
-				// If using SPA, serve the SPA fallback (index.html for client-side routing)
-				if useSPA {
-					handler := spa.HandleSPAFallback()
-					if handler != nil {
-						return handler(ctx)
-					}
+				handler := spa.HandleSPAFallback()
+				if handler != nil {
+					return handler(ctx)
 				}
-
-				// Otherwise, render the 404 page using Mustache
-				ctx.Status(fiber.StatusNotFound)
-				return ctx.Render(
-					"sites/404", map[string]interface{}{
-						"empty-navbar": true,
-					}, "layouts/main",
-				)
 			}
 
 			// For non-HTML requests, return JSON error
@@ -145,13 +94,6 @@ func Init() {
 }
 
 func addRoutes(s fiber.Router) {
-	// Only add Mustache web routes if not using SPA
-	// SPA routes are handled by the fallback handler
-	useSPA := config.Get().Features.WebInterface.UseSPA && spa.Available
-	if !useSPA {
-		addWebRoutes(s)
-	}
-
 	generalPaths := paths.GetGeneralPaths()
 	s.Get(generalPaths.ConfigurationEndpoint, toFiberHandler(configuration.HandleConfiguration))
 	s.Get(paths.WellknownOpenIDConfiguration, toFiberHandler(configuration.HandleConfiguration))
@@ -166,41 +108,16 @@ func addRoutes(s fiber.Router) {
 	s.Post("/c/:consent_code", toFiberHandler(consent.HandleConsentPost))
 	s.Post("/c", consent.HandleCreateConsent)
 
-	// Native app callbacks
-	if useSPA {
-		spaFallback := spa.HandleSPAFallback()
-		s.Get("/native", spaFallback)
-		s.Get("/native/abort", spaFallback)
-	} else {
-		s.Get("/native", handleNativeCallback)
-		s.Get("/native/abort", handleNativeConsentAbortCallback)
-	}
-
-	// Privacy page - can be handled by SPA or Mustache
-	if !useSPA {
-		s.Get(generalPaths.Privacy, handlePrivacy)
-	}
+	// Native app callbacks - handled by SPA
+	spaFallback := spa.HandleSPAFallback()
+	s.Get("/native", spaFallback)
+	s.Get("/native/abort", spaFallback)
 
 	// Calendar ICS endpoint (always server-side)
 	s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id"), calendar.HandleGetICS)
 
-	// Calendar view and notification management - SPA handles these via client-side routing
-	if !useSPA {
-		s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id", "view"), handleViewCalendar)
-		s.Get(utils.CombineURLPath(generalPaths.NotificationManagementEndpoint, ":mc"), handleNotificationManagement)
-	}
-
 	s.Get(generalPaths.ActionsEndpoint, actions.HandleActions)
 	addAPIRoutes(s)
-}
-
-func addWebRoutes(s fiber.Router) {
-	generalPaths := paths.GetGeneralPaths()
-	s.Get("/", handleIndex)
-	s.Get("/home", handleHome)
-	s.Get("/settings", handleSettings)
-	s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id", "view"), handleViewCalendar)
-	s.Get(utils.CombineURLPath(generalPaths.NotificationManagementEndpoint, ":mc"), handleNotificationManagement)
 }
 
 func start(s *fiber.App) {

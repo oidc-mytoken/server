@@ -2,14 +2,12 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	fiberUtils "github.com/gofiber/fiber/v2/utils"
 	"github.com/oidc-mytoken/api/v0"
 
-	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/server/apipath"
 	"github.com/oidc-mytoken/server/internal/server/spa"
@@ -35,46 +33,21 @@ func handleError(ctx *fiber.Ctx, err error) error {
 	if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" && !strings.HasPrefix(
 		ctx.Path(), apipath.Prefix,
 	) {
-		return handleErrorHTML(ctx, code, msg)
+		return handleErrorHTML(ctx, code)
 	}
 	return handleErrorJSON(ctx, code, msg)
 
 }
 
-func handleErrorHTML(ctx *fiber.Ctx, code int, msg string) error {
-	// If SPA is enabled, serve the SPA and let client-side routing handle error display
-	if config.Get().Features.WebInterface.UseSPA && spa.Available {
-		handler := spa.HandleSPAFallback()
-		if handler != nil {
-			ctx.Status(code)
-			return handler(ctx)
-		}
-	}
-
-	// Fall back to Mustache templates
-	var err error
-	errorTemplateData := map[string]interface{}{
-		"empty-navbar": true,
-		"msg":          msg,
-	}
-	switch code {
-	case fiber.StatusNotFound,
-		fiber.StatusMethodNotAllowed,
-		fiber.StatusTooManyRequests,
-		fiber.StatusInternalServerError,
-		fiber.StatusNotImplemented,
-		fiber.StatusHTTPVersionNotSupported:
+func handleErrorHTML(ctx *fiber.Ctx, code int) error {
+	// Serve the SPA and let client-side routing handle error display
+	handler := spa.HandleSPAFallback()
+	if handler != nil {
 		ctx.Status(code)
-		err = ctx.Render(fmt.Sprintf("sites/%d", code), errorTemplateData, "layouts/main")
-	default:
-		return handleErrorJSON(ctx, code, msg)
+		return handler(ctx)
 	}
-	if err != nil {
-		log := logger.GetRequestLogger(ctx)
-		log.WithError(err).Error()
-		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
-	}
-	return nil
+	// If SPA handler is not available, fall back to JSON
+	return handleErrorJSON(ctx, code, "")
 }
 
 func handleErrorJSON(ctx *fiber.Ctx, code int, msg string) error {
