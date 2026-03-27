@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { generateTagColor } from '$lib/utils/color';
+
 	export let name: string = '';  // Tag name (new prop)
 	export let tag: string = '';   // Legacy prop (alias for name)
 	export let color: string = '';  // Can be hex color (with or without #) or Bootstrap class
@@ -8,12 +10,13 @@
 	export let includeChildren: boolean = false;  // Show the include_children icon
 	export let onToggleChildren: (() => void) | undefined = undefined;  // Toggle include_children
 
-	const DEFAULT_COLOR = '#6c757d';  // Gray
-
 	// Support both 'name' and 'tag' props
 	$: displayName = name || tag;
 
-	// Normalize color - use default if empty/undefined
+	// Generate hash-based color as fallback when no color provided
+	$: hashBasedColor = generateTagColor(displayName);
+
+	// Normalize color - use hash-based color if empty/undefined
 	$: trimmedColor = color && color.trim() ? color.trim() : '';
 
 	// Check if color looks like a hex color (with or without #)
@@ -23,13 +26,14 @@
 	// Normalize hex color to always have #
 	$: normalizedHexColor = isHexColor ? (trimmedColor.startsWith('#') ? trimmedColor : `#${trimmedColor}`) : '';
 
-	// Use default if no valid color
-	$: effectiveColor = isHexColor ? normalizedHexColor : (trimmedColor || DEFAULT_COLOR);
+	// Use hash-based color if no valid color provided
+	$: effectiveColor = isHexColor ? normalizedHexColor : (trimmedColor || hashBasedColor);
 
-	// For hex colors, use inline style; for Bootstrap classes, use class
-	$: textColor = isHexColor ? getContrastColor(effectiveColor) : 'white';
-	$: bgStyle = isHexColor ? `background-color: ${effectiveColor}; color: ${textColor};` : '';
-	$: bgClass = isHexColor ? '' : (trimmedColor ? `bg-${trimmedColor}` : 'bg-secondary');
+	// Always use hex color styling (since we always have a hex color now)
+	$: useHexStyle = isHexColor || !trimmedColor;
+	$: textColor = useHexStyle ? getContrastColor(effectiveColor) : 'white';
+	$: bgStyle = useHexStyle ? `background-color: ${effectiveColor}; color: ${textColor};` : '';
+	$: bgClass = useHexStyle ? '' : `bg-${trimmedColor}`;
 
 	function getContrastColor(hexColor: string): string {
 		let hex = hexColor.replace('#', '');

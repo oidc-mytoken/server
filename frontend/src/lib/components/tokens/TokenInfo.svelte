@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
-	import type { TokenInfoResponse, EventHistoryEntry, MytokenEntryTree, UsedRestriction, Restriction, WebCapability, Notification, Calendar } from '$lib/types';
+	import type { TokenInfoResponse, EventHistoryEntry, MytokenEntryTree, UsedRestriction, Restriction, WebCapability, Notification, Calendar, InitialMytokenRequest } from '$lib/types';
 	import { api, ApiClientError } from '$lib/api/client';
 	import { ui } from '$lib/stores/ui';
 	import { formatDateTime, formatRelativeTime, formatTokenPreview } from '$lib/utils/format';
@@ -276,6 +276,51 @@
 
 	function handleCreateTransferCode() {
 		dispatch('createTransferCode', { token: token.trim() });
+	}
+
+	function handleRecreate() {
+		if (!tokenInfo) return;
+		
+		const tokenData = tokenInfo.token;
+		const now = Math.floor(Date.now() / 1000);
+		const offset = now - tokenData.iat;
+		
+		// Adjust restriction timestamps relative to now and remove usage tracking fields
+		const adjustedRestrictions: Restriction[] | undefined = tokenData.restrictions?.map(r => {
+			const adjusted: Restriction = {};
+			if (r.nbf) adjusted.nbf = r.nbf + offset;
+			if (r.exp) adjusted.exp = r.exp + offset;
+			if (r.scope) adjusted.scope = r.scope;
+			if (r.audience) adjusted.audience = [...r.audience];
+			if (r.hosts) adjusted.hosts = [...r.hosts];
+			if (r.geoip_allow) adjusted.geoip_allow = [...r.geoip_allow];
+			if (r.geoip_disallow) adjusted.geoip_disallow = [...r.geoip_disallow];
+			if (r.usages_AT !== undefined) adjusted.usages_AT = r.usages_AT;
+			if (r.usages_other !== undefined) adjusted.usages_other = r.usages_other;
+			return adjusted;
+		});
+		
+		const request: InitialMytokenRequest = {
+			name: tokenData.name,
+			oidc_issuer: tokenData.oidc_iss,
+			capabilities: tokenData.capabilities,
+			restrictions: adjustedRestrictions,
+			rotation: tokenData.rotation,
+			// Determine token type from current token
+			response_type: tokenInfo.token_type === 'short_token' ? 'short_token' : 'token'
+		};
+		
+		// Add tags if present
+		if (tokenInfo.tags && tokenInfo.tags.length > 0) {
+			request.tags = tokenInfo.tags.map(t => ({
+				tag: t.tag,
+				include_children: t.include_children
+			}));
+		}
+		
+		// Encode and redirect to Create Mytoken tab
+		const encoded = btoa(JSON.stringify(request));
+		window.location.href = `/?r=${encoded}#mt`;
 	}
 
 	function getEventIcon(event: string): string {
@@ -576,6 +621,14 @@
 								>
 									<i class="fas fa-exchange-alt me-1"></i>
 									Transfer
+								</button>
+								<button 
+									class="btn btn-sm btn-outline-secondary" 
+									on:click={handleRecreate}
+									title="Create a new mytoken with the same properties"
+								>
+									<i class="fas fa-copy me-1"></i>
+									Re-create
 								</button>
 								<button class="btn btn-sm btn-outline-danger" on:click={revokeToken}>
 									<i class="fas fa-ban me-1"></i>

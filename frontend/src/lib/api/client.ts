@@ -540,6 +540,14 @@ class ApiClient {
 		});
 	}
 
+    /**
+     * Get a specific notification by management code
+     */
+    async getNotificationByManagementCode(managementCode: string): Promise<Notification> {
+        const endpoint = this.getEndpoint('notifications_endpoint');
+        return this.request<Notification>(`${endpoint}/${managementCode}`);
+    }
+
 	/**
 	 * Delete a notification
 	 */
