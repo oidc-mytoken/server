@@ -3,10 +3,14 @@ package mailtemplates
 import (
 	"bytes"
 	"embed"
+	"html/template"
+	"io"
 	"io/fs"
 	"net/http"
+	"path/filepath"
+	"strings"
+	texttemplate "text/template"
 
-	"github.com/gofiber/template/mustache/v2"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -28,7 +32,9 @@ const (
 var _templates embed.FS
 var templates fs.FS
 
-var engine *mustache.Engine
+var htmlTemplates *template.Template
+var textTemplates *texttemplate.Template
+var templateFS http.FileSystem
 
 func init() {
 	var err error
@@ -41,19 +47,82 @@ func init() {
 // Init initializes the mail templates
 func Init() {
 	overWriteDir := config.Get().Features.Notifications.Mail.OverwriteDir
-	engine = mustache.NewFileSystem(
-		fileio.NewLocalAndOtherSearcherFilesystem(overWriteDir, http.FS(templates)),
-		".mustache",
-	)
-	if err := engine.Load(); err != nil {
+	templateFS = fileio.NewLocalAndOtherSearcherFilesystem(overWriteDir, http.FS(templates))
+
+	htmlTemplates = template.New("")
+	textTemplates = texttemplate.New("")
+
+	if err := loadTemplates(); err != nil {
 		log.WithError(err).Fatal()
 	}
 }
 
+func loadTemplates() error {
+	// Get the list of template files from the embedded filesystem
+	entries, err := fs.ReadDir(templates, ".")
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".gotmpl") {
+			continue
+		}
+
+		// Try to read from the filesystem (which checks overwrite dir first)
+		content, err := readFile(templateFS, name)
+		if err != nil {
+			return errors.Wrapf(err, "failed to read template %s", name)
+		}
+
+		// Determine the template name (without extension)
+		tmplName := strings.TrimSuffix(name, ".gotmpl")
+
+		if strings.HasSuffix(tmplName, ".html") {
+			_, err = htmlTemplates.New(tmplName).Parse(string(content))
+		} else if strings.HasSuffix(tmplName, ".txt") {
+			_, err = textTemplates.New(tmplName).Parse(string(content))
+		}
+		if err != nil {
+			return errors.Wrapf(err, "failed to parse template %s", name)
+		}
+	}
+
+	return nil
+}
+
+func readFile(fs http.FileSystem, name string) ([]byte, error) {
+	f, err := fs.Open(filepath.Join("/", name))
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return io.ReadAll(f)
+}
+
 func render(name, suffix string, bindData any) (string, error) {
 	var buf bytes.Buffer
-	if err := engine.Render(&buf, name+suffix, bindData); err != nil {
-		return "", errors.WithStack(err)
+	tmplName := name + suffix
+	if suffix == ".html" {
+		tmpl := htmlTemplates.Lookup(tmplName)
+		if tmpl == nil {
+			return "", errors.Errorf("template %s not found", tmplName)
+		}
+		if err := tmpl.Execute(&buf, bindData); err != nil {
+			return "", errors.WithStack(err)
+		}
+	} else {
+		tmpl := textTemplates.Lookup(tmplName)
+		if tmpl == nil {
+			return "", errors.Errorf("template %s not found", tmplName)
+		}
+		if err := tmpl.Execute(&buf, bindData); err != nil {
+			return "", errors.WithStack(err)
+		}
 	}
 	return buf.String(), nil
 }
