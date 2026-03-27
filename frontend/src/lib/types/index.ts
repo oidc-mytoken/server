@@ -236,6 +236,7 @@ export interface Notification {
 	subscribed_tokens?: string[];
 	tags?: TagInfo[];
 	oidc_iss?: string;
+    oidc_sub?: string;
 }
 
 export interface CreateNotificationRequest {

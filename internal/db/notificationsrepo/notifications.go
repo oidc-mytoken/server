@@ -43,6 +43,12 @@ type ManagementCodeNotificationInfoResponse struct {
 	UID uint64 `db:"uid" json:"-"`
 }
 
+// oidcInfo holds OIDC issuer and subject for a user
+type oidcInfo struct {
+	Iss string `db:"iss"`
+	Sub string `db:"sub"`
+}
+
 // GetNotificationsForMTAndClass checks for and returns the found notifications for a certain mytoken and
 // notification class
 func GetNotificationsForMTAndClass(
@@ -222,7 +228,18 @@ func GetNotificationForManagementCode(
 			if info.Tags, err = GetNotificationTags(rlog, tx, info.NotificationID); err != nil {
 				return err
 			}
-			return errors.WithStack(tx.Get(&info.OIDCIssuer, `CALL GetOIDCIssForManagementCode(?)`, managementCode))
+			// Fetch OIDC issuer and subject
+			var oi oidcInfo
+			if err := errors.WithStack(
+				tx.Get(
+					&oi, `CALL GetOIDCInfoForManagementCode(?)`, managementCode,
+				),
+			); err != nil {
+				return err
+			}
+			info.OIDCIssuer = oi.Iss
+			info.OIDCSub = oi.Sub
+			return nil
 		},
 	)
 	return

@@ -587,3 +587,9 @@ BEGIN
         FROM MytokenRecreateCodes
         WHERE code = CODE_;
 END;;
+
+-- Get OIDC issuer and subject for a notification by management code
+CREATE OR REPLACE PROCEDURE getOIDCInfoForManagementCode(IN CODE VARCHAR(128))
+BEGIN
+    SELECT u.iss, u.sub FROM Users u WHERE u.id = (SELECT n.uid FROM Notifications n WHERE n.management_code = CODE);
+END;;

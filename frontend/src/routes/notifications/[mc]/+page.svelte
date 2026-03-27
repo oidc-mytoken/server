@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { api, ApiClientError } from '$lib/api/client';
-	import { isLoggedIn, auth } from '$lib/stores/auth';
+	import { isLoggedIn, auth, tokenInfo } from '$lib/stores/auth';
 	import { tags as tagsStore } from '$lib/stores/tags';
 	import { discovery } from '$lib/stores/discovery';
 	import { ui } from '$lib/stores/ui';
@@ -43,6 +43,13 @@
 	let expandedTokens: Set<string> = new Set();
 	let addingTokens = false;
 	let tokenSearchQuery = '';
+
+	// Check if logged-in user is the owner of this notification
+	// If not logged in, or notification doesn't have oidc info, treat as owner (no restrictions)
+	$: isOwner = !$isLoggedIn || !notification?.oidc_iss || !notification?.oidc_sub || (
+		$tokenInfo?.token?.oidc_iss === notification.oidc_iss &&
+		$tokenInfo?.token?.oidc_sub === notification.oidc_sub
+	);
 
 	// Get root notification classes (those without a parent)
 	const rootClasses = NOTIFICATION_CLASSES.filter(c => !c.parent);
@@ -209,11 +216,7 @@
 			notification = await api.getNotificationByManagementCode(managementCode);
 			selectedClasses = [...notification.notification_classes];
 			notificationTags = notification.tags?.map(t => t.tag) || [];
-			
-			// Load tokens if not user-wide and logged in
-			if (!notification.user_wide && $isLoggedIn) {
-				await loadTokens();
-			}
+			// Token loading is handled by the reactive statement that checks isOwner
 		} catch (e) {
 			if (e instanceof ApiClientError) {
 				error = e.description ?? e.code;
@@ -513,8 +516,8 @@
 		await loadNotification();
 	});
 
-	// Load tokens when user logs in (if notification is already loaded and not user-wide)
-	$: if ($isLoggedIn && notification && !notification.user_wide && allUserTokens.length === 0 && !loadingTokens) {
+	// Load tokens when user logs in as owner (if notification is already loaded and not user-wide)
+	$: if ($isLoggedIn && isOwner && notification && !notification.user_wide && allUserTokens.length === 0 && !loadingTokens) {
 		loadTokens();
 	}
 </script>
@@ -561,6 +564,15 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Warning for different user -->
+		{#if $isLoggedIn && !isOwner}
+			<div class="alert alert-warning mb-4">
+				<i class="fas fa-exclamation-triangle me-2"></i>
+				<strong>Different Account:</strong> You are logged in with a different account than the one that owns this notification. 
+				Token and tag management is not available.
+			</div>
+		{/if}
 
 		<!-- Notification Classes Section -->
 		<CollapsibleSection title="Notification Classes" icon="fa-bell" collapsed={false}>
@@ -663,7 +675,7 @@
 						<TagPill 
 							tag={tagName} 
 							color={getTagColor(tagName)}
-							removable={$isLoggedIn}
+							removable={$isLoggedIn && isOwner}
 							onRemove={() => removeTag(tagName)}
 						/>
 					{/each}
@@ -672,7 +684,7 @@
 				<div class="text-muted mb-3">No tags selected</div>
 			{/if}
 			
-			{#if $isLoggedIn}
+			{#if $isLoggedIn && isOwner}
 				<!-- Tag dropdown + new tag input -->
 				<div class="input-group mb-3" style="max-width: 500px;">
 					<select 
@@ -718,6 +730,11 @@
 					{/if}
 					Save Tags
 				</button>
+			{:else if $isLoggedIn && !isOwner}
+				<p class="text-muted mb-0">
+					<i class="fas fa-info-circle me-1"></i>
+					Tag management is only available for the notification owner.
+				</p>
 			{:else}
 				<p class="text-muted mb-0">
 					<i class="fas fa-info-circle me-1"></i>
@@ -746,6 +763,11 @@
 							<i class="fas fa-sign-in-alt me-2"></i>
 							Login
 						</button>
+					</div>
+				{:else if !isOwner}
+					<div class="alert alert-info mb-0">
+						<i class="fas fa-info-circle me-2"></i>
+						Token management is only available for the notification owner.
 					</div>
 				{:else if loadingTokens}
 					<LoadingSpinner message="Loading tokens..." />
