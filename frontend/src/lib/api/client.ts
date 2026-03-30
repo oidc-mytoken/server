@@ -59,7 +59,7 @@ class ApiClient {
 		}
 		const endpoint = $discovery.data[name as keyof typeof $discovery.data];
 		if (typeof endpoint !== 'string') {
-			throw new Error(`Endpoint ${name} not found in discovery document`);
+            throw new TypeError(`Endpoint ${name} not found in discovery document`);
 		}
 		return this.toProxyUrl(endpoint);
 	}

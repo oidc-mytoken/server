@@ -15,6 +15,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/actionrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/actions/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
@@ -49,48 +50,7 @@ func handleRecreate(ctx *fiber.Ctx, code string) (err error) {
 			if err != nil || !found {
 				return err
 			}
-			var req api.GeneralMytokenRequest
-			req.Issuer = data.Issuer
-			if data.Name.Valid {
-				req.Name = data.Name.String
-			}
-			req.Rotation = data.Rotation
-			req.Capabilities = data.Capabilities
-			if data.Restrictions != nil {
-				restr := make(api.Restrictions, len(data.Restrictions))
-				created := data.Created
-				now := unixtime.Now()
-				diff := now - created
-				for i, r := range data.Restrictions {
-					apiR := r.Restriction
-					if r.NotBefore != 0 {
-						apiR.NotBefore = int64(r.NotBefore + diff)
-					}
-					if r.ExpiresAt != 0 {
-						apiR.ExpiresAt = int64(r.ExpiresAt + diff)
-					}
-					restr[i] = &apiR
-				}
-				req.Restrictions = restr
-			}
-			// Fetch and include tags
-			if data.MTID != "" {
-				tags, tagErr := actionrepo.GetTagsForMT(rlog, tx, data.MTID)
-				if tagErr != nil {
-					rlog.WithError(tagErr).Warn("Failed to fetch tags for token recreation")
-					// Continue without tags - not critical
-				} else if len(tags) > 0 {
-					// Convert MTTagInfo to CreateMytokenTag
-					createTags := make([]api.CreateMytokenTag, len(tags))
-					for i, t := range tags {
-						createTags[i] = api.CreateMytokenTag{
-							Tag:             t.Tag,
-							IncludeChildren: t.IncludeChildren,
-						}
-					}
-					req.Tags = createTags
-				}
-			}
+			req := buildRecreateRequest(rlog, tx, data)
 			j, err := json.Marshal(req)
 			if err != nil {
 				return err
@@ -110,6 +70,63 @@ func handleRecreate(ctx *fiber.Ctx, code string) (err error) {
 		)
 	}
 	return ctx.Redirect(fmt.Sprintf("/?r=%s#mt", baseRequest), fiber.StatusSeeOther)
+}
+
+func buildRecreateRequest(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, data actionrepo.RecreateData,
+) api.GeneralMytokenRequest {
+	var req api.GeneralMytokenRequest
+	req.Issuer = data.Issuer
+	if data.Name.Valid {
+		req.Name = data.Name.String
+	}
+	req.Rotation = data.Rotation
+	req.Capabilities = data.Capabilities
+	req.Restrictions = adjustRestrictions(data.Restrictions, data.Created)
+	req.Tags = fetchAndConvertTags(rlog, tx, data.MTID)
+	return req
+}
+
+func adjustRestrictions(restrictions restrictions.Restrictions, created unixtime.UnixTime) api.Restrictions {
+	if restrictions == nil {
+		return nil
+	}
+	restr := make(api.Restrictions, len(restrictions))
+	now := unixtime.Now()
+	diff := now - created
+	for i, r := range restrictions {
+		apiR := r.Restriction
+		if r.NotBefore != 0 {
+			apiR.NotBefore = int64(r.NotBefore + diff)
+		}
+		if r.ExpiresAt != 0 {
+			apiR.ExpiresAt = int64(r.ExpiresAt + diff)
+		}
+		restr[i] = &apiR
+	}
+	return restr
+}
+
+func fetchAndConvertTags(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID string) []api.CreateMytokenTag {
+	if mtID == "" {
+		return nil
+	}
+	tags, tagErr := actionrepo.GetTagsForMT(rlog, tx, mtID)
+	if tagErr != nil {
+		rlog.WithError(tagErr).Warn("Failed to fetch tags for token recreation")
+		return nil
+	}
+	if len(tags) == 0 {
+		return nil
+	}
+	createTags := make([]api.CreateMytokenTag, len(tags))
+	for i, t := range tags {
+		createTags[i] = api.CreateMytokenTag{
+			Tag:             t.Tag,
+			IncludeChildren: t.IncludeChildren,
+		}
+	}
+	return createTags
 }
 
 func handleVerifyEmail(ctx *fiber.Ctx, code string) error {

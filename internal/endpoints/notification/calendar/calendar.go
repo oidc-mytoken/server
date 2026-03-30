@@ -26,6 +26,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	notifier "github.com/oidc-mytoken/server/internal/notifier/client"
 	"github.com/oidc-mytoken/server/internal/notifier/server/mailing"
@@ -58,48 +59,8 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 				return err
 			}
 
-			cal, err := ics.ParseCalendar(strings.NewReader(info.ICS))
-			if err != nil {
-				return err
-			}
-			mtids, err := calendarrepo.GetMTsInCalendar(rlog, tx, info.ID)
-			if err != nil {
-				return err
-			}
-
-			// Track existing event IDs
-			existing := make(map[string]struct{})
-			for _, e := range cal.Events() {
-				id := e.Id()
-				if !utils.StringInSlice(id, mtids) {
-					cal.RemoveEvent(id)
-					cal.SetLastModified(time.Now())
-				} else {
-					existing[id] = struct{}{}
-				}
-			}
-
-			// Add missing events for tokens that should be included (directly or via tags
-			// (only from tags should be missing))
-			for _, mtidStr := range mtids {
-				if _, ok := existing[mtidStr]; ok {
-					continue
-				}
-				var event *ics.VEvent
-				event, errRes = eventForMytoken(rlog, tx, mtid.FromHash(mtidStr), "", false, info.ID)
-				if errRes != nil {
-					return errors.New("rollback")
-				}
-				cal.AddVEvent(event)
-				cal.SetLastModified(time.Now())
-			}
-
-			newICS := cal.Serialize()
-			if newICS != info.ICS {
-				info.ICS = newICS
-				return calendarrepo.UpdateICSInternal(rlog, tx, info.ID, newICS)
-			}
-			return nil
+			info.ICS, errRes, err = syncCalendarICS(rlog, tx, info)
+			return err
 		},
 	); err != nil {
 		if errRes != nil {
@@ -119,6 +80,68 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 		ctx.Set("X-Calendar-Tags", string(tagsJSON))
 	}
 	return ctx.SendString(info.ICS)
+}
+
+// syncCalendarICS synchronizes the calendar ICS with the current set of mytokens
+func syncCalendarICS(rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, info calendarrepo.CalendarInfo) (
+	string, *model.Response, error,
+) {
+	cal, err := ics.ParseCalendar(strings.NewReader(info.ICS))
+	if err != nil {
+		return "", nil, err
+	}
+	mtids, err := calendarrepo.GetMTsInCalendar(rlog, tx, info.ID)
+	if err != nil {
+		return "", nil, err
+	}
+
+	existing := removeStaleEventsFromCalendar(cal, mtids)
+	errRes, err := addMissingEventsToCalendar(rlog, tx, cal, mtids, existing, info.ID)
+	if err != nil {
+		return "", errRes, err
+	}
+
+	newICS := cal.Serialize()
+	if newICS != info.ICS {
+		if err = calendarrepo.UpdateICSInternal(rlog, tx, info.ID, newICS); err != nil {
+			return "", nil, err
+		}
+	}
+	return newICS, nil, nil
+}
+
+// removeStaleEventsFromCalendar removes events that are no longer in mtids
+func removeStaleEventsFromCalendar(cal *ics.Calendar, mtids []string) map[string]struct{} {
+	existing := make(map[string]struct{})
+	for _, e := range cal.Events() {
+		id := e.Id()
+		if !utils.StringInSlice(id, mtids) {
+			cal.RemoveEvent(id)
+			cal.SetLastModified(time.Now())
+		} else {
+			existing[id] = struct{}{}
+		}
+	}
+	return existing
+}
+
+// addMissingEventsToCalendar adds events for mytokens that are not yet in the calendar
+func addMissingEventsToCalendar(
+	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, cal *ics.Calendar,
+	mtids []string, existing map[string]struct{}, calendarID string,
+) (*model.Response, error) {
+	for _, mtidStr := range mtids {
+		if _, ok := existing[mtidStr]; ok {
+			continue
+		}
+		event, errRes := eventForMytoken(rlog, tx, mtid.FromHash(mtidStr), "", false, calendarID)
+		if errRes != nil {
+			return errRes, errors.New("rollback")
+		}
+		cal.AddVEvent(event)
+		cal.SetLastModified(time.Now())
+	}
+	return nil, nil
 }
 
 // HandleAdd handles a request to create a new calendar
@@ -344,94 +367,129 @@ func HandleUpdate(ctx *fiber.Ctx) *model.Response {
 	var res *model.Response
 	_ = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
-			tagsUpdated := false
-			descriptionUpdated := false
-
-			if req.Tags != nil {
-				if err = calendarrepo.LinkTags(rlog, tx, calendarID, req.Tags); err != nil {
-					res = model.ErrorToInternalServerErrorResponse(err)
-					return err
-				}
-				tagsUpdated = true
-			}
-			// Get current info to (re)build ICS description if needed
-			info, err := calendarrepo.GetByID(rlog, tx, calendarID)
+			info, tagsUpdated, descriptionUpdated, err := performCalendarUpdate(
+				rlog, tx, mt.ID, calendarID, req.Tags, req.Description,
+			)
 			if err != nil {
-				_, e := db.ParseError(err)
-				if e == nil {
-					res = calendarNotFoundError
-				} else {
-					res = model.ErrorToInternalServerErrorResponse(err)
-				}
+				res = handleCalendarUpdateError(err)
 				return err
 			}
-			if req.Description != nil {
-				if err = calendarrepo.UpdateDescription(rlog, tx, mt.ID, calendarID, *req.Description); err != nil {
-					res = model.ErrorToInternalServerErrorResponse(err)
-					return err
-				}
-				// Update ICS description accordingly
-				cal, err := ics.ParseCalendar(strings.NewReader(info.ICS))
-				if err == nil {
-					cal.SetDescription(
-						fmt.Sprintf(
-							"This calendar contains events and reminders for expiring mytokens issued from '%s'\n\n%s",
-							config.Get().IssuerURL, *req.Description,
-						),
-					)
-					info.ICS = cal.Serialize()
-					if err = calendarrepo.UpdateICS(rlog, tx, mt.ID, calendarID, info.ICS); err != nil {
-						res = model.ErrorToInternalServerErrorResponse(err)
-						return err
-					}
-				}
-				descriptionUpdated = true
-			}
 
-			// Log events and handle token rotation once at the end
-			if tagsUpdated || descriptionUpdated {
-				// Determine the event to log (prefer the more specific one)
-				event := api.EventCalendarUpdated
-				comment := ""
-				if tagsUpdated && descriptionUpdated {
-					comment = "updated tags and description"
-				} else if tagsUpdated {
-					event = api.EventCalendarTagsUpdated
-				} else {
-					comment = "updated description"
-				}
-
-				var rollback bool
-				res, rollback = mytokenutils.DoAfterRequestThingsOther(
-					rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
-					event, comment,
-					usedRestriction, umt.JWT,
-					umt.OriginalTokenType,
-				)
-				if rollback {
-					return errors.New("rollback")
-				}
-			}
-
-			resInfo, err := info.ToCalendarInfoResponse(rlog, tx)
-			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-			// Preserve cookies from token rotation if present
-			var cookies []*fiber.Cookie
-			if res != nil {
-				cookies = res.Cookies
-			}
-			res = &model.Response{
-				Status:   http.StatusOK,
-				Response: resInfo,
-				Cookies:  cookies,
+			res = finalizeCalendarUpdate(
+				rlog, tx, ctx, mt, umt, usedRestriction, info, tagsUpdated, descriptionUpdated,
+			)
+			if res != nil && res.Status >= 400 {
+				return errors.New("rollback")
 			}
 			return nil
 		},
 	)
 	return res
+}
+
+func performCalendarUpdate(
+	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarID string,
+	tags []string, description *string,
+) (calendarrepo.CalendarInfo, bool, bool, error) {
+	var tagsUpdated, descriptionUpdated bool
+	var info calendarrepo.CalendarInfo
+
+	if tags != nil {
+		if err := calendarrepo.LinkTags(rlog, tx, calendarID, tags); err != nil {
+			return info, false, false, err
+		}
+		tagsUpdated = true
+	}
+
+	var err error
+	info, err = calendarrepo.GetByID(rlog, tx, calendarID)
+	if err != nil {
+		return info, tagsUpdated, descriptionUpdated, err
+	}
+
+	if description != nil {
+		descriptionUpdated, err = updateCalendarDescription(rlog, tx, mtID, calendarID, *description, info)
+		if err != nil {
+			return info, tagsUpdated, descriptionUpdated, err
+		}
+	}
+
+	return info, tagsUpdated, descriptionUpdated, nil
+}
+
+func updateCalendarDescription(
+	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarID, description string,
+	info calendarrepo.CalendarInfo,
+) (bool, error) {
+	if err := calendarrepo.UpdateDescription(rlog, tx, mtID, calendarID, description); err != nil {
+		return false, err
+	}
+	cal, err := ics.ParseCalendar(strings.NewReader(info.ICS))
+	if err != nil {
+		return true, nil // Description updated in DB, ICS parsing failed but not critical
+	}
+	cal.SetDescription(
+		fmt.Sprintf(
+			"This calendar contains events and reminders for expiring mytokens issued from '%s'\n\n%s",
+			config.Get().IssuerURL, description,
+		),
+	)
+	info.ICS = cal.Serialize()
+	if err = calendarrepo.UpdateICS(rlog, tx, mtID, calendarID, info.ICS); err != nil {
+		return true, err
+	}
+	return true, nil
+}
+
+func handleCalendarUpdateError(err error) *model.Response {
+	_, e := db.ParseError(err)
+	if e == nil {
+		return calendarNotFoundError
+	}
+	return model.ErrorToInternalServerErrorResponse(err)
+}
+
+func finalizeCalendarUpdate(
+	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, ctx *fiber.Ctx, mt *mytoken.Mytoken,
+	umt universalmytoken.UniversalMytoken, usedRestriction *restrictions.Restriction,
+	info calendarrepo.CalendarInfo, tagsUpdated, descriptionUpdated bool,
+) *model.Response {
+	var res *model.Response
+	if tagsUpdated || descriptionUpdated {
+		event, comment := determineUpdateEvent(tagsUpdated, descriptionUpdated)
+		var rollback bool
+		res, rollback = mytokenutils.DoAfterRequestThingsOther(
+			rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
+			event, comment, usedRestriction, umt.JWT, umt.OriginalTokenType,
+		)
+		if rollback {
+			return &model.Response{Status: http.StatusInternalServerError}
+		}
+	}
+
+	resInfo, err := info.ToCalendarInfoResponse(rlog, tx)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	var cookies []*fiber.Cookie
+	if res != nil {
+		cookies = res.Cookies
+	}
+	return &model.Response{
+		Status:   http.StatusOK,
+		Response: resInfo,
+		Cookies:  cookies,
+	}
+}
+
+func determineUpdateEvent(tagsUpdated, descriptionUpdated bool) (api.Event, string) {
+	if tagsUpdated && descriptionUpdated {
+		return api.EventCalendarUpdated, "updated tags and description"
+	}
+	if tagsUpdated {
+		return api.EventCalendarTagsUpdated, ""
+	}
+	return api.EventCalendarUpdated, "updated description"
 }
 
 // HandleCalendarEntryViaMail creates a calendar entry for a mytoken and sends it via mail
@@ -672,63 +730,74 @@ func HandleAddMytoken(ctx *fiber.Ctx) *model.Response {
 	var res *model.Response
 	_ = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
-			info, err := calendarrepo.GetByID(rlog, tx, calendarID)
-			if err != nil {
-				_, e := db.ParseError(err)
-				if e == nil {
-					res = calendarNotFoundError
-				} else {
-					res = model.ErrorToInternalServerErrorResponse(err)
-				}
-				return err
-			}
-			if err = calendarrepo.AddMytokenToCalendar(rlog, tx, id, info.ID); err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-			cal, err := ics.ParseCalendar(strings.NewReader(info.ICS))
-			if err != nil {
-				err = errors.WithStack(err)
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-			event, errRes := eventForMytoken(rlog, tx, id, req.Comment, true, calendarID)
-			if errRes != nil {
-				res = errRes
-				return errors.New("rollback")
-			}
-			cal.AddVEvent(event)
-			info.ICS = cal.Serialize()
-			if err = calendarrepo.UpdateICS(rlog, tx, id, calendarID, info.ICS); err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-
-			mytokenEvent := api.EventNotificationSubscribed
-			if momMode {
-				mytokenEvent = api.EventNotificationSubscribedOther
-			}
-			resInfo, err := info.ToCalendarInfoResponse(rlog, tx)
-			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-			res = &model.Response{
-				Status:   http.StatusOK,
-				Response: resInfo,
-			}
-			var rollback bool
-			res, rollback = mytokenutils.DoAfterRequestThingsOther(
-				rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
-				mytokenEvent, "", usedRestriction, umt.JWT, umt.OriginalTokenType,
+			res, err = addMytokenToCalendarTx(
+				rlog, tx, ctx, calendarID, id, req.Comment, momMode, mt, umt, usedRestriction,
 			)
-			if rollback {
-				return errors.New("rollback")
+			if err != nil {
+				return err
 			}
 			return nil
 		},
 	)
 	return res
+}
+
+func addMytokenToCalendarTx(
+	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, ctx *fiber.Ctx, calendarID string, id mtid.MTID,
+	comment string, momMode bool, mt *mytoken.Mytoken, umt universalmytoken.UniversalMytoken,
+	usedRestriction *restrictions.Restriction,
+) (*model.Response, error) {
+	info, err := calendarrepo.GetByID(rlog, tx, calendarID)
+	if err != nil {
+		return handleCalendarUpdateError(err), err
+	}
+	if err = calendarrepo.AddMytokenToCalendar(rlog, tx, id, info.ID); err != nil {
+		return model.ErrorToInternalServerErrorResponse(err), err
+	}
+	info.ICS, err = addEventToCalendarICS(rlog, tx, info.ICS, id, comment, calendarID)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err), err
+	}
+	if err = calendarrepo.UpdateICS(rlog, tx, id, calendarID, info.ICS); err != nil {
+		return model.ErrorToInternalServerErrorResponse(err), err
+	}
+
+	mytokenEvent := api.EventNotificationSubscribed
+	if momMode {
+		mytokenEvent = api.EventNotificationSubscribedOther
+	}
+	resInfo, err := info.ToCalendarInfoResponse(rlog, tx)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err), err
+	}
+	res := &model.Response{
+		Status:   http.StatusOK,
+		Response: resInfo,
+	}
+	var rollback bool
+	res, rollback = mytokenutils.DoAfterRequestThingsOther(
+		rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
+		mytokenEvent, "", usedRestriction, umt.JWT, umt.OriginalTokenType,
+	)
+	if rollback {
+		return res, errors.New("rollback")
+	}
+	return res, nil
+}
+
+func addEventToCalendarICS(
+	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, icsContent string, id mtid.MTID, comment, calendarID string,
+) (string, error) {
+	cal, err := ics.ParseCalendar(strings.NewReader(icsContent))
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	event, errRes := eventForMytoken(rlog, tx, id, comment, true, calendarID)
+	if errRes != nil {
+		return "", errors.New("failed to create event")
+	}
+	cal.AddVEvent(event)
+	return cal.Serialize(), nil
 }
 
 func eventForMytoken(

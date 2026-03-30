@@ -22,7 +22,7 @@ for (let i = 0; i < 256; i++) {
 export function crc32(str: string): number {
     let crc = 0xFFFFFFFF;
     for (let i = 0; i < str.length; i++) {
-        crc = crc32Table[(crc ^ str.charCodeAt(i)) & 0xFF] ^ (crc >>> 8);
+        crc = crc32Table[(crc ^ (str.codePointAt(i) ?? 0)) & 0xFF] ^ (crc >>> 8);
     }
     return (crc ^ 0xFFFFFFFF) >>> 0;
 }
@@ -58,7 +58,7 @@ export function normalizeColor(color: string | undefined | null): string {
     const trimmed = color.trim();
     // Check if it's a valid hex color (with or without #)
     const hexPattern = /^#?([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
-    const match = trimmed.match(hexPattern);
+    const match = hexPattern.exec(trimmed);
     if (match) {
         // Ensure it has # prefix
         let hex = match[1];

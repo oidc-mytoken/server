@@ -297,8 +297,6 @@ export const NOTIFICATION_CLASSES: NotificationClass[] = [
 	{ id: 'expiration', label: 'Expiration Warnings', icon: 'fa-clock', description: 'Before tokens expire' }
 ];
 
-export type NotificationClassId = string;
-
 // User settings
 export interface EmailSettings {
     email_address?: string;

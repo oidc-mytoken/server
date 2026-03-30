@@ -165,63 +165,100 @@ func HandleMytokenFromMytokenReq(
 	var tokenUpdate *response.MytokenResponse
 	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) (err error) {
-			if usedRestriction != nil {
-				if err = usedRestriction.UsedOther(rlog, tx, parent.ID); err != nil {
-					return
-				}
-			}
-			tokenUpdate, err = rotation.RotateMytokenAfterOtherForResponse(
-				rlog, tx, req.Mytoken.JWT, parent, *networkData, req.Mytoken.OriginalTokenType,
-			)
-			if err != nil {
-				return
-			}
-			if err = ste.Store(rlog, tx, "Used grant_type mytoken"); err != nil {
-				return
-			}
-			if err = notificationsrepo.ExpandNotificationsToChildrenIfApplicable(
-				rlog, tx, parent.ID, ste.ID,
-			); err != nil {
-				return err
-			}
-			if err = mytokenrepo.ExpandTagsToChildrenIfApplicable(
-				rlog, tx, parent.ID, ste.ID,
-			); err != nil {
-				return err
-			}
-			for _, sub := range req.SubscribeNotificationRequests {
-				if err = notificationsrepo.
-					MytokenSubscribeOrCreateNotificationWithClasses(rlog, tx, sub, ste.ID); err != nil {
-					return err
-				}
-			}
-			if err = notificationsrepo.ScheduleExpirationNotificationsIfNeeded(
-				rlog, tx, ste.ID, ste.Token.ExpiresAt, ste.Token.IssuedAt,
-			); err != nil {
-				return err
-			}
-			return eventService.LogEvents(
-				rlog, tx, []pkg.MTEvent{
-					{
-						Event:          api.EventInheritedRT,
-						Comment:        "Got RT from parent",
-						MTID:           ste.ID,
-						ClientMetaData: *networkData,
-					},
-					{
-						Event:          api.EventSubtokenCreated,
-						Comment:        strings.TrimSpace(fmt.Sprintf("Created MT %s", req.GeneralMytokenRequest.Name)),
-						MTID:           parent.ID,
-						ClientMetaData: *networkData,
-					},
-				},
-			)
+			tokenUpdate, err = processSubtokenCreation(rlog, tx, parent, ste, req, networkData, usedRestriction)
+			return err
 		},
 	); err != nil {
 		rlog.Errorf("%s", errorfmt.Full(err))
 		return model.ErrorToInternalServerErrorResponse(err)
 	}
 
+	return buildMytokenResponse(rlog, ste, req, networkData, tokenUpdate)
+}
+
+func processSubtokenCreation(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, parent *mytoken.Mytoken, ste *mytokenrepo.MytokenEntry,
+	req *response.MytokenFromMytokenRequest, networkData *api.ClientMetaData,
+	usedRestriction *restrictions.Restriction,
+) (*response.MytokenResponse, error) {
+	if err := markRestrictionUsed(rlog, tx, usedRestriction, parent.ID); err != nil {
+		return nil, err
+	}
+
+	tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
+		rlog, tx, req.Mytoken.JWT, parent, *networkData, req.Mytoken.OriginalTokenType,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = storeSubtokenWithInheritance(rlog, tx, parent.ID, ste, req); err != nil {
+		return nil, err
+	}
+
+	if err = logSubtokenEvents(rlog, tx, parent.ID, ste.ID, req.GeneralMytokenRequest.Name, networkData); err != nil {
+		return nil, err
+	}
+
+	return tokenUpdate, nil
+}
+
+func markRestrictionUsed(rlog log.Ext1FieldLogger, tx *sqlx.Tx, r *restrictions.Restriction, mtID mtid.MTID) error {
+	if r == nil {
+		return nil
+	}
+	return r.UsedOther(rlog, tx, mtID)
+}
+
+func storeSubtokenWithInheritance(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, parentID mtid.MTID, ste *mytokenrepo.MytokenEntry,
+	req *response.MytokenFromMytokenRequest,
+) error {
+	if err := ste.Store(rlog, tx, "Used grant_type mytoken"); err != nil {
+		return err
+	}
+	if err := notificationsrepo.ExpandNotificationsToChildrenIfApplicable(rlog, tx, parentID, ste.ID); err != nil {
+		return err
+	}
+	if err := mytokenrepo.ExpandTagsToChildrenIfApplicable(rlog, tx, parentID, ste.ID); err != nil {
+		return err
+	}
+	for _, sub := range req.SubscribeNotificationRequests {
+		if err := notificationsrepo.MytokenSubscribeOrCreateNotificationWithClasses(rlog, tx, sub, ste.ID); err != nil {
+			return err
+		}
+	}
+	return notificationsrepo.ScheduleExpirationNotificationsIfNeeded(
+		rlog, tx, ste.ID, ste.Token.ExpiresAt, ste.Token.IssuedAt,
+	)
+}
+
+func logSubtokenEvents(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, parentID, childID mtid.MTID, tokenName string,
+	networkData *api.ClientMetaData,
+) error {
+	return eventService.LogEvents(
+		rlog, tx, []pkg.MTEvent{
+			{
+				Event:          api.EventInheritedRT,
+				Comment:        "Got RT from parent",
+				MTID:           childID,
+				ClientMetaData: *networkData,
+			},
+			{
+				Event:          api.EventSubtokenCreated,
+				Comment:        strings.TrimSpace(fmt.Sprintf("Created MT %s", tokenName)),
+				MTID:           parentID,
+				ClientMetaData: *networkData,
+			},
+		},
+	)
+}
+
+func buildMytokenResponse(
+	rlog log.Ext1FieldLogger, ste *mytokenrepo.MytokenEntry, req *response.MytokenFromMytokenRequest,
+	networkData *api.ClientMetaData, tokenUpdate *response.MytokenResponse,
+) *model.Response {
 	res, err := ste.Token.ToTokenResponse(
 		rlog, req.ResponseType, req.GeneralMytokenRequest.MaxTokenLen, *networkData, "",
 	)

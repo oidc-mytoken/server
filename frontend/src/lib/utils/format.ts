@@ -29,19 +29,19 @@ export function formatDateTime(timestamp: number): string {
  */
 export function formatDuration(seconds: number): string {
 	if (seconds < 60) {
-		return `${seconds} second${seconds !== 1 ? 's' : ''}`;
+        return `${seconds} second${seconds === 1 ? '' : 's'}`;
 	}
 
 	const minutes = Math.floor(seconds / 60);
 	if (minutes < 60) {
-		return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        return `${minutes} minute${minutes === 1 ? '' : 's'}`;
 	}
 
 	const hours = Math.floor(minutes / 60);
 	if (hours < 24) {
 		const remainingMinutes = minutes % 60;
 		if (remainingMinutes === 0) {
-			return `${hours} hour${hours !== 1 ? 's' : ''}`;
+            return `${hours} hour${hours === 1 ? '' : 's'}`;
 		}
 		return `${hours}h ${remainingMinutes}m`;
 	}
@@ -49,7 +49,7 @@ export function formatDuration(seconds: number): string {
 	const days = Math.floor(hours / 24);
 	const remainingHours = hours % 24;
 	if (remainingHours === 0) {
-		return `${days} day${days !== 1 ? 's' : ''}`;
+        return `${days} day${days === 1 ? '' : 's'}`;
 	}
 	return `${days}d ${remainingHours}h`;
 }
@@ -72,8 +72,8 @@ export function formatRelativeTime(timestamp: number): string {
 		[Infinity, 'year']
 	];
 
-	let value: number;
-	let unit: string;
+    let value = 0;
+    let unit = 'second';
 
 	for (let i = 0; i < units.length; i++) {
 		const [threshold, unitName] = units[i];
@@ -85,11 +85,11 @@ export function formatRelativeTime(timestamp: number): string {
 		}
 	}
 
-	const suffix = value! === 1 ? '' : 's';
+    const suffix = value === 1 ? '' : 's';
 	if (diff < 0) {
-		return `${value!} ${unit!}${suffix} ago`;
+        return `${value} ${unit}${suffix} ago`;
 	}
-	return `in ${value!} ${unit!}${suffix}`;
+    return `in ${value} ${unit}${suffix}`;
 }
 
 /**
