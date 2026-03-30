@@ -9,27 +9,20 @@ import (
 )
 
 // RenderErrorPage renders an error page using the SPA
-func RenderErrorPage(ctx *fiber.Ctx, status int, errorMsg string, _ ...string) error {
-	// Let the SPA handle error display via client-side routing
-	handler := spa.HandleSPAFallback()
-	if handler != nil {
-		ctx.Status(status)
-		return handler(ctx)
+func RenderErrorPage(ctx *fiber.Ctx, status int, errorMsg string, optionalErrorHeading ...string) error {
+	var errorHeading string
+	if len(optionalErrorHeading) > 0 {
+		errorHeading = optionalErrorHeading[0]
 	}
-	// Fallback to JSON if SPA is not available
-	return ctx.Status(status).JSON(
-		fiber.Map{
-			"error": errorMsg,
-		},
-	)
+	return RenderExtendedErrorPage(ctx, status, errorMsg, errorHeading, "")
 }
 
 // RenderExtendedErrorPage renders an error page with additional html content
 func RenderExtendedErrorPage(
 	ctx *fiber.Ctx, status int, errorMsg,
-	optionalErrorHeading, _ string,
+	optionalErrorHeading, additionalHTML string,
 ) error {
-	return RenderErrorPage(ctx, status, errorMsg, optionalErrorHeading)
+	return spa.RenderErrorPage(ctx, status, errorMsg, optionalErrorHeading, additionalHTML)
 }
 
 // RenderInternalServerErrorPage renders an error page for a passed error as an internal server error
