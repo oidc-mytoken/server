@@ -124,7 +124,7 @@ func handleDueMailNotification(
 			"recreate-url":                   recreateURL,
 			"unsubscribe-exp-this-token-url": unsubscribeURL,
 		}
-		if emailInfo.MailVerified {
+		if emailInfo.PreferHTMLMail {
 			bindingData["token-name"] = name.String
 			bindingData["mom_id"] = n.MTID.Hash()
 			bindingData["expires_at"] = exp.Time().String()
