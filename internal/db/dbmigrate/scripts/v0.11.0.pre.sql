@@ -552,6 +552,19 @@ BEGIN
         ORDER BY n.id DESC;
 END;;
 
+-- Update ActionCodes_GetRecreateData to include MT_id for fetching tags
+CREATE OR REPLACE PROCEDURE ActionCodes_GetRecreateData(IN CODE_ VARCHAR(128))
+BEGIN
+    SELECT MT_id, name, capabilities, restrictions, rotation, token_created AS created, issuer
+        FROM MytokenRecreateCodes
+        WHERE code = CODE_;
+END;;
+
+-- Get OIDC issuer and subject for a notification by management code
+CREATE OR REPLACE PROCEDURE getOIDCInfoForManagementCode(IN CODE VARCHAR(128))
+BEGIN
+    SELECT u.iss, u.sub FROM Users u WHERE u.id = (SELECT n.uid FROM Notifications n WHERE n.management_code = CODE);
+END;;
 
 DELIMITER ;
 
@@ -579,17 +592,3 @@ INSERT IGNORE INTO Events (event)
     VALUES ('calendar_updated');
 INSERT IGNORE INTO Events (event)
     VALUES ('notification_tags_updated');
-
--- Update ActionCodes_GetRecreateData to include MT_id for fetching tags
-CREATE OR REPLACE PROCEDURE ActionCodes_GetRecreateData(IN CODE_ VARCHAR(128))
-BEGIN
-    SELECT MT_id, name, capabilities, restrictions, rotation, token_created AS created, issuer
-        FROM MytokenRecreateCodes
-        WHERE code = CODE_;
-END;;
-
--- Get OIDC issuer and subject for a notification by management code
-CREATE OR REPLACE PROCEDURE getOIDCInfoForManagementCode(IN CODE VARCHAR(128))
-BEGIN
-    SELECT u.iss, u.sub FROM Users u WHERE u.id = (SELECT n.uid FROM Notifications n WHERE n.management_code = CODE);
-END;;
