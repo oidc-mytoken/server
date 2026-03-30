@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -25,10 +26,10 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	notifier "github.com/oidc-mytoken/server/internal/notifier/client"
 	"github.com/oidc-mytoken/server/internal/notifier/server/mailing"
-	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
@@ -43,6 +44,8 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 	rlog.Debug("Handle get ics calendar request")
 	cid := ctx.Params("id")
 	var info calendarrepo.CalendarInfo
+	var tags []api.TagInfo
+	var errRes *model.Response
 	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
 			var err error
@@ -51,29 +54,18 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 				return err
 			}
 
-			cal, err := ics.ParseCalendar(strings.NewReader(info.ICS))
+			tags, err = calendarrepo.GetCalendarTags(rlog, tx, cid)
 			if err != nil {
 				return err
 			}
-			mtids, err := calendarrepo.GetMTsInCalendar(rlog, tx, info.ID)
-			if err != nil {
-				return err
-			}
-			for _, e := range cal.Events() {
-				id := e.Id()
-				if !utils.StringInSlice(id, mtids) {
-					cal.RemoveEvent(id)
-					cal.SetLastModified(time.Now())
-				}
-			}
-			newICS := cal.Serialize()
-			if newICS != info.ICS {
-				info.ICS = newICS
-				return calendarrepo.UpdateInternal(rlog, tx, info)
-			}
-			return nil
+
+			info.ICS, errRes, err = syncCalendarICS(rlog, tx, info)
+			return err
 		},
 	); err != nil {
+		if errRes != nil {
+			return errRes.Send(ctx)
+		}
 		_, e := db.ParseError(err)
 		if e != nil {
 			return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
@@ -81,8 +73,75 @@ func HandleGetICS(ctx *fiber.Ctx) error {
 		return calendarNotFoundError.Send(ctx)
 	}
 	ctx.Set(fiber.HeaderContentType, "text/calendar")
-	ctx.Set(fiber.HeaderContentDisposition, fmt.Sprintf(`attachment; filename=%q`, info.Name))
+	ctx.Set(fiber.HeaderContentDisposition, `attachment; filename=mytokens.ics`)
+	// Include tags as JSON in a custom header for the calendar view
+	if len(tags) > 0 {
+		tagsJSON, _ := json.Marshal(tags)
+		ctx.Set("X-Calendar-Tags", string(tagsJSON))
+	}
 	return ctx.SendString(info.ICS)
+}
+
+// syncCalendarICS synchronizes the calendar ICS with the current set of mytokens
+func syncCalendarICS(rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, info calendarrepo.CalendarInfo) (
+	string, *model.Response, error,
+) {
+	cal, err := ics.ParseCalendar(strings.NewReader(info.ICS))
+	if err != nil {
+		return "", nil, err
+	}
+	mtids, err := calendarrepo.GetMTsInCalendar(rlog, tx, info.ID)
+	if err != nil {
+		return "", nil, err
+	}
+
+	existing := removeStaleEventsFromCalendar(cal, mtids)
+	errRes, err := addMissingEventsToCalendar(rlog, tx, cal, mtids, existing, info.ID)
+	if err != nil {
+		return "", errRes, err
+	}
+
+	newICS := cal.Serialize()
+	if newICS != info.ICS {
+		if err = calendarrepo.UpdateICSInternal(rlog, tx, info.ID, newICS); err != nil {
+			return "", nil, err
+		}
+	}
+	return newICS, nil, nil
+}
+
+// removeStaleEventsFromCalendar removes events that are no longer in mtids
+func removeStaleEventsFromCalendar(cal *ics.Calendar, mtids []string) map[string]struct{} {
+	existing := make(map[string]struct{})
+	for _, e := range cal.Events() {
+		id := e.Id()
+		if !utils.StringInSlice(id, mtids) {
+			cal.RemoveEvent(id)
+			cal.SetLastModified(time.Now())
+		} else {
+			existing[id] = struct{}{}
+		}
+	}
+	return existing
+}
+
+// addMissingEventsToCalendar adds events for mytokens that are not yet in the calendar
+func addMissingEventsToCalendar(
+	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, cal *ics.Calendar,
+	mtids []string, existing map[string]struct{}, calendarID string,
+) (*model.Response, error) {
+	for _, mtidStr := range mtids {
+		if _, ok := existing[mtidStr]; ok {
+			continue
+		}
+		event, errRes := eventForMytoken(rlog, tx, mtid.FromHash(mtidStr), "", false, calendarID)
+		if errRes != nil {
+			return errRes, errors.New("rollback")
+		}
+		cal.AddVEvent(event)
+		cal.SetLastModified(time.Now())
+	}
+	return nil, nil
 }
 
 // HandleAdd handles a request to create a new calendar
@@ -101,32 +160,35 @@ func HandleAdd(ctx *fiber.Ctx) *model.Response {
 	if errRes != nil {
 		return errRes
 	}
-	var calendarInfo api.NotificationCalendar
-	if err := errors.WithStack(ctx.BodyParser(&calendarInfo)); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err)
+	type createCalendarRequest struct {
+		api.CreateCalendarRequest
+		Tags []string `json:"tags"`
 	}
-	if calendarInfo.Name == "" {
-		return model.BadRequestErrorResponse("required parameter 'name' is missing")
+	var request createCalendarRequest
+	if err := errors.WithStack(ctx.BodyParser(&request)); err != nil {
+		return model.ErrorToBadRequestErrorResponse(err)
 	}
 
 	id := utils.RandASCIIString(32)
 	cal := ics.NewCalendar()
 	cal.SetMethod(ics.MethodPublish)
-	cal.SetName(calendarInfo.Name)
 	cal.SetDescription(
 		fmt.Sprintf(
-			"This calendar contains events and reminders for expiring mytokens issued from '%s'",
-			config.Get().IssuerURL,
+			"This calendar contains events and reminders for expiring mytokens issued from '%s'\n\n%s",
+			config.Get().IssuerURL, request.Description,
 		),
 	)
-	icsPath := utils.CombineURLPath(routes.CalendarDownloadEndpoint, id)
+	icsPath := pkg.GetICSPath(id)
 	cal.SetUrl(icsPath)
-	calendarInfo.ICSPath = icsPath
+	calendarInfo := api.NotificationCalendar{
+		ID:          id,
+		ICSPath:     icsPath,
+		Description: request.Description,
+	}
 	dbInfo := calendarrepo.CalendarInfo{
-		ID:      id,
-		Name:    calendarInfo.Name,
-		ICSPath: icsPath,
-		ICS:     cal.Serialize(),
+		ID:          id,
+		Description: db.NewNullString(calendarInfo.Description),
+		ICS:         cal.Serialize(),
 	}
 	res := &model.Response{
 		Status:   http.StatusCreated,
@@ -137,10 +199,16 @@ func HandleAdd(ctx *fiber.Ctx) *model.Response {
 			if err := calendarrepo.Insert(rlog, tx, mt.ID, dbInfo); err != nil {
 				return err
 			}
+			// Link tags if provided
+			if len(request.Tags) > 0 {
+				if err := calendarrepo.LinkTags(rlog, tx, id, request.Tags); err != nil {
+					return err
+				}
+			}
 			var rollback bool
 			res, rollback = mytokenutils.DoAfterRequestThingsOther(
 				rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
-				api.EventCalendarCreated, calendarInfo.Name, usedRestriction, umt.JWT, umt.OriginalTokenType,
+				api.EventCalendarCreated, "", usedRestriction, umt.JWT, umt.OriginalTokenType,
 			)
 			if rollback {
 				return errors.New("rollback")
@@ -156,8 +224,8 @@ func HandleAdd(ctx *fiber.Ctx) *model.Response {
 // HandleDelete deletes a calendar
 func HandleDelete(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
-	name := ctxutils.Params(ctx, "name")
-	rlog.WithField("calendar", name).Debug("Handle delete calendar request")
+	calendarID := ctxutils.Params(ctx, "id")
+	rlog.WithField("calendar", calendarID).Debug("Handle delete calendar request")
 	var umt universalmytoken.UniversalMytoken
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
 	if errRes != nil {
@@ -174,13 +242,14 @@ func HandleDelete(ctx *fiber.Ctx) *model.Response {
 	var res *model.Response
 	if err := db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
-			if err := calendarrepo.Delete(rlog, tx, mt.ID, name); err != nil {
+			if err := calendarrepo.Delete(rlog, tx, mt.ID, calendarID); err != nil {
 				return err
 			}
 			var rollback bool
 			res, rollback = mytokenutils.DoAfterRequestThingsOther(
 				rlog, tx, nil, mt, *ctxutils.ClientMetaData(ctx),
-				api.EventCalendarDeleted, name, usedRestriction, umt.JWT, umt.OriginalTokenType,
+				api.EventCalendarDeleted, "", usedRestriction, umt.JWT,
+				umt.OriginalTokenType,
 			)
 			if rollback {
 				return errors.New("rollback")
@@ -202,21 +271,20 @@ func HandleDelete(ctx *fiber.Ctx) *model.Response {
 func HandleGet(ctx *fiber.Ctx) error {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle get calendar request")
-	calendarName := ctxutils.Params(ctx, "name")
+	calendarID := ctxutils.Params(ctx, "id")
 	var umt universalmytoken.UniversalMytoken
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
 	if errRes != nil {
 		return errRes.Send(ctx)
 	}
-	info, err := calendarrepo.Get(rlog, nil, mt.ID, calendarName)
+	ok, err := calendarrepo.MTIsForSameUserAsCalendar(rlog, nil, calendarID, mt.ID)
 	if err != nil {
-		_, e := db.ParseError(err)
-		if e != nil {
-			return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
-		}
+		return model.ErrorToInternalServerErrorResponse(err).Send(ctx)
+	}
+	if !ok {
 		return calendarNotFoundError.Send(ctx)
 	}
-	return ctx.Redirect(info.ICSPath)
+	return ctx.Redirect(pkg.GetICSPath(calendarID))
 }
 
 // HandleList lists all calendars for a user
@@ -260,6 +328,168 @@ func HandleList(ctx *fiber.Ctx) *model.Response {
 		res = model.ErrorToInternalServerErrorResponse(err)
 	}
 	return res
+}
+
+// HandleUpdate updates a calendar's description and/or tags
+func HandleUpdate(ctx *fiber.Ctx) *model.Response {
+	rlog := logger.GetRequestLogger(ctx)
+	calendarID := ctxutils.Params(ctx, "id")
+	rlog.WithField("calendar", calendarID).Debug("Handle update calendar request")
+	var umt universalmytoken.UniversalMytoken
+	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
+	if errRes != nil {
+		return errRes
+	}
+	// Require modify capability like delete/create
+	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
+		rlog, nil, mt,
+		ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyToken,
+	)
+	if errRes != nil {
+		return errRes
+	}
+	ok, err := calendarrepo.MTIsForSameUserAsCalendar(rlog, nil, calendarID, mt.ID)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	if !ok {
+		return calendarNotFoundError
+	}
+	type updateCalendarRequest struct {
+		Description *string  `json:"description"`
+		Tags        []string `json:"tags"`
+	}
+	var req updateCalendarRequest
+	if err = errors.WithStack(ctx.BodyParser(&req)); err != nil {
+		return model.ErrorToBadRequestErrorResponse(err)
+	}
+
+	var res *model.Response
+	_ = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			info, tagsUpdated, descriptionUpdated, err := performCalendarUpdate(
+				rlog, tx, mt.ID, calendarID, req.Tags, req.Description,
+			)
+			if err != nil {
+				res = handleCalendarUpdateError(err)
+				return err
+			}
+
+			res = finalizeCalendarUpdate(
+				rlog, tx, ctx, mt, umt, usedRestriction, info, tagsUpdated, descriptionUpdated,
+			)
+			if res != nil && res.Status >= 400 {
+				return errors.New("rollback")
+			}
+			return nil
+		},
+	)
+	return res
+}
+
+func performCalendarUpdate(
+	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarID string,
+	tags []string, description *string,
+) (calendarrepo.CalendarInfo, bool, bool, error) {
+	var tagsUpdated, descriptionUpdated bool
+	var info calendarrepo.CalendarInfo
+
+	if tags != nil {
+		if err := calendarrepo.LinkTags(rlog, tx, calendarID, tags); err != nil {
+			return info, false, false, err
+		}
+		tagsUpdated = true
+	}
+
+	var err error
+	info, err = calendarrepo.GetByID(rlog, tx, calendarID)
+	if err != nil {
+		return info, tagsUpdated, descriptionUpdated, err
+	}
+
+	if description != nil {
+		descriptionUpdated, err = updateCalendarDescription(rlog, tx, mtID, calendarID, *description, info)
+		if err != nil {
+			return info, tagsUpdated, descriptionUpdated, err
+		}
+	}
+
+	return info, tagsUpdated, descriptionUpdated, nil
+}
+
+func updateCalendarDescription(
+	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarID, description string,
+	info calendarrepo.CalendarInfo,
+) (bool, error) {
+	if err := calendarrepo.UpdateDescription(rlog, tx, mtID, calendarID, description); err != nil {
+		return false, err
+	}
+	cal, err := ics.ParseCalendar(strings.NewReader(info.ICS))
+	if err != nil {
+		return true, nil // Description updated in DB, ICS parsing failed but not critical
+	}
+	cal.SetDescription(
+		fmt.Sprintf(
+			"This calendar contains events and reminders for expiring mytokens issued from '%s'\n\n%s",
+			config.Get().IssuerURL, description,
+		),
+	)
+	info.ICS = cal.Serialize()
+	if err = calendarrepo.UpdateICS(rlog, tx, mtID, calendarID, info.ICS); err != nil {
+		return true, err
+	}
+	return true, nil
+}
+
+func handleCalendarUpdateError(err error) *model.Response {
+	_, e := db.ParseError(err)
+	if e == nil {
+		return calendarNotFoundError
+	}
+	return model.ErrorToInternalServerErrorResponse(err)
+}
+
+func finalizeCalendarUpdate(
+	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, ctx *fiber.Ctx, mt *mytoken.Mytoken,
+	umt universalmytoken.UniversalMytoken, usedRestriction *restrictions.Restriction,
+	info calendarrepo.CalendarInfo, tagsUpdated, descriptionUpdated bool,
+) *model.Response {
+	var res *model.Response
+	if tagsUpdated || descriptionUpdated {
+		event, comment := determineUpdateEvent(tagsUpdated, descriptionUpdated)
+		var rollback bool
+		res, rollback = mytokenutils.DoAfterRequestThingsOther(
+			rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
+			event, comment, usedRestriction, umt.JWT, umt.OriginalTokenType,
+		)
+		if rollback {
+			return &model.Response{Status: http.StatusInternalServerError}
+		}
+	}
+
+	resInfo, err := info.ToCalendarInfoResponse(rlog, tx)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	var cookies []*fiber.Cookie
+	if res != nil {
+		cookies = res.Cookies
+	}
+	return &model.Response{
+		Status:   http.StatusOK,
+		Response: resInfo,
+		Cookies:  cookies,
+	}
+}
+
+func determineUpdateEvent(tagsUpdated, descriptionUpdated bool) (api.Event, string) {
+	if tagsUpdated && descriptionUpdated {
+		return api.EventCalendarUpdated, "updated tags and description"
+	}
+	if tagsUpdated {
+		return api.EventCalendarTagsUpdated, ""
+	}
+	return api.EventCalendarUpdated, "updated description"
 }
 
 // HandleCalendarEntryViaMail creates a calendar entry for a mytoken and sends it via mail
@@ -344,25 +574,151 @@ func HandleCalendarEntryViaMail(
 	return res
 }
 
+// HandleAddTag adds a tag to a calendar
+func HandleAddTag(ctx *fiber.Ctx) *model.Response {
+	rlog := logger.GetRequestLogger(ctx)
+	calendarID := ctxutils.Params(ctx, "id")
+	rlog.WithField("calendar", calendarID).Debug("Handle add tag to calendar request")
+	var umt universalmytoken.UniversalMytoken
+	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
+	if errRes != nil {
+		return errRes
+	}
+	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
+		rlog, nil, mt, ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyToken,
+	)
+	if errRes != nil {
+		return errRes
+	}
+	ok, err := calendarrepo.MTIsForSameUserAsCalendar(rlog, nil, calendarID, mt.ID)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	if !ok {
+		return calendarNotFoundError
+	}
+	type addTagRequest struct {
+		Tag string `json:"tag"`
+	}
+	var req addTagRequest
+	if err = errors.WithStack(ctx.BodyParser(&req)); err != nil {
+		return model.ErrorToBadRequestErrorResponse(err)
+	}
+	if req.Tag == "" {
+		return model.BadRequestErrorResponse("tag must not be empty")
+	}
+	var res *model.Response
+	if err = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			if err := calendarrepo.AddTag(rlog, tx, calendarID, req.Tag); err != nil {
+				return err
+			}
+			var rollback bool
+			res, rollback = mytokenutils.DoAfterRequestThingsOther(
+				rlog, tx, nil, mt, *ctxutils.ClientMetaData(ctx),
+				api.EventCalendarListed, "", usedRestriction, umt.JWT, umt.OriginalTokenType,
+			)
+			if rollback {
+				return errors.New("rollback")
+			}
+			return nil
+		},
+	); err != nil && res == nil {
+		res = model.ErrorToInternalServerErrorResponse(err)
+	}
+	if res == nil {
+		res = &model.Response{Status: http.StatusNoContent}
+	}
+	return res
+}
+
+// HandleRemoveTag removes a tag from a calendar
+func HandleRemoveTag(ctx *fiber.Ctx) *model.Response {
+	rlog := logger.GetRequestLogger(ctx)
+	calendarID := ctxutils.Params(ctx, "id")
+	rlog.WithField("calendar", calendarID).Debug("Handle remove tag from calendar request")
+	var umt universalmytoken.UniversalMytoken
+	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
+	if errRes != nil {
+		return errRes
+	}
+	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
+		rlog, nil, mt, ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyToken,
+	)
+	if errRes != nil {
+		return errRes
+	}
+	ok, err := calendarrepo.MTIsForSameUserAsCalendar(rlog, nil, calendarID, mt.ID)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	if !ok {
+		return calendarNotFoundError
+	}
+	type removeTagRequest struct {
+		Tag string `json:"tag"`
+	}
+	var req removeTagRequest
+	if err = errors.WithStack(ctx.BodyParser(&req)); err != nil {
+		return model.ErrorToBadRequestErrorResponse(err)
+	}
+	if req.Tag == "" {
+		return model.BadRequestErrorResponse("tag must not be empty")
+	}
+	var res *model.Response
+	if err = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			if err := calendarrepo.RemoveTag(rlog, tx, calendarID, req.Tag); err != nil {
+				return err
+			}
+			var rollback bool
+			res, rollback = mytokenutils.DoAfterRequestThingsOther(
+				rlog, tx, nil, mt, *ctxutils.ClientMetaData(ctx),
+				api.EventCalendarListed, "", usedRestriction, umt.JWT, umt.OriginalTokenType,
+			)
+			if rollback {
+				return errors.New("rollback")
+			}
+			return nil
+		},
+	); err != nil && res == nil {
+		res = model.ErrorToInternalServerErrorResponse(err)
+	}
+	if res == nil {
+		res = &model.Response{Status: http.StatusNoContent}
+	}
+	return res
+}
+
 // HandleAddMytoken handles a request to add a mytoken to a calendar
 func HandleAddMytoken(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle add mytoken to calendar request")
 
 	clientMetadata := ctxutils.ClientMetaData(ctx)
-	calendarName := ctxutils.Params(ctx, "name")
+	calendarID := ctxutils.Params(ctx, "id")
 	var umt universalmytoken.UniversalMytoken
 	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
 	if errRes != nil {
 		return errRes
 	}
+	ok, err := calendarrepo.MTIsForSameUserAsCalendar(rlog, nil, calendarID, mt.ID)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err)
+	}
+	if !ok {
+		return calendarNotFoundError
+	}
 
 	var req pkg.AddMytokenToCalendarRequest
-	if err := errors.WithStack(ctx.BodyParser(&req)); err != nil {
+	if err = errors.WithStack(ctx.BodyParser(&req)); err != nil {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
 
-	id, momMode, errRes := validateMomMode(rlog, mt, req, clientMetadata)
+	id, momMode, errRes := auth.ValidateCapabilityWithMomMode(
+		rlog, api.CapabilityTokeninfoNotify,
+		api.CapabilityNotifyAnyToken, mt, req.MomID, clientMetadata,
+	)
 	if errRes != nil {
 		return errRes
 	}
@@ -374,58 +730,11 @@ func HandleAddMytoken(ctx *fiber.Ctx) *model.Response {
 	var res *model.Response
 	_ = db.Transact(
 		rlog, func(tx *sqlx.Tx) error {
-			info, err := calendarrepo.Get(rlog, tx, id, calendarName)
-			if err != nil {
-				_, e := db.ParseError(err)
-				if e == nil {
-					res = calendarNotFoundError
-				} else {
-					res = model.ErrorToInternalServerErrorResponse(err)
-				}
-				return err
-			}
-			if err = calendarrepo.AddMytokenToCalendar(rlog, tx, id, info.ID); err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-			cal, err := ics.ParseCalendar(strings.NewReader(info.ICS))
-			if err != nil {
-				err = errors.WithStack(err)
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-			event, errRes := eventForMytoken(rlog, tx, id, req.Comment, true, calendarName)
-			if errRes != nil {
-				res = errRes
-				return errors.New("rollback")
-			}
-			cal.AddVEvent(event)
-			info.ICS = cal.Serialize()
-			if err = calendarrepo.Update(rlog, tx, id, info); err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-
-			mytokenEvent := api.EventNotificationSubscribed
-			if momMode {
-				mytokenEvent = api.EventNotificationSubscribedOther
-			}
-			resInfo, err := info.ToCalendarInfoResponse(rlog, tx)
-			if err != nil {
-				res = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-			res = &model.Response{
-				Status:   http.StatusOK,
-				Response: resInfo,
-			}
-			var rollback bool
-			res, rollback = mytokenutils.DoAfterRequestThingsOther(
-				rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
-				mytokenEvent, fmt.Sprintf("calendar '%s'", info.Name), usedRestriction, umt.JWT, umt.OriginalTokenType,
+			res, err = addMytokenToCalendarTx(
+				rlog, tx, ctx, calendarID, id, req.Comment, momMode, mt, umt, usedRestriction,
 			)
-			if rollback {
-				return errors.New("rollback")
+			if err != nil {
+				return err
 			}
 			return nil
 		},
@@ -433,29 +742,66 @@ func HandleAddMytoken(ctx *fiber.Ctx) *model.Response {
 	return res
 }
 
-func validateMomMode(
-	rlog logrus.Ext1FieldLogger, mt *mytoken.Mytoken, req pkg.AddMytokenToCalendarRequest,
-	clientMetadata *api.ClientMetaData,
-) (mtid.MTID, bool, *model.Response) {
-	id := mt.ID
-	momMode := req.MomID.Hash() != id.Hash()
-	if momMode {
-		id = req.MomID.MTID
-		if errRes := auth.RequireMytokenIsParentOrCapability(
-			rlog, nil, api.CapabilityTokeninfoNotify, api.CapabilityNotifyAnyToken, mt, id, clientMetadata,
-		); errRes != nil {
-			return id, momMode, errRes
-		}
-		if errRes := auth.RequireMytokensForSameUser(rlog, nil, id, mt.ID); errRes != nil {
-			return id, momMode, errRes
-		}
+func addMytokenToCalendarTx(
+	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, ctx *fiber.Ctx, calendarID string, id mtid.MTID,
+	comment string, momMode bool, mt *mytoken.Mytoken, umt universalmytoken.UniversalMytoken,
+	usedRestriction *restrictions.Restriction,
+) (*model.Response, error) {
+	info, err := calendarrepo.GetByID(rlog, tx, calendarID)
+	if err != nil {
+		return handleCalendarUpdateError(err), err
 	}
-	return id, momMode, nil
+	if err = calendarrepo.AddMytokenToCalendar(rlog, tx, id, info.ID); err != nil {
+		return model.ErrorToInternalServerErrorResponse(err), err
+	}
+	info.ICS, err = addEventToCalendarICS(rlog, tx, info.ICS, id, comment, calendarID)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err), err
+	}
+	if err = calendarrepo.UpdateICS(rlog, tx, id, calendarID, info.ICS); err != nil {
+		return model.ErrorToInternalServerErrorResponse(err), err
+	}
+
+	mytokenEvent := api.EventNotificationSubscribed
+	if momMode {
+		mytokenEvent = api.EventNotificationSubscribedOther
+	}
+	resInfo, err := info.ToCalendarInfoResponse(rlog, tx)
+	if err != nil {
+		return model.ErrorToInternalServerErrorResponse(err), err
+	}
+	res := &model.Response{
+		Status:   http.StatusOK,
+		Response: resInfo,
+	}
+	var rollback bool
+	res, rollback = mytokenutils.DoAfterRequestThingsOther(
+		rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
+		mytokenEvent, "", usedRestriction, umt.JWT, umt.OriginalTokenType,
+	)
+	if rollback {
+		return res, errors.New("rollback")
+	}
+	return res, nil
+}
+
+func addEventToCalendarICS(
+	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, icsContent string, id mtid.MTID, comment, calendarID string,
+) (string, error) {
+	cal, err := ics.ParseCalendar(strings.NewReader(icsContent))
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	event, errRes := eventForMytoken(rlog, tx, id, comment, true, calendarID)
+	if errRes != nil {
+		return "", errors.New("failed to create event")
+	}
+	cal.AddVEvent(event)
+	return cal.Serialize(), nil
 }
 
 func eventForMytoken(
-	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID, comment string,
-	unsubscribeOption bool, calendarName string,
+	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, id mtid.MTID, comment string, unsubscribeOption bool, calendarID string,
 ) (event *ics.VEvent, errRes *model.Response) {
 	_ = db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
@@ -494,14 +840,14 @@ func eventForMytoken(
 					"%s\n", recreateURL,
 			)
 			if unsubscribeOption {
-				unsubscribeURL, err := actions.CreateRemoveFromCalendar(rlog, tx, id, calendarName)
+				unsubscribeURL, err := actions.CreateRemoveFromCalendar(rlog, tx, id, calendarID)
 				if err != nil {
 					errRes = model.ErrorToInternalServerErrorResponse(err)
 					return err
 				}
 				description += fmt.Sprintf(
-					"To remove this mytoken from calendar '%s' follow this link:\n"+
-						"%s\n", calendarName, unsubscribeURL,
+					"To remove this mytoken from this calendar follow this link:\n"+
+						"%s\n", unsubscribeURL,
 				)
 			}
 			event.SetURL(recreateURL)

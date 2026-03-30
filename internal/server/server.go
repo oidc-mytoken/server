@@ -1,15 +1,11 @@
 package server
 
 import (
-	"embed"
 	"fmt"
-	"io/fs"
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/template/mustache/v2"
 	"github.com/oidc-mytoken/utils/utils"
 	log "github.com/sirupsen/logrus"
 
@@ -26,9 +22,28 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/server/apipath"
 	"github.com/oidc-mytoken/server/internal/server/paths"
+	"github.com/oidc-mytoken/server/internal/server/spa"
 	"github.com/oidc-mytoken/server/internal/server/ssh"
-	"github.com/oidc-mytoken/server/internal/utils/fileio"
 )
+
+// essentialWebPaths are paths that must remain accessible even when web_interface is disabled.
+// These include consent screens, native app callbacks, and legal pages.
+var essentialWebPaths = []string{
+	"/c/",
+	"/native",
+	"/privacy",
+}
+
+// IsEssentialWebPath checks if a path is an essential web path that must remain
+// accessible even when the web interface is disabled.
+func IsEssentialWebPath(path string) bool {
+	for _, p := range essentialWebPaths {
+		if strings.HasPrefix(path, p) {
+			return true
+		}
+	}
+	return false
+}
 
 var server *fiber.App
 
@@ -43,71 +58,76 @@ var serverConfig = fiber.Config{
 	Network: "tcp",
 }
 
-//go:embed web/sites web/layouts
-var _webFiles embed.FS
-var webFiles fs.FS
-
-//go:embed web/partials
-var _partials embed.FS
-var partials fs.FS
-
-func init() {
-	var err error
-	webFiles, err = fs.Sub(_webFiles, "web")
-	if err != nil {
-		log.WithError(err).Fatal()
-	}
-	partials, err = fs.Sub(_partials, "web/partials")
-	if err != nil {
-		log.WithError(err).Fatal()
-	}
-}
-
-func initTemplateEngine() {
-	overWriteDir := config.Get().Features.WebInterface.OverwriteDir
-	engine := mustache.NewFileSystemPartials(
-		fileio.NewLocalAndOtherSearcherFilesystem(overWriteDir, http.FS(webFiles)),
-		".mustache",
-		fileio.NewLocalAndOtherSearcherFilesystem(
-			fileio.JoinIfFirstNotEmpty(overWriteDir, "partials"), http.FS(partials),
-		),
-	)
-	serverConfig.Views = engine
-}
-
 // Init initializes the server
 func Init() {
-	initTemplateEngine()
+	webEnabled := config.Get().Features.WebInterface.Enabled
+
+	if !spa.Available {
+		log.Fatal("SPA distribution not available. Please build the frontend first.")
+	}
+
+	// Set the SPA handler for consent page (needed even when web interface is disabled)
+	consent.SPAHandler = spa.HandleSPAFallback()
+
+	if webEnabled {
+		log.Info("Web interface enabled")
+	} else {
+		log.Info("Web interface disabled (essential paths like consent and privacy remain accessible)")
+	}
+
 	serverConfig.ProxyHeader = config.Get().Server.ProxyHeader
 	server = fiber.New(serverConfig)
 	addMiddlewares(server)
 	addRoutes(server)
+
+	// Add SPA routes (needed for essential paths even when web interface is disabled)
+	spa.AddRoutes(server)
+
+	// Add fallback handler (404 for API, SPA fallback for web)
 	server.Use(
 		func(ctx *fiber.Ctx) error {
 			path := ctx.Path()
-			if !strings.HasPrefix(path, apipath.Prefix) && ctx.Accepts(
-				fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8,
-			) != "" {
-				ctx.Status(fiber.StatusNotFound)
-				return ctx.Render(
-					"sites/404", map[string]interface{}{
-						"empty-navbar": true,
-					}, "layouts/main",
-				)
+
+			// For API routes, return JSON error
+			if strings.HasPrefix(path, apipath.Prefix) {
+				return jsonNotFound(ctx, path)
 			}
-			return model.Response{
-				Status: fiber.StatusNotFound,
-				Response: api.Error{
-					Error:            "not_found",
-					ErrorDescription: path,
-				},
-			}.Send(ctx)
+
+			// For HTML requests
+			if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" {
+				// Serve SPA for essential paths regardless of web interface setting
+				if IsEssentialWebPath(path) {
+					if handler := spa.HandleSPAFallback(); handler != nil {
+						return handler(ctx)
+					}
+				}
+
+				// If web interface is enabled, serve SPA for all HTML requests
+				if webEnabled {
+					if handler := spa.HandleSPAFallback(); handler != nil {
+						return handler(ctx)
+					}
+				}
+			}
+
+			// Return JSON 404 for non-HTML requests or when web interface is disabled
+			return jsonNotFound(ctx, path)
 		},
 	)
 }
 
+// jsonNotFound returns a JSON 404 error response
+func jsonNotFound(ctx *fiber.Ctx, path string) error {
+	return model.Response{
+		Status: fiber.StatusNotFound,
+		Response: api.Error{
+			Error:            "not_found",
+			ErrorDescription: path,
+		},
+	}.Send(ctx)
+}
+
 func addRoutes(s fiber.Router) {
-	addWebRoutes(s)
 	generalPaths := paths.GetGeneralPaths()
 	s.Get(generalPaths.ConfigurationEndpoint, toFiberHandler(configuration.HandleConfiguration))
 	s.Get(paths.WellknownOpenIDConfiguration, toFiberHandler(configuration.HandleConfiguration))
@@ -116,24 +136,22 @@ func addRoutes(s fiber.Router) {
 	}
 	s.Get(generalPaths.JWKSEndpoint, endpoints.HandleJWKS)
 	s.Get(generalPaths.OIDCRedirectEndpoint, redirect.HandleOIDCRedirect)
+
+	// Consent routes - these still need server-side handling even with SPA
 	s.Get("/c/:consent_code", consent.HandleConsent)
 	s.Post("/c/:consent_code", toFiberHandler(consent.HandleConsentPost))
 	s.Post("/c", consent.HandleCreateConsent)
-	s.Get("/native", handleNativeCallback)
-	s.Get("/native/abort", handleNativeConsentAbortCallback)
-	s.Get(generalPaths.Privacy, handlePrivacy)
+
+	// Native app callbacks - handled by SPA
+	spaFallback := spa.HandleSPAFallback()
+	s.Get("/native", spaFallback)
+	s.Get("/native/abort", spaFallback)
+
+	// Calendar ICS endpoint (always server-side)
 	s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id"), calendar.HandleGetICS)
+
 	s.Get(generalPaths.ActionsEndpoint, actions.HandleActions)
 	addAPIRoutes(s)
-}
-
-func addWebRoutes(s fiber.Router) {
-	generalPaths := paths.GetGeneralPaths()
-	s.Get("/", handleIndex)
-	s.Get("/home", handleHome)
-	s.Get("/settings", handleSettings)
-	s.Get(utils.CombineURLPath(generalPaths.CalendarEndpoint, ":id", "view"), handleViewCalendar)
-	s.Get(utils.CombineURLPath(generalPaths.NotificationManagementEndpoint, ":mc"), handleNotificationManagement)
 }
 
 func start(s *fiber.App) {

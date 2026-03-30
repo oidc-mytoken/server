@@ -1,0 +1,2 @@
+ALTER TABLE Calendars
+    DROP COLUMN IF EXISTS name;

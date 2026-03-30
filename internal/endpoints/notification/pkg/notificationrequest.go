@@ -13,6 +13,7 @@ type SubscribeNotificationRequest struct {
 	api.SubscribeNotificationRequest
 	Mytoken universalmytoken.UniversalMytoken `json:"mytoken" xml:"mytoken" form:"mytoken"`
 	MomID   mtid.MOMID                        `json:"mom_id" xml:"mom_id" form:"mom_id"`
+	Tags    []string                          `json:"tags,omitempty"`
 }
 
 // NotificationsListResponse is a type holding the response to a notification list request

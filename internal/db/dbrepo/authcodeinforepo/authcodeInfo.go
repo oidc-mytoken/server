@@ -13,6 +13,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/authcodeinforepo/state"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
+	"github.com/oidc-mytoken/server/internal/model/profiled"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 )
 
@@ -108,7 +109,7 @@ func DeleteAuthFlowInfoByState(rlog log.Ext1FieldLogger, tx *sqlx.Tx, state *sta
 // UpdateTokenInfoByState updates the stored AuthFlowInfo for the given state
 func UpdateTokenInfoByState(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx, state *state.State, r restrictions.Restrictions, c api.Capabilities,
-	rot *api.Rotation, tokenName string,
+	rot *api.Rotation, tokenName string, tags []api.CreateMytokenTag,
 ) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
@@ -119,9 +120,13 @@ func UpdateTokenInfoByState(
 			info.Restrictions.Restrictions = r
 			info.Capabilities.Capabilities = c
 			if rot != nil {
+				if info.Rotation == nil {
+					info.Rotation = &profiled.Rotation{}
+				}
 				info.Rotation.Rotation = *rot
 			}
 			info.Name = tokenName
+			info.Tags = tags
 			_, err = tx.Exec(
 				`CALL AuthInfo_Update(?,?)`,
 				state, info.AuthCodeFlowRequest,

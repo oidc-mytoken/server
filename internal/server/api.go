@@ -5,6 +5,7 @@ import (
 	"github.com/oidc-mytoken/utils/utils"
 
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/endpoints/consent"
 	"github.com/oidc-mytoken/server/internal/endpoints/guestmode"
 	"github.com/oidc-mytoken/server/internal/endpoints/notification"
 	"github.com/oidc-mytoken/server/internal/endpoints/notification/calendar"
@@ -14,9 +15,12 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/settings/email"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings/grants"
 	"github.com/oidc-mytoken/server/internal/endpoints/settings/grants/ssh"
+	"github.com/oidc-mytoken/server/internal/endpoints/settings/tags"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/access"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken"
+	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/tagging"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo"
+	"github.com/oidc-mytoken/server/internal/endpoints/webentities"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/server/paths"
 )
@@ -31,6 +35,13 @@ func addAPIRoutes(s fiber.Router) {
 func addAPIvXRoutes(s fiber.Router, version int) {
 	apiPaths := paths.GetAPIPaths(version)
 	s.Post(apiPaths.MytokenEndpoint, toFiberHandler(mytoken.HandleMytokenEndpoint))
+	// Consent API endpoint for SPA
+	s.Get(utils.CombineURLPath(apiPaths.ConsentEndpoint, ":consent_code"), consent.HandleConsentAPI)
+	s.Post(utils.CombineURLPath(apiPaths.ConsentEndpoint, ":consent_code"), toFiberHandler(consent.HandleConsentPost))
+	// Capabilities API endpoint
+	s.Get(apiPaths.CapabilitiesEndpoint, webentities.HandleGetCapabilities)
+	s.Post(utils.CombineURLPath(apiPaths.MytokenEndpoint, "tags"), tagging.HandleAddTagToMytoken)
+	s.Delete(utils.CombineURLPath(apiPaths.MytokenEndpoint, "tags"), tagging.HandleRemoveTagFromMytoken)
 	s.Post(apiPaths.AccessTokenEndpoint, toFiberHandler(access.HandleAccessTokenEndpoint))
 	if config.Get().Features.TokenRevocation.Enabled {
 		s.Post(apiPaths.RevocationEndpoint, toFiberHandler(revocation.HandleRevoke))
@@ -57,9 +68,17 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 		if config.Get().Features.Notifications.ICS.Enabled {
 			s.Get(apiPaths.CalendarEndpoint, toFiberHandler(calendar.HandleList))
 			s.Post(apiPaths.CalendarEndpoint, toFiberHandler(calendar.HandleAdd))
-			s.Get(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), calendar.HandleGet)
-			s.Post(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), toFiberHandler(calendar.HandleAddMytoken))
-			s.Delete(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":name"), toFiberHandler(calendar.HandleDelete))
+			s.Get(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":id"), calendar.HandleGet)
+			s.Post(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":id"), toFiberHandler(calendar.HandleAddMytoken))
+			s.Put(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":id"), toFiberHandler(calendar.HandleUpdate))
+			s.Post(
+				utils.CombineURLPath(apiPaths.CalendarEndpoint, ":id", "tags"), toFiberHandler(calendar.HandleAddTag),
+			)
+			s.Delete(
+				utils.CombineURLPath(apiPaths.CalendarEndpoint, ":id", "tags"),
+				toFiberHandler(calendar.HandleRemoveTag),
+			)
+			s.Delete(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":id"), toFiberHandler(calendar.HandleDelete))
 		}
 		s.Post(apiPaths.NotificationEndpoint, toFiberHandler(notification.HandlePost))
 		s.Get(apiPaths.NotificationEndpoint, toFiberHandler(notification.HandleGet))
@@ -92,6 +111,10 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 			s.Put(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "email"), toFiberHandler(email.HandlePut))
 		}
 	}
+	s.Get(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "tags"), toFiberHandler(tags.HandleGet))
+	s.Post(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "tags", ":tag"), toFiberHandler(tags.HandlePost))
+	s.Put(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "tags", ":tag"), toFiberHandler(tags.HandlePut))
+	s.Delete(utils.CombineURLPath(apiPaths.UserSettingEndpoint, "tags", ":tag"), toFiberHandler(tags.HandleDelete))
 }
 
 func addProfileEndpointRoutes(r fiber.Router, apiPaths paths.APIPaths) {

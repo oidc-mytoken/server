@@ -2,17 +2,14 @@ package main
 
 import (
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/jmoiron/sqlx"
-	mytokenlib "github.com/oidc-mytoken/lib"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbmigrate"
+	"github.com/oidc-mytoken/server/internal/db/dbmigrate/gomigrations"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/versionrepo"
-	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/utils/dbcl"
 )
 
@@ -40,66 +37,44 @@ func getDoneMap(state versionrepo.DBVersionState) (map[string]bool, map[string]b
 	return before, after
 }
 
-func migrateDB(mytokenNodes []string) error {
-	v := "v" + version.VERSION
+func migrateDB() error {
 	dbState, err := versionrepo.GetVersionState(log.StandardLogger(), nil)
 	if err != nil {
 		return err
 	}
-	return runUpdates(dbState, mytokenNodes, v)
+	return runUpdates(dbState)
 }
 
-func runUpdates(dbState versionrepo.DBVersionState, mytokenNodes []string, version string) error {
+func runUpdates(dbState versionrepo.DBVersionState) error {
 	beforeDone, afterDone := getDoneMap(dbState)
-	if err := runBeforeUpdates(beforeDone); err != nil {
-		return err
-	}
-	if !anyAfterUpdates(afterDone) { // If there are no after cmds to run, we are done
-		return nil
-	}
-	waitUntilAllNodesOnVersion(mytokenNodes, version)
-
-	return runAfterUpdates(afterDone)
-}
-
-func runBeforeUpdates(beforeDone map[string]bool) error {
 	for _, v := range dbmigrate.Versions {
 		if err := updateCallback(
-			dbmigrate.MigrationCommands[v].Before, v, beforeDone, versionrepo.SetVersionBefore,
+			dbmigrate.MigrationCommands[v].Before, v, "pre", beforeDone, versionrepo.SetVersionBefore,
+		); err != nil {
+			return err
+		}
+		if err := gomigrations.RunGoMigration(nil, v); err != nil {
+			return err
+		}
+		if err := updateCallback(
+			dbmigrate.MigrationCommands[v].After, v, "post", afterDone, versionrepo.SetVersionAfter,
 		); err != nil {
 			return err
 		}
 	}
 	return nil
 }
-func anyAfterUpdates(afterDone map[string]bool) bool {
-	for v, cs := range dbmigrate.MigrationCommands {
-		if len(cs.After) > 0 && !afterDone[v] {
-			return true
-		}
-	}
-	return false
-}
-func runAfterUpdates(afterDone map[string]bool) error {
-	for _, v := range dbmigrate.Versions {
-		if err := updateCallback(
-			dbmigrate.MigrationCommands[v].After, v, afterDone, versionrepo.SetVersionAfter,
-		); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+
 func updateCallback(
-	cmds, version string, done map[string]bool,
+	cmds, version, code string, done map[string]bool,
 	dbUpdateCallback func(log.Ext1FieldLogger, *sqlx.Tx, string) error,
 ) error {
-	fmt.Printf("Updating DB to version %s\n", version)
+	fmt.Printf("Updating DB to version %s %s\n", version, code)
 	if cmds == "" {
 		return nil
 	}
 	if done[version] {
-		fmt.Printf("Skipping Update; DB already has version %s\n", version)
+		fmt.Printf("Skipping Update; DB already has version %s %s\n", version, code)
 		return nil
 	}
 	if err := dbcl.RunDBCommands(cmds, migrateDBConf.DBConf, true); err != nil {
@@ -110,34 +85,4 @@ func updateCallback(
 			return dbUpdateCallback(log.StandardLogger(), tx, version)
 		},
 	)
-}
-
-func waitUntilAllNodesOnVersion(mytokenNodes []string, version string) {
-	allNodesOnVersion := len(mytokenNodes) == 0
-	for !allNodesOnVersion {
-		var tmp []string
-		for _, n := range mytokenNodes {
-			v, err := getVersionForNode(n)
-			if err != nil {
-				log.WithError(err).Error()
-			}
-			if v != version {
-				tmp = append(tmp, n)
-			}
-		}
-		mytokenNodes = tmp
-		allNodesOnVersion = len(mytokenNodes) == 0
-		time.Sleep(60 * time.Second)
-	}
-}
-
-func getVersionForNode(node string) (string, error) {
-	if !strings.HasPrefix(node, "http") {
-		node = "https://" + node
-	}
-	my, err := mytokenlib.NewMytokenServer(node)
-	if err != nil {
-		return "", err
-	}
-	return my.ServerMetadata.Version, nil
 }

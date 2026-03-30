@@ -12,4 +12,5 @@ type TokeninfoIntrospectResponse struct {
 	api.TokeninfoIntrospectResponse `json:",inline"`
 	TokenType                       model.ResponseType  `json:"token_type"`
 	Token                           mytoken.UsedMytoken `json:"token"`
+	Tags                            []api.MTTagInfo     `json:"tags,omitempty"`
 }

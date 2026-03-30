@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"slices"
 
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/mod/semver"
@@ -33,12 +34,15 @@ var migrationScripts embed.FS
 func init() {
 	Versions = []string{}
 	if err := fs.WalkDir(
-		fs.FS(migrationScripts), ".", func(path string, d fs.DirEntry, err error) error {
+		fs.FS(migrationScripts), ".", func(_ string, d fs.DirEntry, _ error) error {
 			if d.IsDir() {
 				return nil
 			}
 			name := d.Name()
-			Versions = append(Versions, utils.RSplitN(name, ".", 3)[0])
+			v := utils.RSplitN(name, ".", 3)[0]
+			if !slices.Contains(Versions, v) {
+				Versions = append(Versions, v)
+			}
 			return nil
 		},
 	); err != nil {

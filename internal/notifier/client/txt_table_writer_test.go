@@ -7,9 +7,15 @@ import (
 
 func TestTable(*testing.T) {
 	table := generateSimpleTable(
-		nil, map[string]string{
-			"foo": "bar",
-			"FOO": "BAR",
+		nil, []TableRow{
+			{
+				Key:   "foo",
+				Value: "bar",
+			},
+			{
+				Key:   "FOO",
+				Value: "BAR",
+			},
 		},
 	)
 	fmt.Println(table)

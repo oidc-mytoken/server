@@ -345,12 +345,19 @@ func createMytokenEntry(
 		return nil, restrictionsWhereOK, err
 	}
 	mte := mytokenrepo.NewMytokenEntry(mt, authFlowInfo.Name, networkData)
+	mte.Tags = authFlowInfo.Tags
 	mte.Token.AuthTime = unixtime.Now()
 	if err = mte.InitRefreshToken(rt); err != nil {
 		return nil, restrictionsWhereOK, err
 	}
 	if err = mte.Store(rlog, tx, "Used grant_type oidc_flow authorization_code"); err != nil {
 		return nil, restrictionsWhereOK, err
+	}
+	for _, sub := range authFlowInfo.SubscribeNotificationRequests {
+		if err = notificationsrepo.
+			MytokenSubscribeOrCreateNotificationWithClasses(rlog, tx, sub, mte.ID); err != nil {
+			return nil, restrictionsWhereOK, err
+		}
 	}
 	if err = notificationsrepo.ScheduleExpirationNotificationsIfNeeded(
 		rlog, tx, mte.ID, mte.Token.ExpiresAt, mte.Token.IssuedAt,

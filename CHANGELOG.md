@@ -19,6 +19,9 @@
 - The `mytoken-migratedb` utility is dropped! Its functionalty is now
   included in `mytoken-setup`. The drop-in replacement for
   `mytoken-migratedb` is `mytoken-setup db migrate`
+- `mytoken-setup db migrate` no longer supports waiting for mytoken nodes to be upgraded; this was never needed. The
+  `-f` option is dropped and is now the default behavior.
+- Calendars no longer have a name
 
 ### Features
 

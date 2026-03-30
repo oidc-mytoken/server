@@ -30,6 +30,8 @@ func defaultAPIPaths(api string) APIPaths {
 		GuestModeOP:           utils.CombineURLPath(api, "/guests"),
 		NotificationEndpoint:  utils.CombineURLPath(api, "/notifications"),
 		CalendarEndpoint:      utils.CombineURLPath(api, "/notifications/calendars"),
+		ConsentEndpoint:       utils.CombineURLPath(api, "/consent"),
+		CapabilitiesEndpoint:  utils.CombineURLPath(api, "/capabilities"),
 	}
 }
 
@@ -83,6 +85,8 @@ type APIPaths struct {
 	GuestModeOP           string
 	NotificationEndpoint  string
 	CalendarEndpoint      string
+	ConsentEndpoint       string
+	CapabilitiesEndpoint  string
 }
 
 // GetCurrentAPIPaths returns the api paths for the most recent major version

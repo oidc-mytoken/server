@@ -211,12 +211,19 @@ features:
   token_rotation:
     enabled: true
 
-  # Provides a web interface for in browser usage
+  # Provides a web interface for in-browser usage.
+  # When disabled:
+  # - The main web UI (/, /home, /settings, etc.) returns a 404 JSON error
+  # - Essential paths remain accessible:
+  #   - Consent screen (/c/*) - required for authorization flows
+  #   - Native app callbacks (/native, /native/abort) - required for native applications
+  #   - Privacy page (/privacy) - legal requirement
+  # - API endpoints (/api/*) remain fully functional
   web_interface:
     enabled: true
-    # A director with the same structure as https://github.com/oidc-mytoken/server/tree/master/internal/server/web
-    # where web files can be located. If this option is set and a file is present here it is used to overwrite the
-    # default file. This can be used for customization, especially css.
+    # A directory with the same structure as the SPA build output where web files can be located.
+    # If this option is set and a file is present here it is used to overwrite the default file.
+    # This can be used for customization.
     # overwrite_dir: "/var/www/mytoken"
 
   ssh:
