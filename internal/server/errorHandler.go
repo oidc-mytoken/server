@@ -8,6 +8,7 @@ import (
 	fiberUtils "github.com/gofiber/fiber/v2/utils"
 	"github.com/oidc-mytoken/api/v0"
 
+	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/server/apipath"
 	"github.com/oidc-mytoken/server/internal/server/spa"
@@ -40,6 +41,11 @@ func handleError(ctx *fiber.Ctx, err error) error {
 }
 
 func handleErrorHTML(ctx *fiber.Ctx, code int) error {
+	// If web interface is disabled and this is not an essential path, return JSON error
+	if !config.Get().Features.WebInterface.Enabled && !IsEssentialWebPath(ctx.Path()) {
+		return handleErrorJSON(ctx, code, "")
+	}
+
 	// Serve the SPA and let client-side routing handle error display
 	handler := spa.HandleSPAFallback()
 	if handler != nil {

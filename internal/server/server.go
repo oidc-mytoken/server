@@ -26,6 +26,25 @@ import (
 	"github.com/oidc-mytoken/server/internal/server/ssh"
 )
 
+// essentialWebPaths are paths that must remain accessible even when web_interface is disabled.
+// These include consent screens, native app callbacks, and legal pages.
+var essentialWebPaths = []string{
+	"/c/",
+	"/native",
+	"/privacy",
+}
+
+// IsEssentialWebPath checks if a path is an essential web path that must remain
+// accessible even when the web interface is disabled.
+func IsEssentialWebPath(path string) bool {
+	for _, p := range essentialWebPaths {
+		if strings.HasPrefix(path, p) {
+			return true
+		}
+	}
+	return false
+}
+
 var server *fiber.App
 
 var serverConfig = fiber.Config{
@@ -41,20 +60,27 @@ var serverConfig = fiber.Config{
 
 // Init initializes the server
 func Init() {
+	webEnabled := config.Get().Features.WebInterface.Enabled
+
 	if !spa.Available {
 		log.Fatal("SPA distribution not available. Please build the frontend first.")
 	}
 
-	log.Info("Using Svelte SPA for web interface")
-	// Set the SPA handler for consent page
+	// Set the SPA handler for consent page (needed even when web interface is disabled)
 	consent.SPAHandler = spa.HandleSPAFallback()
+
+	if webEnabled {
+		log.Info("Web interface enabled")
+	} else {
+		log.Info("Web interface disabled (essential paths like consent and privacy remain accessible)")
+	}
 
 	serverConfig.ProxyHeader = config.Get().Server.ProxyHeader
 	server = fiber.New(serverConfig)
 	addMiddlewares(server)
 	addRoutes(server)
 
-	// Add SPA routes
+	// Add SPA routes (needed for essential paths even when web interface is disabled)
 	spa.AddRoutes(server)
 
 	// Add fallback handler (404 for API, SPA fallback for web)
@@ -64,33 +90,41 @@ func Init() {
 
 			// For API routes, return JSON error
 			if strings.HasPrefix(path, apipath.Prefix) {
-				return model.Response{
-					Status: fiber.StatusNotFound,
-					Response: api.Error{
-						Error:            "not_found",
-						ErrorDescription: path,
-					},
-				}.Send(ctx)
+				return jsonNotFound(ctx, path)
 			}
 
-			// For HTML requests, serve the SPA fallback (index.html for client-side routing)
+			// For HTML requests
 			if ctx.Accepts(fiber.MIMETextHTML, fiber.MIMETextHTMLCharsetUTF8) != "" {
-				handler := spa.HandleSPAFallback()
-				if handler != nil {
-					return handler(ctx)
+				// Serve SPA for essential paths regardless of web interface setting
+				if IsEssentialWebPath(path) {
+					if handler := spa.HandleSPAFallback(); handler != nil {
+						return handler(ctx)
+					}
+				}
+
+				// If web interface is enabled, serve SPA for all HTML requests
+				if webEnabled {
+					if handler := spa.HandleSPAFallback(); handler != nil {
+						return handler(ctx)
+					}
 				}
 			}
 
-			// For non-HTML requests, return JSON error
-			return model.Response{
-				Status: fiber.StatusNotFound,
-				Response: api.Error{
-					Error:            "not_found",
-					ErrorDescription: path,
-				},
-			}.Send(ctx)
+			// Return JSON 404 for non-HTML requests or when web interface is disabled
+			return jsonNotFound(ctx, path)
 		},
 	)
+}
+
+// jsonNotFound returns a JSON 404 error response
+func jsonNotFound(ctx *fiber.Ctx, path string) error {
+	return model.Response{
+		Status: fiber.StatusNotFound,
+		Response: api.Error{
+			Error:            "not_found",
+			ErrorDescription: path,
+		},
+	}.Send(ctx)
 }
 
 func addRoutes(s fiber.Router) {
