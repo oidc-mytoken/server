@@ -4,7 +4,7 @@
  */
 export async function copyToClipboard(text: string): Promise<boolean> {
 	try {
-		if (navigator.clipboard && window.isSecureContext) {
+        if (navigator.clipboard && globalThis.isSecureContext) {
 			await navigator.clipboard.writeText(text);
 			return true;
 		}
@@ -20,7 +20,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 		textArea.select();
 
 		const success = document.execCommand('copy');
-		document.body.removeChild(textArea);
+        textArea.remove();
 		return success;
 	} catch (err) {
 		console.error('Failed to copy to clipboard:', err);
@@ -32,5 +32,5 @@ export async function copyToClipboard(text: string): Promise<boolean> {
  * Check if clipboard API is available
  */
 export function isClipboardAvailable(): boolean {
-	return !!(navigator.clipboard && window.isSecureContext);
+    return !!(navigator.clipboard && globalThis.isSecureContext);
 }

@@ -11,7 +11,7 @@ const STORAGE_KEY = 'mytoken-theme';
  */
 function getSystemTheme(): EffectiveTheme {
     if (!browser) return 'light';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 /**
@@ -39,7 +39,7 @@ function saveThemePreference(theme: ThemePreference): void {
  */
 function applyTheme(theme: EffectiveTheme): void {
     if (!browser) return;
-    document.documentElement.setAttribute('data-bs-theme', theme);
+    document.documentElement.dataset.bsTheme = theme;
 }
 
 // Store for the system's current theme preference (reactive to OS changes)
@@ -47,7 +47,7 @@ const systemTheme = writable<EffectiveTheme>(getSystemTheme());
 
 // Initialize system theme listener
 if (browser) {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = globalThis.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e: MediaQueryListEvent) => {
         systemTheme.set(e.matches ? 'dark' : 'light');
     };
@@ -104,8 +104,14 @@ function createThemeStore() {
          */
         cycle() {
             const current = get(themePreference);
-            const next: ThemePreference =
-                current === 'light' ? 'dark' : current === 'dark' ? 'auto' : 'light';
+            let next: ThemePreference;
+            if (current === 'light') {
+                next = 'dark';
+            } else if (current === 'dark') {
+                next = 'auto';
+            } else {
+                next = 'light';
+            }
             this.set(next);
         },
 

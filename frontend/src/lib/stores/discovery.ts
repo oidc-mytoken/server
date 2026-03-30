@@ -1,6 +1,6 @@
-import { writable, derived, get } from 'svelte/store';
-import { browser } from '$app/environment';
-import type { DiscoveryDocument, Provider } from '$lib/types';
+import {derived, get, writable} from 'svelte/store';
+import {browser} from '$app/environment';
+import type {DiscoveryDocument} from '$lib/types';
 
 const STORAGE_KEY = 'mytoken_discovery';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes

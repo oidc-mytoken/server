@@ -13,9 +13,9 @@
                 if (stored === 'dark') {
                     theme = 'dark';
                 } else if (stored === 'auto' || !stored) {
-                    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                    theme = globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                 }
-                document.documentElement.setAttribute('data-bs-theme', theme);
+                document.documentElement.dataset.bsTheme = theme;
             })();
         </script>
 		%sveltekit.head%

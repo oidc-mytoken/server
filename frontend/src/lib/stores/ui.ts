@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import {writable} from 'svelte/store';
 
 interface ErrorModal {
 	show: boolean;
@@ -32,7 +32,7 @@ interface UIState {
 }
 
 function createUIStore() {
-	const { subscribe, set, update } = writable<UIState>({
+    const {subscribe, update} = writable<UIState>({
 		errorModal: {
 			show: false,
 			title: '',

@@ -35,7 +35,7 @@ export function crc32(str: string): number {
  * @returns A hex color string with # prefix (e.g., "#a1b2c3")
  */
 export function generateTagColor(tagName: string): string {
-    if (!tagName || !tagName.trim()) {
+    if (!tagName?.trim()) {
         return '#6c757d'; // Default gray for empty names
     }
     const hash = crc32(tagName.trim());
@@ -52,7 +52,7 @@ export function generateTagColor(tagName: string): string {
  * @returns A normalized hex color with # prefix, or default gray if invalid
  */
 export function normalizeColor(color: string | undefined | null): string {
-    if (!color || !color.trim()) {
+    if (!color?.trim()) {
         return '#6c757d'; // Default gray
     }
     const trimmed = color.trim();

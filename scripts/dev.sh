@@ -22,6 +22,7 @@ print_usage() {
     echo "  $0                     # Build frontend and run server"
     echo "  $0 -s                  # Skip frontend build, just run server"
     echo "  $0 -c /path/to/config  # Use specific config file"
+    return 0
 }
 
 while [[ $# -gt 0 ]]; do
@@ -47,7 +48,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Build frontend unless skipped
-if [ "$SKIP_FRONTEND" = false ]; then
+if [[ "$SKIP_FRONTEND" = false ]]; then
     echo "=== Building frontend ==="
     "$SCRIPT_DIR/build-frontend.sh"
     echo ""
@@ -61,7 +62,7 @@ go build -o "$ROOT_DIR/mytoken-server" ./cmd/mytoken-server
 echo ""
 echo "=== Starting mytoken server ==="
 
-if [ -n "$CONFIG_FILE" ]; then
+if [[ -n "$CONFIG_FILE" ]]; then
     exec "$ROOT_DIR/mytoken-server" --config "$CONFIG_FILE"
 else
     exec "$ROOT_DIR/mytoken-server"

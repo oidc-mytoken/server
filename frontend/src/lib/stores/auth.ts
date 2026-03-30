@@ -1,6 +1,6 @@
-import { writable, derived, get } from 'svelte/store';
-import { browser } from '$app/environment';
-import type { TokenInfoResponse } from '$lib/types';
+import {derived, writable} from 'svelte/store';
+import {browser} from '$app/environment';
+import type {TokenInfoResponse} from '$lib/types';
 
 const ISSUER_STORAGE_KEY = 'mytoken_oidc_issuer';
 const SCOPES_STORAGE_KEY = 'mytoken_scopes';
