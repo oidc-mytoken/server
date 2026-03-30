@@ -34,7 +34,7 @@ var migrationScripts embed.FS
 func init() {
 	Versions = []string{}
 	if err := fs.WalkDir(
-		fs.FS(migrationScripts), ".", func(path string, d fs.DirEntry, err error) error {
+		fs.FS(migrationScripts), ".", func(_ string, d fs.DirEntry, _ error) error {
 			if d.IsDir() {
 				return nil
 			}

@@ -9,7 +9,7 @@ import (
 )
 
 // RenderErrorPage renders an error page using the SPA
-func RenderErrorPage(ctx *fiber.Ctx, status int, errorMsg string, optionalErrorHeading ...string) error {
+func RenderErrorPage(ctx *fiber.Ctx, status int, errorMsg string, _ ...string) error {
 	// Let the SPA handle error display via client-side routing
 	handler := spa.HandleSPAFallback()
 	if handler != nil {
@@ -27,7 +27,7 @@ func RenderErrorPage(ctx *fiber.Ctx, status int, errorMsg string, optionalErrorH
 // RenderExtendedErrorPage renders an error page with additional html content
 func RenderExtendedErrorPage(
 	ctx *fiber.Ctx, status int, errorMsg,
-	optionalErrorHeading, additionalHTML string,
+	optionalErrorHeading, _ string,
 ) error {
 	return RenderErrorPage(ctx, status, errorMsg, optionalErrorHeading)
 }

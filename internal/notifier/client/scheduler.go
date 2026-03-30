@@ -138,18 +138,7 @@ func handleDueMailNotification(
 					},
 				)
 			}
-			tableData = append(
-				tableData, TableRow{
-					"Mytoken Mom ID",
-					n.MTID.Hash(),
-				},
-			)
-			tableData = append(
-				tableData, TableRow{
-					"Expires",
-					exp.Time().String(),
-				},
-			)
+			tableData = append(tableData, TableRow{"Mytoken Mom ID", n.MTID.Hash()}, TableRow{"Expires", exp.Time().String()})
 			txtTable := generateSimpleTable(nil, tableData)
 			bindingData["txt-table"] = txtTable
 		}

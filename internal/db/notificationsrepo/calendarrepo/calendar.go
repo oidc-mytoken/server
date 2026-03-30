@@ -39,7 +39,7 @@ func Delete(rlog log.Ext1FieldLogger, tx *sqlx.Tx, myid mtid.MTID, calendarID st
 }
 
 // UpdateICS updates a calendar entry in the database
-func UpdateICS(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarID string, ics string) error {
+func UpdateICS(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarID, ics string) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL Calendar_UpdateICS(?,?,?)`, mtID, calendarID, ics)
@@ -99,7 +99,7 @@ func RemoveTag(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID, tag string) er
 }
 
 // UpdateICSInternal updates a calendar entry in the database	 and does not require a mtid.MTID
-func UpdateICSInternal(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID string, ics string) error {
+func UpdateICSInternal(rlog log.Ext1FieldLogger, tx *sqlx.Tx, calendarID, ics string) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			_, err := tx.Exec(`CALL Calendar_UpdateICSInternal(?,?)`, calendarID, ics)

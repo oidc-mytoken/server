@@ -216,18 +216,7 @@ func sendNotificationsForNotificationInfos(
 						},
 					)
 					if e != nil {
-						tableData = append(
-							tableData, TableRow{
-								"Event",
-								e.Event.String(),
-							},
-						)
-						tableData = append(
-							tableData, TableRow{
-								"Comment",
-								e.Comment,
-							},
-						)
+						tableData = append(tableData, TableRow{"Event", e.Event.String()}, TableRow{"Comment", e.Comment})
 					}
 					if tokenName.Valid {
 						tableData = append(
@@ -237,24 +226,7 @@ func sendNotificationsForNotificationInfos(
 							},
 						)
 					}
-					tableData = append(
-						tableData, TableRow{
-							"Mytoken Mom ID",
-							mtID.Hash(),
-						},
-					)
-					tableData = append(
-						tableData, TableRow{
-							"IP",
-							clientData.IP,
-						},
-					)
-					tableData = append(
-						tableData, TableRow{
-							"User-Agent",
-							clientData.UserAgent,
-						},
-					)
+					tableData = append(tableData, TableRow{"Mytoken Mom ID", mtID.Hash()}, TableRow{"IP", clientData.IP}, TableRow{"User-Agent", clientData.UserAgent})
 					if country := geoip.Country(clientData.IP); country != "" {
 						tableData = append(
 							tableData, TableRow{
