@@ -680,8 +680,8 @@ func validateConfigSections() error {
 }
 
 func validateProviders() error {
-	if len(conf.Providers) == 0 {
-		return errors.New("invalid config: providers must have at least one entry")
+	if len(conf.Providers) == 0 && !conf.Features.Federation.Enabled {
+		return errors.New("invalid config: providers must have at least one entry (or enable federation)")
 	}
 	for i, p := range conf.Providers {
 		if err := validateProvider(p, i); err != nil {
