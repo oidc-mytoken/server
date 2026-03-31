@@ -246,7 +246,8 @@ features:
     # _: admin
 
   # If true a guest mode is enabled that allows to obtain mytokens without further auth, ATs are obviously dummy
-  guest_mode: false
+  guest_mode:
+    enabled: false
 
   # Settings related to the notifications feature
   notifications:
