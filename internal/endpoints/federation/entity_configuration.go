@@ -1,12 +1,16 @@
 package federation
 
 import (
+	"time"
+
+	oidfed "github.com/go-oidfed/lib"
+	"github.com/go-oidfed/lib/jwx"
+	"github.com/go-oidfed/lib/oidfedconst"
 	"github.com/gofiber/fiber/v2"
 	"github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/valyala/fasthttp"
-	oidfed "github.com/zachmann/go-oidfed/pkg"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/jws"
@@ -50,26 +54,19 @@ func InitEntityConfiguration() {
 				SoftwareID:              version.SOFTWAREID,
 				SoftwareVersion:         version.VERSION,
 				OrganizationName:        config.Get().ServiceOperator.Name,
-				ClientRegistrationTypes: []string{oidfed.ClientRegistrationTypeAutomatic},
-			},
-			FederationEntity: &oidfed.FederationEntityMetadata{
-				OrganizationName: config.Get().ServiceOperator.Name,
-				Contacts:         []string{config.Get().ServiceOperator.Contact},
-				LogoURI:          utils.CombineURLPath(config.Get().IssuerURL, "static/img/mytoken.png"),
-				PolicyURI:        privacyURI,
-				HomepageURI:      "https://mytoken-docs.data.kit.edu",
+				ClientRegistrationTypes: []string{oidfedconst.ClientRegistrationTypeAutomatic},
+				InformationURI:          "https://docs.mytok.eu",
 			},
 		},
-		oidfed.NewEntityStatementSigner(
-			jws.GetSigningKey(jws.KeyUsageFederation),
-			config.Get().Features.Federation.Signing.Alg,
+		jwx.NewEntityStatementSigner(
+			jws.GetVersatileSigner(jws.KeyUsageFederation),
 		),
-		config.Get().Features.Federation.EntityConfigurationLifetime,
-		jws.GetSigningKey(jws.KeyUsageOIDCSigning),
-		config.Get().Signing.OIDC.Alg,
+		time.Duration(config.Get().Features.Federation.EntityConfigurationLifetime)*time.Second,
+		jws.GetVersatileSigner(jws.KeyUsageOIDCSigning),
+		nil,
 	)
 	if err != nil {
-		log.WithError(err).Fatal("Could not create oidcfed leaf entity configuration")
+		log.WithError(err).Fatal("Could not create oidfed leaf entity configuration")
 	}
 }
 
@@ -77,7 +74,7 @@ type entityStatementResponse []byte
 
 // Send sends this response using the passed fiber.Ctx
 func (r entityStatementResponse) Send(ctx *fiber.Ctx) error {
-	ctx.Set("content-type", "application/entity-statement+jwt")
+	ctx.Set("content-type", oidfedconst.ContentTypeEntityStatement)
 	return ctx.Status(fasthttp.StatusOK).Send(r)
 }
 

@@ -11,10 +11,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/go-oidfed/lib/jwx"
 	"github.com/golang-jwt/jwt"
 	"github.com/lestrrat-go/jwx/jwa"
+	jwav3 "github.com/lestrrat-go/jwx/v3/jwa"
 	"github.com/pkg/errors"
-	"github.com/zachmann/go-oidfed/pkg/jwk"
 
 	"github.com/oidc-mytoken/server/internal/config"
 )
@@ -108,7 +109,7 @@ type KeyUsage string
 // Predefined KeyUsage strings
 const (
 	KeyUsageMytokenSigning = KeyUsage("MT signing")
-	KeyUsageFederation     = KeyUsage("oidcfed")
+	KeyUsageFederation     = KeyUsage("oidfed")
 	KeyUsageOIDCSigning    = KeyUsage("oidc comm")
 )
 
@@ -117,7 +118,7 @@ type signingKeys map[KeyUsage]signingKeyMaterial
 type signingKeyMaterial struct {
 	SK   crypto.Signer
 	PK   crypto.PublicKey
-	JWKS jwk.JWKS
+	JWKS jwx.JWKS
 }
 
 var keys signingKeys
@@ -145,12 +146,30 @@ func GetPublicKey(usage KeyUsage) (pk crypto.PublicKey) {
 }
 
 // GetJWKS returns the jwks
-func GetJWKS(usage KeyUsage) (jwks jwk.JWKS) {
+func GetJWKS(usage KeyUsage) (jwks jwx.JWKS) {
 	k, ok := keys[usage]
 	if ok {
 		jwks = k.JWKS
 	}
 	return
+}
+
+// GetVersatileSigner returns a VersatileSigner for the given key usage
+func GetVersatileSigner(usage KeyUsage) jwx.VersatileSigner {
+	k, ok := keys[usage]
+	if !ok {
+		return nil
+	}
+	var alg jwa.SignatureAlgorithm
+	switch usage {
+	case KeyUsageMytokenSigning:
+		alg = config.Get().Signing.Mytoken.Alg
+	case KeyUsageOIDCSigning:
+		alg = config.Get().Signing.OIDC.Alg
+	case KeyUsageFederation:
+		alg = config.Get().Features.Federation.Signing.Alg
+	}
+	return jwx.NewSingleKeyVersatileSigner(k.SK, jwaToV3(alg))
 }
 
 // LoadMytokenSigningKey loads the private and public key for signing mytokens
@@ -200,6 +219,12 @@ func loadKey(keyfile string, usage KeyUsage, alg jwa.SignatureAlgorithm) {
 	}
 	keyData.SK = sk
 	keyData.PK = sk.Public()
-	keyData.JWKS = jwk.KeyToJWKS(keyData.PK, alg)
+	keyData.JWKS, _ = jwx.KeyToJWKS(keyData.PK, jwaToV3(alg))
 	keys[usage] = keyData
+}
+
+// jwaToV3 converts a jwa.SignatureAlgorithm (v1) to jwav3.SignatureAlgorithm (v3)
+func jwaToV3(alg jwa.SignatureAlgorithm) jwav3.SignatureAlgorithm {
+	v3alg, _ := jwav3.LookupSignatureAlgorithm(alg.String())
+	return v3alg
 }

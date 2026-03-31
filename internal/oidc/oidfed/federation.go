@@ -1,7 +1,7 @@
-package oidcfed
+package oidfed
 
 import (
-	oidfedcache "github.com/zachmann/go-oidfed/pkg/cache"
+	oidfedcache "github.com/go-oidfed/lib/cache"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints/federation"
@@ -9,7 +9,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/cache"
 )
 
-// Init inits the oidcfed
+// Init inits the oidfed
 func Init() {
 	if !config.Get().Features.Federation.Enabled {
 		return

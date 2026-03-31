@@ -17,7 +17,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/jws"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	notifier "github.com/oidc-mytoken/server/internal/notifier/client"
-	"github.com/oidc-mytoken/server/internal/oidc/oidcfed"
+	"github.com/oidc-mytoken/server/internal/oidc/oidfed"
 	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
 	"github.com/oidc-mytoken/server/internal/server"
 	"github.com/oidc-mytoken/server/internal/server/healthcheck"
@@ -37,7 +37,7 @@ func main() {
 	provider2.Init()
 	server.Init()
 	configurationEndpoint.Init()
-	oidcfed.Init()
+	oidfed.Init()
 	versionrepo.ConnectToVersion()
 	jws.LoadMytokenSigningKey()
 	httpclient.Init(config.Get().IssuerURL, fmt.Sprintf("mytoken-server %s", version.VERSION))
@@ -73,7 +73,7 @@ func reload() {
 	db.Connect()
 	jws.LoadMytokenSigningKey()
 	geoip.Init()
-	oidcfed.Discovery()
+	oidfed.Discovery()
 }
 
 func reloadLogFiles() {

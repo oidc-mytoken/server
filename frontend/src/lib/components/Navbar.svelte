@@ -143,29 +143,30 @@
 								Login
 							</button>
 							<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="loginDropdown">
-								{#if $providers.length > 5}
-									<li class="px-2 pb-2">
-										<input
-											type="text"
-											class="form-control form-control-sm"
-											placeholder="Search providers..."
-											bind:value={providerSearch}
-											bind:this={searchInput}
-											on:keydown={handleSearchKeydown}
-											on:click|stopPropagation
-										/>
-									</li>
-									<li><hr class="dropdown-divider" /></li>
-								{/if}
+								<li class="px-2 pb-2">
+									<input
+										type="text"
+										class="form-control form-control-sm"
+										placeholder="Search providers..."
+										bind:value={providerSearch}
+										bind:this={searchInput}
+										on:keydown={handleSearchKeydown}
+										on:click|stopPropagation
+									/>
+								</li>
+								<li><hr class="dropdown-divider" /></li>
 								<div class="provider-list">
 									{#each filteredProviders as provider}
 										<li>
 											<button
-												class="dropdown-item"
+												class="dropdown-item d-flex align-items-center"
 												on:click={() => handleLogin(provider.issuer)}
 												disabled={loggingIn}
 											>
-												{provider.name ?? provider.issuer}
+												<span class="flex-grow-1">{provider.name ?? provider.issuer}</span>
+												{#if provider.oidfed}
+													<i class="fas fa-project-diagram ms-2 text-info" title="Discovered via OpenID Federation"></i>
+												{/if}
 											</button>
 										</li>
 									{:else}

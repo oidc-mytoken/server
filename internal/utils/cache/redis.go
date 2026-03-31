@@ -38,6 +38,23 @@ func (c redisCache) Set(key string, value any, expiration time.Duration) error {
 	return c.client.Set(c.ctx, key, data, expiration).Err()
 }
 
+// Delete implements the Cache interface
+func (c redisCache) Delete(key string) error {
+	return c.client.Del(c.ctx, key).Err()
+}
+
+// Clear implements the Cache interface
+func (c redisCache) Clear(prefix string) error {
+	keys, err := c.client.Keys(c.ctx, prefix+"*").Result()
+	if err != nil {
+		return errors.Wrap(err, "error getting keys for clear")
+	}
+	if len(keys) == 0 {
+		return nil
+	}
+	return c.client.Del(c.ctx, keys...).Err()
+}
+
 func initRedisCache() {
 	rc := config.Get().Caching.External.Redis
 	rdb := redis.NewClient(

@@ -1,34 +1,34 @@
-package oidcfed
+package oidfed
 
 import (
 	"net/url"
 
+	oidfed "github.com/go-oidfed/lib"
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
-	fed "github.com/zachmann/go-oidfed/pkg"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/pkg/oauth2x"
 )
 
-func fedLeafEntity() *fed.FederationLeaf {
+func fedLeafEntity() *oidfed.FederationLeaf {
 	return config.Get().Features.Federation.Entity
 }
 
-var defaultOIDCFedAudienceConf = &model.AudienceConf{
+var defaultOIDFedAudienceConf = &model.AudienceConf{
 	RFC8707:           true,
 	RequestParameter:  model.AudienceParameterResource,
 	SpaceSeparateAuds: false,
 }
 
-// OIDCFedProvider implements the model.Provider interface for oidc fed
-type OIDCFedProvider struct {
-	*fed.OpenIDProviderMetadata
+// OIDFedProvider implements the model.Provider interface for oidc fed
+type OIDFedProvider struct {
+	*oidfed.OpenIDProviderMetadata
 }
 
 // Name implements the model.Provider interface
-func (p OIDCFedProvider) Name() string {
+func (p OIDFedProvider) Name() string {
 	if p.OrganizationName != "" {
 		return p.OrganizationName
 	}
@@ -36,22 +36,22 @@ func (p OIDCFedProvider) Name() string {
 }
 
 // Issuer implements the model.Provider interface
-func (p OIDCFedProvider) Issuer() string {
+func (p OIDFedProvider) Issuer() string {
 	return p.OpenIDProviderMetadata.Issuer
 }
 
 // ClientID implements the model.Provider interface
-func (OIDCFedProvider) ClientID() string {
-	return fedLeafEntity().EntityID
+func (OIDFedProvider) ClientID() string {
+	return fedLeafEntity().EntityID()
 }
 
 // Scopes implements the model.Provider interface
-func (p OIDCFedProvider) Scopes() []string {
+func (p OIDFedProvider) Scopes() []string {
 	return p.ScopesSupported
 }
 
 // Endpoints implements the model.Provider interface
-func (p OIDCFedProvider) Endpoints() *oauth2x.Endpoints {
+func (p OIDFedProvider) Endpoints() *oauth2x.Endpoints {
 	return &oauth2x.Endpoints{
 		Authorization: p.AuthorizationEndpoint,
 		Token:         p.TokenEndpoint,
@@ -63,17 +63,17 @@ func (p OIDCFedProvider) Endpoints() *oauth2x.Endpoints {
 }
 
 // Audience implements the model.Provider interface
-func (OIDCFedProvider) Audience() *model.AudienceConf {
-	return defaultOIDCFedAudienceConf
+func (OIDFedProvider) Audience() *model.AudienceConf {
+	return defaultOIDFedAudienceConf
 }
 
 // MaxMytokenLifetime implements the model.Provider interface
-func (OIDCFedProvider) MaxMytokenLifetime() int64 {
+func (OIDFedProvider) MaxMytokenLifetime() int64 {
 	return 0
 }
 
 // AddClientAuthentication implements the model.Provider interface; it adds a client assertion to the request
-func (OIDCFedProvider) AddClientAuthentication(r *resty.Request, endpoint string) *resty.Request {
+func (OIDFedProvider) AddClientAuthentication(r *resty.Request, endpoint string) *resty.Request {
 	clientAssertion, err := fedLeafEntity().RequestObjectProducer().ClientAssertion(endpoint)
 	if err != nil {
 		log.WithError(err).Error()
@@ -85,11 +85,11 @@ func (OIDCFedProvider) AddClientAuthentication(r *resty.Request, endpoint string
 	return r.SetFormDataFromValues(params)
 }
 
-// GetOIDCFedProvider returns a OIDCFedProvider implementing model.Provider for the passed issuer url
-func GetOIDCFedProvider(issuer string) model.Provider {
+// GetOIDFedProvider returns a OIDFedProvider implementing model.Provider for the passed issuer url
+func GetOIDFedProvider(issuer string) model.Provider {
 	meta, err := getOPMetadata(issuer)
 	if err != nil {
 		return nil
 	}
-	return OIDCFedProvider{meta}
+	return OIDFedProvider{OpenIDProviderMetadata: meta}
 }

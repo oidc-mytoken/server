@@ -56,3 +56,15 @@ func (c cacheWrapper) Set(key string, value any, expiration time.Duration) error
 	c.c.SetWithTTL(key, data, expiration)
 	return nil
 }
+
+// Delete implements the Cache interface
+func (c cacheWrapper) Delete(key string) error {
+	c.c.Delete(key)
+	return nil
+}
+
+// Clear implements the Cache interface
+func (c cacheWrapper) Clear(prefix string) error {
+	c.c.DeleteKeysByPattern(prefix + "*")
+	return nil
+}

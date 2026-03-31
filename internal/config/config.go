@@ -6,13 +6,13 @@ import (
 	"regexp"
 	"strings"
 
+	oidfed "github.com/go-oidfed/lib"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/oidc-mytoken/utils/context"
 	utils2 "github.com/oidc-mytoken/utils/utils"
 	"github.com/oidc-mytoken/utils/utils/fileutil"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	oidfed "github.com/zachmann/go-oidfed/pkg"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v3"
 
@@ -124,6 +124,10 @@ var defaultConfig = Config{
 			Signing: signingConf{
 				Alg:       jwa.ES512,
 				RSAKeyLen: 2048,
+			},
+			OPDiscovery: opDiscoveryConf{
+				UseEntityCollectionEndpoint: true,
+				Interval:                    3600,
 			},
 		},
 	},
@@ -554,6 +558,13 @@ type federationConf struct {
 	EntityConfigurationLifetime int64                  `yaml:"entity_configuration_lifetime"`
 	Signing                     signingConf            `yaml:"signing"`
 	Entity                      *oidfed.FederationLeaf `yaml:"-"`
+	OPDiscovery                 opDiscoveryConf        `yaml:"op_discovery"`
+}
+
+type opDiscoveryConf struct {
+	UseEntityCollectionEndpoint bool     `yaml:"use_entity_collection_endpoint"`
+	Interval                    int64    `yaml:"interval"`
+	RequiredTrustMarks          []string `yaml:"required_trust_marks"`
 }
 
 func (f *federationConf) validate() (err error) {
@@ -580,6 +591,14 @@ func (f *federationConf) validate() (err error) {
 	}
 	if f.EntityConfigurationLifetime == 0 {
 		f.EntityConfigurationLifetime = 7 * 24 * 60 * 60
+	}
+
+	// Validate OP discovery config
+	if f.OPDiscovery.Interval <= 0 {
+		f.OPDiscovery.Interval = 3600 // default 1 hour
+	}
+	if f.OPDiscovery.UseEntityCollectionEndpoint && f.OPDiscovery.Interval < 60 {
+		return errors.New("op_discovery.interval must be at least 60 seconds when using entity collection endpoint")
 	}
 
 	return

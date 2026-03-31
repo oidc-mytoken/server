@@ -10,7 +10,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/endpoints/configuration/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/model/version"
-	"github.com/oidc-mytoken/server/internal/oidc/oidcfed"
+	"github.com/oidc-mytoken/server/internal/oidc/oidfed"
 	"github.com/oidc-mytoken/server/internal/server/paths"
 )
 
@@ -18,7 +18,7 @@ import (
 // SupportedProviderConfig including providers specified in the config file as well as possible oidc fed providers
 func SupportedProviders() []api.SupportedProviderConfig {
 	if config.Get().Features.Federation.Enabled {
-		mytokenConfig.ProvidersSupported = append(getProvidersFromConfig(), oidcfed.SupportedProviders()...)
+		mytokenConfig.ProvidersSupported = append(getProvidersFromConfig(), oidfed.SupportedProviders()...)
 	} else {
 		mytokenConfig.ProvidersSupported = getProvidersFromConfig()
 	}
@@ -28,7 +28,7 @@ func SupportedProviders() []api.SupportedProviderConfig {
 // HandleConfiguration handles calls to the configuration endpoint
 func HandleConfiguration(*fiber.Ctx) *model.Response {
 	if config.Get().Features.Federation.Enabled {
-		mytokenConfig.ProvidersSupported = append(getProvidersFromConfig(), oidcfed.SupportedProviders()...)
+		mytokenConfig.ProvidersSupported = append(getProvidersFromConfig(), oidfed.SupportedProviders()...)
 	}
 	return &model.Response{
 		Status:   fiber.StatusOK,

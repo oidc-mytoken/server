@@ -1,4 +1,4 @@
-package oidcfed
+package oidfed
 
 import (
 	"net/url"
@@ -12,12 +12,12 @@ import (
 	"github.com/oidc-mytoken/server/internal/server/routes"
 )
 
-// GetAuthorizationURL creates an authorization url using oidcfed automatic client registration
-func (p OIDCFedProvider) GetAuthorizationURL(
+// GetAuthorizationURL creates an authorization url using oidfed automatic client registration
+func (p OIDFedProvider) GetAuthorizationURL(
 	rlog log.Ext1FieldLogger, state, pkceChallenge string,
 	scopeRestrictions, audRestrictions []string,
 ) (string, error) {
-	rlog.Debug("Generating oidcfed authorization url")
+	rlog.Debug("Generating oidfed authorization url")
 	scopes := scopeRestrictions
 	if len(scopes) <= 0 {
 		scopes = p.Scopes()
@@ -33,7 +33,7 @@ func (p OIDCFedProvider) GetAuthorizationURL(
 	params.Set("prompt", "consent")
 	params.Set("code_challenge", pkceChallenge)
 	params.Set("code_challenge_method", pkce.TransformationS256.String())
-	params.Set("nonce", utils.RandASCIIString(44)) // This is only here because some oidcfed implementations
+	params.Set("nonce", utils.RandASCIIString(44)) // This is only here because some oidfed implementations
 	// require nonce, as we don't care about the id token we also don't check the nonce
 
 	if len(audRestrictions) > 0 {

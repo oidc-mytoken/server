@@ -5,7 +5,7 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/model"
-	"github.com/oidc-mytoken/server/internal/oidc/oidcfed"
+	"github.com/oidc-mytoken/server/internal/oidc/oidfed"
 )
 
 var fileProviderByIssuer map[string]model.Provider
@@ -26,7 +26,7 @@ func GetProvider(issuer string) model.Provider {
 		return p
 	}
 	if config.Get().Features.Federation.Enabled {
-		return oidcfed.GetOIDCFedProvider(issuer)
+		return oidfed.GetOIDFedProvider(issuer)
 	}
 	return nil
 }
