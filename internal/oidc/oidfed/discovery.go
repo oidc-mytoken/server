@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/endpoints/federation"
 )
 
 var oidfedOPs map[string]*oidfed.CollectedEntity
@@ -110,6 +111,9 @@ func discovery() {
 
 	oidfedOPs = providers
 
+	// Update the entity configuration with the union of all scopes from discovered OPs
+	federation.UpdateScopes(AllSupportedScopes())
+
 	log.WithField("count", len(providers)).Debug("OP discovery completed")
 }
 
@@ -129,6 +133,25 @@ func getDisplayNameFromEntityInfo(entity *oidfed.CollectedEntity) string {
 		return fed.DisplayName
 	}
 	return entity.EntityID
+}
+
+// AllSupportedScopes returns the union of all scopes supported by the discovered OPs
+func AllSupportedScopes() []string {
+	scopeSet := make(map[string]struct{})
+	for issuer := range oidfedOPs {
+		p := GetOIDFedProvider(issuer)
+		if p == nil {
+			continue
+		}
+		for _, scope := range p.Scopes() {
+			scopeSet[scope] = struct{}{}
+		}
+	}
+	scopes := make([]string, 0, len(scopeSet))
+	for scope := range scopeSet {
+		scopes = append(scopes, scope)
+	}
+	return scopes
 }
 
 // SupportedProviders returns the api.SupportedProviderConfig for the discovered OPs in the federation

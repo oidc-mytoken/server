@@ -1,6 +1,7 @@
 package federation
 
 import (
+	"strings"
 	"time"
 
 	oidfed "github.com/go-oidfed/lib"
@@ -19,7 +20,10 @@ import (
 	"github.com/oidc-mytoken/server/internal/server/paths"
 )
 
-// InitEntityConfiguration initializes the entity configuration if enabled
+// defaultOIDCScopes contains the default OIDC core scopes
+const defaultOIDCScopes = "openid profile email address phone offline_access"
+
+// InitEntityConfiguration initializes the entity configuration if enabled.
 func InitEntityConfiguration() {
 	if config.Get().Features.Federation.Entity != nil {
 		return
@@ -28,12 +32,20 @@ func InitEntityConfiguration() {
 	privacyURI := utils.CombineURLPath(config.Get().IssuerURL, otherPaths.Privacy)
 	var err error
 	jwks := jws.GetJWKS(jws.KeyUsageOIDCSigning)
+
+	// Use configured scopes if set, otherwise use default OIDC core scopes
+	scope := defaultOIDCScopes
+	if len(config.Get().Features.Federation.OPDiscovery.Scopes) > 0 {
+		scope = strings.Join(config.Get().Features.Federation.OPDiscovery.Scopes, " ")
+	}
+
 	config.Get().Features.Federation.Entity, err = oidfed.NewFederationLeaf(
 		config.Get().IssuerURL,
 		config.Get().Features.Federation.AuthorityHints,
 		config.Get().Features.Federation.TrustAnchors,
 		&oidfed.Metadata{
 			RelyingParty: &oidfed.OpenIDRelyingPartyMetadata{
+				Scope: scope,
 				RedirectURIS: []string{
 					utils.CombineURLPath(
 						config.Get().IssuerURL, otherPaths.OIDCRedirectEndpoint,
@@ -67,6 +79,28 @@ func InitEntityConfiguration() {
 	)
 	if err != nil {
 		log.WithError(err).Fatal("Could not create oidfed leaf entity configuration")
+	}
+}
+
+// UpdateScopes updates the scope in the RP metadata of the entity configuration.
+// If static scopes are configured in the config file, this function does nothing.
+func UpdateScopes(scopes []string) {
+	// Skip dynamic update if static scopes are configured
+	if len(config.Get().Features.Federation.OPDiscovery.Scopes) > 0 {
+		return
+	}
+
+	entity := config.Get().Features.Federation.Entity
+	if entity == nil {
+		return
+	}
+	// FederationLeaf embeds StaticFederationEntity as a value (not pointer)
+	staticEntity, ok := entity.FederationEntity.(oidfed.StaticFederationEntity)
+	if !ok {
+		return
+	}
+	if staticEntity.Metadata != nil && staticEntity.Metadata.RelyingParty != nil {
+		staticEntity.Metadata.RelyingParty.Scope = strings.Join(scopes, " ")
 	}
 }
 

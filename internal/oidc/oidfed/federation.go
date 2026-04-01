@@ -17,6 +17,6 @@ func Init() {
 	jws.LoadFederationKey()
 	jws.LoadOIDCSigningKey()
 	oidfedcache.SetCache(cache.SubCache(cache.FederationLib))
-	Discovery()
 	federation.InitEntityConfiguration()
+	Discovery()
 }

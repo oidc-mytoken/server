@@ -565,6 +565,9 @@ type opDiscoveryConf struct {
 	UseEntityCollectionEndpoint bool     `yaml:"use_entity_collection_endpoint"`
 	Interval                    int64    `yaml:"interval"`
 	RequiredTrustMarks          []string `yaml:"required_trust_marks"`
+	// Scopes specifies the scopes to advertise in the RP metadata.
+	// If empty, scopes are dynamically collected from discovered OPs.
+	Scopes []string `yaml:"scopes"`
 }
 
 func (f *federationConf) validate() (err error) {
