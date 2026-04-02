@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/Songmu/prompter v0.5.1
 	github.com/TwiN/gocache/v2 v2.4.0
-	github.com/arran4/golang-ical v0.3.4
+	github.com/arran4/golang-ical v0.3.5
 	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/fatih/structs v1.1.0
