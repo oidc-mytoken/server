@@ -470,7 +470,7 @@ func createOIDCSigningKey(_ *cli.Context) error {
 		fmt.Printf("Generated OIDC signing key for %s at '%s'.\n", algStr, keyFile)
 
 		// Register in public key storage
-		if err = registerOIDCPublicKey(conf.KeyDir, kid, pk, alg); err != nil {
+		if err = registerOIDCPublicKey(conf.KeyDir, kid, pk); err != nil {
 			return errors.Wrapf(err, "failed to register public key for %s", algStr)
 		}
 	}
@@ -479,7 +479,7 @@ func createOIDCSigningKey(_ *cli.Context) error {
 }
 
 // registerOIDCPublicKey adds the public key to the OIDC public key storage
-func registerOIDCPublicKey(keyDir, kid string, pk jwk.Key, alg jwa.SignatureAlgorithm) error {
+func registerOIDCPublicKey(keyDir, kid string, pk jwk.Key) error {
 	pks := &public.FilesystemPublicKeyStorage{
 		Dir:    keyDir,
 		TypeID: "oidc",
