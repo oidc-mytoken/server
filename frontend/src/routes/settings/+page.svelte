@@ -84,13 +84,15 @@
 		</ul>
 
 		<div class="tab-content">
-			{#if activeTab === 'grants'}
+			<div class="tab-pane" class:active={activeTab === 'grants'} style:display={activeTab === 'grants' ? undefined : 'none'} role="tabpanel">
 				<GrantsSettings initialExpandSSH={expandSSH} />
-			{:else if activeTab === 'tags'}
+			</div>
+			<div class="tab-pane" class:active={activeTab === 'tags'} style:display={activeTab === 'tags' ? undefined : 'none'} role="tabpanel">
 				<TagsSettings />
-			{:else if activeTab === 'notifications'}
+			</div>
+			<div class="tab-pane" class:active={activeTab === 'notifications'} style:display={activeTab === 'notifications' ? undefined : 'none'} role="tabpanel">
 				<NotificationSettings />
-			{/if}
+			</div>
 		</div>
 	{:else}
 		<div class="alert alert-warning">

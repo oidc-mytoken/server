@@ -250,37 +250,33 @@
 		</div>
 	{/if}
 
-	<!-- Tab content -->
+	<!-- Tab content - all tabs are kept mounted to preserve state; inactive tabs are hidden via CSS -->
 	<div class="tab-content">
-		{#if activeTab === 'about'}
-			<div class="tab-pane active" role="tabpanel">
-				<AboutTab on:navigate={handleNavigate} />
-			</div>
-		{:else if activeTab === 'mt'}
-			<div class="tab-pane active" role="tabpanel">
-				<CreateMytoken 
-					initialRequest={initialMytokenRequest}
-					on:created={handleTokenCreated} 
-				/>
-			</div>
-		{:else if activeTab === 'at'}
-			<div class="tab-pane active" role="tabpanel">
-				<CreateAccessToken />
-			</div>
-		{:else if activeTab === 'info'}
-			<div class="tab-pane active" role="tabpanel">
-				<TokenInfo initialToken={tokenForInfo} on:createTransferCode={handleCreateTransferCode} />
-			</div>
-		{:else if activeTab === 'transfer'}
-			<div class="tab-pane active" role="tabpanel">
-				<TransferCode initialToken={tokenForTransfer} on:tokenReceived={handleTokenReceived} />
-			</div>
-		{:else if activeTab === 'list' && $isLoggedIn}
-			<div class="tab-pane active" role="tabpanel">
+		<div class="tab-pane" class:active={activeTab === 'about'} style:display={activeTab === 'about' ? undefined : 'none'} role="tabpanel">
+			<AboutTab on:navigate={handleNavigate} />
+		</div>
+		<div class="tab-pane" class:active={activeTab === 'mt'} style:display={activeTab === 'mt' ? undefined : 'none'} role="tabpanel">
+			<CreateMytoken 
+				initialRequest={initialMytokenRequest}
+				on:created={handleTokenCreated} 
+			/>
+		</div>
+		<div class="tab-pane" class:active={activeTab === 'at'} style:display={activeTab === 'at' ? undefined : 'none'} role="tabpanel">
+			<CreateAccessToken />
+		</div>
+		<div class="tab-pane" class:active={activeTab === 'info'} style:display={activeTab === 'info' ? undefined : 'none'} role="tabpanel">
+			<TokenInfo initialToken={tokenForInfo} on:createTransferCode={handleCreateTransferCode} />
+		</div>
+		<div class="tab-pane" class:active={activeTab === 'transfer'} style:display={activeTab === 'transfer' ? undefined : 'none'} role="tabpanel">
+			<TransferCode initialToken={tokenForTransfer} on:tokenReceived={handleTokenReceived} />
+		</div>
+		{#if $isLoggedIn}
+			<div class="tab-pane" class:active={activeTab === 'list'} style:display={activeTab === 'list' ? undefined : 'none'} role="tabpanel">
 				<TokenList />
 			</div>
-		{:else if activeTab === 'notifications' && $isLoggedIn && notificationsEnabled}
-			<div class="tab-pane active" role="tabpanel">
+		{/if}
+		{#if $isLoggedIn && notificationsEnabled}
+			<div class="tab-pane" class:active={activeTab === 'notifications'} style:display={activeTab === 'notifications' ? undefined : 'none'} role="tabpanel">
 				<Notifications initialSubtab={notificationsSubtab} />
 			</div>
 		{/if}

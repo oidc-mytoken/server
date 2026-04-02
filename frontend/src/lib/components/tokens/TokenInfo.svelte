@@ -684,542 +684,545 @@
 				</li>
 			</ul>
 
-			<div class="tab-content">
-				{#if activeTab === 'info'}
-					<!-- Basic info -->
-					<div class="card mb-3">
-						<div class="card-header">
-							<i class="fas fa-info-circle me-1"></i>
-							Basic Information
-						</div>
-						<div class="card-body">
-							<dl class="row mb-0">
-								<dt class="col-sm-4">Token Version</dt>
-								<dd class="col-sm-8">{tokenInfo.token.ver ?? 'N/A'}</dd>
+		<div class="tab-content">
+			<div class="tab-pane" class:active={activeTab === 'info'} style:display={activeTab === 'info' ? undefined : 'none'}>
+				<!-- Basic info -->
+				<div class="card mb-3">
+					<div class="card-header">
+						<i class="fas fa-info-circle me-1"></i>
+						Basic Information
+					</div>
+					<div class="card-body">
+						<dl class="row mb-0">
+							<dt class="col-sm-4">Token Version</dt>
+							<dd class="col-sm-8">{tokenInfo.token.ver ?? 'N/A'}</dd>
 
-								<dt class="col-sm-4">OIDC Issuer</dt>
-								<dd class="col-sm-8">{tokenInfo.token.oidc_iss ?? 'N/A'}</dd>
+							<dt class="col-sm-4">OIDC Issuer</dt>
+							<dd class="col-sm-8">{tokenInfo.token.oidc_iss ?? 'N/A'}</dd>
 
-								<dt class="col-sm-4">OIDC Subject</dt>
-								<dd class="col-sm-8">{tokenInfo.token.oidc_sub ?? 'N/A'}</dd>
+							<dt class="col-sm-4">OIDC Subject</dt>
+							<dd class="col-sm-8">{tokenInfo.token.oidc_sub ?? 'N/A'}</dd>
 
-								<dt class="col-sm-4">Mytoken Issuer</dt>
-								<dd class="col-sm-8">{tokenInfo.token.iss ?? 'N/A'}</dd>
+							<dt class="col-sm-4">Mytoken Issuer</dt>
+							<dd class="col-sm-8">{tokenInfo.token.iss ?? 'N/A'}</dd>
 
-								<dt class="col-sm-4">Audience</dt>
-								<dd class="col-sm-8">{tokenInfo.token.aud ?? 'N/A'}</dd>
+							<dt class="col-sm-4">Audience</dt>
+							<dd class="col-sm-8">{tokenInfo.token.aud ?? 'N/A'}</dd>
 
-								<dt class="col-sm-4">Created (iat)</dt>
-								<dd class="col-sm-8">
-									{tokenInfo.token.iat ? formatDateTime(tokenInfo.token.iat) : 'N/A'}
-								</dd>
+							<dt class="col-sm-4">Created (iat)</dt>
+							<dd class="col-sm-8">
+								{tokenInfo.token.iat ? formatDateTime(tokenInfo.token.iat) : 'N/A'}
+							</dd>
 
-								<dt class="col-sm-4">Not Before (nbf)</dt>
-								<dd class="col-sm-8">
-									{tokenInfo.token.nbf ? formatDateTime(tokenInfo.token.nbf) : 'N/A'}
-								</dd>
+							<dt class="col-sm-4">Not Before (nbf)</dt>
+							<dd class="col-sm-8">
+								{tokenInfo.token.nbf ? formatDateTime(tokenInfo.token.nbf) : 'N/A'}
+							</dd>
 
-								<dt class="col-sm-4">Expires (exp)</dt>
-								<dd class="col-sm-8">
-									{#if tokenInfo.token.exp}
-										{formatDateTime(tokenInfo.token.exp)}
-										<small class="text-muted">({formatRelativeTime(tokenInfo.token.exp)})</small>
-									{:else}
-										Never
-									{/if}
-								</dd>
-
-								{#if tokenInfo.token.auth_time}
-									<dt class="col-sm-4">Auth Time</dt>
-									<dd class="col-sm-8">{formatDateTime(tokenInfo.token.auth_time)}</dd>
+							<dt class="col-sm-4">Expires (exp)</dt>
+							<dd class="col-sm-8">
+								{#if tokenInfo.token.exp}
+									{formatDateTime(tokenInfo.token.exp)}
+									<small class="text-muted">({formatRelativeTime(tokenInfo.token.exp)})</small>
+								{:else}
+									Never
 								{/if}
+							</dd>
 
-								<dt class="col-sm-4">Sequence Number</dt>
-								<dd class="col-sm-8">{tokenInfo.token.seq_no ?? 0}</dd>
+							{#if tokenInfo.token.auth_time}
+								<dt class="col-sm-4">Auth Time</dt>
+								<dd class="col-sm-8">{formatDateTime(tokenInfo.token.auth_time)}</dd>
+							{/if}
 
-								<dt class="col-sm-4">AT Usages</dt>
-								<dd class="col-sm-8">{getTotalUsages(tokenInfo.token.restrictions).at}</dd>
+							<dt class="col-sm-4">Sequence Number</dt>
+							<dd class="col-sm-8">{tokenInfo.token.seq_no ?? 0}</dd>
 
-								<dt class="col-sm-4">Other Usages</dt>
-								<dd class="col-sm-8">{getTotalUsages(tokenInfo.token.restrictions).other}</dd>
-							</dl>
-						</div>
+							<dt class="col-sm-4">AT Usages</dt>
+							<dd class="col-sm-8">{getTotalUsages(tokenInfo.token.restrictions).at}</dd>
+
+							<dt class="col-sm-4">Other Usages</dt>
+							<dd class="col-sm-8">{getTotalUsages(tokenInfo.token.restrictions).other}</dd>
+						</dl>
 					</div>
+				</div>
 
-					<!-- Capabilities -->
+				<!-- Capabilities -->
+				<div class="mb-3">
+					{#if loadingCapabilities}
+						<LoadingSpinner message="Loading capabilities..." />
+					{:else}
+						<CapabilityTree
+							capabilities={webCapabilities}
+							selectedCapabilities={tokenInfo.token.capabilities ?? []}
+							readonly={true}
+							collapsed={true}
+							showTemplates={false}
+						/>
+					{/if}
+				</div>
+
+				<!-- Restrictions -->
+				{#if tokenInfo.token.restrictions && tokenInfo.token.restrictions.length > 0}
 					<div class="mb-3">
-						{#if loadingCapabilities}
-							<LoadingSpinner message="Loading capabilities..." />
-						{:else}
-							<CapabilityTree
-								capabilities={webCapabilities}
-								selectedCapabilities={tokenInfo.token.capabilities ?? []}
-								readonly={true}
-								collapsed={true}
-								showTemplates={false}
-							/>
-						{/if}
+						<RestrictionsEditor
+							restrictions={toRestrictions(tokenInfo.token.restrictions)}
+							readonly={true}
+							collapsed={true}
+							showTemplates={false}
+						/>
 					</div>
+				{/if}
 
-					<!-- Restrictions -->
-					{#if tokenInfo.token.restrictions && tokenInfo.token.restrictions.length > 0}
-						<div class="mb-3">
-							<RestrictionsEditor
-								restrictions={toRestrictions(tokenInfo.token.restrictions)}
-								readonly={true}
-								collapsed={true}
-								showTemplates={false}
-							/>
-						</div>
-					{/if}
+				<!-- Rotation -->
+				{#if tokenInfo.token.rotation}
+					<div class="mb-3">
+						<RotationSettings
+							rotation={tokenInfo.token.rotation}
+							readonly={true}
+							collapsed={true}
+							showTemplates={false}
+						/>
+					</div>
+				{/if}
 
-					<!-- Rotation -->
-					{#if tokenInfo.token.rotation}
-						<div class="mb-3">
-							<RotationSettings
-								rotation={tokenInfo.token.rotation}
-								readonly={true}
-								collapsed={true}
-								showTemplates={false}
-							/>
-						</div>
-					{/if}
-
-					<!-- Linked Notifications -->
-					<CollapsibleSection
-						title="Linked Notifications"
-						icon="fa-bell"
-						collapsed={true}
-					>
-						<span slot="header-right" class="ms-2">
-							{#if loadingNotifications}
-								<span class="spinner-border spinner-border-sm text-muted"></span>
-							{:else if notificationsError}
-								<span class="badge bg-warning text-dark" title={notificationsError}>
-									<i class="fas fa-exclamation-triangle"></i>
-								</span>
-							{:else if hasLinkedNotifications}
-								<span class="badge bg-info">
-									{linkedNotifications.direct.length + linkedNotifications.tagBased.length + linkedNotifications.userWide.length}
-								</span>
-							{:else}
-								<span class="badge bg-secondary">0</span>
-							{/if}
-						</span>
-
+				<!-- Linked Notifications -->
+				<CollapsibleSection
+					title="Linked Notifications"
+					icon="fa-bell"
+					collapsed={true}
+				>
+					<span slot="header-right" class="ms-2">
 						{#if loadingNotifications}
-							<div class="text-center py-3">
-								<span class="spinner-border spinner-border-sm me-2"></span>
-								Loading notifications...
-							</div>
+							<span class="spinner-border spinner-border-sm text-muted"></span>
 						{:else if notificationsError}
-							<div class="alert alert-warning mb-0">
-								<i class="fas fa-exclamation-triangle me-2"></i>
-								{notificationsError}
-							</div>
-						{:else if hasLinkedNotifications}
-							<!-- Directly subscribed notifications -->
-							{#if linkedNotifications.direct.length > 0}
-								<div class="mb-3">
-									<h6 class="text-muted mb-2">
-										<i class="fas fa-link me-1"></i>
-										Directly Subscribed
-									</h6>
-									<div class="list-group list-group-flush">
-										{#each linkedNotifications.direct as notif}
-											<div class="list-group-item d-flex align-items-center gap-2 py-2">
-												<span class="badge bg-secondary" title={notif.notification_type === 'mail' ? 'Email' : 'WebSocket'}>
-													<i class="fas {getNotificationTypeIcon(notif.notification_type)}"></i>
-												</span>
-												<div class="notification-classes-icons">
-													{#each rootClasses as cls}
-														{@const status = isClassEnabled(notif, cls.id)}
-														<span class="{getClassColor(status)}" title={cls.label}>
-															<i class="fas {cls.icon}"></i>
-														</span>
-													{/each}
-												</div>
-												{#if notif.tags && notif.tags.length > 0}
-													<div class="tags ms-2">
-														{#each notif.tags as tag}
-															<TagPill name={tag.tag} color={tag.color} small />
-														{/each}
-													</div>
-												{/if}
-											</div>
-										{/each}
-									</div>
-								</div>
-							{/if}
-
-							<!-- Tag-based notifications -->
-							{#if linkedNotifications.tagBased.length > 0}
-								<div class="mb-3">
-									<h6 class="text-muted mb-2">
-										<i class="fas fa-tags me-1"></i>
-										Via Tags
-									</h6>
-									<div class="list-group list-group-flush">
-										{#each linkedNotifications.tagBased as notif}
-											<div class="list-group-item d-flex align-items-center gap-2 py-2">
-												<span class="badge bg-secondary" title={notif.notification_type === 'mail' ? 'Email' : 'WebSocket'}>
-													<i class="fas {getNotificationTypeIcon(notif.notification_type)}"></i>
-												</span>
-												<div class="notification-classes-icons">
-													{#each rootClasses as cls}
-														{@const status = isClassEnabled(notif, cls.id)}
-														<span class="{getClassColor(status)}" title={cls.label}>
-															<i class="fas {cls.icon}"></i>
-														</span>
-													{/each}
-												</div>
-												{#if notif.tags && notif.tags.length > 0}
-													<div class="tags ms-2">
-														{#each notif.tags as tag}
-															<TagPill name={tag.tag} color={tag.color} small />
-														{/each}
-													</div>
-												{/if}
-											</div>
-										{/each}
-									</div>
-								</div>
-							{/if}
-
-							<!-- User-wide notifications -->
-							{#if linkedNotifications.userWide.length > 0}
-								<div class="mb-3">
-									<h6 class="text-muted mb-2">
-										<i class="fas fa-user me-1"></i>
-										User-Wide
-									</h6>
-									<div class="list-group list-group-flush">
-										{#each linkedNotifications.userWide as notif}
-											<div class="list-group-item d-flex align-items-center gap-2 py-2">
-												<span class="badge bg-secondary" title={notif.notification_type === 'mail' ? 'Email' : 'WebSocket'}>
-													<i class="fas {getNotificationTypeIcon(notif.notification_type)}"></i>
-												</span>
-												<div class="notification-classes-icons">
-													{#each rootClasses as cls}
-														{@const status = isClassEnabled(notif, cls.id)}
-														<span class="{getClassColor(status)}" title={cls.label}>
-															<i class="fas {cls.icon}"></i>
-														</span>
-													{/each}
-												</div>
-												<span class="badge bg-primary ms-auto">
-													<i class="fas fa-user me-1"></i>
-													All Tokens
-												</span>
-											</div>
-										{/each}
-									</div>
-								</div>
-							{/if}
-						{:else}
-							<div class="alert alert-secondary mb-0">
-								<i class="fas fa-info-circle me-2"></i>
-								No notifications linked to this token.
-							</div>
-						{/if}
-					</CollapsibleSection>
-
-					<!-- Linked Calendars -->
-					<CollapsibleSection
-						title="Linked Calendars"
-						icon="fa-calendar"
-						collapsed={true}
-					>
-						<span slot="header-right" class="ms-2">
-							{#if loadingCalendars}
-								<span class="spinner-border spinner-border-sm text-muted"></span>
-							{:else if calendarsError}
-								<span class="badge bg-warning text-dark" title={calendarsError}>
-									<i class="fas fa-exclamation-triangle"></i>
-								</span>
-							{:else if hasLinkedCalendars}
-								<span class="badge bg-info">
-									{linkedCalendars.direct.length + linkedCalendars.tagBased.length}
-								</span>
-							{:else}
-								<span class="badge bg-secondary">0</span>
-							{/if}
-						</span>
-
-						{#if loadingCalendars}
-							<div class="text-center py-3">
-								<span class="spinner-border spinner-border-sm me-2"></span>
-								Loading calendars...
-							</div>
-						{:else if calendarsError}
-							<div class="alert alert-warning mb-0">
-								<i class="fas fa-exclamation-triangle me-2"></i>
-								{calendarsError}
-							</div>
-						{:else if hasLinkedCalendars}
-							<!-- Directly subscribed calendars -->
-							{#if linkedCalendars.direct.length > 0}
-								<div class="mb-3">
-									<h6 class="text-muted mb-2">
-										<i class="fas fa-link me-1"></i>
-										Directly Subscribed
-									</h6>
-									<div class="list-group list-group-flush">
-										{#each linkedCalendars.direct as cal}
-											<div class="list-group-item d-flex align-items-center gap-2 py-2">
-												<i class="fas fa-calendar text-primary"></i>
-												<span class="flex-grow-1">
-													{cal.description || 'Unnamed Calendar'}
-												</span>
-												{#if cal.tags && cal.tags.length > 0}
-													<div class="tags">
-														{#each cal.tags as tag}
-															<TagPill name={tag.tag} color={tag.color} small />
-														{/each}
-													</div>
-												{/if}
-												{#if cal.ics_url}
-													<a 
-														href={cal.ics_url} 
-														class="btn btn-sm btn-outline-secondary"
-														title="Download ICS"
-														target="_blank"
-													>
-														<i class="fas fa-download"></i>
-													</a>
-												{/if}
-											</div>
-										{/each}
-									</div>
-								</div>
-							{/if}
-
-							<!-- Tag-based calendars -->
-							{#if linkedCalendars.tagBased.length > 0}
-								<div class="mb-3">
-									<h6 class="text-muted mb-2">
-										<i class="fas fa-tags me-1"></i>
-										Via Tags
-									</h6>
-									<div class="list-group list-group-flush">
-										{#each linkedCalendars.tagBased as cal}
-											<div class="list-group-item d-flex align-items-center gap-2 py-2">
-												<i class="fas fa-calendar text-primary"></i>
-												<span class="flex-grow-1">
-													{cal.description || 'Unnamed Calendar'}
-												</span>
-												{#if cal.tags && cal.tags.length > 0}
-													<div class="tags">
-														{#each cal.tags as tag}
-															<TagPill name={tag.tag} color={tag.color} small />
-														{/each}
-													</div>
-												{/if}
-												{#if cal.ics_url}
-													<a 
-														href={cal.ics_url} 
-														class="btn btn-sm btn-outline-secondary"
-														title="Download ICS"
-														target="_blank"
-													>
-														<i class="fas fa-download"></i>
-													</a>
-												{/if}
-											</div>
-										{/each}
-									</div>
-								</div>
-							{/if}
-						{:else}
-							<div class="alert alert-secondary mb-0">
-								<i class="fas fa-info-circle me-2"></i>
-								No calendars linked to this token.
-							</div>
-						{/if}
-					</CollapsibleSection>
-
-				{:else if activeTab === 'json'}
-					<!-- JSON output -->
-					<div class="card">
-						<div class="card-header d-flex justify-content-between align-items-center">
-							<span>
-								<i class="fas fa-code me-1"></i>
-								Raw JSON Response
+							<span class="badge bg-warning text-dark" title={notificationsError}>
+								<i class="fas fa-exclamation-triangle"></i>
 							</span>
-							<CopyButton value={JSON.stringify(tokenInfo, null, 2)} label="Copy JSON" />
-						</div>
-						<div class="card-body p-0">
-							<pre class="json-output mb-0"><code>{JSON.stringify(tokenInfo, null, 2)}</code></pre>
-						</div>
-					</div>
+						{:else if hasLinkedNotifications}
+							<span class="badge bg-info">
+								{linkedNotifications.direct.length + linkedNotifications.tagBased.length + linkedNotifications.userWide.length}
+							</span>
+						{:else}
+							<span class="badge bg-secondary">0</span>
+						{/if}
+					</span>
 
-				{:else if activeTab === 'history'}
-					<!-- Event history -->
+					{#if loadingNotifications}
+						<div class="text-center py-3">
+							<span class="spinner-border spinner-border-sm me-2"></span>
+							Loading notifications...
+						</div>
+					{:else if notificationsError}
+						<div class="alert alert-warning mb-0">
+							<i class="fas fa-exclamation-triangle me-2"></i>
+							{notificationsError}
+						</div>
+					{:else if hasLinkedNotifications}
+						<!-- Directly subscribed notifications -->
+						{#if linkedNotifications.direct.length > 0}
+							<div class="mb-3">
+								<h6 class="text-muted mb-2">
+									<i class="fas fa-link me-1"></i>
+									Directly Subscribed
+								</h6>
+								<div class="list-group list-group-flush">
+									{#each linkedNotifications.direct as notif}
+										<div class="list-group-item d-flex align-items-center gap-2 py-2">
+											<span class="badge bg-secondary" title={notif.notification_type === 'mail' ? 'Email' : 'WebSocket'}>
+												<i class="fas {getNotificationTypeIcon(notif.notification_type)}"></i>
+											</span>
+											<div class="notification-classes-icons">
+												{#each rootClasses as cls}
+													{@const status = isClassEnabled(notif, cls.id)}
+													<span class="{getClassColor(status)}" title={cls.label}>
+														<i class="fas {cls.icon}"></i>
+													</span>
+												{/each}
+											</div>
+											{#if notif.tags && notif.tags.length > 0}
+												<div class="tags ms-2">
+													{#each notif.tags as tag}
+														<TagPill name={tag.tag} color={tag.color} small />
+													{/each}
+												</div>
+											{/if}
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
+
+						<!-- Tag-based notifications -->
+						{#if linkedNotifications.tagBased.length > 0}
+							<div class="mb-3">
+								<h6 class="text-muted mb-2">
+									<i class="fas fa-tags me-1"></i>
+									Via Tags
+								</h6>
+								<div class="list-group list-group-flush">
+									{#each linkedNotifications.tagBased as notif}
+										<div class="list-group-item d-flex align-items-center gap-2 py-2">
+											<span class="badge bg-secondary" title={notif.notification_type === 'mail' ? 'Email' : 'WebSocket'}>
+												<i class="fas {getNotificationTypeIcon(notif.notification_type)}"></i>
+											</span>
+											<div class="notification-classes-icons">
+												{#each rootClasses as cls}
+													{@const status = isClassEnabled(notif, cls.id)}
+													<span class="{getClassColor(status)}" title={cls.label}>
+														<i class="fas {cls.icon}"></i>
+													</span>
+												{/each}
+											</div>
+											{#if notif.tags && notif.tags.length > 0}
+												<div class="tags ms-2">
+													{#each notif.tags as tag}
+														<TagPill name={tag.tag} color={tag.color} small />
+													{/each}
+												</div>
+											{/if}
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
+
+						<!-- User-wide notifications -->
+						{#if linkedNotifications.userWide.length > 0}
+							<div class="mb-3">
+								<h6 class="text-muted mb-2">
+									<i class="fas fa-user me-1"></i>
+									User-Wide
+								</h6>
+								<div class="list-group list-group-flush">
+									{#each linkedNotifications.userWide as notif}
+										<div class="list-group-item d-flex align-items-center gap-2 py-2">
+											<span class="badge bg-secondary" title={notif.notification_type === 'mail' ? 'Email' : 'WebSocket'}>
+												<i class="fas {getNotificationTypeIcon(notif.notification_type)}"></i>
+											</span>
+											<div class="notification-classes-icons">
+												{#each rootClasses as cls}
+													{@const status = isClassEnabled(notif, cls.id)}
+													<span class="{getClassColor(status)}" title={cls.label}>
+														<i class="fas {cls.icon}"></i>
+													</span>
+												{/each}
+											</div>
+											<span class="badge bg-primary ms-auto">
+												<i class="fas fa-user me-1"></i>
+												All Tokens
+											</span>
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
+					{:else}
+						<div class="alert alert-secondary mb-0">
+							<i class="fas fa-info-circle me-2"></i>
+							No notifications linked to this token.
+						</div>
+					{/if}
+				</CollapsibleSection>
+
+				<!-- Linked Calendars -->
+				<CollapsibleSection
+					title="Linked Calendars"
+					icon="fa-calendar"
+					collapsed={true}
+				>
+					<span slot="header-right" class="ms-2">
+						{#if loadingCalendars}
+							<span class="spinner-border spinner-border-sm text-muted"></span>
+						{:else if calendarsError}
+							<span class="badge bg-warning text-dark" title={calendarsError}>
+								<i class="fas fa-exclamation-triangle"></i>
+							</span>
+						{:else if hasLinkedCalendars}
+							<span class="badge bg-info">
+								{linkedCalendars.direct.length + linkedCalendars.tagBased.length}
+							</span>
+						{:else}
+							<span class="badge bg-secondary">0</span>
+						{/if}
+					</span>
+
+					{#if loadingCalendars}
+						<div class="text-center py-3">
+							<span class="spinner-border spinner-border-sm me-2"></span>
+							Loading calendars...
+						</div>
+					{:else if calendarsError}
+						<div class="alert alert-warning mb-0">
+							<i class="fas fa-exclamation-triangle me-2"></i>
+							{calendarsError}
+						</div>
+					{:else if hasLinkedCalendars}
+						<!-- Directly subscribed calendars -->
+						{#if linkedCalendars.direct.length > 0}
+							<div class="mb-3">
+								<h6 class="text-muted mb-2">
+									<i class="fas fa-link me-1"></i>
+									Directly Subscribed
+								</h6>
+								<div class="list-group list-group-flush">
+									{#each linkedCalendars.direct as cal}
+										<div class="list-group-item d-flex align-items-center gap-2 py-2">
+											<i class="fas fa-calendar text-primary"></i>
+											<span class="flex-grow-1">
+												{cal.description || 'Unnamed Calendar'}
+											</span>
+											{#if cal.tags && cal.tags.length > 0}
+												<div class="tags">
+													{#each cal.tags as tag}
+														<TagPill name={tag.tag} color={tag.color} small />
+													{/each}
+												</div>
+											{/if}
+											{#if cal.ics_url}
+												<a 
+													href={cal.ics_url} 
+													class="btn btn-sm btn-outline-secondary"
+													title="Download ICS"
+													target="_blank"
+												>
+													<i class="fas fa-download"></i>
+												</a>
+											{/if}
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
+
+						<!-- Tag-based calendars -->
+						{#if linkedCalendars.tagBased.length > 0}
+							<div class="mb-3">
+								<h6 class="text-muted mb-2">
+									<i class="fas fa-tags me-1"></i>
+									Via Tags
+								</h6>
+								<div class="list-group list-group-flush">
+									{#each linkedCalendars.tagBased as cal}
+										<div class="list-group-item d-flex align-items-center gap-2 py-2">
+											<i class="fas fa-calendar text-primary"></i>
+											<span class="flex-grow-1">
+												{cal.description || 'Unnamed Calendar'}
+											</span>
+											{#if cal.tags && cal.tags.length > 0}
+												<div class="tags">
+													{#each cal.tags as tag}
+														<TagPill name={tag.tag} color={tag.color} small />
+													{/each}
+												</div>
+											{/if}
+											{#if cal.ics_url}
+												<a 
+													href={cal.ics_url} 
+													class="btn btn-sm btn-outline-secondary"
+													title="Download ICS"
+													target="_blank"
+												>
+													<i class="fas fa-download"></i>
+												</a>
+											{/if}
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
+					{:else}
+						<div class="alert alert-secondary mb-0">
+							<i class="fas fa-info-circle me-2"></i>
+							No calendars linked to this token.
+						</div>
+					{/if}
+				</CollapsibleSection>
+			</div>
+
+			<div class="tab-pane" class:active={activeTab === 'json'} style:display={activeTab === 'json' ? undefined : 'none'}>
+				<!-- JSON output -->
+				<div class="card">
+					<div class="card-header d-flex justify-content-between align-items-center">
+						<span>
+							<i class="fas fa-code me-1"></i>
+							Raw JSON Response
+						</span>
+						<CopyButton value={JSON.stringify(tokenInfo, null, 2)} label="Copy JSON" />
+					</div>
+					<div class="card-body p-0">
+						<pre class="json-output mb-0"><code>{JSON.stringify(tokenInfo, null, 2)}</code></pre>
+					</div>
+				</div>
+			</div>
+
+			<div class="tab-pane" class:active={activeTab === 'history'} style:display={activeTab === 'history' ? undefined : 'none'}>
+				<!-- Event history -->
+				<div class="d-flex justify-content-between align-items-center mb-3">
+					<h6 class="mb-0">
+						<i class="fas fa-history me-1"></i>
+						Event History
+					</h6>
+					<button 
+						class="btn btn-sm btn-outline-secondary" 
+						on:click={() => loadEventHistory(true)}
+						disabled={loadingHistory}
+					>
+						{#if loadingHistory}
+							<span class="spinner-border spinner-border-sm me-1"></span>
+						{:else}
+							<i class="fas fa-sync-alt me-1"></i>
+						{/if}
+						Reload
+					</button>
+				</div>
+				{#if loadingHistory}
+					<LoadingSpinner message="Loading event history..." />
+				{:else if eventHistory.length > 0}
+					<div class="table-responsive">
+						<table class="table table-hover align-middle">
+							<thead>
+								<tr>
+									<th>Event</th>
+									<th>Comment</th>
+									<th>Time</th>
+									<th>IP</th>
+									<th class="text-center">Client</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each eventHistory as event}
+									{@const uaInfo = parseUserAgent(event.user_agent)}
+									<tr>
+										<td>
+											<i class="fas {getEventIcon(event.event)} me-2"></i>
+											{formatEventName(event.event)}
+										</td>
+										<td class="text-break">
+											{event.comment || '-'}
+										</td>
+										<td class="text-nowrap">
+											{formatDateTime(event.time)}
+										</td>
+										<td>
+											<code>{event.ip || '-'}</code>
+										</td>
+										<td class="text-center">
+											<i 
+												class="{uaInfo.icon}" 
+												title={event.user_agent || 'Unknown'}
+											></i>
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{:else}
+					<div class="alert alert-info">
+						<i class="fas fa-info-circle me-2"></i>
+						No event history available.
+					</div>
+				{/if}
+			</div>
+
+			<div class="tab-pane" class:active={activeTab === 'subtokens'} style:display={activeTab === 'subtokens' ? undefined : 'none'}>
+				<!-- Subtokens -->
+				{#if loadingSubtokens}
+					<LoadingSpinner message="Loading subtokens..." />
+				{:else if visibleSubtokens.length > 0}
+					<div class="table-responsive">
+						<table class="table table-hover align-middle subtokens-table">
+							<thead>
+								<tr>
+									<th>Token Name</th>
+									<th>Tags</th>
+									<th>Created</th>
+									<th>Created from IP</th>
+									<th>Expires</th>
+									<th>MOM ID</th>
+									<th>
+										<button
+											class="btn btn-sm btn-outline-primary"
+											on:click={() => loadSubtokens(true)}
+											disabled={loadingSubtokens}
+											title="Refresh"
+										>
+											<i class="fas fa-sync" class:fa-spin={loadingSubtokens}></i>
+										</button>
+									</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each visibleSubtokens as item (item.id)}
+									{@const expired = isExpired(item.token.expires_at)}
+									<tr class:token-expired={expired}>
+										<td 
+											class:token-fold={item.hasChildren}
+											on:click={() => item.hasChildren && toggleSubtokenExpand(item.id)}
+											on:keydown={(e) => e.key === 'Enter' && item.hasChildren && toggleSubtokenExpand(item.id)}
+											role={item.hasChildren ? 'button' : undefined}
+											tabindex={item.hasChildren ? 0 : undefined}
+										>
+											<span style="margin-left: {item.depth * 1.5}rem;"></span>
+											{#if item.hasChildren}
+												<i class="fas me-2" class:fa-caret-right={!isSubtokenExpanded(item.id)} class:fa-caret-down={isSubtokenExpanded(item.id)}></i>
+											{:else}
+												<span style="width: 1rem; display: inline-block;"></span>
+											{/if}
+											<span class:token-name-unnamed={!item.token.name}>
+												{item.token.name || 'unnamed token'}
+											</span>
+										</td>
+										<td>
+											{#if item.token.tags && item.token.tags.length > 0}
+												{#each item.token.tags as tag}
+													<TagPill name={tag.tag} color={tag.color} small />
+												{/each}
+											{:else}
+												<span class="text-muted">-</span>
+											{/if}
+										</td>
+										<td>{formatDateTime(item.token.created)}</td>
+										<td>{item.token.ip || '-'}</td>
+										<td class:text-muted={!item.token.expires_at || item.token.expires_at === 0}>
+											{formatExpiry(item.token.expires_at)}
+											{#if expired}
+												<span class="badge bg-secondary ms-1" title="This token has expired">Expired</span>
+											{/if}
+										</td>
+										<td>
+											<small class="text-muted font-monospace">
+												{formatTokenPreview(item.token.mom_id, 8)}
+											</small>
+										</td>
+										<td></td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+					<div class="text-muted mt-2">
+						<small>{flattenedSubtokens.length} subtoken{flattenedSubtokens.length !== 1 ? 's' : ''}</small>
+					</div>
+				{:else}
 					<div class="d-flex justify-content-between align-items-center mb-3">
-						<h6 class="mb-0">
-							<i class="fas fa-history me-1"></i>
-							Event History
-						</h6>
+						<span></span>
 						<button 
 							class="btn btn-sm btn-outline-secondary" 
-							on:click={() => loadEventHistory(true)}
-							disabled={loadingHistory}
+							on:click={() => loadSubtokens(true)}
+							disabled={loadingSubtokens}
 						>
-							{#if loadingHistory}
-								<span class="spinner-border spinner-border-sm me-1"></span>
-							{:else}
-								<i class="fas fa-sync-alt me-1"></i>
-							{/if}
+							<i class="fas fa-sync-alt me-1"></i>
 							Reload
 						</button>
 					</div>
-					{#if loadingHistory}
-						<LoadingSpinner message="Loading event history..." />
-					{:else if eventHistory.length > 0}
-						<div class="table-responsive">
-							<table class="table table-hover align-middle">
-								<thead>
-									<tr>
-										<th>Event</th>
-										<th>Comment</th>
-										<th>Time</th>
-										<th>IP</th>
-										<th class="text-center">Client</th>
-									</tr>
-								</thead>
-								<tbody>
-									{#each eventHistory as event}
-										{@const uaInfo = parseUserAgent(event.user_agent)}
-										<tr>
-											<td>
-												<i class="fas {getEventIcon(event.event)} me-2"></i>
-												{formatEventName(event.event)}
-											</td>
-											<td class="text-break">
-												{event.comment || '-'}
-											</td>
-											<td class="text-nowrap">
-												{formatDateTime(event.time)}
-											</td>
-											<td>
-												<code>{event.ip || '-'}</code>
-											</td>
-											<td class="text-center">
-												<i 
-													class="{uaInfo.icon}" 
-													title={event.user_agent || 'Unknown'}
-												></i>
-											</td>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
-						</div>
-					{:else}
-						<div class="alert alert-info">
-							<i class="fas fa-info-circle me-2"></i>
-							No event history available.
-						</div>
-					{/if}
-
-				{:else if activeTab === 'subtokens'}
-					<!-- Subtokens -->
-					{#if loadingSubtokens}
-						<LoadingSpinner message="Loading subtokens..." />
-					{:else if visibleSubtokens.length > 0}
-						<div class="table-responsive">
-							<table class="table table-hover align-middle subtokens-table">
-								<thead>
-									<tr>
-										<th>Token Name</th>
-										<th>Tags</th>
-										<th>Created</th>
-										<th>Created from IP</th>
-										<th>Expires</th>
-										<th>MOM ID</th>
-										<th>
-											<button
-												class="btn btn-sm btn-outline-primary"
-												on:click={() => loadSubtokens(true)}
-												disabled={loadingSubtokens}
-												title="Refresh"
-											>
-												<i class="fas fa-sync" class:fa-spin={loadingSubtokens}></i>
-											</button>
-										</th>
-									</tr>
-								</thead>
-								<tbody>
-									{#each visibleSubtokens as item (item.id)}
-										{@const expired = isExpired(item.token.expires_at)}
-										<tr class:token-expired={expired}>
-											<td 
-												class:token-fold={item.hasChildren}
-												on:click={() => item.hasChildren && toggleSubtokenExpand(item.id)}
-												on:keydown={(e) => e.key === 'Enter' && item.hasChildren && toggleSubtokenExpand(item.id)}
-												role={item.hasChildren ? 'button' : undefined}
-												tabindex={item.hasChildren ? 0 : undefined}
-											>
-												<span style="margin-left: {item.depth * 1.5}rem;"></span>
-												{#if item.hasChildren}
-													<i class="fas me-2" class:fa-caret-right={!isSubtokenExpanded(item.id)} class:fa-caret-down={isSubtokenExpanded(item.id)}></i>
-												{:else}
-													<span style="width: 1rem; display: inline-block;"></span>
-												{/if}
-												<span class:token-name-unnamed={!item.token.name}>
-													{item.token.name || 'unnamed token'}
-												</span>
-											</td>
-											<td>
-												{#if item.token.tags && item.token.tags.length > 0}
-													{#each item.token.tags as tag}
-														<TagPill name={tag.tag} color={tag.color} small />
-													{/each}
-												{:else}
-													<span class="text-muted">-</span>
-												{/if}
-											</td>
-											<td>{formatDateTime(item.token.created)}</td>
-											<td>{item.token.ip || '-'}</td>
-											<td class:text-muted={!item.token.expires_at || item.token.expires_at === 0}>
-												{formatExpiry(item.token.expires_at)}
-												{#if expired}
-													<span class="badge bg-secondary ms-1" title="This token has expired">Expired</span>
-												{/if}
-											</td>
-											<td>
-												<small class="text-muted font-monospace">
-													{formatTokenPreview(item.token.mom_id, 8)}
-												</small>
-											</td>
-											<td></td>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
-						</div>
-						<div class="text-muted mt-2">
-							<small>{flattenedSubtokens.length} subtoken{flattenedSubtokens.length !== 1 ? 's' : ''}</small>
-						</div>
-					{:else}
-						<div class="d-flex justify-content-between align-items-center mb-3">
-							<span></span>
-							<button 
-								class="btn btn-sm btn-outline-secondary" 
-								on:click={() => loadSubtokens(true)}
-								disabled={loadingSubtokens}
-							>
-								<i class="fas fa-sync-alt me-1"></i>
-								Reload
-							</button>
-						</div>
-						<div class="alert alert-info">
-							<i class="fas fa-info-circle me-2"></i>
-							No subtokens found.
-						</div>
-					{/if}
+					<div class="alert alert-info">
+						<i class="fas fa-info-circle me-2"></i>
+						No subtokens found.
+					</div>
 				{/if}
 			</div>
+		</div>
 		</div>
 	{:else}
 		<!-- Empty state -->
