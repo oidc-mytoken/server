@@ -23,6 +23,7 @@ export interface Provider {
 	name?: string;
 	scopes_supported?: string[];
 	audiences_supported?: string[];
+    oidfed?: boolean;
 }
 
 // Capability types

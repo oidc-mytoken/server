@@ -13,6 +13,7 @@
 	import TagPill from '../TagPill.svelte';
 	import CopyButton from '../CopyButton.svelte';
 	import LoadingSpinner from '../LoadingSpinner.svelte';
+	import ProviderSelector from '../ProviderSelector.svelte';
 
 	const dispatch = createEventDispatcher<{ created: { token: string; tokenType: string } }>();
 
@@ -618,16 +619,12 @@
 						<i class="fab fa-openid me-1"></i>
 						OpenID Provider
 					</label>
-					<select id="provider" class="form-select" bind:value={selectedProvider} required={!$isLoggedIn}>
-						{#if !$isLoggedIn}
-							<option value="">-- Select a provider --</option>
-						{/if}
-						{#each $providers as provider}
-							<option value={provider.issuer}>
-								{provider.name ?? provider.issuer}
-							</option>
-						{/each}
-					</select>
+					<ProviderSelector
+						bind:selectedProvider
+						required={!$isLoggedIn}
+						id="provider"
+						placeholder="-- Select a provider --"
+					/>
 					<small class="text-muted">
 						OpenID Provider for which this mytoken can obtain access tokens.
 					</small>

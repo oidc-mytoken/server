@@ -4,15 +4,16 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 
+	oidfed "github.com/go-oidfed/lib"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/oidc-mytoken/utils/context"
 	utils2 "github.com/oidc-mytoken/utils/utils"
 	"github.com/oidc-mytoken/utils/utils/fileutil"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	oidfed "github.com/zachmann/go-oidfed/pkg"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v3"
 
@@ -51,9 +52,22 @@ var defaultConfig = Config{
 			Alg:       jwa.ES512,
 			RSAKeyLen: 2048,
 		},
-		OIDC: signingConf{
-			Alg:       jwa.ES512,
-			RSAKeyLen: 2048,
+		OIDC: oidcSigningConf{
+			Algorithms: []string{
+				"ES512",
+				"ES384",
+				"ES256",
+				"EdDSA",
+				"PS512",
+				"PS384",
+				"PS256",
+				"RS512",
+				"RS384",
+				"RS256",
+			},
+			DefaultAlgorithm: "ES512",
+			RSAKeyLen:        2048,
+			GenerateKeys:     true,
 		},
 	},
 	Logging: loggingConf{
@@ -124,6 +138,10 @@ var defaultConfig = Config{
 			Signing: signingConf{
 				Alg:       jwa.ES512,
 				RSAKeyLen: 2048,
+			},
+			OPDiscovery: opDiscoveryConf{
+				UseEntityCollectionEndpoint: true,
+				Interval:                    3600,
 			},
 		},
 	},
@@ -440,14 +458,47 @@ type tlsConf struct {
 }
 
 type signingConfs struct {
-	Mytoken signingConf `yaml:"mytoken"`
-	OIDC    signingConf `yaml:"oidc"`
+	Mytoken signingConf     `yaml:"mytoken"`
+	OIDC    oidcSigningConf `yaml:"oidc"`
 }
 
 type signingConf struct {
 	Alg       jwa.SignatureAlgorithm `yaml:"alg"`
 	KeyFile   string                 `yaml:"key_file"`
 	RSAKeyLen int                    `yaml:"rsa_key_len"`
+}
+
+// oidcSigningConf holds configuration for OIDC signing with multiple algorithms
+type oidcSigningConf struct {
+	KeyDir           string   `yaml:"key_dir"`       // Directory for OIDC keys
+	Algorithms       []string `yaml:"algs"`          // Supported algorithms in preference order
+	DefaultAlgorithm string   `yaml:"default_alg"`   // Default when OP doesn't specify
+	RSAKeyLen        int      `yaml:"rsa_key_len"`   // RSA key length (for RS/PS algorithms)
+	GenerateKeys     bool     `yaml:"generate_keys"` // Auto-generate missing keys
+}
+
+func (c *oidcSigningConf) validate() error {
+	if c.KeyDir == "" {
+		return errors.New("signing.oidc.key_dir must be specified when federation is enabled")
+	}
+	if len(c.Algorithms) == 0 {
+		return errors.New("signing.oidc.algs must not be empty")
+	}
+	supportedAlgs := jwa.SignatureAlgorithms()
+	for _, algStr := range c.Algorithms {
+		if !slices.Contains(supportedAlgs, jwa.SignatureAlgorithm(algStr)) {
+			return errors.Errorf("unknown algorithm '%s' in signing.oidc.algs", algStr)
+		}
+	}
+	if c.DefaultAlgorithm != "" {
+		if !slices.Contains(supportedAlgs, jwa.SignatureAlgorithm(c.DefaultAlgorithm)) {
+			return errors.Errorf("unknown default algorithm '%s' in signing.oidc.default_alg", c.DefaultAlgorithm)
+		}
+		if !slices.Contains(c.Algorithms, c.DefaultAlgorithm) {
+			return errors.New("signing.oidc.default_alg must be one of the configured algs")
+		}
+	}
+	return nil
 }
 
 // ProviderConf holds information about a provider
@@ -554,17 +605,24 @@ type federationConf struct {
 	EntityConfigurationLifetime int64                  `yaml:"entity_configuration_lifetime"`
 	Signing                     signingConf            `yaml:"signing"`
 	Entity                      *oidfed.FederationLeaf `yaml:"-"`
+	OPDiscovery                 opDiscoveryConf        `yaml:"op_discovery"`
+}
+
+type opDiscoveryConf struct {
+	UseEntityCollectionEndpoint bool     `yaml:"use_entity_collection_endpoint"`
+	Interval                    int64    `yaml:"interval"`
+	RequiredTrustMarks          []string `yaml:"required_trust_marks"`
+	// Scopes specifies the scopes to advertise in the RP metadata.
+	// If empty, scopes are dynamically collected from discovered OPs.
+	Scopes []string `yaml:"scopes"`
 }
 
 func (f *federationConf) validate() (err error) {
 	if !f.Enabled {
 		return nil
 	}
-	if Get().Signing.OIDC.KeyFile == "" {
-		return errors.New("if federation is enabled an OIDC signing key must be set under signing.oidc.key_file")
-	}
-	if Get().Signing.OIDC.Alg == "" {
-		return errors.New("if federation is enabled an OIDC signing alg must be set under signing.oidc.alg")
+	if err = Get().Signing.OIDC.validate(); err != nil {
+		return err
 	}
 	if len(f.TrustAnchors) == 0 {
 		return errors.New("federation enabled, but no trust anchors specified")
@@ -580,6 +638,14 @@ func (f *federationConf) validate() (err error) {
 	}
 	if f.EntityConfigurationLifetime == 0 {
 		f.EntityConfigurationLifetime = 7 * 24 * 60 * 60
+	}
+
+	// Validate OP discovery config
+	if f.OPDiscovery.Interval <= 0 {
+		f.OPDiscovery.Interval = 3600 // default 1 hour
+	}
+	if f.OPDiscovery.UseEntityCollectionEndpoint && f.OPDiscovery.Interval < 60 {
+		return errors.New("op_discovery.interval must be at least 60 seconds when using entity collection endpoint")
 	}
 
 	return
@@ -661,8 +727,8 @@ func validateConfigSections() error {
 }
 
 func validateProviders() error {
-	if len(conf.Providers) == 0 {
-		return errors.New("invalid config: providers must have at least one entry")
+	if len(conf.Providers) == 0 && !conf.Features.Federation.Enabled {
+		return errors.New("invalid config: providers must have at least one entry (or enable federation)")
 	}
 	for i, p := range conf.Providers {
 		if err := validateProvider(p, i); err != nil {

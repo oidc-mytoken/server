@@ -1,7 +1,7 @@
-package oidcfed
+package oidfed
 
 import (
-	oidfedcache "github.com/zachmann/go-oidfed/pkg/cache"
+	oidfedcache "github.com/go-oidfed/lib/cache"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/endpoints/federation"
@@ -9,14 +9,17 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/cache"
 )
 
-// Init inits the oidcfed
-func Init() {
+// Init inits the oidfed
+func Init() error {
 	if !config.Get().Features.Federation.Enabled {
-		return
+		return nil
 	}
 	jws.LoadFederationKey()
-	jws.LoadOIDCSigningKey()
+	if err := jws.LoadOIDCSigningKey(); err != nil {
+		return err
+	}
 	oidfedcache.SetCache(cache.SubCache(cache.FederationLib))
-	Discovery()
 	federation.InitEntityConfiguration()
+	Discovery()
+	return nil
 }

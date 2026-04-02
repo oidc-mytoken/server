@@ -101,15 +101,24 @@ signing:
     key_file: "/mytoken.key"
     # If an RSA-based algorithm is used, this is the key len. Only needed when generating a new rsa key.
     rsa_key_len: 2048
-  # Configuration for signing operations within oidc communication, currently this is only used if federation support
-  #  is enabled; it is recommended to use different signing keys for mytoken signing, oidc communication, and federation
+  # Configuration for signing operations within OIDC communication (federation)
+  # Multiple algorithms are supported to negotiate with different OPs based on their supported algorithms
   oidc:
-    # The used algorithm
-    alg: "ES512"
-    # The file with the signing key
-    # key_file: "/oidc.key"
-    # If an RSA-based algorithm is used, this is the key len. Only needed when generating a new rsa key.
+    # Directory where OIDC signing keys are stored (required when federation is enabled)
+    key_dir: "/keys/oidc"
+    # Supported algorithms in preference order
+    # Default: all supported algorithms (ES512, ES384, ES256, EdDSA, PS512, PS384, PS256, RS512, RS384, RS256)
+    algs:
+      - ES512
+      - ES384
+      - ES256
+      - EdDSA
+    # Default algorithm when OP doesn't specify preference (default: ES512)
+    default_alg: ES512
+    # RSA key length for RS/PS algorithms (default: 2048)
     rsa_key_len: 2048
+    # Auto-generate missing keys on startup (default: true)
+    generate_keys: true
 
 # Configuration for logging
 logging:
@@ -246,7 +255,8 @@ features:
     # _: admin
 
   # If true a guest mode is enabled that allows to obtain mytokens without further auth, ATs are obviously dummy
-  guest_mode: false
+  guest_mode:
+    enabled: false
 
   # Settings related to the notifications feature
   notifications:
