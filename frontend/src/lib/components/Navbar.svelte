@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount, onDestroy } from 'svelte';
 	import { auth, isLoggedIn } from '$lib/stores/auth';
 	import { providers } from '$lib/stores/discovery';
 	import { api, ApiClientError } from '$lib/api/client';
@@ -9,6 +10,21 @@
 	export let empty: boolean = false;
 
 	let loggingIn = false;
+
+	// Reset login state when the page is restored from bfcache (browser back/forward navigation)
+	function handlePageShow(event: PageTransitionEvent) {
+		if (event.persisted) {
+			loggingIn = false;
+		}
+	}
+
+	onMount(() => {
+		window.addEventListener('pageshow', handlePageShow);
+	});
+
+	onDestroy(() => {
+		window.removeEventListener('pageshow', handlePageShow);
+	});
 	let providerSearch = '';
 	let searchInput: HTMLInputElement | null = null;
 
