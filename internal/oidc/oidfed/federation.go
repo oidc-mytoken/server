@@ -10,13 +10,16 @@ import (
 )
 
 // Init inits the oidfed
-func Init() {
+func Init() error {
 	if !config.Get().Features.Federation.Enabled {
-		return
+		return nil
 	}
 	jws.LoadFederationKey()
-	jws.LoadOIDCSigningKey()
+	if err := jws.LoadOIDCSigningKey(); err != nil {
+		return err
+	}
 	oidfedcache.SetCache(cache.SubCache(cache.FederationLib))
 	federation.InitEntityConfiguration()
 	Discovery()
+	return nil
 }

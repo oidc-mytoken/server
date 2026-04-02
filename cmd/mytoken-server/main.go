@@ -37,7 +37,9 @@ func main() {
 	provider2.Init()
 	server.Init()
 	configurationEndpoint.Init()
-	oidfed.Init()
+	if err := oidfed.Init(); err != nil {
+		log.WithError(err).Fatal("Failed to initialize OIDC federation")
+	}
 	versionrepo.ConnectToVersion()
 	jws.LoadMytokenSigningKey()
 	httpclient.Init(config.Get().IssuerURL, fmt.Sprintf("mytoken-server %s", version.VERSION))

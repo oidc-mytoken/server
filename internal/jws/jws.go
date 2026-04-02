@@ -12,6 +12,8 @@ import (
 	"os"
 
 	"github.com/go-oidfed/lib/jwx"
+	"github.com/go-oidfed/lib/jwx/keymanagement/kms"
+	"github.com/go-oidfed/lib/jwx/keymanagement/public"
 	"github.com/golang-jwt/jwt"
 	"github.com/lestrrat-go/jwx/jwa"
 	jwav3 "github.com/lestrrat-go/jwx/v3/jwa"
@@ -24,12 +26,6 @@ import (
 // the mytoken config.
 func GenerateMytokenSigningKeyPair() (sk crypto.Signer, pk crypto.PublicKey, err error) {
 	return generateKeyPair(config.Get().Signing.Mytoken.Alg, config.Get().Signing.Mytoken.RSAKeyLen)
-}
-
-// GenerateOIDCSigningKeyPair generates a cryptographic key pair for jwt signing within oidc communication with the
-// algorithm specified in the mytoken config.
-func GenerateOIDCSigningKeyPair() (sk crypto.Signer, pk crypto.PublicKey, err error) {
-	return generateKeyPair(config.Get().Signing.OIDC.Alg, config.Get().Signing.OIDC.RSAKeyLen)
 }
 
 // GenerateFederationSigningKeyPair generates a cryptographic key pair for federation signing with the algorithm
@@ -123,6 +119,12 @@ type signingKeyMaterial struct {
 
 var keys signingKeys
 
+// OIDC multi-key signing support
+var (
+	oidcKMS kms.BasicKeyManagementSystem
+	oidcPKS public.PublicKeyStorage
+)
+
 func init() {
 	keys = make(signingKeys)
 }
@@ -147,6 +149,17 @@ func GetPublicKey(usage KeyUsage) (pk crypto.PublicKey) {
 
 // GetJWKS returns the jwks
 func GetJWKS(usage KeyUsage) (jwks jwx.JWKS) {
+	// OIDC signing uses multi-key KMS
+	if usage == KeyUsageOIDCSigning {
+		if oidcKMS == nil {
+			return
+		}
+		vs := kms.KMSToVersatileSignerWithPKStorage(oidcKMS, oidcPKS)
+		jwks, _ = vs.JWKS()
+		return
+	}
+
+	// Other usages use single-key mode
 	k, ok := keys[usage]
 	if ok {
 		jwks = k.JWKS
@@ -156,6 +169,15 @@ func GetJWKS(usage KeyUsage) (jwks jwx.JWKS) {
 
 // GetVersatileSigner returns a VersatileSigner for the given key usage
 func GetVersatileSigner(usage KeyUsage) jwx.VersatileSigner {
+	// OIDC signing uses multi-key KMS
+	if usage == KeyUsageOIDCSigning {
+		if oidcKMS == nil {
+			return nil
+		}
+		return kms.KMSToVersatileSignerWithPKStorage(oidcKMS, oidcPKS)
+	}
+
+	// Other usages use single-key mode
 	k, ok := keys[usage]
 	if !ok {
 		return nil
@@ -164,8 +186,6 @@ func GetVersatileSigner(usage KeyUsage) jwx.VersatileSigner {
 	switch usage {
 	case KeyUsageMytokenSigning:
 		alg = config.Get().Signing.Mytoken.Alg
-	case KeyUsageOIDCSigning:
-		alg = config.Get().Signing.OIDC.Alg
 	case KeyUsageFederation:
 		alg = config.Get().Features.Federation.Signing.Alg
 	}
@@ -177,11 +197,52 @@ func LoadMytokenSigningKey() {
 	loadKey(config.Get().Signing.Mytoken.KeyFile, KeyUsageMytokenSigning, config.Get().Signing.Mytoken.Alg)
 }
 
-// LoadOIDCSigningKey loads the private and public key for signing operations within oidc communcation
-func LoadOIDCSigningKey() {
-	if config.Get().Signing.OIDC.KeyFile != "" {
-		loadKey(config.Get().Signing.OIDC.KeyFile, KeyUsageOIDCSigning, config.Get().Signing.OIDC.Alg)
+// LoadOIDCSigningKey loads the private and public key(s) for signing operations within OIDC communication
+func LoadOIDCSigningKey() error {
+	conf := config.Get().Signing.OIDC
+
+	// Parse algorithms
+	var algs []jwav3.SignatureAlgorithm
+	for _, algStr := range conf.Algorithms {
+		alg, _ := jwav3.LookupSignatureAlgorithm(algStr)
+		algs = append(algs, alg)
 	}
+
+	// Default algorithm
+	defaultAlg, _ := jwav3.LookupSignatureAlgorithm(conf.DefaultAlgorithm)
+	if defaultAlg.String() == "" && len(algs) > 0 {
+		defaultAlg = algs[0]
+	}
+
+	// Create public key storage
+	oidcPKS = &public.FilesystemPublicKeyStorage{
+		Dir:    conf.KeyDir,
+		TypeID: "oidc",
+	}
+	if err := oidcPKS.Load(); err != nil {
+		return errors.Wrap(err, "failed to load OIDC public key storage")
+	}
+
+	// Create and load KMS
+	kmsInst := &kms.FilesystemKMS{
+		FilesystemKMSConfig: kms.FilesystemKMSConfig{
+			KMSConfig: kms.KMSConfig{
+				GenerateKeys: conf.GenerateKeys,
+				Algs:         algs,
+				DefaultAlg:   defaultAlg,
+				RSAKeyLen:    conf.RSAKeyLen,
+			},
+			Dir:    conf.KeyDir,
+			TypeID: "oidc",
+		},
+		PKs: oidcPKS,
+	}
+
+	if err := kmsInst.Load(); err != nil {
+		return errors.Wrap(err, "failed to load OIDC signing keys")
+	}
+	oidcKMS = kmsInst
+	return nil
 }
 
 // LoadFederationKey loads the private and public key for signing federation statements

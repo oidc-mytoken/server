@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 
 	oidfed "github.com/go-oidfed/lib"
@@ -51,9 +52,22 @@ var defaultConfig = Config{
 			Alg:       jwa.ES512,
 			RSAKeyLen: 2048,
 		},
-		OIDC: signingConf{
-			Alg:       jwa.ES512,
-			RSAKeyLen: 2048,
+		OIDC: oidcSigningConf{
+			Algorithms: []string{
+				"ES512",
+				"ES384",
+				"ES256",
+				"EdDSA",
+				"PS512",
+				"PS384",
+				"PS256",
+				"RS512",
+				"RS384",
+				"RS256",
+			},
+			DefaultAlgorithm: "ES512",
+			RSAKeyLen:        2048,
+			GenerateKeys:     true,
 		},
 	},
 	Logging: loggingConf{
@@ -444,14 +458,47 @@ type tlsConf struct {
 }
 
 type signingConfs struct {
-	Mytoken signingConf `yaml:"mytoken"`
-	OIDC    signingConf `yaml:"oidc"`
+	Mytoken signingConf     `yaml:"mytoken"`
+	OIDC    oidcSigningConf `yaml:"oidc"`
 }
 
 type signingConf struct {
 	Alg       jwa.SignatureAlgorithm `yaml:"alg"`
 	KeyFile   string                 `yaml:"key_file"`
 	RSAKeyLen int                    `yaml:"rsa_key_len"`
+}
+
+// oidcSigningConf holds configuration for OIDC signing with multiple algorithms
+type oidcSigningConf struct {
+	KeyDir           string   `yaml:"key_dir"`       // Directory for OIDC keys
+	Algorithms       []string `yaml:"algs"`          // Supported algorithms in preference order
+	DefaultAlgorithm string   `yaml:"default_alg"`   // Default when OP doesn't specify
+	RSAKeyLen        int      `yaml:"rsa_key_len"`   // RSA key length (for RS/PS algorithms)
+	GenerateKeys     bool     `yaml:"generate_keys"` // Auto-generate missing keys
+}
+
+func (c *oidcSigningConf) validate() error {
+	if c.KeyDir == "" {
+		return errors.New("signing.oidc.key_dir must be specified when federation is enabled")
+	}
+	if len(c.Algorithms) == 0 {
+		return errors.New("signing.oidc.algs must not be empty")
+	}
+	supportedAlgs := jwa.SignatureAlgorithms()
+	for _, algStr := range c.Algorithms {
+		if !slices.Contains(supportedAlgs, jwa.SignatureAlgorithm(algStr)) {
+			return errors.Errorf("unknown algorithm '%s' in signing.oidc.algs", algStr)
+		}
+	}
+	if c.DefaultAlgorithm != "" {
+		if !slices.Contains(supportedAlgs, jwa.SignatureAlgorithm(c.DefaultAlgorithm)) {
+			return errors.Errorf("unknown default algorithm '%s' in signing.oidc.default_alg", c.DefaultAlgorithm)
+		}
+		if !slices.Contains(c.Algorithms, c.DefaultAlgorithm) {
+			return errors.New("signing.oidc.default_alg must be one of the configured algs")
+		}
+	}
+	return nil
 }
 
 // ProviderConf holds information about a provider
@@ -574,11 +621,8 @@ func (f *federationConf) validate() (err error) {
 	if !f.Enabled {
 		return nil
 	}
-	if Get().Signing.OIDC.KeyFile == "" {
-		return errors.New("if federation is enabled an OIDC signing key must be set under signing.oidc.key_file")
-	}
-	if Get().Signing.OIDC.Alg == "" {
-		return errors.New("if federation is enabled an OIDC signing alg must be set under signing.oidc.alg")
+	if err = Get().Signing.OIDC.validate(); err != nil {
+		return err
 	}
 	if len(f.TrustAnchors) == 0 {
 		return errors.New("federation enabled, but no trust anchors specified")

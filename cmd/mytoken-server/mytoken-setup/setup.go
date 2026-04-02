@@ -7,10 +7,16 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/Songmu/prompter"
+	"github.com/go-oidfed/lib/jwx"
+	"github.com/go-oidfed/lib/jwx/keymanagement/public"
+	"github.com/go-oidfed/lib/unixtime"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/oidc-mytoken/utils/utils/fileutil"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -98,6 +104,7 @@ var dbFlags = []cli.Flag{
 }
 
 var sigKeyFile string
+var oidcAlgFlag string
 
 var sigKeyFlag = &cli.StringFlag{
 	Name: "key-file",
@@ -157,10 +164,15 @@ var app = &cli.App{
 					Name:    "oidc",
 					Aliases: []string{"OIDC"},
 					Flags: []cli.Flag{
-						sigKeyFlag,
+						&cli.StringFlag{
+							Name:        "alg",
+							Usage:       "Generate key for specific algorithm only (if not set, generates for all configured algorithms)",
+							Destination: &oidcAlgFlag,
+							Placeholder: "ALG",
+						},
 					},
-					Usage:       "Generates a new oidc signing key",
-					Description: "Generates a new oidc signing key according to the properties specified in the config file and stores it.",
+					Usage:       "Generates OIDC signing key(s)",
+					Description: "Generates OIDC signing key(s) for the algorithms specified in the config file and stores them in the key directory.",
 					Action:      createOIDCSigningKey,
 				},
 				&cli.Command{
@@ -409,11 +421,87 @@ func createMytokenSigningKey(_ *cli.Context) error {
 	return writeSigningKey(sk, config.Get().Signing.Mytoken.KeyFile, "mytoken")
 }
 func createOIDCSigningKey(_ *cli.Context) error {
-	sk, _, err := jws.GenerateOIDCSigningKeyPair()
-	if err != nil {
+	conf := config.Get().Signing.OIDC
+
+	// In guided mode, skip if federation is not enabled
+	if guidedMode && !config.Get().Features.Federation.Enabled {
+		return nil
+	}
+
+	// Ensure key directory exists
+	if err := mkdir(conf.KeyDir); err != nil {
+		return errors.Wrapf(err, "failed to create key directory '%s'", conf.KeyDir)
+	}
+
+	// Determine which algorithms to generate keys for
+	algsToGenerate := conf.Algorithms
+	if oidcAlgFlag != "" {
+		if !slices.Contains(conf.Algorithms, oidcAlgFlag) {
+			return errors.Errorf("algorithm '%s' not in configured algorithms: %v", oidcAlgFlag, conf.Algorithms)
+		}
+		algsToGenerate = []string{oidcAlgFlag}
+	}
+
+	// Generate keys for each algorithm
+	for _, algStr := range algsToGenerate {
+		keyFile := filepath.Join(conf.KeyDir, fmt.Sprintf("oidc_%s.pem", algStr))
+
+		if fileutil.FileExists(keyFile) {
+			fmt.Printf("OIDC signing key for %s already exists at '%s'.\n", algStr, keyFile)
+			if noOverwritePrompt || !prompter.YesNo("Do you want to overwrite it?", false) {
+				continue
+			}
+		}
+
+		alg, ok := jwa.LookupSignatureAlgorithm(algStr)
+		if !ok {
+			return errors.Errorf("unknown algorithm '%s'", algStr)
+		}
+
+		sk, pk, kid, err := jwx.GenerateKeyPair(alg, conf.RSAKeyLen)
+		if err != nil {
+			return errors.Wrapf(err, "failed to generate key for %s", algStr)
+		}
+
+		// Write private key to file
+		if err = jwx.WriteSignerToFile(sk, keyFile); err != nil {
+			return errors.Wrapf(err, "failed to write key file for %s", algStr)
+		}
+		fmt.Printf("Generated OIDC signing key for %s at '%s'.\n", algStr, keyFile)
+
+		// Register in public key storage
+		if err = registerOIDCPublicKey(conf.KeyDir, kid, pk, alg); err != nil {
+			return errors.Wrapf(err, "failed to register public key for %s", algStr)
+		}
+	}
+
+	return nil
+}
+
+// registerOIDCPublicKey adds the public key to the OIDC public key storage
+func registerOIDCPublicKey(keyDir, kid string, pk jwk.Key, alg jwa.SignatureAlgorithm) error {
+	pks := &public.FilesystemPublicKeyStorage{
+		Dir:    keyDir,
+		TypeID: "oidc",
+	}
+	if err := pks.Load(); err != nil {
 		return err
 	}
-	return writeSigningKey(sk, config.Get().Signing.OIDC.KeyFile, "oidc")
+
+	// Check if already registered
+	existing, _ := pks.Get(kid)
+	if existing != nil {
+		return nil
+	}
+
+	now := unixtime.Now()
+	pke := public.PublicKeyEntry{
+		KID:       kid,
+		Key:       public.JWKKey{Key: pk},
+		IssuedAt:  &now,
+		NotBefore: &now,
+	}
+	return pks.Add(pke)
 }
 func createFederationSigningKey(_ *cli.Context) error {
 	if !config.Get().Features.Federation.Enabled && guidedMode {
