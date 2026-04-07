@@ -37,6 +37,11 @@
 	let rotationTemplates: RotationTemplate[] = [];
 	let selectedProfile = '';
 
+	// Saved state (preserved across form destroy/recreate when showing result)
+	let savedCapabilities: string[] = [];
+	let savedRestrictions: Restriction[] = [];
+	let savedRotation: Rotation = {};
+
 	// UI state
 	let loading = false;
 	let loadingData = true;
@@ -65,6 +70,18 @@
 	let defaultProfileApplied = false;
 
 	/**
+	 * Wait for the discovery document to be loaded (fetched by the layout).
+	 * Profile/template API calls depend on endpoints from the discovery document.
+	 */
+	async function waitForDiscovery(maxWaitMs: number = 5000): Promise<boolean> {
+		const startTime = Date.now();
+		while (!$discovery.data && Date.now() - startTime < maxWaitMs) {
+			await new Promise(resolve => setTimeout(resolve, 50));
+		}
+		return !!$discovery.data;
+	}
+
+	/**
 	 * Wait for providers to be loaded from discovery
 	 */
 	async function waitForProviders(maxWaitMs: number = 5000): Promise<boolean> {
@@ -78,100 +95,110 @@
 	// Initialize capabilities and templates
 	onMount(async () => {
 		loadingData = true;
-		try {
-			// Fetch capabilities with full structure
-			webCapabilities = await api.getAllCapabilities();
-			
-			// Try to fetch profiles (may fail if not configured)
-			try {
-				const serverProfiles = await api.getProfiles();
-				profiles = serverProfiles.map(p => {
-					const payload = p.payload as any;
-					return {
-						name: p.name,
-						capabilities: payload?.capabilities,
-						restrictions: payload?.restrictions,
-						rotation: payload?.rotation,
-						tags: payload?.tags
-					};
-				});
-			} catch {
-				profiles = [];
-			}
-			
-			// Try to fetch templates (may fail if not configured)
-			try {
-				const capTemplates = await api.getCapabilityTemplates();
-				capabilityTemplates = capTemplates.map(p => ({
-					name: p.name,
-					capabilities: Array.isArray(p.payload) ? p.payload as string[] : []
-				}));
-			} catch {
-				capabilityTemplates = [];
-			}
-			
-			try {
-				const restrTemplates = await api.getRestrictionTemplates();
-				restrictionTemplates = restrTemplates.map(p => ({
-					name: p.name,
-					restrictions: Array.isArray(p.payload) ? p.payload as Restriction[] : []
-				}));
-			} catch {
-				restrictionTemplates = [];
-			}
-			
-			try {
-				const rotTemplates = await api.getRotationTemplates();
-				rotationTemplates = rotTemplates.map(p => ({
-					name: p.name,
-					rotation: (p.payload as Rotation) ?? {}
-				}));
-			} catch {
-				rotationTemplates = [];
-			}
-		} catch (err) {
-			console.error('Error loading capabilities:', err);
-			// Fall back to empty capabilities
+
+		// Wait for the discovery document before calling any endpoint that depends on it.
+		// The layout fetches discovery concurrently; profile/template endpoints are
+		// resolved from the discovery document and will throw if it is not yet available.
+		await waitForDiscovery();
+
+		// Fetch all API data in parallel so a slow or failing request
+		// does not block or prevent the others from completing.
+		const [capResult, profileResult, capTplResult, restrTplResult, rotTplResult] =
+			await Promise.allSettled([
+				api.getAllCapabilities(),
+				api.getProfiles(),
+				api.getCapabilityTemplates(),
+				api.getRestrictionTemplates(),
+				api.getRotationTemplates()
+			]);
+
+		// Apply results — each is independent; a failure in one must not affect others
+		if (capResult.status === 'fulfilled') {
+			webCapabilities = capResult.value;
+		} else {
+			console.error('Error loading capabilities:', capResult.reason);
 			webCapabilities = [];
-		} finally {
-			loadingData = false;
-			
-			// Wait for DOM to update so capabilityTreeRef is available
-			await tick();
-			// Wait again to ensure child component's reactive statements have processed
-			await tick();
-			
-			// Load tags before applying initial request so tag colors are available
-			// Wait for discovery if not yet loaded (might still be loading from layout)
-			if ($isLoggedIn && !$tags.loaded) {
-				// Wait for discovery endpoint to be available
-				let waitAttempts = 0;
-				while (!$discovery.data?.usersettings_endpoint && waitAttempts < 50) {
-					await new Promise(resolve => setTimeout(resolve, 50));
-					waitAttempts++;
-				}
-				
-				if ($discovery.data?.usersettings_endpoint) {
-					await tags.fetch($discovery.data.usersettings_endpoint);
-					// Wait for store update to propagate
-					await tick();
-				}
+		}
+
+		if (profileResult.status === 'fulfilled') {
+			profiles = profileResult.value.map(p => {
+				const payload = p.payload as any;
+				return {
+					name: p.name,
+					capabilities: payload?.capabilities,
+					restrictions: payload?.restrictions,
+					rotation: payload?.rotation,
+					tags: payload?.tags
+				};
+			});
+		} else {
+			profiles = [];
+		}
+
+		if (capTplResult.status === 'fulfilled') {
+			capabilityTemplates = capTplResult.value.map(p => ({
+				name: p.name,
+				capabilities: Array.isArray(p.payload) ? p.payload as string[] : []
+			}));
+		} else {
+			capabilityTemplates = [];
+		}
+
+		if (restrTplResult.status === 'fulfilled') {
+			restrictionTemplates = restrTplResult.value.map(p => ({
+				name: p.name,
+				restrictions: Array.isArray(p.payload) ? p.payload as Restriction[] : []
+			}));
+		} else {
+			restrictionTemplates = [];
+		}
+
+		if (rotTplResult.status === 'fulfilled') {
+			rotationTemplates = rotTplResult.value.map(p => ({
+				name: p.name,
+				rotation: (p.payload as Rotation) ?? {}
+			}));
+		} else {
+			rotationTemplates = [];
+		}
+
+		loadingData = false;
+
+		// Wait for DOM to update so capabilityTreeRef is available
+		await tick();
+		// Wait again to ensure child component's reactive statements have processed
+		await tick();
+
+		// Load tags before applying initial request so tag colors are available
+		// Wait for discovery if not yet loaded (might still be loading from layout)
+		if ($isLoggedIn && !$tags.loaded) {
+			// Wait for discovery endpoint to be available
+			let waitAttempts = 0;
+			while (!$discovery.data?.usersettings_endpoint && waitAttempts < 50) {
+				await new Promise(resolve => setTimeout(resolve, 50));
+				waitAttempts++;
 			}
-			
-			// Apply initial request if provided (from URL parameter), otherwise apply default profile
-			if (initialRequest) {
-				// Wait for providers to be loaded before validating issuer
-				await waitForProviders();
-				const success = applyInitialRequest(initialRequest);
-				if (!success) {
-					// Validation failed (e.g., invalid issuer), apply default profile instead
-					applyDefaultProfile();
-				}
-			} else {
-				applyDefaultProfile();
+
+			if ($discovery.data?.usersettings_endpoint) {
+				await tags.fetch($discovery.data.usersettings_endpoint);
+				// Wait for store update to propagate
+				await tick();
 			}
 		}
-		
+
+		// Apply initial request if provided (from URL parameter), otherwise apply default profile
+		if (initialRequest) {
+			// Wait for providers to be loaded before validating issuer
+			await waitForProviders();
+			const success = applyInitialRequest(initialRequest);
+			if (!success) {
+				// Validation failed (e.g., invalid issuer), apply default profile instead
+				applyDefaultProfile();
+			}
+		} else {
+			applyDefaultProfile();
+		}
+
 		// Auto-select current session provider if logged in
 		if ($isLoggedIn && $auth.oidcIssuer) {
 			selectedProvider = $auth.oidcIssuer;
@@ -298,6 +325,10 @@
 		try {
 			const enabledCapabilities = capabilityTreeRef?.getEnabledCapabilities() ?? [];
 			const finalRestrictions = restrictionsEditorRef?.getRestrictions() ?? restrictions;
+			// Save state before the form may be destroyed by polling/result states
+			savedCapabilities = enabledCapabilities;
+			savedRestrictions = JSON.parse(JSON.stringify(finalRestrictions));
+			savedRotation = { ...rotation };
 
 		const request: CreateMytokenRequest = {
 			grant_type: 'oidc_flow',
@@ -409,6 +440,12 @@
 	}
 
 	function handleTokenCreated(token: string, tokenType: string = 'token') {
+		// Save state before the form is destroyed by showResult=true
+		savedCapabilities = capabilityTreeRef?.getEnabledCapabilities() ?? savedCapabilities;
+		if (restrictionsEditorRef) {
+			savedRestrictions = JSON.parse(JSON.stringify(restrictionsEditorRef.getRestrictions()));
+		}
+		savedRotation = { ...rotation };
 		createdToken = token;
 		createdTokenType = tokenType;
 		showResult = true;
@@ -424,15 +461,20 @@
 		consentUri = '';
 	}
 
-	function resetForm() {
+	async function resetForm() {
+		// Restore form state before showing the form so the recreated
+		// child components pick up the saved values via bind:
+		restrictions = savedRestrictions;
+		rotation = savedRotation;
 		showResult = false;
 		createdToken = '';
-		tokenName = '';
-		tokenType = 'token';
-		maxTokenLength = undefined;
-		selectedTags = [];
-		restrictions = [];
-		rotation = {};
+		// After the form is recreated by Svelte, restore the saved capabilities
+		// (capabilities use internal component state rather than bind:, so they
+		// must be restored after the component is created)
+		await tick();
+		if (capabilityTreeRef && savedCapabilities.length > 0) {
+			capabilityTreeRef.setEnabledCapabilities(savedCapabilities);
+		}
 	}
 
 	// Reactive lookup of tag colors - returns color for a given tag name
@@ -553,10 +595,6 @@
 				<button type="button" class="btn btn-primary" on:click={resetForm}>
 					<i class="fas fa-plus me-1"></i>
 					Create Another
-				</button>
-				<button type="button" class="btn btn-outline-secondary" on:click={() => (showResult = false)}>
-					<i class="fas fa-edit me-1"></i>
-					Edit Settings
 				</button>
 			</div>
 		</div>

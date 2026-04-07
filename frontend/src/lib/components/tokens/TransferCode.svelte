@@ -139,7 +139,7 @@
 		</li>
 	</ul>
 
-	{#if mode === 'create'}
+	<div style:display={mode === 'create' ? undefined : 'none'}>
 		<!-- Create transfer code -->
 		{#if createSuccess}
 			<div class="result-section">
@@ -217,7 +217,8 @@
 				</div>
 			</form>
 		{/if}
-	{:else}
+	</div>
+	<div style:display={mode === 'exchange' ? undefined : 'none'}>
 		<!-- Exchange transfer code -->
 		{#if exchangeSuccess}
 			<div class="result-section">
@@ -291,7 +292,7 @@
 				</div>
 			</form>
 		{/if}
-	{/if}
+	</div>
 </div>
 
 <style>
