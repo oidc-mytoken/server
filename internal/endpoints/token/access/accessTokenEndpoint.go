@@ -21,6 +21,7 @@ import (
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
+	notifier "github.com/oidc-mytoken/server/internal/notifier/client"
 	"github.com/oidc-mytoken/server/internal/oidc/oidcreqres"
 	"github.com/oidc-mytoken/server/internal/oidc/refresh"
 	"github.com/oidc-mytoken/server/internal/utils"
@@ -109,6 +110,15 @@ func HandleAccessTokenRefresh(
 				return dbErr
 			}
 			if !rtFound {
+				_ = notifier.SendNotificationsForSubClass(
+					rlog, tx, mt.ID, api.NotificationClassRTFailure, &networkData,
+					model.KeyValues{
+						{
+							Key:   "Reason",
+							Value: "No refresh token attached",
+						},
+					}, nil,
+				)
 				errRes = &model.Response{
 					Status:   fiber.StatusUnauthorized,
 					Response: model.InvalidTokenError("No refresh token attached"),
@@ -126,6 +136,19 @@ func HandleAccessTokenRefresh(
 				return err
 			}
 			if oidcErrRes != nil {
+				_ = notifier.SendNotificationsForSubClass(
+					rlog, tx, mt.ID, api.NotificationClassRTFailure, &networkData,
+					model.KeyValues{
+						{
+							Key:   "OP Error",
+							Value: oidcErrRes.Error,
+						},
+						{
+							Key:   "OP Error Description",
+							Value: oidcErrRes.ErrorDescription,
+						},
+					}, nil,
+				)
 				errRes = &model.Response{
 					Status:   oidcErrRes.Status,
 					Response: model.OIDCError(oidcErrRes.Error, oidcErrRes.ErrorDescription),

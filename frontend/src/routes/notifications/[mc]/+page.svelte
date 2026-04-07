@@ -14,6 +14,7 @@
 	import TagPill from '$lib/components/TagPill.svelte';
 	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
 	import CollapsibleSection from '$lib/components/CollapsibleSection.svelte';
+	import NotificationClassIcon from '$lib/components/notifications/NotificationClassIcon.svelte';
 
 	// Get management code from URL
 	$: managementCode = $page.params.mc;
@@ -591,7 +592,7 @@
 								on:change={() => toggleClass(cls.id)}
 							/>
 							<label class="form-check-label" for="class-{cls.id}">
-								<i class="fas {cls.icon} me-1" class:text-primary={isSelected}></i>
+								<NotificationClassIcon icon={cls.icon} extraClass="me-1{isSelected ? ' text-primary' : ''}" />
 								<strong>{cls.label}</strong>
 								<small class="text-muted ms-2">{cls.description}</small>
 							</label>
@@ -611,8 +612,8 @@
 											checked={isChildSelected}
 											on:change={() => toggleClass(child.id)}
 										/>
-										<label class="form-check-label" for="class-{child.id}">
-											<i class="fas {child.icon} me-1" class:text-primary={isChildSelected}></i>
+									<label class="form-check-label" for="class-{child.id}">
+										<NotificationClassIcon icon={child.icon} extraClass="me-1{isChildSelected ? ' text-primary' : ''}" />
 											{child.label}
 										</label>
 									</div>
@@ -629,8 +630,8 @@
 														checked={isGrandchildSelected}
 														on:change={() => toggleClass(grandchild.id)}
 													/>
-													<label class="form-check-label" for="class-{grandchild.id}">
-														<i class="fas {grandchild.icon} me-1" class:text-primary={isGrandchildSelected}></i>
+												<label class="form-check-label" for="class-{grandchild.id}">
+													<NotificationClassIcon icon={grandchild.icon} extraClass="me-1{isGrandchildSelected ? ' text-primary' : ''}" />
 														{grandchild.label}
 													</label>
 												</div>

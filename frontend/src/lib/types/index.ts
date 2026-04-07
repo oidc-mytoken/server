@@ -287,6 +287,12 @@ export interface NotificationClass {
 // Notification class definitions
 export const NOTIFICATION_CLASSES: NotificationClass[] = [
 	{ id: 'AT_creations', label: 'Access Token Creations', icon: 'fa-key', description: 'When access tokens are created' },
+	{
+		id: 'rt_failure',
+		label: 'Refresh Token Failures',
+		icon: 'fa-unlink',
+		description: 'When a refresh token could not be used'
+	},
 	{ id: 'subtoken_creations', label: 'Subtoken Creations', icon: 'fa-sitemap', description: 'When subtokens are created' },
 	{ id: 'setting_changes', label: 'Setting Changes', icon: 'fa-cog', description: 'When settings are modified' },
 	{ id: 'security', label: 'Security Events', icon: 'fa-shield-alt', description: 'All security-related events' },

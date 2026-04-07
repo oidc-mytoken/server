@@ -7,6 +7,7 @@
 	import TagPill from '../TagPill.svelte';
 	import LoadingSpinner from '../LoadingSpinner.svelte';
 	import NotificationItem from '../notifications/NotificationItem.svelte';
+	import NotificationClassIcon from '../notifications/NotificationClassIcon.svelte';
 
 	// Props
 	let {
@@ -430,7 +431,7 @@
 														class:btn-outline-secondary={!newNotificationClasses.includes(cls.id)}
 														onclick={() => toggleNotificationClass(cls.id)}
 													>
-														<i class="fas {cls.icon} me-1"></i>
+														<NotificationClassIcon icon={cls.icon} extraClass="me-1" />
 														{cls.label}
 													</button>
 												{/each}

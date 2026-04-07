@@ -7,6 +7,7 @@
 		getClassColor,
 		getRootNotificationClasses
 	} from '$lib/utils/notifications';
+	import NotificationClassIcon from './NotificationClassIcon.svelte';
 	import TagPill from '../TagPill.svelte';
 
 	interface Props {
@@ -72,7 +73,7 @@
 				class="me-2 {getClassColor(status)}"
 				title="{cls.label}: {status === 'full' ? 'Enabled' : status === 'partial' ? 'Partially enabled' : 'Disabled'}"
 			>
-				<i class="fas {cls.icon}"></i>
+				<NotificationClassIcon icon={cls.icon} />
 			</span>
 		{/each}
 	</div>
@@ -172,7 +173,7 @@
 	}
 
 	.notification-classes {
-		width: 130px;
+		width: 170px;
 		flex-shrink: 0;
 		font-size: 1.1em;
 	}
