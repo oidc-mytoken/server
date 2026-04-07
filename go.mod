@@ -31,7 +31,7 @@ require (
 	github.com/sethvargo/go-limiter v1.1.0
 	github.com/sirupsen/logrus v1.9.4
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
-	github.com/valyala/fasthttp v1.69.0
+	github.com/valyala/fasthttp v1.70.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	golang.org/x/crypto v0.49.0
 	golang.org/x/mod v0.34.0
@@ -43,7 +43,7 @@ require (
 	filippo.io/edwards25519 v1.1.1 // indirect
 	github.com/ThalesGroup/crypto11 v1.2.6 // indirect
 	github.com/adam-hanna/arrayOperations v1.0.1 // indirect
-	github.com/andybalholm/brotli v1.2.0 // indirect
+	github.com/andybalholm/brotli v1.2.1 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clipperhouse/displaywidth v0.10.0 // indirect
