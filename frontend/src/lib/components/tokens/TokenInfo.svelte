@@ -12,6 +12,7 @@
 	import LoadingSpinner from '../LoadingSpinner.svelte';
 	import TagPill from '../TagPill.svelte';
 	import CollapsibleSection from '../CollapsibleSection.svelte';
+	import NotificationClassIcon from '../notifications/NotificationClassIcon.svelte';
 
 	// Input token
 	export let initialToken: string = '';
@@ -835,7 +836,7 @@
 												{#each rootClasses as cls}
 													{@const status = isClassEnabled(notif, cls.id)}
 													<span class="{getClassColor(status)}" title={cls.label}>
-														<i class="fas {cls.icon}"></i>
+														<NotificationClassIcon icon={cls.icon} />
 													</span>
 												{/each}
 											</div>
@@ -869,7 +870,7 @@
 												{#each rootClasses as cls}
 													{@const status = isClassEnabled(notif, cls.id)}
 													<span class="{getClassColor(status)}" title={cls.label}>
-														<i class="fas {cls.icon}"></i>
+														<NotificationClassIcon icon={cls.icon} />
 													</span>
 												{/each}
 											</div>
@@ -903,7 +904,7 @@
 												{#each rootClasses as cls}
 													{@const status = isClassEnabled(notif, cls.id)}
 													<span class="{getClassColor(status)}" title={cls.label}>
-														<i class="fas {cls.icon}"></i>
+														<NotificationClassIcon icon={cls.icon} />
 													</span>
 												{/each}
 											</div>

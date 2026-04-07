@@ -10,6 +10,7 @@
 	import { formatDateTime } from '$lib/utils/format';
 	import TagPill from '../TagPill.svelte';
 	import LoadingSpinner from '../LoadingSpinner.svelte';
+	import NotificationClassIcon from './NotificationClassIcon.svelte';
 
 	const dispatch = createEventDispatcher<{ 
 		saved: Notification | void;
@@ -446,7 +447,7 @@
 											onchange={() => toggleClass(cls.id)}
 										/>
 										<label class="form-check-label" for="modal-class-{cls.id}">
-											<i class="fas {cls.icon} me-1" class:text-primary={isSelected}></i>
+											<NotificationClassIcon icon={cls.icon} extraClass="me-1{isSelected ? ' text-primary' : ''}" />
 											<strong>{cls.label}</strong>
 											<small class="text-muted ms-2">{cls.description}</small>
 										</label>
@@ -468,7 +469,7 @@
 														onchange={() => toggleClass(child.id)}
 													/>
 													<label class="form-check-label" for="modal-class-{child.id}">
-														<i class="fas {child.icon} me-1" class:text-primary={isChildSelected}></i>
+														<NotificationClassIcon icon={child.icon} extraClass="me-1{isChildSelected ? ' text-primary' : ''}" />
 														{child.label}
 													</label>
 												</div>
@@ -487,7 +488,7 @@
 																	onchange={() => toggleClass(grandchild.id)}
 																/>
 																<label class="form-check-label" for="modal-class-{grandchild.id}">
-																	<i class="fas {grandchild.icon} me-1" class:text-primary={isGrandchildSelected}></i>
+																	<NotificationClassIcon icon={grandchild.icon} extraClass="me-1{isGrandchildSelected ? ' text-primary' : ''}" />
 																	{grandchild.label}
 																</label>
 															</div>
