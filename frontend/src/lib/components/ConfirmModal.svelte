@@ -7,6 +7,9 @@
 	$: confirmText = $ui.confirmModal.confirmText;
 	$: cancelText = $ui.confirmModal.cancelText;
 	$: confirmVariant = $ui.confirmModal.confirmVariant;
+	$: showCheckbox = $ui.confirmModal.showCheckbox;
+	$: checkboxLabel = $ui.confirmModal.checkboxLabel;
+	$: checkboxChecked = $ui.confirmModal.checkboxChecked;
 
 	function handleConfirm() {
 		ui.resolveConfirm(true);
@@ -14,6 +17,11 @@
 
 	function handleCancel() {
 		ui.resolveConfirm(false);
+	}
+
+	function handleCheckboxChange(event: Event) {
+		const target = event.target as HTMLInputElement;
+		ui.setCheckboxState(target.checked);
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
@@ -60,6 +68,20 @@
 				</div>
 				<div class="modal-body">
 					<p class="mb-0">{message}</p>
+					{#if showCheckbox}
+						<div class="form-check mt-2">
+							<input 
+								type="checkbox" 
+								class="form-check-input" 
+								id="recursive-checkbox"
+								checked={checkboxChecked}
+								on:change={handleCheckboxChange}
+							>
+							<label class="form-check-label" for="recursive-checkbox">
+								{checkboxLabel || 'Option'}
+							</label>
+						</div>
+					{/if}
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" on:click={handleCancel}>

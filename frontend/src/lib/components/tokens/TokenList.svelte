@@ -274,24 +274,50 @@
 		return formatDateTime(token.expires_at);
 	}
 
-	async function revokeToken(momId: string, name?: string) {
+	async function revokeToken(momId: string, name?: string, hasChildren?: boolean) {
 		const displayName = name || 'unnamed token';
-		const confirmed = await ui.confirm({
-			title: 'Revoke Token',
-			message: `Are you sure you want to revoke "${displayName}"? This cannot be undone.`,
-			confirmText: 'Revoke',
-			confirmVariant: 'danger'
-		});
 		
-		if (!confirmed) return;
+		if (hasChildren) {
+			const confirmed = await ui.confirm({
+				title: 'Revoke Token',
+				message: `Are you sure you want to revoke "${displayName}"? This cannot be undone.`,
+				confirmText: 'Revoke',
+				confirmVariant: 'danger',
+				showCheckbox: true,
+				checkboxLabel: 'Also revoke all child tokens (recursive)',
+				checkboxChecked: false
+			});
+			
+			if (!confirmed) return;
 
-		try {
-			await api.revokeToken(momId, false);
-			ui.success(`Token "${displayName}" revoked`);
-			await loadTokens(); // Reload the list
-		} catch (err) {
-			if (err instanceof ApiClientError) {
-				ui.showError('Revocation Failed', err.description ?? err.code);
+			try {
+				const recursive = $ui.confirmModal.checkboxChecked ?? false;
+				await api.revokeTokenByMomID(momId, recursive);
+				ui.success(`Token "${displayName}" revoked${recursive ? ' (including children)' : ''}`);
+				await loadTokens();
+			} catch (err) {
+				if (err instanceof ApiClientError) {
+					ui.showError('Revocation Failed', err.description ?? err.code);
+				}
+			}
+		} else {
+			const confirmed = await ui.confirm({
+				title: 'Revoke Token',
+				message: `Are you sure you want to revoke "${displayName}"? This cannot be undone.`,
+				confirmText: 'Revoke',
+				confirmVariant: 'danger'
+			});
+			
+			if (!confirmed) return;
+
+			try {
+				await api.revokeTokenByMomID(momId, false);
+				ui.success(`Token "${displayName}" revoked`);
+				await loadTokens();
+			} catch (err) {
+				if (err instanceof ApiClientError) {
+					ui.showError('Revocation Failed', err.description ?? err.code);
+				}
 			}
 		}
 	}
@@ -477,7 +503,7 @@
 										type="button"
 										class="btn btn-outline-danger"
 										title="Revoke token"
-										onclick={() => revokeToken(token.mom_id, token.name)}
+										onclick={() => revokeToken(token.mom_id, token.name, item.hasChildren)}
 									>
 										<i class="fas fa-trash"></i>
 									</button>

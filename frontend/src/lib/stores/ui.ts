@@ -15,6 +15,9 @@ interface ConfirmModal {
 	cancelText: string;
 	confirmVariant: 'danger' | 'primary' | 'warning';
 	resolve: ((value: boolean) => void) | null;
+	showCheckbox?: boolean;
+	checkboxLabel?: string;
+	checkboxChecked?: boolean;
 }
 
 interface ToastNotification {
@@ -134,6 +137,9 @@ function createUIStore() {
 			confirmText?: string;
 			cancelText?: string;
 			confirmVariant?: 'danger' | 'primary' | 'warning';
+			showCheckbox?: boolean;
+			checkboxLabel?: string;
+			checkboxChecked?: boolean;
 		}): Promise<boolean> {
 			return new Promise((resolve) => {
 				update((state) => ({
@@ -145,6 +151,9 @@ function createUIStore() {
 						confirmText: options.confirmText ?? 'Confirm',
 						cancelText: options.cancelText ?? 'Cancel',
 						confirmVariant: options.confirmVariant ?? 'danger',
+						showCheckbox: options.showCheckbox ?? false,
+						checkboxLabel: options.checkboxLabel ?? '',
+						checkboxChecked: options.checkboxChecked ?? false,
 						resolve
 					}
 				}));
@@ -168,6 +177,19 @@ function createUIStore() {
 					}
 				};
 			});
+		},
+
+		/**
+		 * Set checkbox state in confirm modal
+		 */
+		setCheckboxState(checked: boolean) {
+			update((state) => ({
+				...state,
+				confirmModal: {
+					...state.confirmModal,
+					checkboxChecked: checked
+				}
+			}));
 		},
 
 		/**
