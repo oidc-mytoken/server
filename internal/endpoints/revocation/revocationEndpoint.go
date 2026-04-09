@@ -160,6 +160,16 @@ func revokeByID(
 				}
 				return rollback
 			}
+			if req.MOMID == authToken.ID.Hash() {
+				errRes = &model.Response{
+					Status: fiber.StatusBadRequest,
+					Response: api.Error{
+						Error:            api.ErrorStrInvalidRequest,
+						ErrorDescription: "A token cannot be revoked by its own mom_id. Use the token itself instead.",
+					},
+				}
+				return rollback
+			}
 			if err = helper.RevokeMT(rlog, tx, req.MOMID, req.Recursive); err != nil {
 				errRes = model.ErrorToInternalServerErrorResponse(err)
 				return err
