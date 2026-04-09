@@ -351,6 +351,23 @@ class ApiClient {
 	}
 
 	/**
+	 * Revoke a token by its mom_id
+	 */
+	async revokeTokenByMomID(
+		momId: string,
+		recursive = false
+	): Promise<void> {
+		const endpoint = this.getEndpoint('revocation_endpoint');
+		await this.request(endpoint, {
+			method: 'POST',
+			body: JSON.stringify({
+				mom_id: momId,
+				recursive
+			})
+		});
+	}
+
+	/**
 	 * Revoke the current session (cookie-authenticated).
 	 * Used for logout - revokes the token associated with the current session cookie.
 	 */
