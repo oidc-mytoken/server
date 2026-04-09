@@ -6,6 +6,7 @@
 	import { tags } from '$lib/stores/tags';
 	import { usersettingsEndpoint, notificationsEndpoint } from '$lib/stores/discovery';
 	import { formatDateTime } from '$lib/utils/format';
+	import { tokenInfo } from '$lib/stores/auth';
 	import LoadingSpinner from '../LoadingSpinner.svelte';
 	import TagPill from '../TagPill.svelte';
 	import TokenTagsCell from './TokenTagsCell.svelte';
@@ -503,6 +504,7 @@
 										type="button"
 										class="btn btn-outline-danger"
 										title="Revoke token"
+										disabled={token.mom_id === $tokenInfo?.mom_id}
 										onclick={() => revokeToken(token.mom_id, token.name, item.hasChildren)}
 									>
 										<i class="fas fa-trash"></i>

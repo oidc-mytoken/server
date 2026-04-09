@@ -13,6 +13,7 @@
 	import TagPill from '../TagPill.svelte';
 	import CollapsibleSection from '../CollapsibleSection.svelte';
 	import NotificationClassIcon from '../notifications/NotificationClassIcon.svelte';
+	import { tokenInfo as authStoreTokenInfo } from '$lib/stores/auth';
 
 	// Input token
 	export let initialToken: string = '';
@@ -631,7 +632,7 @@
 									<i class="fas fa-copy me-1"></i>
 									Re-create
 								</button>
-								<button class="btn btn-sm btn-outline-danger" on:click={revokeToken}>
+								<button class="btn btn-sm btn-outline-danger" on:click={revokeToken} disabled={tokenInfo.mom_id === $authStoreTokenInfo?.mom_id}>
 									<i class="fas fa-ban me-1"></i>
 									Revoke
 								</button>
