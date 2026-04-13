@@ -21,10 +21,10 @@ import type {
 	ServerProfile,
 	SSHInfoResponse,
 	SSHKeyInfo,
+	TagInfo,
 	TokenInfoResponse,
 	TransferCodeRequest,
 	TransferCodeResponse,
-	TagInfo,
 	WebCapability
 } from '$lib/types';
 
@@ -383,6 +383,30 @@ class ApiClient {
 
 		return flatten(trees);
 	}
+
+    /**
+     * Get notifications and calendars for a specific token via tokeninfo endpoint
+     */
+    async getNotificationsForToken(token: string): Promise<{
+        notifications: Notification[];
+        calendars: Calendar[];
+    }> {
+        const endpoint = this.getEndpoint('tokeninfo_endpoint');
+        const response = await this.request<{
+            notifications: Notification[];
+            calendars: Calendar[];
+        }>(endpoint, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'notifications',
+                mytoken: token
+            })
+        });
+        return {
+            notifications: response.notifications ?? [],
+            calendars: response.calendars ?? []
+        };
+    }
 
 	/**
 	 * Revoke a token

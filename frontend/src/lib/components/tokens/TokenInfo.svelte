@@ -199,8 +199,7 @@
 			ui.success('Token introspected successfully');
 			
 			// Load notifications and calendars in background
-			loadNotifications();
-			loadCalendars();
+			loadNotificationsAndCalendars();
 		} catch (error) {
 			if (error instanceof ApiClientError) {
 				ui.showError('Introspection Failed', error.description ?? error.code);
@@ -439,52 +438,36 @@
 		};
 	}
 
-	// Load notifications linked to this token
-	async function loadNotifications() {
+	// Load notifications and calendars linked to this token via tokeninfo endpoint
+	async function loadNotificationsAndCalendars() {
 		if (!tokenInfo) return;
 		
 		loadingNotifications = true;
-		notificationsError = null;
-		try {
-			notifications = await api.getNotifications();
-		} catch (error) {
-			console.error('Failed to load notifications:', error);
-			notifications = [];
-			if (error instanceof ApiClientError) {
-				if (error.isAuthError()) {
-					notificationsError = 'Session expired or invalid. Please log in again.';
-				} else {
-					notificationsError = error.description ?? error.code;
-				}
-			} else {
-				notificationsError = (error as Error).message;
-			}
-		} finally {
-			loadingNotifications = false;
-		}
-	}
-
-	// Load calendars linked to this token
-	async function loadCalendars() {
-		if (!tokenInfo) return;
-		
 		loadingCalendars = true;
+		notificationsError = null;
 		calendarsError = null;
 		try {
-			calendars = await api.getCalendars();
+			const result = await api.getNotificationsForToken(token);
+			notifications = result.notifications;
+			calendars = result.calendars;
 		} catch (error) {
-			console.error('Failed to load calendars:', error);
+			console.error('Failed to load notifications and calendars:', error);
+			notifications = [];
 			calendars = [];
 			if (error instanceof ApiClientError) {
 				if (error.isAuthError()) {
+					notificationsError = 'Session expired or invalid. Please log in again.';
 					calendarsError = 'Session expired or invalid. Please log in again.';
 				} else {
+					notificationsError = error.description ?? error.code;
 					calendarsError = error.description ?? error.code;
 				}
 			} else {
+				notificationsError = (error as Error).message;
 				calendarsError = (error as Error).message;
 			}
 		} finally {
+			loadingNotifications = false;
 			loadingCalendars = false;
 		}
 	}
