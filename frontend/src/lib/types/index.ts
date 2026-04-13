@@ -359,21 +359,31 @@ export interface ConsentData {
 
 // Web capability details (from server)
 export interface WebCapabilityDetails {
-	Name: string;
-	Description?: string;
-	IsReadOnly?: boolean;
-	ColorClass?: string;      // "text-success", "text-warning", "text-danger"
-	CapabilityLevel?: string; // Description of power level
+    name: string;
+    description?: string;
+    is_read_only?: boolean;
+    color_class?: string;      // "text-success", "text-warning", "text-danger"
+    capability_level?: string; // Description of power level
 }
 
 // Web capability for consent display
-// ReadWriteCapability/ReadOnlyCapability can be either:
+// read_write_capability/read_only_capability can be either:
 // - A string (capability name like "AT", "tokeninfo")
-// - An object with Name, Description, ColorClass, CapabilityLevel fields
+// - An object with name, description, color_class, capability_level fields
 export interface WebCapability {
-	ReadWriteCapability: string | WebCapabilityDetails;
-	ReadOnlyCapability?: string | WebCapabilityDetails;
-	Children?: WebCapability[];
+    read_write_capability: string | WebCapabilityDetails;
+    read_only_capability?: string | WebCapabilityDetails;
+    children?: WebCapability[];
+}
+
+// Web capability for consent display
+// read_write_capability/read_only_capability can be either:
+// - A string (capability name like "AT", "tokeninfo")
+// - An object with name, description, color_class, capability_level fields
+export interface WebCapability {
+    read_write_capability: string | WebCapabilityDetails;
+    read_only_capability?: string | WebCapabilityDetails;
+    children?: WebCapability[];
 }
 
 // Tag for creating mytoken

@@ -12,24 +12,24 @@ import (
 
 // WebCapability is type for representing api.Capability in the consent screen
 type WebCapability struct {
-	ReadWriteCapability webCapability    `json:"ReadWriteCapability"`
-	ReadOnlyCapability  *webCapability   `json:"ReadOnlyCapability,omitempty"`
-	Children            []*WebCapability `json:"Children,omitempty"`
+	ReadWriteCapability webCapability    `json:"read_write_capability"`
+	ReadOnlyCapability  *webCapability   `json:"read_only_capability,omitempty"`
+	Children            []*WebCapability `json:"children,omitempty"`
 }
 
 type webCapability struct {
 	api.Capability
 	intClass   *int `json:"-"`
-	IsReadOnly bool `json:"IsReadOnly,omitempty"`
+	IsReadOnly bool `json:"is_read_only,omitempty"`
 }
 
 // webCapabilityJSON is used for JSON marshaling to include computed fields
 type webCapabilityJSON struct {
-	Name            string `json:"Name"`
-	Description     string `json:"Description,omitempty"`
-	IsReadOnly      bool   `json:"IsReadOnly,omitempty"`
-	ColorClass      string `json:"ColorClass,omitempty"`
-	CapabilityLevel string `json:"CapabilityLevel,omitempty"`
+	Name            string `json:"name"`
+	Description     string `json:"description,omitempty"`
+	IsReadOnly      bool   `json:"is_read_only,omitempty"`
+	ColorClass      string `json:"color_class,omitempty"`
+	CapabilityLevel string `json:"capability_level,omitempty"`
 }
 
 // MarshalJSON implements json.Marshaler to include ColorClass and CapabilityLevel

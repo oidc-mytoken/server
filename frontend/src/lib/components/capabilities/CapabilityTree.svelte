@@ -123,7 +123,7 @@
 	}
 
 	function isWebCapability(cap: Capability | WebCapability): cap is WebCapability {
-		return 'ReadWriteCapability' in cap;
+		return 'read_write_capability' in cap;
 	}
 
 	function normalizeCapabilities(caps: Capability[] | WebCapability[]): Capability[] {
@@ -139,16 +139,16 @@
 	}
 
 	function convertWebCapability(webCap: WebCapability | any): Capability {
-		// ReadWriteCapability can be either a string (capability name) or an object with Name/Description
-		const rwCap = webCap.ReadWriteCapability || webCap.readWriteCapability;
+		// read_write_capability can be either a string (capability name) or an object with name/description
+		const rwCap = webCap.read_write_capability;
 		if (!rwCap) {
-			console.error('No ReadWriteCapability found in:', webCap);
+			console.error('No read_write_capability found in:', webCap);
 			return { name: 'unknown', enabled: false };
 		}
 		
 		// Handle both formats:
 		// 1. String format: "AT", "tokeninfo", etc.
-		// 2. Object format: { Name: "AT", Description: "...", ColorClass: "...", CapabilityLevel: "..." }
+		// 2. Object format: { name: "AT", description: "...", color_class: "...", capability_level: "..." }
 		let name: string;
 		let description: string = '';
 		let colorClass: string = '';
@@ -157,14 +157,14 @@
 		if (typeof rwCap === 'string') {
 			name = rwCap;
 		} else {
-			name = rwCap.Name || rwCap.name || 'unknown';
-			description = rwCap.Description || rwCap.description || '';
-			colorClass = rwCap.ColorClass || rwCap.colorClass || '';
-			capabilityLevel = rwCap.CapabilityLevel || rwCap.capabilityLevel || '';
+			name = rwCap.name || 'unknown';
+			description = rwCap.description || '';
+			colorClass = rwCap.color_class || '';
+			capabilityLevel = rwCap.capability_level || '';
 		}
 		
-		// hasReadOnlyOption is true when there IS a ReadOnlyCapability (meaning we can toggle between modes)
-		const hasReadOnlyOption = !!(webCap.ReadOnlyCapability || webCap.readOnlyCapability);
+		// hasReadOnlyOption is true when there IS a read_only_capability (meaning we can toggle between modes)
+		const hasReadOnlyOption = !!webCap.read_only_capability;
 		
 		const cap: Capability = {
 			name,
@@ -175,7 +175,7 @@
 			capabilityLevel
 		};
 		
-		const children = webCap.Children || webCap.children;
+		const children = webCap.children;
 		if (children && children.length > 0) {
 			cap.children = children.map((child: any) => convertWebCapability(child));
 		}
