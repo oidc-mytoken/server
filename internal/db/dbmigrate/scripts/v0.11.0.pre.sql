@@ -546,7 +546,13 @@ BEGIN
                               (SELECT nt.notification_id
                                    FROM NotificationTags nt
                                             JOIN MTTags mt ON nt.tag_id = mt.tag_id
-                                   WHERE mt.MT_id = MTID))) n
+                                   WHERE mt.MT_id = MTID)
+                              UNION
+                              -- User-wide notifications
+                              (SELECT id
+                                   FROM Notifications
+                                   WHERE user_wide = 1
+                                     AND uid = (SELECT user_id FROM MTokens WHERE id = MTID)))) n
                      JOIN SubscribedNotificationClasses snc ON n.id = snc.notificaton_id
                  )
         ORDER BY n.id DESC;
