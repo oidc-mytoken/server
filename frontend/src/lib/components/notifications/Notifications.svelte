@@ -37,7 +37,7 @@
 			// Load tags if not already loaded
 			if ($isLoggedIn && $discovery.data?.usersettings_endpoint) {
 				if (!$tags.loaded) {
-					await tags.fetch($discovery.data.usersettings_endpoint);
+					await tags.fetch();
 				}
 			}
 

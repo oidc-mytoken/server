@@ -333,7 +333,7 @@
 
 		// Create new tag
 		if ($discovery.data?.usersettings_endpoint) {
-			const success = await tagsStore.create($discovery.data.usersettings_endpoint, { 
+			const success = await tagsStore.create({ 
 				tag: tagName, 
 				color: '#6c757d' 
 			});
@@ -512,7 +512,7 @@
 		}
 		// Load tags if logged in (force load even if already loaded to ensure fresh data)
 		if ($isLoggedIn && $discovery.data?.usersettings_endpoint) {
-			await tagsStore.fetch($discovery.data.usersettings_endpoint);
+			await tagsStore.fetch();
 		}
 		await loadNotification();
 	});

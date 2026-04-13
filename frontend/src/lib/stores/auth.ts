@@ -1,6 +1,7 @@
 import {derived, writable} from 'svelte/store';
 import {browser} from '$app/environment';
 import type {TokenInfoResponse} from '$lib/types';
+import {api} from '$lib/api/client';
 
 const ISSUER_STORAGE_KEY = 'mytoken_oidc_issuer';
 const SCOPES_STORAGE_KEY = 'mytoken_scopes';
@@ -33,28 +34,43 @@ function createAuthStore() {
 		 * Check if logged in via cookie by calling introspect
 		 * This mirrors the Mustache frontend's checkIfLoggedIn behavior
 		 */
-		async checkLogin(tokeninfoEndpoint: string): Promise<boolean> {
+		async checkLogin(): Promise<boolean> {
 			update((s) => ({ ...s, loading: true }));
 
 			try {
-				const response = await fetch(tokeninfoEndpoint, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
-					credentials: 'include',
-					body: JSON.stringify({
-						action: 'introspect'
-					})
-				});
-
-				if (!response.ok) {
-					throw new Error('Not logged in');
+				let data;
+				try {
+					data = await api.introspect();
+				} catch (err: any) {
+					update((s) => ({
+						...s,
+						isLoggedIn: false,
+						tokenInfo: null,
+						oidcIssuer: null,
+						scopes: [],
+						loading: false,
+						initialized: true,
+						error: null
+					}));
+					return false;
 				}
 
-				const data = await response.json();
 				const tokenInfo: TokenInfoResponse = data;
 				const token = data.token;
+
+				if (!tokenInfo || !tokenInfo.valid) {
+					update((s) => ({
+						...s,
+						isLoggedIn: false,
+						tokenInfo: null,
+						oidcIssuer: null,
+						scopes: [],
+						loading: false,
+						initialized: true,
+						error: null
+					}));
+					return false;
+				}
 
 				// Extract issuer and scopes from token info
 				const issuer = token?.oidc_iss ?? null;

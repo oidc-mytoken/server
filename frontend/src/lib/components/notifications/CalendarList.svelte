@@ -106,7 +106,7 @@
 
 		// Create new tag
 		if ($discovery.data?.usersettings_endpoint) {
-			const success = await tagsStore.create($discovery.data.usersettings_endpoint, { 
+			const success = await tagsStore.create({ 
 				tag: tagName, 
 				color: '#6c757d' 
 			});
@@ -177,7 +177,7 @@
 
 		// Create new tag
 		if ($discovery.data?.usersettings_endpoint) {
-			const success = await tagsStore.create($discovery.data.usersettings_endpoint, { 
+			const success = await tagsStore.create({ 
 				tag: tagName, 
 				color: '#6c757d' 
 			});

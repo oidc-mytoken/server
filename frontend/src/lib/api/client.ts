@@ -24,10 +24,61 @@ import type {
 	TokenInfoResponse,
 	TransferCodeRequest,
 	TransferCodeResponse,
+	TagInfo,
 	WebCapability
 } from '$lib/types';
 
 class ApiClient {
+
+	// ==================== Tags ====================
+
+	/**
+	 * Fetch all tags
+	 */
+	async getTags(): Promise<TagInfo[]> {
+		const endpoint = this.getEndpoint('usersettings_endpoint');
+		const response = await this.request<{tags: TagInfo[]}>(endpoint + '/tags', {
+			method: 'GET'
+		});
+		return response.tags ?? [];
+	}
+
+	/**
+	 * Create a new tag
+	 */
+	async createTag(tagName: string, color: string): Promise<void> {
+		const endpoint = this.getEndpoint('usersettings_endpoint');
+		await this.request(endpoint + '/tags/' + encodeURIComponent(tagName), {
+			method: 'POST',
+			body: JSON.stringify({ color })
+		});
+	}
+
+	/**
+	 * Update an existing tag
+	 */
+	async updateTag(tagName: string, color?: string, newTagName?: string): Promise<void> {
+		const endpoint = this.getEndpoint('usersettings_endpoint');
+		const payload: any = {};
+		if (color !== undefined) payload.color = color;
+		if (newTagName !== undefined) payload.tag = newTagName;
+		await this.request(endpoint + '/tags/' + encodeURIComponent(tagName), {
+			method: 'PUT',
+			body: JSON.stringify(payload)
+		});
+	}
+
+	/**
+	 * Delete a tag
+	 */
+	async deleteTag(tagName: string): Promise<void> {
+		const endpoint = this.getEndpoint('usersettings_endpoint');
+		await this.request(endpoint + '/tags/' + encodeURIComponent(tagName), {
+			method: 'DELETE'
+		});
+	}
+
+
 	/**
 	 * Request queue to serialize cookie-authenticated requests.
 	 * This prevents race conditions when the session token has rotation enabled,
@@ -228,7 +279,7 @@ class ApiClient {
 	/**
 	 * Introspect a token
 	 */
-	async introspect(token: string): Promise<TokenInfoResponse> {
+	async introspect(token?: string): Promise<TokenInfoResponse> {
 		const endpoint = this.getEndpoint('tokeninfo_endpoint');
 		return this.request<TokenInfoResponse>(endpoint, {
 			method: 'POST',

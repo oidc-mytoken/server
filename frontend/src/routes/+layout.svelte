@@ -36,7 +36,7 @@
 		// Then check if actually logged in via cookie (like Mustache frontend does)
 		const discoveryData = get(discovery);
 		if (discoveryData.data?.tokeninfo_endpoint) {
-			await auth.checkLogin(discoveryData.data.tokeninfo_endpoint);
+			await auth.checkLogin();
 		}
 		
 		// Note: Tags are loaded lazily when needed (e.g., in CreateMytoken)

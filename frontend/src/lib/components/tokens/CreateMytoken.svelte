@@ -180,7 +180,7 @@
 			}
 
 			if ($discovery.data?.usersettings_endpoint) {
-				await tags.fetch($discovery.data.usersettings_endpoint);
+				await tags.fetch();
 				// Wait for store update to propagate
 				await tick();
 			}
@@ -533,7 +533,7 @@
 			
 			// Create the new tag on the server
 			if ($discovery.data?.usersettings_endpoint) {
-				const success = await tags.create($discovery.data.usersettings_endpoint, { tag: tagName });
+				const success = await tags.create({ tag: tagName });
 				if (!success) {
 					ui.showError('Error', 'Failed to create tag');
 					return;

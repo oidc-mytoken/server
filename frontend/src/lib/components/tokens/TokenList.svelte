@@ -222,7 +222,7 @@
 		// Fetch available tags once for the tag selector
 		const endpoint = $usersettingsEndpoint;
 		if (endpoint && !$tags.loaded) {
-			tags.fetch(endpoint);
+			tags.fetch();
 		}
 	});
 

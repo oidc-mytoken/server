@@ -64,7 +64,7 @@
 		loading = true;
 		try {
 			if ($isLoggedIn && $discovery.data?.usersettings_endpoint) {
-				await tagsStore.fetch($discovery.data.usersettings_endpoint);
+				await tagsStore.fetch();
 			}
 		} catch (error) {
 			ui.error('Failed to load tags');
@@ -91,7 +91,7 @@
 					tag: newTagName.trim(),
 					color: newTagColor
 				};
-				await tagsStore.create($discovery.data.usersettings_endpoint, tag);
+				await tagsStore.create(tag);
 				ui.success(`Tag "${tag.tag}" created`);
 				// Reset form
 				newTagName = '';
@@ -118,7 +118,7 @@
 		deleting = tagName;
 		try {
 			if ($isLoggedIn && $discovery.data?.usersettings_endpoint) {
-				await tagsStore.delete($discovery.data.usersettings_endpoint, tagName);
+				await tagsStore.delete(tagName);
 				ui.success(`Tag "${tagName}" deleted`);
 			}
 		} catch (error) {
@@ -175,11 +175,7 @@
 				if (nameChanged) updates.tag = editTagName.trim();
 				if (colorChanged) updates.color = editTagColor;
 
-				const success = await tagsStore.update(
-					$discovery.data.usersettings_endpoint,
-					editingTag,
-					updates
-				);
+				const success = await tagsStore.update(editingTag, updates);
 
 				if (success) {
 					ui.success('Tag updated');
