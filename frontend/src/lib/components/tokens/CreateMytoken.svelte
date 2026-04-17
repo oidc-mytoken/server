@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, tick, createEventDispatcher } from 'svelte';
-	import type { Restriction, Rotation, WebCapability, CapabilityTemplate, RestrictionTemplate, RotationTemplate, MytokenProfile, CreateMytokenTag, CreateMytokenRequest, InitialMytokenRequest } from '$lib/types';
+	import type { Restriction, Rotation, WebCapability, CapabilityTemplate, RestrictionTemplate, RotationTemplate, MytokenProfile, CreateMytokenTag, CreateMytokenRequest, InitialMytokenRequest, ServerProfile } from '$lib/types';
 	import { api, ApiClientError } from '$lib/api/client';
 	import { discovery, providers } from '$lib/stores/discovery';
 	import { isLoggedIn, auth } from '$lib/stores/auth';
@@ -101,16 +101,31 @@
 		// resolved from the discovery document and will throw if it is not yet available.
 		await waitForDiscovery();
 
-		// Fetch all API data in parallel so a slow or failing request
-		// does not block or prevent the others from completing.
-		const [capResult, profileResult, capTplResult, restrTplResult, rotTplResult] =
-			await Promise.allSettled([
-				api.getAllCapabilities(),
-				api.getProfiles(),
-				api.getCapabilityTemplates(),
-				api.getRestrictionTemplates(),
-				api.getRotationTemplates()
-			]);
+		// First, get all profile groups
+		let profileGroups: string[] = [];
+		try {
+			profileGroups = await api.getProfileGroups();
+		} catch (error) {
+			console.error('Error loading profile groups:', error);
+			profileGroups = ['default']; // Fallback to default
+		}
+
+		// Fetch capabilities and profiles/templates from ALL groups in parallel
+		const capResultArray = await Promise.allSettled([
+			api.getAllCapabilities()
+		]);
+		const capResult = capResultArray[0];
+		
+		const groupsPromises = profileGroups.map(group => 
+			Promise.all([
+				api.getProfiles(group),
+				api.getCapabilityTemplates(group),
+				api.getRestrictionTemplates(group),
+				api.getRotationTemplates(group)
+			])
+		);
+		
+		const groupsResults = await Promise.allSettled(groupsPromises);
 
 		// Apply results — each is independent; a failure in one must not affect others
 		if (capResult.status === 'fulfilled') {
@@ -120,47 +135,67 @@
 			webCapabilities = [];
 		}
 
-		if (profileResult.status === 'fulfilled') {
-			profiles = profileResult.value.map(p => {
-				const payload = p.payload as any;
-				return {
-					name: p.name,
-					capabilities: payload?.capabilities,
-					restrictions: payload?.restrictions,
-					rotation: payload?.rotation,
-					tags: payload?.tags
-				};
-			});
-		} else {
-			profiles = [];
+		// Process group results - each result is [profiles, capTemplates, restrTemplates, rotTemplates]
+		const allProfiles: MytokenProfile[] = [];
+		const allCapTemplates: CapabilityTemplate[] = [];
+		const allRestrictionTemplates: RestrictionTemplate[] = [];
+		const allRotationTemplates: RotationTemplate[] = [];
+
+		for (let i = 0; i < groupsResults.length; i++) {
+			const groupResult = groupsResults[i];
+			if (groupResult.status === 'fulfilled') {
+				const [profilesArr, capTplArr, restrTplArr, rotTplArr] = groupResult.value;
+				const groupName = profileGroups[i];
+				
+				// Add profiles with prefix (skip prefix for default group '_')
+				if (profilesArr && Array.isArray(profilesArr)) {
+					allProfiles.push(...profilesArr.map(p => {
+						const payload = p.payload as any;
+						return {
+							name: groupName === '_' ? p.name : `[${groupName}] ${p.name}`,
+							capabilities: payload?.capabilities,
+							restrictions: payload?.restrictions,
+							rotation: payload?.rotation,
+							tags: payload?.tags
+						};
+					}));
+				}
+				
+				// Add capability templates with prefix (skip prefix for default group '_')
+				if (capTplArr && Array.isArray(capTplArr)) {
+					allCapTemplates.push(...capTplArr.map(p => ({
+						name: groupName === '_' ? p.name : `[${groupName}] ${p.name}`,
+						capabilities: Array.isArray(p.payload) ? p.payload as string[] : []
+					})));
+				}
+				
+				// Add restriction templates with prefix (skip prefix for default group '_')
+				if (restrTplArr && Array.isArray(restrTplArr)) {
+					allRestrictionTemplates.push(...restrTplArr.map(p => ({
+						name: groupName === '_' ? p.name : `[${groupName}] ${p.name}`,
+						restrictions: Array.isArray(p.payload) ? p.payload as Restriction[] : []
+					})));
+				}
+				
+				// Add rotation templates with prefix (skip prefix for default group '_')
+				if (rotTplArr && Array.isArray(rotTplArr)) {
+					allRotationTemplates.push(...rotTplArr.map(p => ({
+						name: groupName === '_' ? p.name : `[${groupName}] ${p.name}`,
+						rotation: (p.payload as Rotation) ?? {}
+					})));
+				}
+				
+
+
+			} else {
+				console.error(`Error loading data from group ${profileGroups[i]}:`, groupResult.reason);
+			}
 		}
 
-		if (capTplResult.status === 'fulfilled') {
-			capabilityTemplates = capTplResult.value.map(p => ({
-				name: p.name,
-				capabilities: Array.isArray(p.payload) ? p.payload as string[] : []
-			}));
-		} else {
-			capabilityTemplates = [];
-		}
-
-		if (restrTplResult.status === 'fulfilled') {
-			restrictionTemplates = restrTplResult.value.map(p => ({
-				name: p.name,
-				restrictions: Array.isArray(p.payload) ? p.payload as Restriction[] : []
-			}));
-		} else {
-			restrictionTemplates = [];
-		}
-
-		if (rotTplResult.status === 'fulfilled') {
-			rotationTemplates = rotTplResult.value.map(p => ({
-				name: p.name,
-				rotation: (p.payload as Rotation) ?? {}
-			}));
-		} else {
-			rotationTemplates = [];
-		}
+		profiles = allProfiles;
+		capabilityTemplates = allCapTemplates;
+		restrictionTemplates = allRestrictionTemplates;
+		rotationTemplates = allRotationTemplates;
 
 		loadingData = false;
 
