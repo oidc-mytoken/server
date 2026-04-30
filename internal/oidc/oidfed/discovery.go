@@ -103,7 +103,7 @@ func discovery() {
 		}
 
 		if response != nil {
-			for _, op := range response.FederationEntities {
+			for _, op := range response.Entities {
 				providers[op.EntityID] = op
 			}
 		}
