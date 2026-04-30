@@ -13,11 +13,14 @@ import (
 	"github.com/oidc-mytoken/server/internal/utils/dbcl"
 )
 
-func did(state versionrepo.DBVersionState, version string) (beforeDone, afterDone bool) {
+func did(state versionrepo.DBVersionState, version string) (beforeDone, goDone, afterDone bool) {
 	for _, entry := range state {
 		if entry.Version == version {
 			if entry.Before.Valid {
 				beforeDone = true
+			}
+			if entry.Go.Valid {
+				goDone = true
 			}
 			if entry.After.Valid {
 				afterDone = true
@@ -28,13 +31,14 @@ func did(state versionrepo.DBVersionState, version string) (beforeDone, afterDon
 	return
 }
 
-func getDoneMap(state versionrepo.DBVersionState) (map[string]bool, map[string]bool) {
+func getDoneMap(state versionrepo.DBVersionState) (map[string]bool, map[string]bool, map[string]bool) {
 	before := make(map[string]bool, len(dbmigrate.Versions))
+	goMap := make(map[string]bool, len(dbmigrate.Versions))
 	after := make(map[string]bool, len(dbmigrate.Versions))
 	for _, v := range dbmigrate.Versions {
-		before[v], after[v] = did(state, v)
+		before[v], goMap[v], after[v] = did(state, v)
 	}
-	return before, after
+	return before, goMap, after
 }
 
 func migrateDB() error {
@@ -46,14 +50,14 @@ func migrateDB() error {
 }
 
 func runUpdates(dbState versionrepo.DBVersionState) error {
-	beforeDone, afterDone := getDoneMap(dbState)
+	beforeDone, goDone, afterDone := getDoneMap(dbState)
 	for _, v := range dbmigrate.Versions {
 		if err := updateCallback(
 			dbmigrate.MigrationCommands[v].Before, v, "pre", beforeDone, versionrepo.SetVersionBefore,
 		); err != nil {
 			return err
 		}
-		if err := gomigrations.RunGoMigration(nil, v); err != nil {
+		if err := runGoMigration(v, goDone); err != nil {
 			return err
 		}
 		if err := updateCallback(
@@ -63,6 +67,15 @@ func runUpdates(dbState versionrepo.DBVersionState) error {
 		}
 	}
 	return nil
+}
+
+func runGoMigration(version string, goDone map[string]bool) error {
+	fmt.Printf("Updating DB to version %s go\n", version)
+	if goDone[version] {
+		fmt.Printf("Skipping Update; DB already has version %s go\n", version)
+		return nil
+	}
+	return gomigrations.RunGoMigration(nil, version)
 }
 
 func updateCallback(
