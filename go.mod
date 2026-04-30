@@ -12,7 +12,7 @@ require (
 	github.com/gliderlabs/ssh v0.3.8
 	github.com/go-oidfed/lib v0.10.4
 	github.com/go-resty/resty/v2 v2.17.2
-	github.com/go-sql-driver/mysql v1.9.3
+	github.com/go-sql-driver/mysql v1.10.0
 	github.com/gofiber/fiber/v2 v2.52.13
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -40,7 +40,7 @@ require (
 )
 
 require (
-	filippo.io/edwards25519 v1.1.1 // indirect
+	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/ThalesGroup/crypto11 v1.6.0 // indirect
 	github.com/adam-hanna/arrayOperations v1.0.1 // indirect
 	github.com/andybalholm/brotli v1.2.1 // indirect
