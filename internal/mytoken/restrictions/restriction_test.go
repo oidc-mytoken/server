@@ -837,14 +837,14 @@ func TestRestriction_isTighterThan(t *testing.T) {
 			a: Restriction{
 				Restriction: api.Restriction{
 					Hosts: []string{
-						"stackoverflow.com",
+						"mytoken.data.kit.edu",
 					},
 				},
 			},
 			b: Restriction{
 				Restriction: api.Restriction{
 					Hosts: []string{
-						"198.252.206.16",
+						"2a00:1398:100:4::59",
 					},
 				},
 			},
@@ -855,14 +855,14 @@ func TestRestriction_isTighterThan(t *testing.T) {
 			a: Restriction{
 				Restriction: api.Restriction{
 					Hosts: []string{
-						"198.252.206.16",
+						"2a00:1398:100:4::59",
 					},
 				},
 			},
 			b: Restriction{
 				Restriction: api.Restriction{
 					Hosts: []string{
-						"stackoverflow.com",
+						"mytoken.data.kit.edu",
 					},
 				},
 			},
@@ -873,14 +873,14 @@ func TestRestriction_isTighterThan(t *testing.T) {
 			a: Restriction{
 				Restriction: api.Restriction{
 					Hosts: []string{
-						"198.252.206.16",
+						"2a00:1398:100:4::59",
 					},
 				},
 			},
 			b: Restriction{
 				Restriction: api.Restriction{
 					Hosts: []string{
-						"*stackoverflow.com",
+						"*mytoken.data.kit.edu",
 					},
 				},
 			},
@@ -891,14 +891,14 @@ func TestRestriction_isTighterThan(t *testing.T) {
 			a: Restriction{
 				Restriction: api.Restriction{
 					Hosts: []string{
-						"198.252.206.16",
+						"2a00:1398:100:4::59",
 					},
 				},
 			},
 			b: Restriction{
 				Restriction: api.Restriction{
 					Hosts: []string{
-						"*stackoverflow.com",
+						"*mytoken.data.kit.edu",
 					},
 				},
 			},
@@ -909,14 +909,14 @@ func TestRestriction_isTighterThan(t *testing.T) {
 			a: Restriction{
 				Restriction: api.Restriction{
 					Hosts: []string{
-						"*.stackoverflow.com",
+						"*.mytoken.data.kit.edu",
 					},
 				},
 			},
 			b: Restriction{
 				Restriction: api.Restriction{
 					Hosts: []string{
-						"198.252.206.16",
+						"2a00:1398:100:4::59",
 					},
 				},
 			},
@@ -927,14 +927,14 @@ func TestRestriction_isTighterThan(t *testing.T) {
 			a: Restriction{
 				Restriction: api.Restriction{
 					Hosts: []string{
-						"198.252.206.16",
+						"2a00:1398:100:4::59",
 					},
 				},
 			},
 			b: Restriction{
 				Restriction: api.Restriction{
 					Hosts: []string{
-						"*.stackoverflow.com",
+						"*.mytoken.data.kit.edu",
 					},
 				},
 			},
@@ -945,14 +945,140 @@ func TestRestriction_isTighterThan(t *testing.T) {
 			a: Restriction{
 				Restriction: api.Restriction{
 					Hosts: []string{
-						"*.stackoverflow.com",
+						"*.mytoken.data.kit.edu",
 					},
 				},
 			},
 			b: Restriction{
 				Restriction: api.Restriction{
 					Hosts: []string{
-						"198.252.206.16",
+						"2a00:1398:100:4::59",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Host with ipv6",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"mytoken.data.kit.edu",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"2a00:1398:100:4::59",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Host with ipv6 reversed",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"2a00:1398:100:4::59",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"mytoken.data.kit.edu",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "wildcard Host with ipv6",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"2a00:1398:100:4::59",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*mytoken.data.kit.edu",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "wildcard Host with ipv6",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"2a00:1398:100:4::59",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*mytoken.data.kit.edu",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "wildcard Host with ipv6 reversed",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.mytoken.data.kit.edu",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"2a00:1398:100:4::59",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "wildcard Host 2 with ipv6",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"2a00:1398:100:4::59",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.mytoken.data.kit.edu",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "wildcard Host 2 with ipv6 reversed",
+			a: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"*.mytoken.data.kit.edu",
+					},
+				},
+			},
+			b: Restriction{
+				Restriction: api.Restriction{
+					Hosts: []string{
+						"2a00:1398:100:4::59",
 					},
 				},
 			},
