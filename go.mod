@@ -27,7 +27,7 @@ require (
 	github.com/olekukonko/tablewriter v1.1.4
 	github.com/pires/go-proxyproto v0.12.0
 	github.com/pkg/errors v0.9.1
-	github.com/redis/go-redis/v9 v9.18.0
+	github.com/redis/go-redis/v9 v9.19.0
 	github.com/sethvargo/go-limiter v1.1.0
 	github.com/sirupsen/logrus v1.9.4
 	github.com/urfave/cli/v2 v2.3.1-0.20211205195634-e8d81738896c
@@ -50,7 +50,6 @@ require (
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1 // indirect
-	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/goccy/go-json v0.10.6 // indirect
