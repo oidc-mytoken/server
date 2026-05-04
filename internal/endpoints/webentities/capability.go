@@ -1,8 +1,10 @@
 package webentities
 
 import (
+	"encoding/json"
 	"strings"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/jinzhu/copier"
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/utils/utils"
@@ -10,15 +12,35 @@ import (
 
 // WebCapability is type for representing api.Capability in the consent screen
 type WebCapability struct {
-	ReadWriteCapability webCapability
-	ReadOnlyCapability  *webCapability
-	Children            []*WebCapability
+	ReadWriteCapability webCapability    `json:"read_write_capability"`
+	ReadOnlyCapability  *webCapability   `json:"read_only_capability,omitempty"`
+	Children            []*WebCapability `json:"children,omitempty"`
 }
 
 type webCapability struct {
 	api.Capability
-	intClass   *int
-	IsReadOnly bool
+	intClass   *int `json:"-"`
+	IsReadOnly bool `json:"is_read_only,omitempty"`
+}
+
+// webCapabilityJSON is used for JSON marshaling to include computed fields
+type webCapabilityJSON struct {
+	Name            string `json:"name"`
+	Description     string `json:"description,omitempty"`
+	IsReadOnly      bool   `json:"is_read_only,omitempty"`
+	ColorClass      string `json:"color_class,omitempty"`
+	CapabilityLevel string `json:"capability_level,omitempty"`
+}
+
+// MarshalJSON implements json.Marshaler to include ColorClass and CapabilityLevel
+func (c webCapability) MarshalJSON() ([]byte, error) {
+	return json.Marshal(webCapabilityJSON{
+		Name:            c.Name,
+		Description:     c.Description,
+		IsReadOnly:      c.IsReadOnly,
+		ColorClass:      c.ColorClass(),
+		CapabilityLevel: c.CapabilityLevel(),
+	})
 }
 
 // WebCapabilities creates a slice of WebCapability from api.Capabilities
@@ -198,4 +220,9 @@ func (c webCapability) CapabilityLevel() string {
 // skipcq: CRT-P0003
 func (c WebCapability) IsCreateMT() bool {
 	return c.ReadWriteCapability.Name == api.CapabilityCreateMT.Name
+}
+
+// HandleGetCapabilities returns all capabilities as JSON for the SPA
+func HandleGetCapabilities(ctx *fiber.Ctx) error {
+	return ctx.JSON(AllWebCapabilities())
 }

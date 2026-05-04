@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
@@ -15,8 +14,8 @@ import (
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/actionrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/actions/pkg"
-	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
 	"github.com/oidc-mytoken/server/internal/server/routes"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
@@ -35,9 +34,8 @@ func HandleActions(ctx *fiber.Ctx) error {
 	case pkg.ActionUnsubscribeScheduled:
 		return handleUnsubscribeScheduled(ctx, actionInfo.Code)
 	}
-	return ctxutils.RenderErrorPage(
-		ctx, fiber.StatusBadRequest, model.BadRequestError("unknown action").
-			CombinedMessage(),
+	return ctxutils.RenderActionResultPage(
+		ctx, fiber.StatusBadRequest, "Unknown Action", "The requested action is not recognized.", false,
 	)
 }
 
@@ -52,30 +50,7 @@ func handleRecreate(ctx *fiber.Ctx, code string) (err error) {
 			if err != nil || !found {
 				return err
 			}
-			var req api.GeneralMytokenRequest
-			req.Issuer = data.Issuer
-			if data.Name.Valid {
-				req.Name = data.Name.String
-			}
-			req.Rotation = data.Rotation
-			req.Capabilities = data.Capabilities
-			if data.Restrictions != nil {
-				restr := make(api.Restrictions, len(data.Restrictions))
-				created := data.Created
-				now := unixtime.Now()
-				diff := now - created
-				for i, r := range data.Restrictions {
-					apiR := r.Restriction
-					if r.NotBefore != 0 {
-						apiR.NotBefore = int64(r.NotBefore + diff)
-					}
-					if r.ExpiresAt != 0 {
-						apiR.ExpiresAt = int64(r.ExpiresAt + diff)
-					}
-					restr[i] = &apiR
-				}
-				req.Restrictions = restr
-			}
+			req := buildRecreateRequest(rlog, tx, data)
 			j, err := json.Marshal(req)
 			if err != nil {
 				return err
@@ -85,25 +60,90 @@ func handleRecreate(ctx *fiber.Ctx, code string) (err error) {
 		},
 	)
 	if err != nil {
-		return ctxutils.RenderInternalServerErrorPage(ctx, err)
+		return ctxutils.RenderActionResultPage(
+			ctx, fiber.StatusInternalServerError, "Error", "An internal error occurred.", false,
+		)
 	}
 	if !found {
-		return ctxutils.RenderErrorPage(ctx, fiber.StatusNotFound, "recreation code not found")
+		return ctxutils.RenderActionResultPage(
+			ctx, fiber.StatusNotFound, "Not Found", "The recreation code was not found.", false,
+		)
 	}
 	return ctx.Redirect(fmt.Sprintf("/?r=%s#mt", baseRequest), fiber.StatusSeeOther)
+}
+
+func buildRecreateRequest(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, data actionrepo.RecreateData,
+) api.GeneralMytokenRequest {
+	var req api.GeneralMytokenRequest
+	req.Issuer = data.Issuer
+	if data.Name.Valid {
+		req.Name = data.Name.String
+	}
+	req.Rotation = data.Rotation
+	req.Capabilities = data.Capabilities
+	req.Restrictions = adjustRestrictions(data.Restrictions, data.Created)
+	req.Tags = fetchAndConvertTags(rlog, tx, data.MTID)
+	return req
+}
+
+func adjustRestrictions(restrictions restrictions.Restrictions, created unixtime.UnixTime) api.Restrictions {
+	if restrictions == nil {
+		return nil
+	}
+	restr := make(api.Restrictions, len(restrictions))
+	now := unixtime.Now()
+	diff := now - created
+	for i, r := range restrictions {
+		apiR := r.Restriction
+		if r.NotBefore != 0 {
+			apiR.NotBefore = int64(r.NotBefore + diff)
+		}
+		if r.ExpiresAt != 0 {
+			apiR.ExpiresAt = int64(r.ExpiresAt + diff)
+		}
+		restr[i] = &apiR
+	}
+	return restr
+}
+
+func fetchAndConvertTags(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID string) []api.CreateMytokenTag {
+	if mtID == "" {
+		return nil
+	}
+	tags, tagErr := actionrepo.GetTagsForMT(rlog, tx, mtID)
+	if tagErr != nil {
+		rlog.WithError(tagErr).Warn("Failed to fetch tags for token recreation")
+		return nil
+	}
+	if len(tags) == 0 {
+		return nil
+	}
+	createTags := make([]api.CreateMytokenTag, len(tags))
+	for i, t := range tags {
+		createTags[i] = api.CreateMytokenTag{
+			Tag:             t.Tag,
+			IncludeChildren: t.IncludeChildren,
+		}
+	}
+	return createTags
 }
 
 func handleVerifyEmail(ctx *fiber.Ctx, code string) error {
 	rlog := logger.GetRequestLogger(ctx)
 	verified, err := actionrepo.VerifyMail(rlog, nil, code)
 	if err != nil {
-		return ctxutils.RenderInternalServerErrorPage(ctx, err)
+		return ctxutils.RenderActionResultPage(
+			ctx, fiber.StatusInternalServerError, "Error", "An internal error occurred.", false,
+		)
 	}
 	if !verified {
-		return ctxutils.RenderErrorPage(ctx, http.StatusBadRequest, "code not valid or expired")
+		return ctxutils.RenderActionResultPage(
+			ctx, fiber.StatusBadRequest, "Invalid Code", "The verification code is not valid or has expired.", false,
+		)
 	}
-	return ctxutils.RenderErrorPage(
-		ctx, http.StatusOK, "The email address was successfully verified.", "Email Verified",
+	return ctxutils.RenderActionResultPage(
+		ctx, fiber.StatusOK, "Email Verified", "Your email address was successfully verified.", true,
 	)
 }
 
@@ -111,10 +151,12 @@ func handleRemoveFromCalendar(ctx *fiber.Ctx, code string) error {
 	rlog := logger.GetRequestLogger(ctx)
 	err := actionrepo.UseRemoveCalendarCode(rlog, nil, code)
 	if err != nil {
-		return ctxutils.RenderInternalServerErrorPage(ctx, err)
+		return ctxutils.RenderActionResultPage(
+			ctx, fiber.StatusInternalServerError, "Error", "An internal error occurred.", false,
+		)
 	}
-	return ctxutils.RenderErrorPage(
-		ctx, http.StatusOK, "The token was successfully removed from the calendar.", "Token Removed from Calendar",
+	return ctxutils.RenderActionResultPage(
+		ctx, fiber.StatusOK, "Token Removed", "The token was successfully removed from the calendar.", true,
 	)
 }
 
@@ -122,11 +164,13 @@ func handleUnsubscribeScheduled(ctx *fiber.Ctx, code string) error {
 	rlog := logger.GetRequestLogger(ctx)
 	err := actionrepo.UseUnsubscribeFurtherNotificationsCode(rlog, nil, code)
 	if err != nil {
-		return ctxutils.RenderInternalServerErrorPage(ctx, err)
+		return ctxutils.RenderActionResultPage(
+			ctx, fiber.StatusInternalServerError, "Error", "An internal error occurred.", false,
+		)
 	}
-	return ctxutils.RenderErrorPage(
-		ctx, http.StatusOK, "You have successfully unsubscribed from further notifications of this kind.",
-		"Unsubscribed",
+	return ctxutils.RenderActionResultPage(
+		ctx, fiber.StatusOK, "Unsubscribed",
+		"You have successfully unsubscribed from further notifications of this kind.", true,
 	)
 }
 
@@ -155,7 +199,7 @@ func CreateRecreateToken(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID) 
 }
 
 // CreateRemoveFromCalendar creates an action url for removing a token from a calendar
-func CreateRemoveFromCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarName string) (
+func CreateRemoveFromCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarID string) (
 	string,
 	error,
 ) {
@@ -163,7 +207,7 @@ func CreateRemoveFromCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.M
 		Action: pkg.ActionRemoveFromCalendar,
 		Code:   pkg.NewCode(),
 	}
-	if err := actionrepo.AddRemoveFromCalendarCode(rlog, tx, mtID, code.Code, calendarName); err != nil {
+	if err := actionrepo.AddRemoveFromCalendarCode(rlog, tx, mtID, code.Code, calendarID); err != nil {
 		return "", err
 	}
 	return routes.ActionsURL(code), nil

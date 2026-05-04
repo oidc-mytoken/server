@@ -1,0 +1,10 @@
+You have been successfully subscribed to receive notifications for {{with index . "mtid"}}your mytoken {{with index $ "token-name"}}'{{.}}'{{end}} with the mom id '{{.}}'{{else}}all your mytokens{{end}} on {{index . "issuer-url"}}.
+You will be notified about the following things:
+{{range index . "notification-classes"}}
+- {{.Name}}
+{{end}}
+
+If you want to manage this notification subscription, you can do so at: {{index . "management-url"}}
+
+Sincerely,
+the mytoken notification bot.

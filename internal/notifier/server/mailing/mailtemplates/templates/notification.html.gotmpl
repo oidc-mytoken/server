@@ -1,0 +1,65 @@
+<p>Your mytoken was used for something we should notify you about. Here are the details:</p>
+
+<style>
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+</style>
+
+<table>
+    {{with index . "token-name"}}
+        <tr>
+            <td>Mytoken Name</td>
+            <td>{{.}}</td>
+        </tr>
+    {{end}}
+    <tr>
+        <td>Mytoken Mom ID</td>
+        <td>{{index . "mom_id"}}</td>
+    </tr>
+    <tr>
+        <td>IP</td>
+        <td>{{index . "ip"}}</td>
+    </tr>
+    <tr>
+        <td>User-Agent</td>
+        <td>{{index . "user-agent"}}</td>
+    </tr>
+    {{with index . "country"}}
+        <tr>
+            <td>Location</td>
+            <td>{{.}}</td>
+        </tr>
+    {{end}}
+
+    <tr>
+        <td style="font-weight:bold;">Notification Reason</td>
+        <td style="font-weight:bold;">{{index . "notification-class"}}</td>
+    </tr>
+    {{with index . "event"}}
+        <tr>
+            <td style="font-weight:bold;">Event</td>
+            <td style="font-weight:bold;">{{.}}</td>
+        </tr>
+    {{end}}
+    {{with index . "comment"}}
+        <tr>
+            <td style="font-weight:bold;">Comment</td>
+            <td style="font-weight:bold;">{{.}}</td>
+        </tr>
+    {{end}}
+    {{range index . "additional-data"}}
+        <tr>
+            <td style="font-weight:bold;">{{.Key}}</td>
+            <td style="font-weight:bold;">{{.Value}}</td>
+        </tr>
+    {{end}}
+</table>
+
+<p>
+    If you want to manage this notification subscription, you can do so <a href="{{index . "management-url"}}">here</a>.
+</p>
+
+Sincerely,<br>
+the mytoken notification bot.

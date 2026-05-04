@@ -8,6 +8,7 @@ import (
 	"github.com/oidc-mytoken/api/v0"
 
 	"github.com/oidc-mytoken/server/internal/db"
+	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/tokeninfo/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
@@ -32,6 +33,7 @@ func HandleTokenInfoIntrospect(
 	}
 
 	var usedToken mytoken.UsedMytoken
+	var tags []api.MTTagInfo
 	if err := db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
 			tmp, err := mt.ToUsedMytoken(rlog, tx)
@@ -39,6 +41,12 @@ func HandleTokenInfoIntrospect(
 				return err
 			}
 			usedToken = *tmp
+			// Fetch tags, but don't fail if we can't get them
+			tags, err = mytokenrepo.GetTags(rlog, tx, mt.ID)
+			if err != nil {
+				rlog.WithError(err).Debug("could not get tags for token")
+				tags = []api.MTTagInfo{} // Continue without tags
+			}
 			return eventService.LogEvent(
 				rlog, tx, pkg2.MTEvent{
 					Event:          api.EventTokenInfoIntrospect,
@@ -59,6 +67,7 @@ func HandleTokenInfoIntrospect(
 			},
 			Token:     usedToken,
 			TokenType: origionalTokenType,
+			Tags:      tags,
 		},
 	}
 }

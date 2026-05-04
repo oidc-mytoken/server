@@ -31,3 +31,50 @@ Documentation is available at [https://mytoken-docs.data.kit.edu/](https://mytok
 
 A go library for interacting with the mytoken server can be found
 at [https://github.com/oidc-mytoken/lib](https://github.com/oidc-mytoken/lib).
+
+## Building
+
+### Prerequisites
+
+- Go 1.25+
+- Node.js 22+ (for frontend)
+- npm 9+
+
+### Building the Frontend
+
+The web interface is built with SvelteKit. To build it:
+
+```bash
+# Using the provided script (recommended)
+./scripts/build-frontend.sh
+
+# Or manually
+cd frontend
+npm install
+npm run build
+cp -r build/* ../internal/server/spa/dist/
+```
+
+### Building the Server
+
+```bash
+# Build the server (requires frontend to be built first)
+go build ./cmd/mytoken-server
+
+# Build the setup tool
+go build ./cmd/mytoken-server/mytoken-setup
+```
+
+### Development
+
+For frontend development with hot reload:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The dev server runs at http://localhost:5173 and proxies API requests to the Go backend at http://localhost:8000.
+
+See [frontend/README.md](frontend/README.md) for more details.

@@ -5,14 +5,25 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/Songmu/prompter"
+	"github.com/go-oidfed/lib/jwx"
+	"github.com/go-oidfed/lib/jwx/keymanagement/public"
+	"github.com/go-oidfed/lib/unixtime"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/oidc-mytoken/utils/utils/fileutil"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
 	"github.com/oidc-mytoken/server/internal/config"
+	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/jws"
 	"github.com/oidc-mytoken/server/internal/model/version"
 	"github.com/oidc-mytoken/server/internal/utils/dbcl"
@@ -27,6 +38,16 @@ type _rootDBCredentials struct {
 }
 
 var rootDBCredentials _rootDBCredentials
+
+var askOverwriteFlag bool
+var noOverwritePrompt bool
+var guidedMode bool
+var skipDB bool
+
+var migrateDBConf struct {
+	config.DBConf
+	Hosts cli.StringSlice
+}
 
 func (cred _rootDBCredentials) toDBConf() config.DBConf {
 	return config.DBConf{
@@ -83,6 +104,7 @@ var dbFlags = []cli.Flag{
 }
 
 var sigKeyFile string
+var oidcAlgFlag string
 
 var sigKeyFlag = &cli.StringFlag{
 	Name: "key-file",
@@ -114,7 +136,7 @@ var app = &cli.App{
 			Email: "gabriel.zachmann@kit.edu",
 		},
 	},
-	Copyright:              "Karlsruhe Institute of Technology 2020-2022",
+	Copyright:              "Karlsruhe Institute of Technology 2020-2025",
 	UseShortOptionHandling: true,
 	Commands: cli.Commands{
 		&cli.Command{
@@ -142,11 +164,22 @@ var app = &cli.App{
 					Name:    "oidc",
 					Aliases: []string{"OIDC"},
 					Flags: []cli.Flag{
-						sigKeyFlag,
+						&cli.StringFlag{
+							Name:        "alg",
+							Usage:       "Generate key for specific algorithm only (if not set, generates for all configured algorithms)",
+							Destination: &oidcAlgFlag,
+							Placeholder: "ALG",
+						},
 					},
-					Usage:       "Generates a new oidc signing key",
-					Description: "Generates a new oidc signing key according to the properties specified in the config file and stores it.",
+					Usage:       "Generates OIDC signing key(s)",
+					Description: "Generates OIDC signing key(s) for the algorithms specified in the config file and stores them in the key directory.",
 					Action:      createOIDCSigningKey,
+				},
+				&cli.Command{
+					Name:        "ssh",
+					Usage:       "Generates new ssh host key pairs",
+					Description: "Generates new ssh host key paris to the location specified in the config file.",
+					Action:      createSSHHostKeys,
 				},
 			},
 			Flags: []cli.Flag{
@@ -182,6 +215,66 @@ var app = &cli.App{
 					Usage:  "Creates the normal database user",
 					Action: createUser,
 					Flags:  append([]cli.Flag{}, dbFlags...),
+				},
+				&cli.Command{
+					Name:  "migrate",
+					Usage: "Migrates the database to the latest version",
+					Flags: []cli.Flag{
+						&cli.StringFlag{
+							Name:        "db",
+							Usage:       "The name of the database",
+							EnvVars:     []string{"DB_DATABASE"},
+							Value:       "mytoken",
+							Destination: &migrateDBConf.DB,
+							Placeholder: "DB",
+						},
+						&cli.StringFlag{
+							Name:        "user",
+							Aliases:     []string{"u"},
+							Usage:       "The user for connecting to the database (Needs correct privileges)",
+							EnvVars:     []string{"DB_USER"},
+							Value:       "root",
+							Destination: &migrateDBConf.User,
+							Placeholder: "USER",
+						},
+						&cli.StringFlag{
+							Name:    "password",
+							Aliases: []string{"p"},
+							Usage:   "The password for connecting to the database",
+							EnvVars: []string{
+								"DB_ROOT_PASSWORD",
+								"DB_ROOT_PW",
+							},
+							Destination: &migrateDBConf.Password,
+							Placeholder: "PASSWORD",
+						},
+						&cli.StringFlag{
+							Name:    "password-file",
+							Aliases: []string{"pw-file"},
+							Usage:   "Read the password for connecting to the database from this file",
+							EnvVars: []string{
+								"DB_PASSWORD_FILE",
+								"DB_PW_FILE",
+							},
+							Destination: &migrateDBConf.PasswordFile,
+							Placeholder: "FILE",
+						},
+						&cli.StringSliceFlag{
+							Name:    "host",
+							Aliases: []string{"hosts"},
+							Usage:   "The hostnames of the database nodes",
+							EnvVars: []string{
+								"DB_HOST",
+								"DB_HOSTS",
+								"DB_NODES",
+							},
+							Value:       cli.NewStringSlice("localhost"),
+							Destination: &migrateDBConf.Hosts,
+							Placeholder: "HOST",
+							TakesFile:   true,
+						},
+					},
+					Action: migrateDBAction,
 				},
 			},
 		},
@@ -219,28 +312,105 @@ var app = &cli.App{
 			},
 		},
 	},
+	Action: guidedSetup,
+	Flags: append(
+		dbFlags,
+		&cli.BoolFlag{
+			Name: "ask-overwrites",
+			Aliases: []string{
+				"prompt-overwrites",
+				"no-overwrite-skip",
+			},
+			Usage:       "If a file already exist, ask if it should be overwritten instead of skipping it.",
+			Destination: &askOverwriteFlag,
+		},
+		&cli.BoolFlag{
+			Name:        "skip-db",
+			Usage:       "Skips db-related setups",
+			Destination: &skipDB,
+		},
+	),
 }
 
 func main() {
+	log.SetLevel(log.ErrorLevel)
 	config.LoadForSetup()
+	config.Get().Logging.Internal.Level = "error"
 	loggerUtils.Init()
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
 }
 
+func guidedSetup(ctx *cli.Context) error {
+	guidedMode = true
+	noOverwritePrompt = !askOverwriteFlag
+	fcs := []func(*cli.Context) error{
+		installGEOIPDB,
+		createMytokenSigningKey,
+		createOIDCSigningKey,
+		createFederationSigningKey,
+		createSSHHostKeys,
+	}
+	if !skipDB {
+		fcs = append(
+			fcs,
+			func(_ *cli.Context) error {
+				fmt.Println("Setting up database...")
+				return nil
+			},
+			createDB,
+			createUser,
+			func(_ *cli.Context) error {
+				fmt.Println("Migrating database...")
+				migrateDBConf.DBConf = rootDBCredentials.toDBConf()
+				migrateDBConf.DBConf.DB = config.Get().DB.DB
+				db.ConnectConfig(migrateDBConf.DBConf)
+				return migrateDB()
+			},
+		)
+	}
+
+	for _, f := range fcs {
+		if err := f(ctx); err != nil {
+			return err
+		}
+		// fmt.Println()
+	}
+	fmt.Println("Setup done!")
+	return nil
+}
+
 func installGEOIPDB(_ *cli.Context) error {
+	f := config.Get().GeoIPDBFile
+	if f == "" {
+		fmt.Fprintln(os.Stderr, "No geoip database file specified")
+		if !guidedMode {
+			os.Exit(1)
+		}
+		return nil
+	}
+	if fileutil.FileExists(f) {
+		fmt.Printf("Geo IP Database file '%s' already exists.\n", f)
+		if noOverwritePrompt {
+			return nil
+		}
+		if !prompter.YesNo(
+			"Do you  want to re-download the geo ip database?", false,
+		) {
+			return nil
+		}
+	}
 	archive, err := zipdownload.DownloadZipped("https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.IPV6.BIN.ZIP")
 	if err != nil {
 		return err
 	}
-	log.Debug("Downloaded zip file")
-	err = os.WriteFile(config.Get().GeoIPDBFile, archive["IP2LOCATION-LITE-DB1.IPV6.BIN"], 0600)
-	if err == nil {
-		log.WithField("file", config.Get().GeoIPDBFile).Debug("Installed geo ip database")
-		fmt.Printf("Installed geo ip database file to '%s'.\n", config.Get().GeoIPDBFile)
+	fmt.Println("Downloaded geo ip database")
+	if err = os.WriteFile(config.Get().GeoIPDBFile, archive["IP2LOCATION-LITE-DB1.IPV6.BIN"], 0600); err != nil {
+		return err
 	}
-	return err
+	fmt.Printf("Geo IP Database file '%s' successfully installed.\n", f)
+	return nil
 }
 
 func createMytokenSigningKey(_ *cli.Context) error {
@@ -248,39 +418,169 @@ func createMytokenSigningKey(_ *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return writeSigningKey(sk, config.Get().Signing.Mytoken.KeyFile)
+	return writeSigningKey(sk, config.Get().Signing.Mytoken.KeyFile, "mytoken")
 }
 func createOIDCSigningKey(_ *cli.Context) error {
-	sk, _, err := jws.GenerateOIDCSigningKeyPair()
-	if err != nil {
+	conf := config.Get().Signing.OIDC
+
+	// In guided mode, skip if federation is not enabled
+	if guidedMode && !config.Get().Features.Federation.Enabled {
+		return nil
+	}
+
+	// Ensure key directory exists
+	if err := mkdir(conf.KeyDir); err != nil {
+		return errors.Wrapf(err, "failed to create key directory '%s'", conf.KeyDir)
+	}
+
+	// Determine which algorithms to generate keys for
+	algsToGenerate := conf.Algorithms
+	if oidcAlgFlag != "" {
+		if !slices.Contains(conf.Algorithms, oidcAlgFlag) {
+			return errors.Errorf("algorithm '%s' not in configured algorithms: %v", oidcAlgFlag, conf.Algorithms)
+		}
+		algsToGenerate = []string{oidcAlgFlag}
+	}
+
+	// Generate keys for each algorithm
+	for _, algStr := range algsToGenerate {
+		keyFile := filepath.Join(conf.KeyDir, fmt.Sprintf("oidc_%s.pem", algStr))
+
+		if fileutil.FileExists(keyFile) {
+			fmt.Printf("OIDC signing key for %s already exists at '%s'.\n", algStr, keyFile)
+			if noOverwritePrompt || !prompter.YesNo("Do you want to overwrite it?", false) {
+				continue
+			}
+		}
+
+		alg, ok := jwa.LookupSignatureAlgorithm(algStr)
+		if !ok {
+			return errors.Errorf("unknown algorithm '%s'", algStr)
+		}
+
+		sk, pk, kid, err := jwx.GenerateKeyPair(alg, conf.RSAKeyLen)
+		if err != nil {
+			return errors.Wrapf(err, "failed to generate key for %s", algStr)
+		}
+
+		// Write private key to file
+		if err = jwx.WriteSignerToFile(sk, keyFile); err != nil {
+			return errors.Wrapf(err, "failed to write key file for %s", algStr)
+		}
+		fmt.Printf("Generated OIDC signing key for %s at '%s'.\n", algStr, keyFile)
+
+		// Register in public key storage
+		if err = registerOIDCPublicKey(conf.KeyDir, kid, pk); err != nil {
+			return errors.Wrapf(err, "failed to register public key for %s", algStr)
+		}
+	}
+
+	return nil
+}
+
+// registerOIDCPublicKey adds the public key to the OIDC public key storage
+func registerOIDCPublicKey(keyDir, kid string, pk jwk.Key) error {
+	pks := &public.FilesystemPublicKeyStorage{
+		Dir:    keyDir,
+		TypeID: "oidc",
+	}
+	if err := pks.Load(); err != nil {
 		return err
 	}
-	return writeSigningKey(sk, config.Get().Signing.OIDC.KeyFile)
+
+	// Check if already registered
+	existing, _ := pks.Get(kid)
+	if existing != nil {
+		return nil
+	}
+
+	now := unixtime.Now()
+	pke := public.PublicKeyEntry{
+		KID:       kid,
+		Key:       public.JWKKey{Key: pk},
+		IssuedAt:  &now,
+		NotBefore: &now,
+	}
+	return pks.Add(pke)
 }
 func createFederationSigningKey(_ *cli.Context) error {
+	if !config.Get().Features.Federation.Enabled && guidedMode {
+		return nil
+	}
 	sk, _, err := jws.GenerateFederationSigningKeyPair()
 	if err != nil {
 		return err
 	}
-	return writeSigningKey(sk, config.Get().Features.Federation.Signing.KeyFile)
+	return writeSigningKey(sk, config.Get().Features.Federation.Signing.KeyFile, "openid federations")
 }
 
-func writeSigningKey(sk crypto.Signer, keyFileFromConfig string) error {
+func writeSigningKey(sk crypto.Signer, keyPathFromConfig, purpose string) error {
 	str := jws.ExportPrivateKeyAsPemStr(sk)
+	if sigKeyFile == "" || guidedMode {
+		sigKeyFile = keyPathFromConfig
+	}
 	if sigKeyFile == "" {
-		sigKeyFile = keyFileFromConfig
+		if guidedMode && purpose != "mytoken" {
+			return nil
+		}
+		return errors.New("no signing key file specified")
 	}
 	if fileutil.FileExists(sigKeyFile) {
-		log.WithField("filepath", sigKeyFile).Debug("File already exists")
-		if !prompter.YesNo(fmt.Sprintf("File '%s' already exists. Do you  want to overwrite it?", sigKeyFile), false) {
-			os.Exit(1)
+		fmt.Printf("%s signing key file '%s' already exists.\n", purpose, sigKeyFile)
+		if noOverwritePrompt {
+			return nil
 		}
+		if !prompter.YesNo("Do you  want to overwrite it?", false) {
+			return nil
+		}
+	}
+	if err := mkdir(filepath.Dir(sigKeyFile)); err != nil {
+		return err
 	}
 	if err := os.WriteFile(sigKeyFile, []byte(str), 0600); err != nil {
 		return err
 	}
-	log.WithField("filepath", sigKeyFile).Debug("Wrote key to file")
-	fmt.Printf("Wrote key to file '%s'.\n", sigKeyFile)
+	fmt.Printf("Wrote %s signing key to file '%s'.\n", purpose, sigKeyFile)
+	return nil
+}
+
+func createSSHHostKeys(_ *cli.Context) error {
+	if guidedMode && !config.Get().Features.SSH.Enabled {
+		return nil
+	}
+	for _, keyFile := range config.Get().Features.SSH.KeyFiles {
+		if fileutil.FileExists(keyFile) {
+			fmt.Printf("ssh host key file '%s' already exists.\n", keyFile)
+			if noOverwritePrompt || !prompter.YesNo(
+				"Do you  want to overwrite it?", false,
+			) {
+				continue
+			}
+		}
+		if err := mkdir(filepath.Dir(keyFile)); err != nil {
+			return err
+		}
+		var typ string
+		var additionalArgs []string
+		switch {
+		case strings.HasSuffix(keyFile, "_rsa_key"):
+			typ = "rsa"
+			additionalArgs = append(additionalArgs, "-b", "4096")
+		case strings.HasSuffix(keyFile, "_ed25519_key"):
+			typ = "ed25519"
+		case strings.HasSuffix(keyFile, "_ecdsa_key"):
+			typ = "ecdsa"
+			additionalArgs = append(additionalArgs, "-b", "521")
+		}
+		keygenCmd := fmt.Sprintf(`ssh-keygen -t %s %s -f %s -N ""`, typ, strings.Join(additionalArgs, " "), keyFile)
+		cmd := exec.Command("sh", "-c", keygenCmd)
+		if err := cmd.Run(); err != nil {
+			log.WithField("filepath", keyFile).WithError(err).Error("Failed to generate key")
+			return err
+		} else {
+			fmt.Printf("Generated ssh host key '%s'.\n", keyFile)
+		}
+	}
 	return nil
 }
 
@@ -298,20 +598,28 @@ func readSQLFile(path string) (string, error) {
 func _getSetVars() (string, error) {
 	return readSQLFile("scripts/vars.sql")
 }
+func _getSetVarsAfterExec() (string, error) {
+	return readSQLFile("scripts/vars_after.sql")
+}
 func getSetVarsCommands(db, user, password string) (string, error) {
 	cmds, err := _getSetVars()
 	if err != nil {
 		return "", err
 	}
 	if db != "" {
-		cmds += fmt.Sprintf(`EXECUTE setDB USING '%s';\n`, db)
+		cmds += "\n" + fmt.Sprintf(`EXECUTE setDB USING '%s';`, db)
 	}
 	if user != "" {
-		cmds += fmt.Sprintf(`EXECUTE setUser USING '%s';\n`, user)
+		cmds += "\n" + fmt.Sprintf(`EXECUTE setUser USING '%s';`, user)
 	}
 	if password != "" {
-		cmds += fmt.Sprintf(`EXECUTE setPassword USING '%s';\n`, password)
+		cmds += "\n" + fmt.Sprintf(`EXECUTE setPassword USING '%s';`, password)
 	}
+	after, err := _getSetVarsAfterExec()
+	if err != nil {
+		return "", err
+	}
+	cmds += after
 	return cmds, nil
 }
 func getDBCmds() (string, error) {
@@ -321,7 +629,23 @@ func getUserCmds() (string, error) {
 	return readSQLFile("scripts/user.sql")
 }
 
+func dbEnsureRootPW() {
+	dbconf := rootDBCredentials.toDBConf()
+	user := rootDBCredentials.User
+	if user == "" {
+		user = "root"
+	}
+	if dbconf.GetPassword() == "" {
+		rootDBCredentials.Password = prompter.Password(
+			fmt.Sprintf(
+				"Enter db password for user '%s'", user,
+			),
+		)
+	}
+}
+
 func createDB(_ *cli.Context) error {
+	dbEnsureRootPW()
 	cmds, err := getSetVarsCommands(config.Get().DB.DB, config.Get().DB.User, config.Get().DB.GetPassword())
 	if err != nil {
 		return err
@@ -335,6 +659,7 @@ func createDB(_ *cli.Context) error {
 }
 
 func createUser(_ *cli.Context) error {
+	dbEnsureRootPW()
 	cmds, err := getSetVarsCommands(config.Get().DB.DB, config.Get().DB.User, config.Get().DB.GetPassword())
 	if err != nil {
 		return err
@@ -345,4 +670,25 @@ func createUser(_ *cli.Context) error {
 	}
 	cmds += userCmds
 	return dbcl.RunDBCommands(cmds, rootDBCredentials.toDBConf(), true)
+}
+
+func migrateDBAction(_ *cli.Context) error {
+	if migrateDBConf.GetPassword() == "" {
+		migrateDBConf.Password = prompter.Password(
+			fmt.Sprintf(
+				"Enter db password for user '%s'", migrateDBConf.User,
+			),
+		)
+	}
+	migrateDBConf.ReconnectInterval = 60
+	migrateDBConf.DBConf.Hosts = migrateDBConf.Hosts.Value()
+	tmpScheduleEnabled := migrateDBConf.DBConf.EnableScheduledCleanup
+	migrateDBConf.DBConf.EnableScheduledCleanup = false
+	db.ConnectConfig(migrateDBConf.DBConf)
+	migrateDBConf.DBConf.EnableScheduledCleanup = tmpScheduleEnabled
+	return migrateDB()
+}
+
+func mkdir(path string) error {
+	return os.MkdirAll(path, 0750)
 }

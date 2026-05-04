@@ -11,6 +11,8 @@ import (
 type Cache interface {
 	Get(key string, target any) (bool, error)
 	Set(key string, value any, expiration time.Duration) error
+	Delete(key string) error
+	Clear(prefix string) error
 }
 
 var c Cache
@@ -45,7 +47,7 @@ const (
 	invalidated2
 	WebProfiles
 	FederationLib
-	FederationOPMetadata
+	HealthcheckTest
 	ScheduledNotifications
 	IPCache
 )
@@ -71,6 +73,16 @@ func Get(t Type, key string, i any) (bool, error) {
 	return c.Get(k(t, key), i)
 }
 
+// Delete removes a value from the cache
+func Delete(t Type, key string) error {
+	return c.Delete(k(t, key))
+}
+
+// Clear clears all entries with the given prefix in the specified cache type
+func Clear(t Type, prefix string) error {
+	return c.Clear(k(t, prefix))
+}
+
 type subcache struct {
 	t Type
 }
@@ -83,6 +95,16 @@ func (sc subcache) Get(key string, i any) (bool, error) {
 // Set implements the Cache interface
 func (sc subcache) Set(key string, value any, expiration time.Duration) error {
 	return Set(sc.t, key, value, expiration)
+}
+
+// Delete implements the Cache interface
+func (sc subcache) Delete(key string) error {
+	return Delete(sc.t, key)
+}
+
+// Clear implements the Cache interface
+func (sc subcache) Clear(prefix string) error {
+	return Clear(sc.t, prefix)
 }
 
 // SubCache returns a sub-cache for the given Type

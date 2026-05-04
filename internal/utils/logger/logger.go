@@ -13,6 +13,9 @@ import (
 )
 
 func mustGetFile(path string) io.Writer {
+	if err := os.MkdirAll(filepath.Dir(path), 0750); err != nil {
+		panic(err)
+	}
 	file, err := getFile(path)
 	if err != nil {
 		panic(err)

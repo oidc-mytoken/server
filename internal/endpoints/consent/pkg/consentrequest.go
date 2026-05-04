@@ -14,6 +14,7 @@ type ConsentApprovalRequest struct {
 	Capabilities api.Capabilities          `json:"capabilities"`
 	TokenName    string                    `json:"name"`
 	Rotation     *api.Rotation             `json:"rotation,omitempty"`
+	Tags         []api.CreateMytokenTag    `json:"tags,omitempty"`
 }
 
 // ConsentRequest holds the post request for creating a consent screen

@@ -80,3 +80,14 @@ func (i MTID) MarshalJSON() ([]byte, error) {
 func (i *MTID) UnmarshalJSON(data []byte) error {
 	return errors.WithStack(json.Unmarshal(data, &i.UUID))
 }
+
+// MomID returns a MOMID for a MTID
+func (i MTID) MomID() MOMID {
+	return MOMID{i}
+}
+
+// FromHash constructs an MTID from a known hash without requiring the UUID.
+// The resulting MTID can be used in DB calls that expect the hashed ID value.
+func FromHash(hash string) MTID {
+	return MTID{hash: hash}
+}

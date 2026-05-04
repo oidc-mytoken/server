@@ -19,6 +19,7 @@ var serverConfig = fiber.Config{
 	WriteTimeout:   90 * time.Second,
 	IdleTimeout:    150 * time.Second,
 	ReadBufferSize: 32768,
+	Network:        "tcp",
 }
 
 func startServer() {

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+        <title>mytoken</title>
+		<link rel="icon" href="%sveltekit.assets%/favicon.ico" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content="mytoken - Manage your OIDC tokens" />
+        <script>
+            // Prevent flash of wrong theme on page load
+            (function () {
+                const stored = localStorage.getItem('mytoken-theme');
+                let theme = 'light';
+                if (stored === 'dark') {
+                    theme = 'dark';
+                } else if (stored === 'auto' || !stored) {
+                    theme = globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+                document.documentElement.dataset.bsTheme = theme;
+            })();
+        </script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>

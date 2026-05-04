@@ -35,6 +35,7 @@ type MytokenEntry struct {
 	IP                     string `db:"ip_created"`
 	networkData            api.ClientMetaData
 	expiresAt              unixtime.UnixTime
+	Tags                   []api.CreateMytokenTag
 }
 
 // InitRefreshToken links a refresh token to this MytokenEntry
@@ -132,14 +133,25 @@ func (mte *MytokenEntry) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx, comment st
 			if err = storeEncryptionKey(tx, mte.encryptionKeyEncrypted, steStore.RefreshTokenID, mte.ID); err != nil {
 				return err
 			}
-			return eventService.LogEvent(
+			if err = eventService.LogEvent(
 				rlog, tx, pkg.MTEvent{
 					Event:          api.EventMTCreated,
 					Comment:        comment,
 					MTID:           mte.ID,
 					ClientMetaData: mte.networkData,
 				},
-			)
+			); err != nil {
+				return err
+			}
+			// Link tags to the newly created mytoken
+			for _, tag := range mte.Tags {
+				if _, err = tx.Exec(
+					`CALL MTokens_LinkTag(?,?,?)`, mte.ID, tag.Tag, tag.IncludeChildren,
+				); err != nil {
+					return errors.WithStack(err)
+				}
+			}
+			return nil
 		},
 	)
 }
@@ -173,6 +185,171 @@ func (e *mytokenEntryStore) Store(rlog log.Ext1FieldLogger, tx *sqlx.Tx) error {
 				e.Sub, e.Iss, e.ID, e.SeqNo, e.ParentID, e.RefreshTokenID, e.Name, e.IP, e.ExpiresAt, e.Capabilities,
 				e.Rotation, e.Restrictions,
 			)
+			return errors.WithStack(err)
+		},
+	)
+}
+
+// ExpandTagsToChildrenIfApplicable copies tags with include_children=true from parent to child token.
+// This is called when creating a subtoken to ensure it inherits the parent's inheritable tags.
+func ExpandTagsToChildrenIfApplicable(rlog log.Ext1FieldLogger, tx *sqlx.Tx, parent, child mtid.MTID) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL MTTags_ExpandToChildren(?,?)`, parent, child)
+			return errors.WithStack(err)
+		},
+	)
+}
+
+// AddTag adds a tag to a mytoken
+func AddTag(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MOMID,
+	tag api.Tag, includeChildren bool,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			ids := []mtid.MOMID{mtID}
+			if includeChildren {
+				var tokens []*MytokenEntry
+				if err := db.RunWithinTransaction(
+					rlog, tx, func(tx *sqlx.Tx) error {
+						return errors.WithStack(
+							tx.Select(
+								&tokens,
+								`CALL MTokens_GetSubtokens(?)`, mtID,
+							),
+						)
+					},
+				); err != nil {
+					return err
+				}
+				for _, token := range tokens {
+					ids = append(ids, token.ID.MomID())
+				}
+			}
+			for _, id := range ids {
+				_, err := tx.Exec(`CALL MTokens_LinkTag(?,?,?)`, id, tag, includeChildren)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	)
+
+}
+
+// RemoveTag removes a tag from a mytoken
+func RemoveTag(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MOMID, tag api.Tag,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			var includeChildren db.BitBool
+			if err := tx.Get(&includeChildren, `CALL MTTag_GetIncludeChildren(?,?)`, mtID, tag); err != nil {
+				return errors.WithStack(err)
+			}
+			ids := []mtid.MOMID{mtID}
+			if includeChildren {
+				var tokens []*MytokenEntry
+				if err := errors.WithStack(
+					tx.Select(&tokens, `CALL MTokens_GetSubtokens(?)`, mtID),
+				); err != nil {
+					return err
+				}
+				for _, token := range tokens {
+					ids = append(ids, token.ID.MomID())
+				}
+			}
+			for _, id := range ids {
+				_, err := tx.Exec(`CALL MTokens_UnlinkTag(?,?)`, id, tag)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	)
+}
+
+// GetTags returns all tags for a mytoken
+func GetTags(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
+) ([]api.MTTagInfo, error) {
+	var tags []struct {
+		TagID              uint64     `db:"tag_id"`
+		Tag                string     `db:"tag"`
+		Color              string     `db:"tag_color"`
+		TagIncludeChildren db.BitBool `db:"tag_include_children"`
+	}
+	err := db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(
+				tx.Select(&tags, `CALL MTokens_GetTags(?)`, mtID),
+			)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(tags) == 0 {
+		return []api.MTTagInfo{}, nil
+	}
+	result := make([]api.MTTagInfo, len(tags))
+	for i, tag := range tags {
+		result[i] = api.MTTagInfo{
+			TagInfo: api.TagInfo{
+				Tag:   api.Tag(tag.Tag),
+				Color: tag.Color,
+			},
+			IncludeChildren: bool(tag.TagIncludeChildren),
+		}
+	}
+	return result, nil
+}
+
+// ClearTags removes all tags from a mytoken
+func ClearTags(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MOMID,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			var children []*MytokenEntry
+			if err := errors.WithStack(
+				tx.Select(&children, `CALL MTokens_GetChildren(?)`, mtID),
+			); err != nil {
+				return err
+			}
+
+			var tags []struct {
+				TagID              uint64     `db:"tag_id"`
+				Tag                string     `db:"tag"`
+				Color              string     `db:"tag_color"`
+				TagIncludeChildren db.BitBool `db:"tag_include_children"`
+			}
+			if err := errors.WithStack(
+				tx.Select(&tags, `CALL MTokens_GetTags(?)`, mtID),
+			); err != nil {
+				return err
+			}
+
+			for _, tag := range tags {
+				var includeChildren bool
+				if err := tx.Get(
+					&includeChildren, `CALL MTTag_GetIncludeChildren(
+?,?)`, mtID, tag,
+				); err != nil {
+					return errors.WithStack(err)
+				}
+				if includeChildren {
+					for _, child := range children {
+						if err := RemoveTag(rlog, tx, child.ID.MomID(), api.Tag(tag.Tag)); err != nil {
+							return err
+						}
+					}
+				}
+			}
+			_, err := tx.Exec(`CALL MTokens_ClearTags(?)`, mtID)
 			return errors.WithStack(err)
 		},
 	)

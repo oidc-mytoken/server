@@ -130,6 +130,7 @@ func UseUnsubscribeFurtherNotificationsCode(rlog log.Ext1FieldLogger, tx *sqlx.T
 
 // RecreateData holds data stored in the database to enable re-creation of mytokens
 type RecreateData struct {
+	MTID         string                    `db:"MT_id"`
 	Name         db.NullString             `db:"name"`
 	Issuer       string                    `db:"issuer"`
 	Restrictions restrictions.Restrictions `db:"restrictions"`
@@ -147,6 +148,40 @@ func GetRecreateData(rlog log.Ext1FieldLogger, tx *sqlx.Tx, code string) (data R
 	)
 	found, err = db.ParseError(err)
 	return
+}
+
+// GetTagsForMT returns all tags for a mytoken (used by recreation)
+func GetTagsForMT(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID string) ([]api.MTTagInfo, error) {
+	var tags []struct {
+		TagID              uint64     `db:"tag_id"`
+		Tag                string     `db:"tag"`
+		Color              string     `db:"tag_color"`
+		TagIncludeChildren db.BitBool `db:"tag_include_children"`
+	}
+	err := db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(
+				tx.Select(&tags, `CALL MTokens_GetTags(?)`, mtID),
+			)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(tags) == 0 {
+		return []api.MTTagInfo{}, nil
+	}
+	result := make([]api.MTTagInfo, len(tags))
+	for i, tag := range tags {
+		result[i] = api.MTTagInfo{
+			TagInfo: api.TagInfo{
+				Tag:   api.Tag(tag.Tag),
+				Color: tag.Color,
+			},
+			IncludeChildren: bool(tag.TagIncludeChildren),
+		}
+	}
+	return result, nil
 }
 
 // GetScheduledNotificationActionCode returns the action code for a scheduled notification

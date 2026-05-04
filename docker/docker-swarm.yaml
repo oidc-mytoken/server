@@ -17,9 +17,10 @@ services:
       - ssh_host_rsa_key
       - db_password
     networks:
-      - frontend
-      - backend
       - proxy
+      - database
+      - cache
+      - notifications
     deploy:
       mode: replicated
       replicas: 2
@@ -48,7 +49,7 @@ services:
     volumes:
       - ${DB_BOOTSTRAP_DIR}:/bitnami/mariadb
     networks:
-      - backend
+      - database
     env_file:
       - db.env
     environment:
@@ -81,7 +82,7 @@ services:
     volumes:
       - ${DB_DATA_DIR}:/bitnami/mariadb
     networks:
-      - backend
+      - database
     env_file:
       - db.env
     environment:
@@ -154,9 +155,9 @@ services:
         failure_action: rollback
 
   migrate:
-    image: oidcmytoken/mytoken-migratedb
+    image: oidcmytoken/mytoken-setup:latest
     networks:
-      - backend
+      - database
     environment:
       - DB_PASSWORD_FILE=/run/secrets/db_root_password
       - DB_DATABASE=mytoken
@@ -169,7 +170,31 @@ services:
       mode: replicated
       replicas: 1
       restart_policy:
-        condition: on-failure
+        condition: unless-stopped
+    command: [ "mytoken-setup", "db", "migrate" ]
+
+  notifier:
+    image: oidcmytoken/mytoken-notifier-server:latest
+    configs:
+      - source: notifier_config
+        target: /etc/mytoken/notifier-config.yaml
+    networks:
+      - notifications
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: unless-stopped
+
+  redis:
+    image: redis:latest
+    networks:
+      - cache
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: unless-stopped
 
 #  debug:
 #    deploy:
@@ -187,15 +212,18 @@ services:
 
 
 networks:
-  frontend:
-  backend:
   proxy:
+  database:
+  cache:
+  notifications:
 
 configs:
   mytoken_config:
     file: ${MYTOKEN_CONFIG_FILE}
   haproxy_config:
     file: ${HAPROXY_CONFIG_FILE}
+  notifier_config:
+    file: ${NOTIFIER_CONFIG_FILE}
 
 secrets:
   cert_key:

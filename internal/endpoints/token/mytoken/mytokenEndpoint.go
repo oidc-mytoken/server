@@ -5,7 +5,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/oidc-mytoken/api/v0"
-	"github.com/oidc-mytoken/utils/utils"
 
 	"github.com/oidc-mytoken/server/internal/config"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
@@ -13,7 +12,6 @@ import (
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/mytoken"
 	"github.com/oidc-mytoken/server/internal/oidc/authcode"
-	"github.com/oidc-mytoken/server/internal/oidc/oidcfed"
 	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
@@ -53,11 +51,9 @@ func handleOIDCFlow(ctx *fiber.Ctx) *model.Response {
 		return model.ErrorToBadRequestErrorResponse(err)
 	}
 	if p := provider2.GetProvider(req.Issuer); p == nil {
-		if !utils.StringInSlice(req.Issuer, oidcfed.Issuers()) {
-			return &model.Response{
-				Status:   fiber.StatusBadRequest,
-				Response: api.ErrorUnknownIssuer,
-			}
+		return &model.Response{
+			Status:   fiber.StatusBadRequest,
+			Response: api.ErrorUnknownIssuer,
 		}
 	}
 	if len(req.Capabilities.Capabilities) == 0 {

@@ -12,6 +12,24 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.11.0
+
+### Important Changes
+
+- The `mytoken-migratedb` utility is dropped! Its functionalty is now
+  included in `mytoken-setup`. The drop-in replacement for
+  `mytoken-migratedb` is `mytoken-setup db migrate`
+- `mytoken-setup db migrate` no longer supports waiting for mytoken nodes to be upgraded; this was never needed. The
+  `-f` option is dropped and is now the default behavior.
+- Calendars no longer have a name
+
+### Features
+
+- Improved the `mytoken-setup` utility:
+  - Added possibility to generate ssh host keys
+  - Integrated `mytoken-migratedb`
+  - Added guided mode (this is the default) that guides through / does all
+    necessary setups.
 
 ## mytoken 0.10.0
 

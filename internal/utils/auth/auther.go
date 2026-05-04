@@ -307,3 +307,25 @@ func RequireMytokenIsParentOrCapability(
 		},
 	}
 }
+
+func ValidateCapabilityWithMomMode(
+	rlog log.Ext1FieldLogger, capabilityIfParent,
+	capabilityIfNotParent api.Capability, mt *mytoken.Mytoken,
+	momID mtid.MOMID,
+	clientMetadata *api.ClientMetaData,
+) (mtid.MTID, bool, *model.Response) {
+	id := mt.ID
+	momMode := momID.Hash() != id.Hash()
+	if momMode {
+		id = momID.MTID
+		if errRes := RequireMytokenIsParentOrCapability(
+			rlog, nil, capabilityIfParent, capabilityIfNotParent, mt, id, clientMetadata,
+		); errRes != nil {
+			return id, momMode, errRes
+		}
+		if errRes := RequireMytokensForSameUser(rlog, nil, id, mt.ID); errRes != nil {
+			return id, momMode, errRes
+		}
+	}
+	return id, momMode, nil
+}

@@ -3,6 +3,7 @@ package notificationsrepo
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -40,6 +41,12 @@ type NotificationInfoBase struct {
 type ManagementCodeNotificationInfoResponse struct {
 	api.ManagementCodeNotificationInfoResponse
 	UID uint64 `db:"uid" json:"-"`
+}
+
+// oidcInfo holds OIDC issuer and subject for a user
+type oidcInfo struct {
+	Iss string `db:"iss"`
+	Sub string `db:"sub"`
 }
 
 // GetNotificationsForMTAndClass checks for and returns the found notifications for a certain mytoken and
@@ -127,12 +134,17 @@ func notificationInfoBaseWithClassToNotificationInfo(
 						Classes:              api.NotificationClasses{api.NewNotificationClass(n.Class)},
 					}
 					if !n.UserWide {
+						// Only return directly subscribed tokens (not tag-based)
 						if err = tx.Select(
-							&nie.SubscribedTokens, `CALL Notifications_GetMTsForNotification(?)`,
+							&nie.SubscribedTokens, `CALL Notifications_GetDirectMTsForNotification(?)`,
 							n.NotificationID,
 						); err != nil {
 							return err
 						}
+					}
+					// Fetch tags for this notification
+					if nie.Tags, err = GetNotificationTags(rlog, tx, n.NotificationID); err != nil {
+						return err
 					}
 				}
 				notificationMap[nie.NotificationID] = nie
@@ -200,9 +212,10 @@ func GetNotificationForManagementCode(
 				info.Classes = append(info.Classes, api.NewNotificationClass(n.Class))
 			}
 			if !info.UserWide {
+				// Only return directly subscribed tokens (not tag-based)
 				if err = errors.WithStack(
 					tx.Select(
-						&info.SubscribedTokens, `CALL Notifications_GetMTsForNotification(?)`,
+						&info.SubscribedTokens, `CALL Notifications_GetDirectMTsForNotification(?)`,
 						info.NotificationID,
 					),
 				); err != nil {
@@ -211,7 +224,22 @@ func GetNotificationForManagementCode(
 					}
 				}
 			}
-			return errors.WithStack(tx.Get(&info.OIDCIssuer, `CALL GetOIDCIssForManagementCode(?)`, managementCode))
+			// Fetch tags for this notification
+			if info.Tags, err = GetNotificationTags(rlog, tx, info.NotificationID); err != nil {
+				return err
+			}
+			// Fetch OIDC issuer and subject
+			var oi oidcInfo
+			if err := errors.WithStack(
+				tx.Get(
+					&oi, `CALL GetOIDCInfoForManagementCode(?)`, managementCode,
+				),
+			); err != nil {
+				return err
+			}
+			info.OIDCIssuer = oi.Iss
+			info.OIDCSub = oi.Sub
+			return nil
 		},
 	)
 	return
@@ -224,6 +252,11 @@ func NewNotification(
 ) error {
 	if req.UserWide {
 		return newUserWideNotification(rlog, tx, req, mtID, managementCode, ws)
+	}
+	// If tags are provided and no explicit mom_id, create notification without linking a token
+	// The token will be associated via tags instead
+	if len(req.Tags) > 0 && !req.MomID.HashValid() {
+		return newTagOnlyNotification(rlog, tx, req, mtID, managementCode, ws)
 	}
 	return newMTNotification(rlog, tx, req, mtID, managementCode, ws)
 }
@@ -258,6 +291,26 @@ func newMTNotification(
 			if err := errors.WithStack(
 				tx.Get(
 					&nid, `CALL Notifications_CreateForMT(?,?,?,?,?)`, mtID, req.IncludeChildren, req.NotificationType,
+					managementCode, db.NewNullString(ws),
+				),
+			); err != nil {
+				return err
+			}
+			return linkNotificationClasses(rlog, tx, nid, req.NotificationClasses)
+		},
+	)
+}
+
+func newTagOnlyNotification(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req pkg.SubscribeNotificationRequest,
+	mtID mtid.MOMID, managementCode, ws string,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			var nid uint64
+			if err := errors.WithStack(
+				tx.Get(
+					&nid, `CALL Notifications_CreateWithoutMT(?,?,?,?)`, mtID, req.NotificationType,
 					managementCode, db.NewNullString(ws),
 				),
 			); err != nil {
@@ -339,4 +392,97 @@ func Delete(rlog log.Ext1FieldLogger, tx *sqlx.Tx, managementCode string) error 
 			return errors.WithStack(err)
 		},
 	)
+}
+
+// MytokenSubscribeOrCreateNotificationWithClasses checks if a notification
+// already exists with the request type and api.
+// NotificationClasses; if yes the mytoken subscribes to this notification,
+// if not a new notification is created.
+func MytokenSubscribeOrCreateNotificationWithClasses(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx,
+	req api.CreateMytokenSubscribeNotificationInfos,
+	mtID mtid.MTID,
+) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			notifications, err := GetNotificationsForUser(rlog, tx, mtID)
+			if err != nil {
+				return err
+			}
+			for _, n := range notifications {
+				if n.UserWide {
+					continue
+				}
+				if n.Type != req.NotificationType {
+					continue
+				}
+				if n.Classes.Equals(req.NotificationClasses) {
+					return AddTokenToNotification(
+						rlog, tx, n.NotificationID, mtID.MomID(), req.IncludeChildren,
+					)
+				}
+			}
+			// No existing notification found with the requested classes,
+			// create a new one
+			var nid uint64
+			if err = errors.WithStack(
+				tx.Get(
+					&nid, `CALL Notifications_CreateForMT(?,?,?,?,?)`, mtID, req.IncludeChildren, req.NotificationType,
+					utils.RandASCIIString(64), db.NewNullString(""),
+				),
+			); err != nil {
+				return err
+			}
+			return linkNotificationClasses(rlog, tx, nid, req.NotificationClasses)
+		},
+	)
+}
+
+// LinkTags clears and links the provided tags to a notification
+func LinkTags(rlog log.Ext1FieldLogger, tx *sqlx.Tx, notificationID uint64, tags []api.Tag) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Notifications_ClearTags(?)`, notificationID)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			for _, tag := range tags {
+				_, err = tx.Exec(`CALL Notifications_LinkTag(?,?)`, notificationID, tag)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+			}
+			return nil
+		},
+	)
+}
+
+// AddTag adds a tag to a notification
+func AddTag(rlog log.Ext1FieldLogger, tx *sqlx.Tx, notificationID uint64, tag string) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Notifications_LinkTag(?,?)`, notificationID, tag)
+			return errors.WithStack(err)
+		},
+	)
+}
+
+// RemoveTag removes a tag from a notification
+func RemoveTag(rlog log.Ext1FieldLogger, tx *sqlx.Tx, notificationID uint64, tag string) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Notifications_UnlinkTag(?,?)`, notificationID, tag)
+			return errors.WithStack(err)
+		},
+	)
+}
+
+// GetNotificationTags returns the api.TagInfos for a notification
+func GetNotificationTags(rlog log.Ext1FieldLogger, tx *sqlx.Tx, notificationID uint64) (tags []api.TagInfo, err error) {
+	err = db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			return errors.WithStack(tx.Select(&tags, `CALL Notifications_GetTags(?)`, notificationID))
+		},
+	)
+	return
 }

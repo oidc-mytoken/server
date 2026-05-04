@@ -8,8 +8,9 @@ variables:
   UPSTREAM_PROJECT: oidc-mytoken/server
   CI_DEFAULT_BRANCH: "master"
 
-image: golang:1.22
+image: golang:1.25
 stages:
+  - build_frontend
   - build
   - test
   - lint
@@ -29,18 +30,42 @@ before_script:
   - mkdir -p .cache
   - export GOPATH=${CI_PROJECT_DIR}/.cache
 
+# Frontend build job
+build_frontend:
+  stage: build_frontend
+  image: node:22
+  before_script: []  # Override global before_script (Go-specific)
+  script:
+    - cd frontend
+    - npm ci
+    - npm run check
+    - npm run build
+    - mkdir -p ../internal/server/spa/dist
+    - cp -r build/* ../internal/server/spa/dist/
+  artifacts:
+    paths:
+      - internal/server/spa/dist/
+    expire_in: 1 hour
+  cache:
+    key: frontend-npm-${CI_COMMIT_REF_SLUG}
+    paths:
+      - frontend/node_modules/
+
 test:
   stage: test
+  needs: [build_frontend]
   script:
     - go test -v ./...
 
 test_race:
   stage: test
+  needs: [build_frontend]
   script:
     - go test -race -v ./...
 
 staticcheck:
   stage: lint
+  needs: [build_frontend]
   before_script:
     - go install honnef.co/go/tools/cmd/staticcheck@latest
   script:
@@ -48,26 +73,25 @@ staticcheck:
 
 vet:
   stage: lint
+  needs: [build_frontend]
   script:
     - go vet -structtag=false ./...
 
 build_server:
   stage: build
+  needs: [build_frontend]
   script:
     - go build github.com/oidc-mytoken/server/cmd/mytoken-server
 
 build_setup:
   stage: build
+  needs: [build_frontend]
   script:
     - go build github.com/oidc-mytoken/server/cmd/mytoken-server/mytoken-setup
 
-build_migratedb:
-  stage: build
-  script:
-    - go build github.com/oidc-mytoken/server/cmd/mytoken-server/mytoken-migratedb
-
 package:
   stage: package
+  needs: [build_frontend]
   image:
     name: goreleaser/goreleaser
     entrypoint: [ "" ]
