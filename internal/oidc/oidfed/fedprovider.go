@@ -29,6 +29,9 @@ type OIDFedProvider struct {
 
 // Name implements the model.Provider interface
 func (p OIDFedProvider) Name() string {
+	if p.DisplayName != "" {
+		return p.DisplayName
+	}
 	if p.OrganizationName != "" {
 		return p.OrganizationName
 	}
