@@ -3,6 +3,7 @@ package tagrepo
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/utils/ternary"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -10,12 +11,12 @@ import (
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
 )
 
-// CreateTag creates a tag for the user linked to the mtID with the default
-// color
-func CreateTag(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tag string, mtID mtid.MTID) error {
+// CreateTag creates a tag for the user linked to the mtID with the specified
+// color (or auto-generated if empty)
+func CreateTag(rlog log.Ext1FieldLogger, tx *sqlx.Tx, tag string, color string, mtID mtid.MTID) error {
 	return db.RunWithinTransaction(
 		rlog, tx, func(tx *sqlx.Tx) error {
-			_, err := tx.Exec(`CALL Tags_Create(?,?,NULL)`, mtID, tag)
+			_, err := tx.Exec(`CALL Tags_Create(?,?,?)`, mtID, tag, ternary.If(color != "", color, nil))
 			return errors.WithStack(err)
 		},
 	)

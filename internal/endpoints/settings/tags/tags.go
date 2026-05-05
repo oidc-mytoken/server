@@ -135,13 +135,20 @@ func HandlePost(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle create tag request")
 	tag := ctx.Params("tag")
+	var req api.TagInfo
+	body := ctx.Body()
+	if len(body) > 0 {
+		if err := ctx.BodyParser(&req); err != nil {
+			return model.ErrorToBadRequestErrorResponse(err)
+		}
+	}
 	var reqMytoken universalmytoken.UniversalMytoken
 
 	return settings.HandleSettingsHelper(
 		ctx, nil, &reqMytoken, api.CapabilityTags,
 		&api.EventTagCreated, tag, fiber.StatusNoContent,
 		func(tx *sqlx.Tx, mt *mytoken.Mytoken) (my.TokenUpdatableResponse, *model.Response) {
-			if err := tagrepo.CreateTag(rlog, tx, tag, mt.ID); err != nil {
+			if err := tagrepo.CreateTag(rlog, tx, tag, req.Color, mt.ID); err != nil {
 				return nil, model.ErrorToInternalServerErrorResponse(err)
 			}
 			return &my.OnlyTokenUpdateRes{}, nil
