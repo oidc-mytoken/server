@@ -47,6 +47,9 @@ func HandleAddTagToMytoken(ctx *fiber.Ctx) error {
 		return errRes.Send(ctx)
 	}
 	clientMetadata := ctxutils.ClientMetaData(ctx)
+	if !req.MomID.HashValid() {
+		req.MomID = mt.ID.MomID()
+	}
 	id, momMode, errRes := auth.ValidateCapabilityWithMomMode(
 		rlog, api.CapabilityTokeninfoTags,
 		api.CapabilityTagAnyToken, mt, req.MomID, clientMetadata,
@@ -104,6 +107,9 @@ func HandleRemoveTagFromMytoken(ctx *fiber.Ctx) error {
 		return errRes.Send(ctx)
 	}
 	clientMetadata := ctxutils.ClientMetaData(ctx)
+	if !req.MomID.HashValid() {
+		req.MomID = mt.ID.MomID()
+	}
 	id, momMode, errRes := auth.ValidateCapabilityWithMomMode(
 		rlog, api.CapabilityTokeninfoTags,
 		api.CapabilityTagAnyToken, mt, req.MomID, clientMetadata,
