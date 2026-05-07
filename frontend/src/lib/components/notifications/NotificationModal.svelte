@@ -136,14 +136,16 @@
 			selectedClasses = [...notification.notification_classes];
 			selectedTags = notification.tags?.map(t => t.tag) ?? [];
 			
+			// Always populate selectedTokenIds with directly subscribed tokens
+			selectedTokenIds = notification.subscribed_tokens ?? [];
+			
 			// Determine subscription mode from notification
 			if (notification.user_wide) {
 				subscriptionMode = 'user_wide';
 			} else if (notification.tags && notification.tags.length > 0) {
 				subscriptionMode = 'tags';
-			} else if (notification.subscribed_tokens && notification.subscribed_tokens.length > 0) {
+			} else if (selectedTokenIds.length > 0) {
 				subscriptionMode = 'tokens';
-				selectedTokenIds = [...notification.subscribed_tokens];
 			} else {
 				subscriptionMode = 'tags';
 			}
@@ -356,12 +358,47 @@
 
 		try {
 			if (isEditMode && notification) {
-				// Update existing notification
-				await api.updateNotification(notification.management_code, {
-					notification_classes: selectedClasses,
-					tags: subscriptionMode === 'tags' ? selectedTags : undefined
-				});
-				ui.success('Notification updated');
+				// Get previously subscribed tokens from the notification
+				const previousTokens = notification.subscribed_tokens ?? [];
+				
+				// Determine token changes (only in tokens mode)
+				const tokensToAdd = subscriptionMode === 'tokens' 
+					? selectedTokenIds.filter(id => !previousTokens.includes(id))
+					: [];
+				const tokensToRemove = subscriptionMode === 'tokens'
+					? previousTokens.filter(id => !selectedTokenIds.includes(id))
+					: [];
+				
+				// Build update payload for classes and tags
+				const updatePayload: any = {
+					notification_classes: selectedClasses
+				};
+				
+				// Only update tags if we're in tags mode (preserve existing tags in tokens mode)
+				if (subscriptionMode === 'tags') {
+					updatePayload.tags = selectedTags;
+				}
+				
+				// First, update the base notification (classes/tags)
+				await api.updateNotification(notification.management_code, updatePayload);
+				
+				// Then handle token changes (only in tokens mode)
+				let tokenChangeMessage = '';
+				if (tokensToAdd.length > 0 || tokensToRemove.length > 0) {
+					// Add new tokens
+					for (const tokenId of tokensToAdd) {
+						await api.addTokenToNotification(notification.management_code, tokenId, false);
+					}
+					
+					// Remove tokens
+					for (const tokenId of tokensToRemove) {
+						await api.removeTokenFromNotification(notification.management_code, tokenId);
+					}
+					
+					tokenChangeMessage = ` (${tokensToAdd.length} token${tokensToAdd.length !== 1 ? 's' : ''} added, ${tokensToRemove.length} token${tokensToRemove.length !== 1 ? 's' : ''} removed)`;
+				}
+				
+				ui.success('Notification updated' + tokenChangeMessage);
 				dispatch('saved');
 			} else {
 				// Create new notification
