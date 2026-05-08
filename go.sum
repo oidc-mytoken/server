@@ -122,8 +122,8 @@ github.com/maxatome/go-testdeep v1.14.0 h1:rRlLv1+kI8eOI3OaBXZwb3O7xY3exRzdW5QyX
 github.com/maxatome/go-testdeep v1.14.0/go.mod h1:lPZc/HAcJMP92l7yI6TRz1aZN5URwUBUAfUNvrclaNM=
 github.com/miekg/pkcs11 v1.1.1 h1:Ugu9pdy6vAYku5DEpVWVFPYnzV+bxB+iRdbuFSu7TvU=
 github.com/miekg/pkcs11 v1.1.1/go.mod h1:XsNlhZGX73bx86s2hdc/FuaLm2CPZJemRLMA+WTFxgs=
-github.com/oidc-mytoken/api v0.11.2-0.20260407104632-89693cc5e9a0 h1:SLk5gxn6i6T7h6lHq+qf/8dmF4nXoY+C/N+q614UL4M=
-github.com/oidc-mytoken/api v0.11.2-0.20260407104632-89693cc5e9a0/go.mod h1:4QwDXesKKEzbTmH2vENYCVcmdb5/gbDPg3DOm9HQLdg=
+github.com/oidc-mytoken/api v0.12.1 h1:2VFZ2rFBRmWmqdjH1T2Yw1Z/qkwyNwZF0CBk6LGFumI=
+github.com/oidc-mytoken/api v0.12.1/go.mod h1:4QwDXesKKEzbTmH2vENYCVcmdb5/gbDPg3DOm9HQLdg=
 github.com/oidc-mytoken/utils v0.1.3-0.20240527155944-26103774a5aa h1:Ff2ebDPyHdxTIx95G5hD5PuS8o495JIwu4a2lsQ9sX8=
 github.com/oidc-mytoken/utils v0.1.3-0.20240527155944-26103774a5aa/go.mod h1:PH/hvZP5HjEQFF/l/ooPj0MH0yhpqO4sEF9V33+cGL0=
 github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 h1:zrbMGy9YXpIeTnGj4EljqMiZsIcE09mmF8XsD5AYOJc=
