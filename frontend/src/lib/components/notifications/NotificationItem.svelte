@@ -35,6 +35,12 @@
 	const rootClasses = getRootNotificationClasses();
 
 	function getTokenCount(): number {
+		// Use total_subscribed_tokens from backend if available (includes direct + tag-based)
+		if (notification.total_subscribed_tokens !== undefined && notification.total_subscribed_tokens >= 0) {
+			return notification.total_subscribed_tokens;
+		}
+		
+		// Fallback to client-side calculation for backwards compatibility
 		// Count directly subscribed tokens
 		const directCount = notification.subscribed_tokens?.length ?? 0;
 		
