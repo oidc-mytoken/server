@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	oidfed "github.com/go-oidfed/lib"
+	"github.com/go-oidfed/lib/jwx"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/oidc-mytoken/utils/context"
 	utils2 "github.com/oidc-mytoken/utils/utils"
@@ -53,18 +54,7 @@ var defaultConfig = Config{
 			RSAKeyLen: 2048,
 		},
 		OIDC: oidcSigningConf{
-			Algorithms: []string{
-				"ES512",
-				"ES384",
-				"ES256",
-				"EdDSA",
-				"PS512",
-				"PS384",
-				"PS256",
-				"RS512",
-				"RS384",
-				"RS256",
-			},
+			Algorithms:       jwx.SupportedAlgsStrings(),
 			DefaultAlgorithm: "ES512",
 			RSAKeyLen:        2048,
 			GenerateKeys:     true,
