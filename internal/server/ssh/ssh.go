@@ -47,6 +47,12 @@ func decodeData(data, dataType string) ([]byte, error) {
 }
 
 func handleSSHSession(s ssh.Session) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.WithField("panic", r).Error("Panic in SSH session handler")
+			_ = writeError(s, errors.New("Internal server error"))
+		}
+	}()
 	err := _handleSSHSession(s)
 	if err != nil {
 		if err = writeError(s, err); err != nil {
