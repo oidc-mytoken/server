@@ -7,11 +7,20 @@ import (
 	"strings"
 
 	"github.com/gliderlabs/ssh"
+	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/model"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
+	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
+	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
+	"github.com/oidc-mytoken/server/internal/utils/auth"
+	"github.com/oidc-mytoken/server/internal/utils/logger"
+	"github.com/oidc-mytoken/server/internal/utils/mytokenutils"
 )
 
 func decodeData(data, dataType string) ([]byte, error) {
@@ -95,9 +104,168 @@ func _handleSSHSession(s ssh.Session) (err error) {
 		return handleSubtokens(s)
 	case api.SSHRequestTokenInfoListMytokens:
 		return handleListMytokens(s)
+	case api.SSHRequestTokenInfoNotifications:
+		return handleTokenInfoNotifications(req, s)
+	case api.SSHRequestRevoke:
+		return handleSSHRevoke(req, s)
+	case api.SSHRequestAddTag:
+		return handleSSHAddTag(req, s)
+	case api.SSHRequestRemoveTag:
+		return handleSSHRemoveTag(req, s)
+	case api.SSHRequestEmailGet:
+		return handleSSHEmailGet(s)
+	case api.SSHRequestEmailSet:
+		return handleSSHEmailSet(req, s)
+	case api.SSHRequestTagsList:
+		return handleSSHTagsList(s)
+	case api.SSHRequestTagCreate:
+		return handleSSHTagCreate(req, s)
+	case api.SSHRequestTagUpdate:
+		return handleSSHTagUpdate(req, s)
+	case api.SSHRequestTagDelete:
+		return handleSSHTagDelete(req, s)
+	case api.SSHRequestNotifications:
+		return handleSSHNotificationsList(s)
+	case api.SSHRequestNotificationCreate:
+		return handleSSHNotificationCreate(req, s)
+	case api.SSHRequestNotificationAddToken:
+		return handleSSHNotificationAddToken(req, s)
+	case api.SSHRequestNotificationRemoveToken:
+		return handleSSHNotificationRemoveToken(req, s)
+	case api.SSHRequestCalendars:
+		return handleSSHCalendarsList(s)
+	case api.SSHRequestCalendarCreate:
+		return handleSSHCalendarCreate(req, s)
+	case api.SSHRequestCalendarGet:
+		return handleSSHCalendarGet(req, s)
+	case api.SSHRequestCalendarUpdate:
+		return handleSSHCalendarUpdate(req, s)
+	case api.SSHRequestCalendarDelete:
+		return handleSSHCalendarDelete(req, s)
+	case api.SSHRequestCalendarAddMytoken:
+		return handleSSHCalendarAddMytoken(req, s)
+	case api.SSHRequestCalendarAddTag:
+		return handleSSHCalendarAddTag(req, s)
+	case api.SSHRequestCalendarRemoveTag:
+		return handleSSHCalendarRemoveTag(req, s)
+	case api.SSHRequestCalendarRemoveMytoken:
+		return handleSSHCalendarRemoveMytoken(req, s)
+	case api.SSHRequestNotificationUpdate:
+		return handleSSHNotificationUpdate(req, s)
+	case api.SSHRequestNotificationDelete:
+		return handleSSHNotificationDelete(req, s)
 	default:
 		return errors.New(fmt.Sprintf("Unknown request\n%s", helpError))
 	}
+}
+
+// sshSessionCtx holds the common context extracted from an SSH session
+type sshSessionCtx struct {
+	mt             *mytoken.Mytoken
+	clientMetaData *api.ClientMetaData
+	rlog           log.Ext1FieldLogger
+}
+
+// newSSHSessionCtx extracts common context from an SSH session
+func newSSHSessionCtx(s ssh.Session) sshSessionCtx {
+	ctx := s.Context()
+	return sshSessionCtx{
+		mt: ctx.Value("mytoken").(*mytoken.Mytoken),
+		clientMetaData: &api.ClientMetaData{
+			IP:        ctx.Value("ip").(string),
+			UserAgent: ctx.Value("user_agent").(string),
+		},
+		rlog: logger.GetSSHRequestLogger(ctx.Value("session").(string)),
+	}
+}
+
+// requireNotRevoked checks that the mytoken is not revoked
+func (c sshSessionCtx) requireNotRevoked(s ssh.Session) error {
+	errRes := auth.RequireMytokenNotRevoked(c.rlog, nil, c.mt, c.clientMetaData)
+	if errRes != nil {
+		return writeErrRes(s, errRes)
+	}
+	return nil
+}
+
+// requireCapability checks the mytoken's capability and restrictions
+func (c sshSessionCtx) requireCapability(s ssh.Session, cap api.Capability) (*restrictions.Restriction, error) {
+	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
+		c.rlog, nil, c.mt, c.clientMetaData, cap,
+	)
+	if errRes != nil {
+		return nil, writeErrRes(s, errRes)
+	}
+	return usedRestriction, nil
+}
+
+// doAfterRequest wraps the common post-request processing
+func doAfterRequest(
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, resIn *model.Response, mt *mytoken.Mytoken,
+	clientMetaData api.ClientMetaData, event api.Event, eventComment string,
+	usedRestriction *restrictions.Restriction, umt universalmytoken.UniversalMytoken,
+) (*model.Response, error) {
+	var rollback bool
+	res, rollback := mytokenutils.DoAfterRequestThingsOther(
+		rlog, tx, resIn, mt, clientMetaData,
+		event, eventComment, usedRestriction, umt.JWT, umt.OriginalTokenType,
+	)
+	if rollback {
+		return res, errors.New("rollback")
+	}
+	return res, nil
+}
+
+// transactWithResult runs a transaction with standard error handling
+func transactWithResult(
+	rlog log.Ext1FieldLogger,
+	fn func(tx *sqlx.Tx) (*model.Response, error),
+) (*model.Response, error) {
+	var res *model.Response
+	err := db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			var err error
+			res, err = fn(tx)
+			return err
+		},
+	)
+	if err != nil && res == nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// momModeResult holds the result of resolving MomID mode authentication
+type momModeResult struct {
+	id              mtid.MTID
+	momMode         bool
+	usedRestriction *restrictions.Restriction
+}
+
+// resolveMomMode handles MomID resolution and capability validation
+func (c sshSessionCtx) resolveMomMode(
+	s ssh.Session, reqMOMID string,
+	capIfParent, capIfNotParent api.Capability,
+) (*momModeResult, error) {
+	momID := c.mt.ID.MomID()
+	if reqMOMID != "" {
+		momID = mtid.MOMID{MTID: mtid.FromHash(reqMOMID)}
+	}
+	id, momMode, errRes := auth.ValidateCapabilityWithMomMode(
+		c.rlog, capIfParent, capIfNotParent, c.mt, momID, c.clientMetaData,
+	)
+	if errRes != nil {
+		return nil, writeErrRes(s, errRes)
+	}
+	usedRestriction, errRes := auth.RequireUsableRestrictionOther(c.rlog, nil, c.mt, c.clientMetaData)
+	if errRes != nil {
+		return nil, writeErrRes(s, errRes)
+	}
+	return &momModeResult{
+		id:              id,
+		momMode:         momMode,
+		usedRestriction: usedRestriction,
+	}, nil
 }
 
 const helpError = `Syntax for a request is:

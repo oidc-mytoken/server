@@ -1,6 +1,8 @@
 package ssh
 
 import (
+	"encoding/json"
+
 	"github.com/gliderlabs/ssh"
 	"github.com/jmoiron/sqlx"
 	"github.com/oidc-mytoken/api/v0"
@@ -130,6 +132,45 @@ func handleListMytokens(s ssh.Session) error {
 				return errors.New("rollback")
 			}
 			res = tokeninfo.HandleTokenInfoList(rlog, tx, &pkg.TokenInfoRequest{}, mt, clientMetaData)
+			if res.Status >= 400 {
+				errRes = res
+				return errors.New("rollback")
+			}
+			return nil
+		},
+	)
+	if errRes != nil {
+		return writeErrRes(s, errRes)
+	}
+	return writeJSON(s, res.Response)
+}
+
+func handleTokenInfoNotifications(reqData []byte, s ssh.Session) error {
+	ctx := s.Context()
+	mt := ctx.Value("mytoken").(*mytoken.Mytoken)
+	clientMetaData := &api.ClientMetaData{
+		IP:        ctx.Value("ip").(string),
+		UserAgent: ctx.Value("user_agent").(string),
+	}
+	rlog := logger.GetSSHRequestLogger(ctx.Value("session").(string))
+	rlog.Debug("Handle tokeninfo notifications from ssh")
+
+	var req pkg.TokenInfoRequest
+	if len(reqData) > 0 {
+		if err := json.Unmarshal(reqData, &req); err != nil {
+			return err
+		}
+	}
+
+	var res *model.Response
+	var errRes *model.Response
+	_ = db.Transact(
+		rlog, func(tx *sqlx.Tx) error {
+			errRes = auth.RequireMytokenNotRevoked(rlog, tx, mt, clientMetaData)
+			if errRes != nil {
+				return errors.New("rollback")
+			}
+			res = tokeninfo.HandleTokenInfoNotifications(rlog, tx, &req, mt, clientMetaData)
 			if res.Status >= 400 {
 				errRes = res
 				return errors.New("rollback")

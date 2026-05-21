@@ -247,6 +247,16 @@ func AddMytokenToCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID,
 	)
 }
 
+// RemoveMytokenFromCalendar removes a mytoken from a calendar in the database
+func RemoveMytokenFromCalendar(rlog log.Ext1FieldLogger, tx *sqlx.Tx, mtID mtid.MTID, calendarID string) error {
+	return db.RunWithinTransaction(
+		rlog, tx, func(tx *sqlx.Tx) error {
+			_, err := tx.Exec(`CALL Calendar_RemoveMytoken(?, ?)`, mtID, calendarID)
+			return errors.WithStack(err)
+		},
+	)
+}
+
 func MTIsForSameUserAsCalendar(
 	rlog log.Ext1FieldLogger, tx *sqlx.Tx,
 	calendarID string, mtID mtid.MTID,
