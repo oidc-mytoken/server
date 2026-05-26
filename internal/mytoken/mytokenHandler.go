@@ -2,8 +2,6 @@ package mytoken
 
 import (
 	"encoding/json"
-	"fmt"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
@@ -14,25 +12,16 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/cryptstore"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
-	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo"
 	dbhelper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/refreshtokenrepo"
-	"github.com/oidc-mytoken/server/internal/db/notificationsrepo"
 	response "github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
-	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	"github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/pkg/mtid"
-	"github.com/oidc-mytoken/server/internal/mytoken/restrictions"
-	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	provider2 "github.com/oidc-mytoken/server/internal/oidc/provider"
 	"github.com/oidc-mytoken/server/internal/oidc/revoke"
-	"github.com/oidc-mytoken/server/internal/utils/auth"
-	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
@@ -108,227 +97,6 @@ func HandleMytokenFromTransferCode(ctx *fiber.Ctx) *model.Response {
 		},
 	}
 
-}
-
-// HandleMytokenFromMytokenReqChecks handles the necessary req checks for a pkg.MytokenFromMytokenRequest
-func HandleMytokenFromMytokenReqChecks(
-	rlog log.Ext1FieldLogger, req *response.MytokenFromMytokenRequest, clientData *api.ClientMetaData,
-	ctx *fiber.Ctx,
-) (*restrictions.Restriction, *mytoken.Mytoken, *model.Response) {
-	req.Restrictions.ReplaceThisIP(clientData.IP)
-	req.Restrictions.ClearUnsupportedKeys()
-	rlog.Trace("Parsed mytoken request")
-
-	// GrantType already checked
-
-	mt, errRes := auth.RequireValidMytoken(rlog, nil, &req.Mytoken, ctx)
-	if errRes != nil {
-		return nil, nil, errRes
-	}
-	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
-		rlog, nil, mt, clientData, api.CapabilityCreateMT,
-	)
-	if errRes != nil {
-		return nil, nil, errRes
-	}
-	if _, errRes = auth.RequireMatchingIssuer(rlog, mt.OIDCIssuer, &req.GeneralMytokenRequest.Issuer); errRes != nil {
-		return nil, nil, errRes
-	}
-	return usedRestriction, mt, nil
-}
-
-// HandleMytokenFromMytoken handles requests to create a Mytoken from an existing Mytoken
-func HandleMytokenFromMytoken(ctx *fiber.Ctx) *model.Response {
-	rlog := logger.GetRequestLogger(ctx)
-	rlog.Debug("Handle mytoken from mytoken")
-	req := response.NewMytokenRequest()
-	if err := errors.WithStack(json.Unmarshal(ctx.Body(), &req)); err != nil {
-		return model.ErrorToBadRequestErrorResponse(err)
-	}
-	usedRestriction, mt, errRes := HandleMytokenFromMytokenReqChecks(rlog, req, ctxutils.ClientMetaData(ctx), ctx)
-	if errRes != nil {
-		return errRes
-	}
-	return HandleMytokenFromMytokenReq(rlog, mt, req, ctxutils.ClientMetaData(ctx), usedRestriction)
-}
-
-// HandleMytokenFromMytokenReq handles a mytoken request (from an existing mytoken)
-func HandleMytokenFromMytokenReq(
-	rlog log.Ext1FieldLogger, parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest,
-	networkData *api.ClientMetaData,
-	usedRestriction *restrictions.Restriction,
-) *model.Response {
-	ste, errorResponse := createMytokenEntry(rlog, parent, req, *networkData)
-	if errorResponse != nil {
-		return errorResponse
-	}
-	var tokenUpdate *response.MytokenResponse
-	if err := db.Transact(
-		rlog, func(tx *sqlx.Tx) (err error) {
-			tokenUpdate, err = processSubtokenCreation(rlog, tx, parent, ste, req, networkData, usedRestriction)
-			return err
-		},
-	); err != nil {
-		rlog.Errorf("%s", errorfmt.Full(err))
-		return model.ErrorToInternalServerErrorResponse(err)
-	}
-
-	return buildMytokenResponse(rlog, ste, req, networkData, tokenUpdate)
-}
-
-func processSubtokenCreation(
-	rlog log.Ext1FieldLogger, tx *sqlx.Tx, parent *mytoken.Mytoken, ste *mytokenrepo.MytokenEntry,
-	req *response.MytokenFromMytokenRequest, networkData *api.ClientMetaData,
-	usedRestriction *restrictions.Restriction,
-) (*response.MytokenResponse, error) {
-	if err := markRestrictionUsed(rlog, tx, usedRestriction, parent.ID); err != nil {
-		return nil, err
-	}
-
-	tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
-		rlog, tx, req.Mytoken.JWT, parent, *networkData, req.Mytoken.OriginalTokenType,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = storeSubtokenWithInheritance(rlog, tx, parent.ID, ste, req); err != nil {
-		return nil, err
-	}
-
-	if err = logSubtokenEvents(rlog, tx, parent.ID, ste.ID, req.GeneralMytokenRequest.Name, networkData); err != nil {
-		return nil, err
-	}
-
-	return tokenUpdate, nil
-}
-
-func markRestrictionUsed(rlog log.Ext1FieldLogger, tx *sqlx.Tx, r *restrictions.Restriction, mtID mtid.MTID) error {
-	if r == nil {
-		return nil
-	}
-	return r.UsedOther(rlog, tx, mtID)
-}
-
-func storeSubtokenWithInheritance(
-	rlog log.Ext1FieldLogger, tx *sqlx.Tx, parentID mtid.MTID, ste *mytokenrepo.MytokenEntry,
-	req *response.MytokenFromMytokenRequest,
-) error {
-	if err := ste.Store(rlog, tx, "Used grant_type mytoken"); err != nil {
-		return err
-	}
-	if err := notificationsrepo.ExpandNotificationsToChildrenIfApplicable(rlog, tx, parentID, ste.ID); err != nil {
-		return err
-	}
-	if err := mytokenrepo.ExpandTagsToChildrenIfApplicable(rlog, tx, parentID, ste.ID); err != nil {
-		return err
-	}
-	for _, sub := range req.SubscribeNotificationRequests {
-		if err := notificationsrepo.MytokenSubscribeOrCreateNotificationWithClasses(rlog, tx, sub, ste.ID); err != nil {
-			return err
-		}
-	}
-	return notificationsrepo.ScheduleExpirationNotificationsIfNeeded(
-		rlog, tx, ste.ID, ste.Token.ExpiresAt, ste.Token.IssuedAt,
-	)
-}
-
-func logSubtokenEvents(
-	rlog log.Ext1FieldLogger, tx *sqlx.Tx, parentID, childID mtid.MTID, tokenName string,
-	networkData *api.ClientMetaData,
-) error {
-	return eventService.LogEvents(
-		rlog, tx, []pkg.MTEvent{
-			{
-				Event:          api.EventInheritedRT,
-				Comment:        "Got RT from parent",
-				MTID:           childID,
-				ClientMetaData: *networkData,
-			},
-			{
-				Event:          api.EventSubtokenCreated,
-				Comment:        strings.TrimSpace(fmt.Sprintf("Created MT %s", tokenName)),
-				MTID:           parentID,
-				ClientMetaData: *networkData,
-			},
-		},
-	)
-}
-
-func buildMytokenResponse(
-	rlog log.Ext1FieldLogger, ste *mytokenrepo.MytokenEntry, req *response.MytokenFromMytokenRequest,
-	networkData *api.ClientMetaData, tokenUpdate *response.MytokenResponse,
-) *model.Response {
-	res, err := ste.Token.ToTokenResponse(
-		rlog, req.ResponseType, req.GeneralMytokenRequest.MaxTokenLen, *networkData, "",
-	)
-	if err != nil {
-		rlog.Errorf("%s", errorfmt.Full(err))
-		return model.ErrorToInternalServerErrorResponse(err)
-	}
-	var cake []*fiber.Cookie
-	if tokenUpdate != nil {
-		res.TokenUpdate = tokenUpdate
-		cake = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}
-	}
-	return &model.Response{
-		Status:   fiber.StatusOK,
-		Response: res,
-		Cookies:  cake,
-	}
-}
-
-func createMytokenEntry(
-	rlog log.Ext1FieldLogger, parent *mytoken.Mytoken, req *response.MytokenFromMytokenRequest,
-	networkData api.ClientMetaData,
-) (*mytokenrepo.MytokenEntry, *model.Response) {
-	rtID, dbErr := refreshtokenrepo.GetRTID(rlog, nil, parent.ID)
-	rtFound, err := db.ParseError(dbErr)
-	if err != nil {
-		rlog.WithError(dbErr).Error()
-		return nil, model.ErrorToInternalServerErrorResponse(dbErr)
-	}
-	if !rtFound {
-		return nil, &model.Response{
-			Status:   fiber.StatusBadRequest,
-			Response: model.InvalidTokenError(""),
-		}
-	}
-	if changed := req.Restrictions.EnforceMaxLifetime(parent.OIDCIssuer); changed && req.FailOnRestrictionsNotTighter {
-		return nil, model.BadRequestErrorResponse("requested restrictions do not respect maximum mytoken lifetime")
-	}
-	r, ok := restrictions.Tighten(rlog, parent.Restrictions, req.Restrictions.Restrictions)
-	if !ok && req.FailOnRestrictionsNotTighter {
-		return nil, model.BadRequestErrorResponse("requested restrictions are not subset of original restrictions")
-	}
-	c := api.TightenCapabilities(parent.Capabilities, req.Capabilities.Capabilities)
-	if len(c) == 0 {
-		return nil, model.BadRequestErrorResponse("mytoken to be issued cannot have any of the requested capabilities")
-	}
-	var rot *api.Rotation
-	if req.Rotation != nil {
-		rot = &req.Rotation.Rotation
-	}
-	mt, err := mytoken.NewMytoken(
-		parent.OIDCSubject, parent.OIDCIssuer, req.GeneralMytokenRequest.Name, r, c, rot,
-		parent.AuthTime,
-	)
-	if err != nil {
-		return nil, model.ErrorToInternalServerErrorResponse(err)
-	}
-	mte := mytokenrepo.NewMytokenEntry(mt, req.GeneralMytokenRequest.Name, networkData)
-	mte.Tags = req.GeneralMytokenRequest.Tags
-	encryptionKey, _, err := encryptionkeyrepo.GetEncryptionKey(rlog, nil, parent.ID, req.Mytoken.JWT)
-	if err != nil {
-		rlog.WithError(err).Error()
-		return mte, model.ErrorToInternalServerErrorResponse(err)
-	}
-	if err = mte.SetRefreshToken(rtID, encryptionKey); err != nil {
-		rlog.WithError(err).Error()
-		return mte, model.ErrorToInternalServerErrorResponse(err)
-	}
-	mte.ParentID = parent.ID
-	return mte, nil
 }
 
 // RevokeMytoken revokes a Mytoken

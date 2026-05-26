@@ -22,7 +22,7 @@ require (
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/lestrrat-go/jwx v1.2.31
 	github.com/lestrrat-go/jwx/v3 v3.1.1
-	github.com/oidc-mytoken/api v0.12.1
+	github.com/oidc-mytoken/api v0.12.2-0.20260529132908-2e1359c93a95
 	github.com/oidc-mytoken/utils v0.1.3-0.20240527155944-26103774a5aa
 	github.com/olekukonko/tablewriter v1.1.4
 	github.com/pires/go-proxyproto v0.14.0
@@ -89,5 +89,3 @@ require (
 )
 
 replace github.com/urfave/cli/v2 => github.com/zachmann/cli/v2 v2.3.1-0.20211220102037-d619fd40a704
-
-replace github.com/oidc-mytoken/api v0.12.1 => ../api

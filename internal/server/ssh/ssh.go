@@ -258,7 +258,7 @@ func (c sshSessionCtx) resolveMomMode(
 		momID = mtid.MOMID{MTID: mtid.FromHash(reqMOMID)}
 	}
 	id, momMode, errRes := auth.ValidateCapabilityWithMomMode(
-		c.rlog, capIfParent, capIfNotParent, c.mt, momID, c.clientMetaData,
+		c.rlog, nil, capIfParent, capIfNotParent, c.mt, momID, c.clientMetaData,
 	)
 	if errRes != nil {
 		return nil, writeErrRes(s, errRes)

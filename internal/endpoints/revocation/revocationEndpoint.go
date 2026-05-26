@@ -14,17 +14,15 @@ import (
 
 	"github.com/oidc-mytoken/server/internal/config"
 	"github.com/oidc-mytoken/server/internal/db"
-	helper "github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/mytokenrepohelper"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/shorttokenrepo"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/mytokenrepo/transfercoderepo"
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/model"
 	"github.com/oidc-mytoken/server/internal/mytoken"
-	eventService "github.com/oidc-mytoken/server/internal/mytoken/event"
-	pkg2 "github.com/oidc-mytoken/server/internal/mytoken/event/pkg"
 	mytokenPkg "github.com/oidc-mytoken/server/internal/mytoken/pkg"
 	"github.com/oidc-mytoken/server/internal/mytoken/rotation"
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
+	"github.com/oidc-mytoken/server/internal/service/revoke"
 	"github.com/oidc-mytoken/server/internal/utils/cookies"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/errorfmt"
@@ -67,9 +65,11 @@ func HandleRevoke(ctx *fiber.Ctx) *model.Response {
 					res = model.ErrorToBadRequestErrorResponse(err)
 					return err
 				}
-				errRes := revokeByID(rlog, tx, req, authToken, metadata)
-				if errRes != nil {
-					res = errRes
+				svcRes := revoke.Service.ByMOMID(
+					rlog, tx, authToken, metadata, req.MOMID, req.Recursive,
+				)
+				if svcRes != nil && svcRes.Status >= 400 {
+					res = svcRes
 					return errors.New("rollback")
 				}
 				tokenUpdate, err := rotation.RotateMytokenAfterOtherForResponse(
@@ -117,78 +117,6 @@ func HandleRevoke(ctx *fiber.Ctx) *model.Response {
 		}
 	}
 	return &model.Response{Status: fiber.StatusNoContent}
-}
-
-func revokeByID(
-	rlog log.Ext1FieldLogger, tx *sqlx.Tx, req api.RevocationRequest,
-	authToken *mytokenPkg.Mytoken,
-	clientMetadata *api.ClientMetaData,
-) (errRes *model.Response) {
-	rollback := errors.New("rollback")
-	_ = db.RunWithinTransaction(
-		rlog, tx, func(tx *sqlx.Tx) error {
-			isParent, err := helper.MOMIDHasParent(rlog, nil, req.MOMID, authToken.ID)
-			if err != nil {
-				errRes = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-			if !isParent && !authToken.Capabilities.Has(api.CapabilityRevokeAnyToken) {
-				errRes = &model.Response{
-					Status: fiber.StatusForbidden,
-					Response: api.Error{
-						Error: api.ErrorStrInsufficientCapabilities,
-						ErrorDescription: fmt.Sprintf(
-							"The provided token is neither a parent of the token to be revoked"+
-								" nor does it have the '%s' capability", api.CapabilityRevokeAnyToken.Name,
-						),
-					},
-				}
-				return rollback
-			}
-			same, err := helper.CheckMytokensAreForSameUser(rlog, nil, req.MOMID, authToken.ID)
-			if err != nil {
-				errRes = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-			if !same {
-				errRes = &model.Response{
-					Status: fiber.StatusForbidden,
-					Response: api.Error{
-						Error:            api.ErrorStrInvalidGrant,
-						ErrorDescription: "The provided token cannot be used to revoke this mom_id",
-					},
-				}
-				return rollback
-			}
-			if req.MOMID == authToken.ID.Hash() {
-				errRes = &model.Response{
-					Status: fiber.StatusBadRequest,
-					Response: api.Error{
-						Error:            api.ErrorStrInvalidRequest,
-						ErrorDescription: "A token cannot be revoked by its own mom_id. Use the token itself instead.",
-					},
-				}
-				return rollback
-			}
-			if err = helper.RevokeMT(rlog, tx, req.MOMID, req.Recursive); err != nil {
-				errRes = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-			if err = eventService.LogEvent(
-				rlog, tx, pkg2.MTEvent{
-					Event:          api.EventRevokedOtherToken,
-					MTID:           authToken.ID,
-					Comment:        fmt.Sprintf("mom_id: %s", req.MOMID),
-					ClientMetaData: *clientMetadata,
-				},
-			); err != nil {
-				errRes = model.ErrorToInternalServerErrorResponse(err)
-				return err
-			}
-			return nil
-		},
-	)
-	return
 }
 
 func revokeAnyToken(
@@ -246,8 +174,7 @@ func revokeTransferCode(rlog log.Ext1FieldLogger, tx *sqlx.Tx, token, issuer str
 				if err != nil {
 					return err
 				}
-				if valid { // if !valid the jwt field could not be decrypted correctly, so we can skip that,
-					// but still delete the TransferCode
+				if valid {
 					errRes = revokeAnyToken(rlog, tx, jwt, issuer, true)
 					if errRes != nil {
 						return errors.New("placeholder")

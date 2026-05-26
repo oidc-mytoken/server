@@ -4,38 +4,28 @@ import (
 	"encoding/json"
 
 	"github.com/gliderlabs/ssh"
-	"github.com/oidc-mytoken/api/v0"
 	"github.com/oidc-mytoken/utils/utils/ternary"
+	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/server/internal/endpoints/token/mytoken/pkg"
-	"github.com/oidc-mytoken/server/internal/model"
-	mytoken2 "github.com/oidc-mytoken/server/internal/mytoken"
-	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
-	"github.com/oidc-mytoken/server/internal/utils/logger"
+	"github.com/oidc-mytoken/server/internal/service/mytoken"
 )
 
 func handleSSHMytoken(reqData []byte, s ssh.Session) error {
-	ctx := s.Context()
+	c := newSSHSessionCtx(s)
 	req := pkg.NewMytokenRequest()
-	req.GrantType = model.GrantTypeMytoken
 	if len(reqData) > 0 {
 		if err := json.Unmarshal(reqData, &req); err != nil {
 			return err
 		}
 	}
-	clientMetaData := &api.ClientMetaData{
-		IP:        ctx.Value("ip").(string),
-		UserAgent: ctx.Value("user_agent").(string),
+	c.rlog.Debug("Handle mytoken from ssh")
+	umt := c.mt.ToUniversalMytoken()
+	req.Mytoken = umt
+	res := mytoken.Service.CreateFromMytoken(c.rlog, c.mt, umt, c.clientMetaData, req)
+	if res == nil {
+		return writeError(s, errors.New("internal server error"))
 	}
-	req.Mytoken = ctx.Value("mytoken").(*mytoken.Mytoken).ToUniversalMytoken()
-	rlog := logger.GetSSHRequestLogger(ctx.Value("session").(string))
-	rlog.Debug("Handle mytoken from ssh")
-
-	usedRestriction, mt, errRes := mytoken2.HandleMytokenFromMytokenReqChecks(rlog, req, clientMetaData, nil)
-	if errRes != nil {
-		return writeErrRes(s, errRes)
-	}
-	res := mytoken2.HandleMytokenFromMytokenReq(rlog, mt, req, clientMetaData, usedRestriction)
 	if res.Status >= 400 {
 		return writeErrRes(s, res)
 	}

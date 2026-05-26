@@ -24,6 +24,7 @@ import (
 	"github.com/oidc-mytoken/server/internal/mytoken/universalmytoken"
 	notifier "github.com/oidc-mytoken/server/internal/notifier/client"
 	"github.com/oidc-mytoken/server/internal/server/routes"
+	"github.com/oidc-mytoken/server/internal/service/notification"
 	"github.com/oidc-mytoken/server/internal/utils/auth"
 	"github.com/oidc-mytoken/server/internal/utils/ctxutils"
 	"github.com/oidc-mytoken/server/internal/utils/logger"
@@ -85,46 +86,11 @@ func HandleGet(ctx *fiber.Ctx) *model.Response {
 	rlog := logger.GetRequestLogger(ctx)
 	rlog.Debug("Handle notification get request")
 	var umt universalmytoken.UniversalMytoken
-	mt, errRes := auth.RequireValidMytoken(rlog, nil, &umt, ctx)
+	mt, errRes := auth.RequireMytoken(rlog, &umt, ctx)
 	if errRes != nil {
 		return errRes
 	}
-	usedRestriction, errRes := auth.RequireCapabilityAndRestrictionOther(
-		rlog, nil, mt,
-		ctxutils.ClientMetaData(ctx), api.CapabilityNotifyAnyTokenRead,
-	)
-	if errRes != nil {
-		return errRes
-	}
-	var res *model.Response
-	if err := db.Transact(
-		rlog, func(tx *sqlx.Tx) error {
-			infos, err := notificationsrepo.GetNotificationsForUser(rlog, tx, mt.ID)
-			if err != nil {
-				return err
-			}
-			res = &model.Response{
-				Status: fiber.StatusOK,
-				Response: &pkg.NotificationsListResponse{
-					NotificationsListResponse: api.NotificationsListResponse{
-						Notifications: infos,
-					},
-				},
-			}
-			var rollback bool
-			res, rollback = mytokenutils.DoAfterRequestThingsOther(
-				rlog, tx, res, mt, *ctxutils.ClientMetaData(ctx),
-				api.EventNotificationListed, "", usedRestriction, umt.JWT, umt.OriginalTokenType,
-			)
-			if rollback {
-				return errors.New("rollback")
-			}
-			return nil
-		},
-	); err != nil && res == nil {
-		res = model.ErrorToInternalServerErrorResponse(err)
-	}
-	return res
+	return notification.Service.List(rlog, mt, umt, ctxutils.ClientMetaData(ctx))
 }
 
 // HandlePost is the main entry function for handling notification creation requests

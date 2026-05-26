@@ -79,6 +79,10 @@ func addAPIvXRoutes(s fiber.Router, version int) {
 				toFiberHandler(calendar.HandleRemoveTag),
 			)
 			s.Delete(utils.CombineURLPath(apiPaths.CalendarEndpoint, ":id"), toFiberHandler(calendar.HandleDelete))
+			s.Delete(
+				utils.CombineURLPath(apiPaths.CalendarEndpoint, ":id", "mytokens"),
+				toFiberHandler(calendar.HandleRemoveMytoken),
+			)
 		}
 		s.Post(apiPaths.NotificationEndpoint, toFiberHandler(notification.HandlePost))
 		s.Get(apiPaths.NotificationEndpoint, toFiberHandler(notification.HandleGet))
