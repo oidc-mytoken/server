@@ -25,7 +25,7 @@ require (
 	github.com/oidc-mytoken/api v0.12.1
 	github.com/oidc-mytoken/utils v0.1.3-0.20240527155944-26103774a5aa
 	github.com/olekukonko/tablewriter v1.1.4
-	github.com/pires/go-proxyproto v0.12.0
+	github.com/pires/go-proxyproto v0.14.0
 	github.com/pkg/errors v0.9.1
 	github.com/redis/go-redis/v9 v9.19.0
 	github.com/sethvargo/go-limiter v1.1.0
@@ -82,8 +82,8 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/zachmann/go-utils v0.0.0-20251216142941-208653c379f5 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/net v0.54.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/term v0.43.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 )
