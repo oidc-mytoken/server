@@ -214,18 +214,9 @@ func LoadOIDCSigningKey() error {
 		defaultAlg = algs[0]
 	}
 
-	// Create public key storage
-	oidcPKS = &public.FilesystemPublicKeyStorage{
-		Dir:    conf.KeyDir,
-		TypeID: "oidc",
-	}
-	if err := oidcPKS.Load(); err != nil {
-		return errors.Wrap(err, "failed to load OIDC public key storage")
-	}
-
 	// Create and load KMS
-	kmsInst := &kms.FilesystemKMS{
-		FilesystemKMSConfig: kms.FilesystemKMSConfig{
+	kmsInst, err := kms.NewFilesystemKMSAndPublicKeyStorage(
+		kms.FilesystemKMSConfig{
 			KMSConfig: kms.KMSConfig{
 				GenerateKeys: conf.GenerateKeys,
 				Algs:         algs,
@@ -235,10 +226,11 @@ func LoadOIDCSigningKey() error {
 			Dir:    conf.KeyDir,
 			TypeID: "oidc",
 		},
-		PKs: oidcPKS,
+	)
+	if err != nil {
+		return errors.Wrap(err, "failed to create OIDC KMS")
 	}
-
-	if err := kmsInst.Load(); err != nil {
+	if err = kmsInst.Load(); err != nil {
 		return errors.Wrap(err, "failed to load OIDC signing keys")
 	}
 	oidcKMS = kmsInst
