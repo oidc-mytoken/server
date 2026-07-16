@@ -25,7 +25,7 @@ require (
 	github.com/oidc-mytoken/api v0.12.2-0.20260529132908-2e1359c93a95
 	github.com/oidc-mytoken/utils v0.1.3
 	github.com/olekukonko/tablewriter v1.1.4
-	github.com/pires/go-proxyproto v0.14.0
+	github.com/pires/go-proxyproto v0.15.0
 	github.com/pkg/errors v0.9.1
 	github.com/redis/go-redis/v9 v9.21.0
 	github.com/sethvargo/go-limiter v1.1.0
