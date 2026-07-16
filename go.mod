@@ -6,7 +6,7 @@ require (
 	github.com/Songmu/prompter v0.5.1
 	github.com/TwiN/gocache/v2 v2.4.0
 	github.com/arran4/golang-ical v0.3.5
-	github.com/coreos/go-oidc/v3 v3.19.0
+	github.com/coreos/go-oidc/v3 v3.20.0
 	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/fatih/structs v1.1.0
 	github.com/gliderlabs/ssh v0.3.8
@@ -23,7 +23,7 @@ require (
 	github.com/lestrrat-go/jwx v1.2.31
 	github.com/lestrrat-go/jwx/v3 v3.1.1
 	github.com/oidc-mytoken/api v0.12.2-0.20260529132908-2e1359c93a95
-	github.com/oidc-mytoken/utils v0.1.3-0.20240527155944-26103774a5aa
+	github.com/oidc-mytoken/utils v0.1.3
 	github.com/olekukonko/tablewriter v1.1.4
 	github.com/pires/go-proxyproto v0.14.0
 	github.com/pkg/errors v0.9.1
@@ -57,11 +57,14 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jarcoal/httpmock v1.4.1 // indirect
 	github.com/klauspost/compress v1.18.6 // indirect
+	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.4 // indirect
 	github.com/lestrrat-go/dsig v1.3.0 // indirect
 	github.com/lestrrat-go/dsig-secp256k1 v1.0.0 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/httprc/v3 v3.0.5 // indirect
+	github.com/lestrrat-go/iter v1.0.2 // indirect
+	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/lestrrat-go/option/v2 v2.0.0 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
