@@ -49,6 +49,16 @@ func SplitIgnoreEmpty(s, del string) (ret []string) {
 	return
 }
 
+// RemoveEmpty returns the passed slice without any empty strings
+func RemoveEmpty(values []string) (ret []string) {
+	for _, v := range values {
+		if v != "" {
+			ret = append(ret, v)
+		}
+	}
+	return
+}
+
 // RSplitN splits a string s at the delimiter del into n pieces. Unlike strings.SplitN RSplitN splits the string
 // starting from the right side
 func RSplitN(s, del string, n int) []string {

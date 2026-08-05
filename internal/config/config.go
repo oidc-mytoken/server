@@ -493,15 +493,16 @@ func (c *oidcSigningConf) validate() error {
 
 // ProviderConf holds information about a provider
 type ProviderConf struct {
-	Issuer               string                   `yaml:"issuer"`
-	ClientID             string                   `yaml:"client_id"`
-	ClientSecret         string                   `yaml:"client_secret"`
-	Scopes               []string                 `yaml:"scopes"`
-	MytokensMaxLifetime  int64                    `yaml:"mytokens_max_lifetime"`
-	EnforcedRestrictions EnforcedRestrictionsConf `yaml:"enforced_restrictions"`
-	Endpoints            *oauth2x.Endpoints       `yaml:"-"`
-	Name                 string                   `yaml:"name"`
-	Audience             *model.AudienceConf      `yaml:"audience"`
+	Issuer               string                      `yaml:"issuer"`
+	ClientID             string                      `yaml:"client_id"`
+	ClientSecret         string                      `yaml:"client_secret"`
+	Scopes               []string                    `yaml:"scopes"`
+	MytokensMaxLifetime  int64                       `yaml:"mytokens_max_lifetime"`
+	EnforcedRestrictions EnforcedRestrictionsConf    `yaml:"enforced_restrictions"`
+	Endpoints            *oauth2x.Endpoints          `yaml:"-"`
+	Name                 string                      `yaml:"name"`
+	Audience             *model.AudienceConf         `yaml:"audience"`
+	AccessTokenCache     *model.AccessTokenCacheConf `yaml:"access_token_caching"`
 }
 
 // EnforcedRestrictionsConf is a type for holding configuration for enforced restrictions
@@ -589,13 +590,14 @@ func (so *ServiceOperatorConf) validate() error {
 }
 
 type federationConf struct {
-	Enabled                     bool                   `yaml:"enabled"`
-	TrustAnchors                oidfed.TrustAnchors    `yaml:"trust_anchors"`
-	AuthorityHints              []string               `yaml:"authority_hints"`
-	EntityConfigurationLifetime int64                  `yaml:"entity_configuration_lifetime"`
-	Signing                     signingConf            `yaml:"signing"`
-	Entity                      *oidfed.FederationLeaf `yaml:"-"`
-	OPDiscovery                 opDiscoveryConf        `yaml:"op_discovery"`
+	Enabled                     bool                        `yaml:"enabled"`
+	TrustAnchors                oidfed.TrustAnchors         `yaml:"trust_anchors"`
+	AuthorityHints              []string                    `yaml:"authority_hints"`
+	EntityConfigurationLifetime int64                       `yaml:"entity_configuration_lifetime"`
+	Signing                     signingConf                 `yaml:"signing"`
+	Entity                      *oidfed.FederationLeaf      `yaml:"-"`
+	OPDiscovery                 opDiscoveryConf             `yaml:"op_discovery"`
+	AccessTokenCache            *model.AccessTokenCacheConf `yaml:"access_token_caching"`
 }
 
 type opDiscoveryConf struct {
@@ -628,6 +630,9 @@ func (f *federationConf) validate() (err error) {
 	}
 	if f.EntityConfigurationLifetime == 0 {
 		f.EntityConfigurationLifetime = 7 * 24 * 60 * 60
+	}
+	if err := f.AccessTokenCache.Validate(); err != nil {
+		return errors.Wrap(err, "invalid access_token_caching in federation config")
 	}
 
 	// Validate OP discovery config
@@ -761,6 +766,9 @@ func validateProvider(p *ProviderConf, i int) error {
 		p.Audience.SpaceSeparateAuds = false
 	} else if p.Audience.RequestParameter == "" {
 		p.Audience.RequestParameter = model.AudienceParameterResource
+	}
+	if err := p.AccessTokenCache.Validate(); err != nil {
+		return errors.Wrapf(err, "invalid config for provider.issuer '%s' (Index %d)", p.Issuer, i)
 	}
 	return nil
 }

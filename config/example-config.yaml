@@ -293,6 +293,13 @@ features:
       key_file: "/federation.ecdsa.key"
       # If an RSA-based algorithm is used, this is the key len. Only needed when generating a new rsa key.
       rsa_key_len: 2048
+    # Default access token caching configuration for OPs discovered via federation; cannot be configured per OP.
+    # For providers configured in the 'providers' section, this default does not apply.
+    access_token_caching:
+    # At maximum one strategy must be configured; uncomment the desired one
+    #reuse_for_seconds: 3000 # Reuse a cached AT while it is at most this age (in seconds)
+    #reuse_percentage: 50 # Reuse a cached AT while it is at most this percentage of its lifetime old
+    #reuse_if_remaining_seconds: 60 # Reuse a cached AT while it still has at least this much lifetime (in seconds)
 
 # The list of supported providers
 providers:
@@ -306,6 +313,14 @@ providers:
     # Maximum lifetime for mytokens for this issuer, given in seconds. On default the lifetime of mytokens is not
     # restricted. Setting this value to 0, means that there is no maximum lifetime.
     mytokens_max_lifetime: 0
+    # Configuration for access token caching. If access token caching is enabled for this provider, access tokens that
+    # were already obtained for the same mytoken and the same scopes and audiences are reused if they still satisfy the
+    # configured strategy. This reduces the number of token requests sent to the OP.
+    # At maximum one strategy must be configured; uncomment the desired one
+    access_token_caching:
+    #reuse_for_seconds: 3000 # Reuse a cached AT while it is at most this age (in seconds)
+    #reuse_percentage: 50 # Reuse a cached AT while it is at most this percentage of its lifetime old
+    #reuse_if_remaining_seconds: 60 # Reuse a cached AT while it still has at least this much lifetime (in seconds)
     # Settings related to how the audience(s) of ATs is requested
     audience:
       # Unless false audiences are requested according to RFC8707; other options are ignored;

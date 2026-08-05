@@ -70,6 +70,12 @@ func (OIDFedProvider) Audience() *model.AudienceConf {
 	return defaultOIDFedAudienceConf
 }
 
+// AccessTokenCache implements the model.Provider interface; it returns the default configuration for federated
+// providers
+func (OIDFedProvider) AccessTokenCache() *model.AccessTokenCacheConf {
+	return config.Get().Features.Federation.AccessTokenCache
+}
+
 // MaxMytokenLifetime implements the model.Provider interface
 func (OIDFedProvider) MaxMytokenLifetime() int64 {
 	return 0

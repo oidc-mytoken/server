@@ -12,6 +12,19 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.12.0
+
+### Features
+
+- Added option to cache access tokens (ATs). It can be configured per provider (and as a default for federated
+  providers)
+  that previously issued access tokens are returned on access token requests instead of requesting a new one from the
+  OP. Only access tokens that were issued for the same mytoken and the exact same scopes and audiences are reused.
+  - The reuse can be limited in different ways:
+    - `reuse_for_seconds`: reuse a cached AT while its age is below this value
+    - `reuse_percentage`: reuse a cached AT while its age is below this percentage of its lifetime
+    - `reuse_if_remaining_seconds`: reuse a cached AT while it still has at least this much lifetime remaining
+
 ## mytoken 0.11.0
 
 ### Important Changes

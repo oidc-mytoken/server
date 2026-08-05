@@ -3,6 +3,7 @@ package access
 
 import (
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
@@ -88,82 +89,131 @@ func (s *service) createAccessTokenLogic(
 ) (*model.Response, bool) {
 	var tokenUpdate *response.MytokenResponse
 	var oidcRes *oidcreqres.OIDCTokenResponse
-	var retScopes string
-	var retAudiences []string
-	rt, rtFound, dbErr := cryptstore.GetRefreshToken(rlog, tx, mt.ID, req.Mytoken.JWT)
-	if dbErr != nil {
-		rlog.Errorf("%s", errorfmt.Full(dbErr))
-		return model.ErrorToInternalServerErrorResponse(dbErr), true
-	}
-	if !rtFound {
-		_ = notifier.SendNotificationsForSubClass(
-			rlog, tx, mt.ID, api.NotificationClassRTFailure, &networkData,
-			model.KeyValues{
-				{
-					Key:   "Reason",
-					Value: "No refresh token attached",
-				},
-			}, nil,
-		)
-		return &model.Response{
-			Status:   fiber.StatusUnauthorized,
-			Response: model.InvalidTokenError("No refresh token attached"),
-		}, true
-	}
+	var rsp *request.AccessTokenResponse
 
 	scopes, auds := s.parseScopesAndAudienceToUse(
 		req.Scope, strings.Split(req.Audience, " "), usedRestriction, provider.Scopes(),
 	)
-	opRes, oidcErrRes, err := refresh.DoFlowAndUpdateDB(
-		rlog, tx, provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds,
-	)
-	if err != nil {
-		rlog.Errorf("%s", errorfmt.Full(err))
-		return model.ErrorToInternalServerErrorResponse(err), true
-	}
-	if oidcErrRes != nil {
-		_ = notifier.SendNotificationsForSubClass(
-			rlog, tx, mt.ID, api.NotificationClassRTFailure, &networkData,
-			model.KeyValues{
-				{
-					Key:   "OP Error",
-					Value: oidcErrRes.Error,
-				},
-				{
-					Key:   "OP Error Description",
-					Value: oidcErrRes.ErrorDescription,
-				},
-			}, nil,
+
+	eventComment := "Used grant_type mytoken"
+
+	// Try to serve the request from a cached access token
+	if atCacheConf := provider.AccessTokenCache(); atCacheConf != nil && atCacheConf.Enabled() {
+		stJWT, err := mt.ToJWT()
+		if err != nil {
+			rlog.Errorf("%s", errorfmt.Full(err))
+			return model.ErrorToInternalServerErrorResponse(err), true
+		}
+		reqScopes := utils.SplitIgnoreEmpty(scopes, " ")
+		cached, err := accesstokenrepo.GetCachedAT(
+			rlog, tx, mt.ID, stJWT, reqScopes, auds,
 		)
-		return &model.Response{
-			Status:   oidcErrRes.Status,
-			Response: model.OIDCError(oidcErrRes.Error, oidcErrRes.ErrorDescription),
-		}, true
+		if err != nil {
+			rlog.Errorf("%s", errorfmt.Full(err))
+			return model.ErrorToInternalServerErrorResponse(err), true
+		}
+		if cached != nil && atCacheConf.ShouldReuse(time.Now(), cached.Created, cached.ExpiresAt) {
+			rlog.Debug("Returning cached access token")
+			eventComment += "; returned a cached access token"
+			cachedAudiences, _ := jwtutils.GetAudiencesFromJWT(rlog, cached.Token)
+			rsp = &request.AccessTokenResponse{
+				AccessTokenResponse: api.AccessTokenResponse{
+					AccessToken: cached.Token,
+					TokenType:   cached.TokenType,
+					ExpiresIn:   max(int64(time.Until(cached.ExpiresAt).Seconds()), 0),
+					Scope:       strings.Join(reqScopes, " "),
+					Audiences:   cachedAudiences,
+				},
+			}
+		}
 	}
-	oidcRes = opRes
 
-	retScopes = oidcRes.Scopes
-	if retScopes == "" {
-		retScopes = scopes
-	}
-	retAudiences, _ = jwtutils.GetAudiencesFromJWT(rlog, oidcRes.AccessToken)
-	at := accesstokenrepo.AccessToken{
-		Token:     oidcRes.AccessToken,
-		IP:        networkData.IP,
-		Comment:   req.Comment,
-		Mytoken:   mt,
-		Scopes:    utils.SplitIgnoreEmpty(retScopes, " "),
-		Audiences: retAudiences,
+	if rsp == nil { // no cached access token could be used, so we obtain a fresh one
+		rt, rtFound, dbErr := cryptstore.GetRefreshToken(rlog, tx, mt.ID, req.Mytoken.JWT)
+		if dbErr != nil {
+			rlog.Errorf("%s", errorfmt.Full(dbErr))
+			return model.ErrorToInternalServerErrorResponse(dbErr), true
+		}
+		if !rtFound {
+			_ = notifier.SendNotificationsForSubClass(
+				rlog, tx, mt.ID, api.NotificationClassRTFailure, &networkData,
+				model.KeyValues{
+					{
+						Key:   "Reason",
+						Value: "No refresh token attached",
+					},
+				}, nil,
+			)
+			return &model.Response{
+				Status:   fiber.StatusUnauthorized,
+				Response: model.InvalidTokenError("No refresh token attached"),
+			}, true
+		}
+
+		opRes, oidcErrRes, err := refresh.DoFlowAndUpdateDB(
+			rlog, tx, provider, mt.ID, req.Mytoken.JWT, rt, scopes, auds,
+		)
+		if err != nil {
+			rlog.Errorf("%s", errorfmt.Full(err))
+			return model.ErrorToInternalServerErrorResponse(err), true
+		}
+		if oidcErrRes != nil {
+			_ = notifier.SendNotificationsForSubClass(
+				rlog, tx, mt.ID, api.NotificationClassRTFailure, &networkData,
+				model.KeyValues{
+					{
+						Key:   "OP Error",
+						Value: oidcErrRes.Error,
+					},
+					{
+						Key:   "OP Error Description",
+						Value: oidcErrRes.ErrorDescription,
+					},
+				}, nil,
+			)
+			return &model.Response{
+				Status:   oidcErrRes.Status,
+				Response: model.OIDCError(oidcErrRes.Error, oidcErrRes.ErrorDescription),
+			}, true
+		}
+		oidcRes = opRes
+
+		retScopes := oidcRes.Scopes
+		if retScopes == "" {
+			retScopes = scopes
+		}
+		retAudiences, _ := jwtutils.GetAudiencesFromJWT(rlog, oidcRes.AccessToken)
+		at := accesstokenrepo.AccessToken{
+			Token:     oidcRes.AccessToken,
+			IP:        networkData.IP,
+			Comment:   req.Comment,
+			Mytoken:   mt,
+			Scopes:    utils.SplitIgnoreEmpty(retScopes, " "),
+			Audiences: retAudiences,
+			ExpiresAt: oidcRes.AccessTokenExpiresAt(rlog),
+			TokenType: oidcRes.TokenType,
+		}
+
+		if err = at.Store(rlog, tx); err != nil {
+			rlog.Errorf("%s", errorfmt.Full(err))
+			return model.ErrorToInternalServerErrorResponse(err), true
+		}
+
+		rsp = &request.AccessTokenResponse{
+			AccessTokenResponse: api.AccessTokenResponse{
+				AccessToken: oidcRes.AccessToken,
+				TokenType:   oidcRes.TokenType,
+				ExpiresIn:   oidcRes.ExpiresIn,
+				Scope:       retScopes,
+				Audiences:   retAudiences,
+			},
+		}
 	}
 
-	if err = at.Store(rlog, tx); err != nil {
-		rlog.Errorf("%s", errorfmt.Full(err))
-		return model.ErrorToInternalServerErrorResponse(err), true
-	}
-	if err = eventService.LogEvent(
+	if err := eventService.LogEvent(
 		rlog, tx, pkg.MTEvent{
 			Event:          api.EventATCreated,
-			Comment:        "Used grant_type mytoken",
+			Comment:        eventComment,
 			MTID:           mt.ID,
 			ClientMetaData: networkData,
 		},
@@ -172,11 +222,12 @@ func (s *service) createAccessTokenLogic(
 		return model.ErrorToInternalServerErrorResponse(err), true
 	}
 	if usedRestriction != nil {
-		if err = usedRestriction.UsedAT(rlog, tx, mt.ID); err != nil {
+		if err := usedRestriction.UsedAT(rlog, tx, mt.ID); err != nil {
 			rlog.Errorf("%s", errorfmt.Full(err))
 			return model.ErrorToInternalServerErrorResponse(err), true
 		}
 	}
+	var err error
 	tokenUpdate, err = rotation.RotateMytokenAfterATForResponse(
 		rlog, tx, req.Mytoken.JWT, mt, networkData, req.Mytoken.OriginalTokenType,
 	)
@@ -185,15 +236,6 @@ func (s *service) createAccessTokenLogic(
 		return model.ErrorToInternalServerErrorResponse(err), true
 	}
 
-	rsp := request.AccessTokenResponse{
-		AccessTokenResponse: api.AccessTokenResponse{
-			AccessToken: oidcRes.AccessToken,
-			TokenType:   oidcRes.TokenType,
-			ExpiresIn:   oidcRes.ExpiresIn,
-			Scope:       retScopes,
-			Audiences:   retAudiences,
-		},
-	}
 	var cake []*fiber.Cookie
 	if tokenUpdate != nil {
 		rsp.TokenUpdate = tokenUpdate
@@ -227,5 +269,6 @@ func (s *service) parseScopesAndAudienceToUse(
 			auds = usedRestriction.Audiences
 		}
 	}
+	auds = utils.RemoveEmpty(auds)
 	return scopes, auds
 }
