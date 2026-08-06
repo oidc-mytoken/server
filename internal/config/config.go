@@ -50,7 +50,7 @@ var defaultConfig = Config{
 	},
 	Signing: signingConfs{
 		Mytoken: signingConf{
-			Alg:       SignatureAlgorithm{SignatureAlgorithm: jwa.ES512()},
+			Alg:       "ES512",
 			RSAKeyLen: 2048,
 		},
 		OIDC: oidcSigningConf{
@@ -126,7 +126,7 @@ var defaultConfig = Config{
 			Enabled:                     false,
 			EntityConfigurationLifetime: 7 * 24 * 60 * 60,
 			Signing: signingConf{
-				Alg:       SignatureAlgorithm{SignatureAlgorithm: jwa.ES512()},
+				Alg:       "ES512",
 				RSAKeyLen: 2048,
 			},
 			OPDiscovery: opDiscoveryConf{
@@ -453,33 +453,9 @@ type signingConfs struct {
 }
 
 type signingConf struct {
-	Alg       SignatureAlgorithm `yaml:"alg"`
-	KeyFile   string             `yaml:"key_file"`
-	RSAKeyLen int                `yaml:"rsa_key_len"`
-}
-
-// SignatureAlgorithm is a jwa.SignatureAlgorithm that can be marshalled to and unmarshalled from YAML.
-type SignatureAlgorithm struct {
-	jwa.SignatureAlgorithm
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler for SignatureAlgorithm.
-func (a *SignatureAlgorithm) UnmarshalYAML(value *yaml.Node) error {
-	var s string
-	if err := value.Decode(&s); err != nil {
-		return errors.Wrap(err, "invalid signing algorithm")
-	}
-	alg, ok := jwa.LookupSignatureAlgorithm(s)
-	if !ok {
-		return errors.Errorf("unknown signing algorithm '%s'", s)
-	}
-	a.SignatureAlgorithm = alg
-	return nil
-}
-
-// MarshalYAML implements yaml.Marshaler for SignatureAlgorithm.
-func (a SignatureAlgorithm) MarshalYAML() (interface{}, error) {
-	return a.String(), nil
+	Alg       string `yaml:"alg"`
+	KeyFile   string `yaml:"key_file"`
+	RSAKeyLen int    `yaml:"rsa_key_len"`
 }
 
 // oidcSigningConf holds configuration for OIDC signing with multiple algorithms
@@ -653,8 +629,11 @@ func (f *federationConf) validate() (err error) {
 	if f.Signing.KeyFile == "" {
 		return errors.New("federation enabled, but no signing keyfile specified")
 	}
-	if f.Signing.Alg.String() == "" {
+	if f.Signing.Alg == "" {
 		return errors.New("federation enabled, but no signing alg specified")
+	}
+	if _, ok := jwa.LookupSignatureAlgorithm(f.Signing.Alg); !ok {
+		return errors.Errorf("federation enabled, but unknown signing alg '%s' specified", f.Signing.Alg)
 	}
 	if f.EntityConfigurationLifetime == 0 {
 		f.EntityConfigurationLifetime = 7 * 24 * 60 * 60
@@ -819,8 +798,11 @@ func validateSigningConfig() error {
 	if conf.Signing.Mytoken.KeyFile == "" {
 		return errors.New("invalid config: signing keyfile not set")
 	}
-	if conf.Signing.Mytoken.Alg.String() == "" {
+	if conf.Signing.Mytoken.Alg == "" {
 		return errors.New("invalid config: token signing alg not set")
+	}
+	if _, ok := jwa.LookupSignatureAlgorithm(conf.Signing.Mytoken.Alg); !ok {
+		return errors.Errorf("invalid config: unknown token signing alg '%s'", conf.Signing.Mytoken.Alg)
 	}
 	return nil
 }

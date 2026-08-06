@@ -24,16 +24,22 @@ import (
 // GenerateMytokenSigningKeyPair generates a cryptographic key pair for mytoken signing with the algorithm specified in
 // the mytoken config.
 func GenerateMytokenSigningKeyPair() (sk crypto.Signer, pk crypto.PublicKey, err error) {
-	return generateKeyPair(config.Get().Signing.Mytoken.Alg.SignatureAlgorithm, config.Get().Signing.Mytoken.RSAKeyLen)
+	return generateKeyPair(algFromConfig(config.Get().Signing.Mytoken.Alg), config.Get().Signing.Mytoken.RSAKeyLen)
 }
 
 // GenerateFederationSigningKeyPair generates a cryptographic key pair for federation signing with the algorithm
 // specified in the config.
 func GenerateFederationSigningKeyPair() (sk crypto.Signer, pk crypto.PublicKey, err error) {
 	return generateKeyPair(
-		config.Get().Features.Federation.Signing.Alg.SignatureAlgorithm,
+		algFromConfig(config.Get().Features.Federation.Signing.Alg),
 		config.Get().Features.Federation.Signing.RSAKeyLen,
 	)
+}
+
+// algFromConfig converts a signing algorithm string from the config to a jwa.SignatureAlgorithm.
+func algFromConfig(s string) jwa.SignatureAlgorithm {
+	alg, _ := jwa.LookupSignatureAlgorithm(s)
+	return alg
 }
 
 // generateKeyPair generates a cryptographic key pair with the passed properties
@@ -185,9 +191,9 @@ func GetVersatileSigner(usage KeyUsage) jwx.VersatileSigner {
 	var alg jwa.SignatureAlgorithm
 	switch usage {
 	case KeyUsageMytokenSigning:
-		alg = config.Get().Signing.Mytoken.Alg.SignatureAlgorithm
+		alg = algFromConfig(config.Get().Signing.Mytoken.Alg)
 	case KeyUsageFederation:
-		alg = config.Get().Features.Federation.Signing.Alg.SignatureAlgorithm
+		alg = algFromConfig(config.Get().Features.Federation.Signing.Alg)
 	}
 	return jwx.NewSingleKeyVersatileSigner(k.SK, alg)
 }
@@ -196,7 +202,7 @@ func GetVersatileSigner(usage KeyUsage) jwx.VersatileSigner {
 func LoadMytokenSigningKey() {
 	loadKey(
 		config.Get().Signing.Mytoken.KeyFile, KeyUsageMytokenSigning,
-		config.Get().Signing.Mytoken.Alg.SignatureAlgorithm,
+		algFromConfig(config.Get().Signing.Mytoken.Alg),
 	)
 }
 
@@ -249,7 +255,7 @@ func LoadOIDCSigningKey() error {
 func LoadFederationKey() {
 	loadKey(
 		config.Get().Features.Federation.Signing.KeyFile, KeyUsageFederation,
-		config.Get().Features.Federation.Signing.Alg.SignatureAlgorithm,
+		algFromConfig(config.Get().Features.Federation.Signing.Alg),
 	)
 }
 

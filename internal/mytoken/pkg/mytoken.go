@@ -281,7 +281,7 @@ func (mt *Mytoken) ToJWT() (string, error) {
 	}
 	var err error
 	j := jwt.NewWithClaims(
-		jwt.GetSigningMethod(config.Get().Signing.Mytoken.Alg.String()), mt,
+		jwt.GetSigningMethod(config.Get().Signing.Mytoken.Alg), mt,
 	)
 	j.Header["typ"] = "MT+JWT"
 	mt.jwt, err = j.SignedString(jws.GetSigningKey(jws.KeyUsageMytokenSigning))
