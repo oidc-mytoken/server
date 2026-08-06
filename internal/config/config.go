@@ -9,7 +9,7 @@ import (
 
 	oidfed "github.com/go-oidfed/lib"
 	"github.com/go-oidfed/lib/jwx"
-	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/lestrrat-go/jwx/v4/jwa"
 	"github.com/oidc-mytoken/utils/context"
 	utils2 "github.com/oidc-mytoken/utils/utils"
 	"github.com/oidc-mytoken/utils/utils/fileutil"
@@ -50,11 +50,11 @@ var defaultConfig = Config{
 	},
 	Signing: signingConfs{
 		Mytoken: signingConf{
-			Alg:       jwa.ES512,
+			Alg:       SignatureAlgorithm{SignatureAlgorithm: jwa.ES512()},
 			RSAKeyLen: 2048,
 		},
 		OIDC: oidcSigningConf{
-			Algorithms:       jwx.SupportedAlgsStrings(),
+			Algorithms:       jwx.DefaultAlgsStrings(),
 			DefaultAlgorithm: "ES512",
 			RSAKeyLen:        2048,
 			GenerateKeys:     true,
@@ -126,7 +126,7 @@ var defaultConfig = Config{
 			Enabled:                     false,
 			EntityConfigurationLifetime: 7 * 24 * 60 * 60,
 			Signing: signingConf{
-				Alg:       jwa.ES512,
+				Alg:       SignatureAlgorithm{SignatureAlgorithm: jwa.ES512()},
 				RSAKeyLen: 2048,
 			},
 			OPDiscovery: opDiscoveryConf{
@@ -453,9 +453,33 @@ type signingConfs struct {
 }
 
 type signingConf struct {
-	Alg       jwa.SignatureAlgorithm `yaml:"alg"`
-	KeyFile   string                 `yaml:"key_file"`
-	RSAKeyLen int                    `yaml:"rsa_key_len"`
+	Alg       SignatureAlgorithm `yaml:"alg"`
+	KeyFile   string             `yaml:"key_file"`
+	RSAKeyLen int                `yaml:"rsa_key_len"`
+}
+
+// SignatureAlgorithm is a jwa.SignatureAlgorithm that can be marshalled to and unmarshalled from YAML.
+type SignatureAlgorithm struct {
+	jwa.SignatureAlgorithm
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler for SignatureAlgorithm.
+func (a *SignatureAlgorithm) UnmarshalYAML(value *yaml.Node) error {
+	var s string
+	if err := value.Decode(&s); err != nil {
+		return errors.Wrap(err, "invalid signing algorithm")
+	}
+	alg, ok := jwa.LookupSignatureAlgorithm(s)
+	if !ok {
+		return errors.Errorf("unknown signing algorithm '%s'", s)
+	}
+	a.SignatureAlgorithm = alg
+	return nil
+}
+
+// MarshalYAML implements yaml.Marshaler for SignatureAlgorithm.
+func (a SignatureAlgorithm) MarshalYAML() (interface{}, error) {
+	return a.String(), nil
 }
 
 // oidcSigningConf holds configuration for OIDC signing with multiple algorithms
@@ -476,12 +500,16 @@ func (c *oidcSigningConf) validate() error {
 	}
 	supportedAlgs := jwa.SignatureAlgorithms()
 	for _, algStr := range c.Algorithms {
-		if !slices.Contains(supportedAlgs, jwa.SignatureAlgorithm(algStr)) {
+		if !slices.ContainsFunc(
+			supportedAlgs, func(alg jwa.SignatureAlgorithm) bool { return alg.String() == algStr },
+		) {
 			return errors.Errorf("unknown algorithm '%s' in signing.oidc.algs", algStr)
 		}
 	}
 	if c.DefaultAlgorithm != "" {
-		if !slices.Contains(supportedAlgs, jwa.SignatureAlgorithm(c.DefaultAlgorithm)) {
+		if !slices.ContainsFunc(
+			supportedAlgs, func(alg jwa.SignatureAlgorithm) bool { return alg.String() == c.DefaultAlgorithm },
+		) {
 			return errors.Errorf("unknown default algorithm '%s' in signing.oidc.default_alg", c.DefaultAlgorithm)
 		}
 		if !slices.Contains(c.Algorithms, c.DefaultAlgorithm) {
@@ -625,7 +653,7 @@ func (f *federationConf) validate() (err error) {
 	if f.Signing.KeyFile == "" {
 		return errors.New("federation enabled, but no signing keyfile specified")
 	}
-	if f.Signing.Alg == "" {
+	if f.Signing.Alg.String() == "" {
 		return errors.New("federation enabled, but no signing alg specified")
 	}
 	if f.EntityConfigurationLifetime == 0 {
@@ -791,7 +819,7 @@ func validateSigningConfig() error {
 	if conf.Signing.Mytoken.KeyFile == "" {
 		return errors.New("invalid config: signing keyfile not set")
 	}
-	if conf.Signing.Mytoken.Alg == "" {
+	if conf.Signing.Mytoken.Alg.String() == "" {
 		return errors.New("invalid config: token signing alg not set")
 	}
 	return nil
