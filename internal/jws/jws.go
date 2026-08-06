@@ -237,6 +237,11 @@ func LoadOIDCSigningKey() error {
 		return errors.Wrap(err, "failed to load OIDC signing keys")
 	}
 	oidcKMS = kmsInst
+	if fsKMS, ok := kmsInst.(*kms.FilesystemKMS); ok {
+		oidcPKS = fsKMS.PKs
+	} else {
+		return errors.New("failed to obtain OIDC public key storage from KMS")
+	}
 	return nil
 }
 
