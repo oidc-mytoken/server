@@ -2,6 +2,7 @@ package hashutils
 
 import (
 	"crypto/hmac"
+	sha30 "crypto/sha3"
 	"crypto/sha512"
 	"encoding/base64"
 
@@ -35,7 +36,7 @@ func HMACBasedHash(data []byte) string {
 //
 //goland:noinspection GoSnakeCaseUsage
 func SHA3_256Str(data []byte) string {
-	hash := sha3.Sum256(data)
+	hash := sha30.Sum256(data)
 	return base64.StdEncoding.EncodeToString(hash[:])
 }
 
@@ -43,6 +44,6 @@ func SHA3_256Str(data []byte) string {
 //
 //goland:noinspection GoSnakeCaseUsage
 func SHA3_512Str(data []byte) string {
-	hash := sha3.Sum512(data)
+	hash := sha30.Sum512(data)
 	return base64.StdEncoding.EncodeToString(hash[:])
 }

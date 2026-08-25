@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"slices"
 
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
@@ -21,7 +22,7 @@ var AllRestrictionClaimStrings = api.AllRestrictionClaims
 var AllRestrictionClaims RestrictionClaims
 
 func init() {
-	for i := 0; i < int(maxRestrictionClaim); i++ {
+	for i := range int(maxRestrictionClaim) {
 		AllRestrictionClaims = append(AllRestrictionClaims, RestrictionClaim(i))
 	}
 }
@@ -109,12 +110,7 @@ func (rc RestrictionClaim) MarshalJSON() ([]byte, error) {
 
 // Has checks if a RestrictionClaim is in a RestrictionClaims
 func (rks RestrictionClaims) Has(rk RestrictionClaim) bool {
-	for _, k := range rks {
-		if k == rk {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(rks, rk)
 }
 
 // Disable subtracts the passed RestrictionClaims from this RestrictionClaims and returns the left RestrictionClaims

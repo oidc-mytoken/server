@@ -40,8 +40,7 @@ func CompareNullableIntsWithNilAsInfinity(a, b *int64) int {
 
 // SplitIgnoreEmpty splits a string at the specified delimiter without generating empty parts
 func SplitIgnoreEmpty(s, del string) (ret []string) {
-	tmp := strings.Split(s, del)
-	for _, ss := range tmp {
+	for ss := range strings.SplitSeq(s, del) {
 		if ss != "" {
 			ret = append(ret, ss)
 		}
@@ -88,7 +87,7 @@ func RSplitN(s, del string, n int) []string {
 }
 
 // StructToStringMap creates a string map from an interface{} using the passed tag name
-func StructToStringMap(st interface{}, tag string) map[string]string {
+func StructToStringMap(st any, tag string) map[string]string {
 	s := structs.New(st)
 	s.TagName = tag
 	m := make(map[string]string)
@@ -106,7 +105,7 @@ func StructToStringMap(st interface{}, tag string) map[string]string {
 }
 
 // StructToStringMapUsingJSONTags creates a string map from an interface{} using json tags
-func StructToStringMapUsingJSONTags(st interface{}) map[string]string {
+func StructToStringMapUsingJSONTags(st any) map[string]string {
 	return StructToStringMap(st, "json")
 }
 

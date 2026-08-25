@@ -66,7 +66,7 @@ func writeString(s ssh.Session, str string) error {
 	return err
 }
 
-func writeJSON(s ssh.Session, o interface{}) error {
+func writeJSON(s ssh.Session, o any) error {
 	data, err := json.Marshal(o)
 	if err != nil {
 		return err

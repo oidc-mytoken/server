@@ -13,7 +13,7 @@ type Response struct {
 	// The Http Status code of the response
 	Status int
 	// The response body, will be marshalled as json
-	Response interface{}
+	Response any
 	// Cookies that should be set
 	Cookies []*fiber.Cookie
 }

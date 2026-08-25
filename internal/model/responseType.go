@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"slices"
 
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
@@ -83,10 +84,8 @@ func (r ResponseType) MarshalJSON() ([]byte, error) {
 
 // AddToSliceIfNotFound adds the ResponseType to a slice s if it is not already there
 func (r ResponseType) AddToSliceIfNotFound(s *[]ResponseType) {
-	for _, ss := range *s {
-		if ss == r {
-			return
-		}
+	if slices.Contains(*s, r) {
+		return
 	}
 	*s = append(*s, r)
 }
@@ -97,7 +96,7 @@ func (r ResponseType) Value() (driver.Value, error) {
 }
 
 // Scan implements the sql.Scanner interface.
-func (r *ResponseType) Scan(src interface{}) error {
+func (r *ResponseType) Scan(src any) error {
 	ns := sql.NullString{}
 	if err := errors.WithStack(ns.Scan(src)); err != nil {
 		return err

@@ -58,7 +58,7 @@ func (i MTID) Value() (driver.Value, error) {
 }
 
 // Scan implements the sql.Scanner interface
-func (i *MTID) Scan(src interface{}) error {
+func (i *MTID) Scan(src any) error {
 	if src == nil {
 		return nil
 	}

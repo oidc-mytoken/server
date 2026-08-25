@@ -34,13 +34,15 @@ type webCapabilityJSON struct {
 
 // MarshalJSON implements json.Marshaler to include ColorClass and CapabilityLevel
 func (c webCapability) MarshalJSON() ([]byte, error) {
-	return json.Marshal(webCapabilityJSON{
-		Name:            c.Name,
-		Description:     c.Description,
-		IsReadOnly:      c.IsReadOnly,
-		ColorClass:      c.ColorClass(),
-		CapabilityLevel: c.CapabilityLevel(),
-	})
+	return json.Marshal(
+		webCapabilityJSON{
+			Name:            c.Name,
+			Description:     c.Description,
+			IsReadOnly:      c.IsReadOnly,
+			ColorClass:      c.ColorClass(),
+			CapabilityLevel: c.CapabilityLevel(),
+		},
+	)
 }
 
 // WebCapabilities creates a slice of WebCapability from api.Capabilities
@@ -138,7 +140,7 @@ func webCapabilityFromCapability(capability api.Capability) *WebCapability {
 
 // internal classes
 const (
-	intClassNormal = iota
+	intClassNormal int = iota
 	intClassWarning
 	intClassDanger
 )
@@ -177,13 +179,13 @@ func (c *webCapability) getIntClass() int {
 	}
 	name := c.Name
 	if utils.StringInSlice(name, normalCapabilities) {
-		c.intClass = utils.NewInt(intClassNormal)
+		c.intClass = new(intClassNormal)
 	}
 	if utils.StringInSlice(name, warningCapabilities) {
-		c.intClass = utils.NewInt(intClassWarning)
+		c.intClass = new(intClassWarning)
 	}
 	if utils.StringInSlice(name, dangerCapabilities) {
-		c.intClass = utils.NewInt(intClassDanger)
+		c.intClass = new(intClassDanger)
 	}
 	if c.intClass != nil {
 		return *c.intClass

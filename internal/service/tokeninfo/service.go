@@ -14,7 +14,7 @@ var Service = &service{}
 
 type service struct{}
 
-func (s *service) makeTokenInfoResponse(rsp interface{}, tokenUpdate *response.MytokenResponse) *model.Response {
+func (s *service) makeTokenInfoResponse(rsp any, tokenUpdate *response.MytokenResponse) *model.Response {
 	var cake []*fiber.Cookie
 	if tokenUpdate != nil {
 		cake = []*fiber.Cookie{cookies.MytokenCookie(tokenUpdate.Mytoken)}

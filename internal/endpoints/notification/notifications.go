@@ -209,9 +209,9 @@ func handleNewMailNotification(
 func prepareNotificationWelcomeData(
 	rlog logrus.Ext1FieldLogger, tx *sqlx.Tx, mt *mytoken.Mytoken,
 	req pkg.SubscribeNotificationRequest, managementCode string,
-) (mtid.MOMID, api.Capability, map[string]interface{}, *model.Response, error) {
+) (mtid.MOMID, api.Capability, map[string]any, *model.Response, error) {
 	mtID := mtid.MOMID{MTID: mt.ID}
-	welcomeData := map[string]interface{}{
+	welcomeData := map[string]any{
 		"management-url":       routes.NotificationManagementURL(managementCode),
 		"token-name":           mt.Name,
 		"issuer-url":           config.Get().IssuerURL,
