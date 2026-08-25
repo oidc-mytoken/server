@@ -48,13 +48,13 @@ type Restriction struct {
 // NewRestrictionsFromAPI turn api.Restrictions into Restrictions
 func NewRestrictionsFromAPI(apis api.Restrictions) (rs Restrictions) {
 	for _, a := range apis {
-		rs = append(
-			rs, &Restriction{
-				NotBefore:   unixtime.UnixTime(a.NotBefore),
-				ExpiresAt:   unixtime.UnixTime(a.ExpiresAt),
-				Restriction: *a,
-			},
-		)
+		rr := &Restriction{
+			NotBefore:   unixtime.UnixTime(a.NotBefore),
+			ExpiresAt:   unixtime.UnixTime(a.ExpiresAt),
+			Restriction: *a,
+		}
+		normalizeSchedule(rr.Schedule)
+		rs = append(rs, rr)
 	}
 	return
 }
@@ -88,6 +88,9 @@ func (r *Restrictions) ClearUnsupportedKeys() {
 		}
 		if disabledRestrictionKeys().Has(model.RestrictionClaimUsagesOther) {
 			rr.UsagesOther = nil
+		}
+		if disabledRestrictionKeys().Has(model.RestrictionClaimSchedule) {
+			rr.Schedule = nil
 		}
 		// (*r)[i] = rr
 	}
@@ -149,7 +152,13 @@ func (r *Restriction) verifyExp(now unixtime.UnixTime) bool {
 func (r *Restriction) verifyTimeBased(rlog log.Ext1FieldLogger) bool {
 	rlog.Trace("Verifying time based")
 	now := unixtime.Now()
-	return r.verifyNbf(now) && r.verifyExp(now)
+	if !r.verifyNbf(now) || !r.verifyExp(now) {
+		return false
+	}
+	if disabledRestrictionKeys().Has(model.RestrictionClaimSchedule) {
+		return true
+	}
+	return verifySchedule(r.Schedule, now.Time())
 }
 func (r *Restriction) verifyLocationBased(rlog log.Ext1FieldLogger, ip string) bool {
 	return r.verifyHosts(rlog, ip) && r.verifyGeoIP(rlog, ip)
@@ -582,6 +591,12 @@ func (r *Restriction) isTighterThan(b *Restriction) bool {
 		return false
 	}
 	if iutils.CompareNullableIntsWithNilAsInfinity(r.UsagesOther, b.UsagesOther) > 0 {
+		return false
+	}
+	if r.Schedule == nil && b.Schedule != nil {
+		return false
+	}
+	if r.Schedule != nil && b.Schedule != nil && !scheduleSubset(r.Schedule, b.Schedule) {
 		return false
 	}
 	return true

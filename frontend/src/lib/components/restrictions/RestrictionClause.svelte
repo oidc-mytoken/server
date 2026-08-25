@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Restriction } from '$lib/types';
+	import type { Restriction, Schedule } from '$lib/types';
 	import { formatDateTime } from '$lib/utils/format';
 	import { countries, getCountryName } from '$lib/data/countries';
 	import DateTimePicker from '../DateTimePicker.svelte';
@@ -203,6 +203,144 @@
 		// Just switch the view, don't clear data
 		// Users can combine hosts with geoip restrictions
 	}
+
+	// --- Schedule management ---
+	const FALLBACK_TIMEZONES = [
+		'UTC', 'Europe/Berlin', 'Europe/London', 'Europe/Paris', 'Europe/Vienna', 'Europe/Zurich',
+		'Europe/Amsterdam', 'Europe/Stockholm', 'Europe/Vilnius', 'America/New_York', 'America/Chicago',
+		'America/Los_Angeles', 'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Kolkata', 'Australia/Sydney',
+		'Pacific/Auckland'
+	];
+	// The user's local timezone; used as the default for new schedules.
+	const USER_TIMEZONE = (() => {
+		try {
+			return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+		} catch {
+			return 'UTC';
+		}
+	})();
+
+	// Full list of IANA timezones from the browser, with a curated fallback.
+	const ALL_TIMEZONES: string[] = (() => {
+		try {
+			const zones = Intl.supportedValuesOf?.('timeZone') ?? [];
+			if (zones.length > 0) return zones;
+		} catch {
+			// ignore, fall through to fallback
+		}
+		return FALLBACK_TIMEZONES;
+	})();
+
+	$: timezoneGroups = (() => {
+		const groups: Record<string, string[]> = {};
+		for (const tz of ALL_TIMEZONES) {
+			const idx = tz.indexOf('/');
+			const label = idx > 0 ? tz.slice(0, idx) : 'Other';
+			(groups[label] ??= []).push(tz);
+		}
+		return Object.entries(groups)
+			.sort(([a], [b]) => a.localeCompare(b))
+			.map(([label, zones]) => ({ label, zones }));
+	})();
+
+	const WEEKDAYS = [
+		{ value: 1, label: 'Mon' },
+		{ value: 2, label: 'Tue' },
+		{ value: 3, label: 'Wed' },
+		{ value: 4, label: 'Thu' },
+		{ value: 5, label: 'Fri' },
+		{ value: 6, label: 'Sat' },
+		{ value: 7, label: 'Sun' }
+	];
+	const WEEKDAY_LABELS: Record<number, string> = { 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat', 7: 'Sun' };
+
+	// Ensure schedule exists so bindings work
+	$: if (restriction.schedule && !restriction.schedule.timezone) restriction.schedule.timezone = USER_TIMEZONE;
+
+	$: scheduleActive = !!restriction.schedule;
+
+	function toggleSchedule(active: boolean) {
+		if (active) {
+			restriction.schedule = { timezone: USER_TIMEZONE, days: [], days_of_month: [] };
+		} else {
+			delete restriction.schedule;
+		}
+		restriction = restriction;
+	}
+
+	function toggleDay(day: number) {
+		if (readonly || !restriction.schedule) return;
+		const days = restriction.schedule.days ?? [];
+		const idx = days.indexOf(day);
+		if (idx >= 0) {
+			days.splice(idx, 1);
+		} else {
+			days.push(day);
+		}
+		if (days.length === 0) {
+			delete restriction.schedule.days;
+		} else {
+			restriction.schedule.days = [...days].sort((a, b) => a - b);
+		}
+		restriction = restriction;
+	}
+
+	$: domInput = (restriction.schedule?.days_of_month ?? []).join(', ');
+
+	function updateDom() {
+		if (readonly || !restriction.schedule) return;
+		const vals = domInput
+			.split(',')
+			.map((s) => parseInt(s.trim(), 10))
+			.filter((n) => !isNaN(n) && n !== 0 && n >= -31 && n <= 31);
+		const unique = [...new Set(vals)].sort((a, b) => a - b);
+		if (unique.length > 0) {
+			restriction.schedule.days_of_month = unique;
+		} else {
+			delete restriction.schedule.days_of_month;
+		}
+		restriction = restriction;
+	}
+
+	function updateWindowField(field: 'from' | 'to', val: string) {
+		if (readonly || !restriction.schedule) return;
+		if (val) {
+			restriction.schedule[field] = val;
+		} else {
+			delete restriction.schedule[field];
+		}
+		restriction = restriction;
+	}
+
+	function clearWindow() {
+		if (readonly || !restriction.schedule) return;
+		delete restriction.schedule.from;
+		delete restriction.schedule.to;
+		restriction = restriction;
+	}
+
+	function updateEvery() {
+		if (!restriction.schedule) return;
+		if (restriction.schedule.every !== undefined && restriction.schedule.every > 1) {
+			restriction.schedule.every = restriction.schedule.every;
+		} else {
+			delete restriction.schedule.every;
+			delete restriction.schedule.anchor;
+		}
+		restriction = restriction;
+	}
+
+	function scheduleSummary(s: Schedule): string {
+		const parts: string[] = [];
+		if (s.days && s.days.length > 0) parts.push(s.days.map((d) => WEEKDAY_LABELS[d] ?? d).join(', '));
+		if (s.days_of_month && s.days_of_month.length > 0) parts.push(`day-of-month: ${s.days_of_month.join(', ')}`);
+		if (s.from && s.to) parts.push(`${s.from} - ${s.to}`);
+		if (s.every) {
+			parts.push(`every ${s.every} days${s.anchor ? ` (anchor ${s.anchor})` : ''}`);
+		}
+		parts.push(s.timezone || 'UTC');
+		return parts.join(' · ') || 'any time';
+	}
 </script>
 
 <div class="restriction-clause card mb-3">
@@ -252,6 +390,155 @@
 						placeholder="Select expiry date/time"
 						on:change={(e) => updateExp(e.detail)}
 					/>
+				{/if}
+			</div>
+
+			<!-- Schedule -->
+			<div class="col-12">
+				<span class="form-label d-block">
+					<i class="fas fa-calendar-alt me-1"></i>
+					Schedule
+				</span>
+				{#if readonly}
+					<p class="form-control-plaintext">
+						{restriction.schedule ? scheduleSummary(restriction.schedule) : 'Not set'}
+					</p>
+				{:else}
+					<div class="form-check mb-2">
+						<input
+							class="form-check-input"
+							type="checkbox"
+							id="restriction-{index}-schedule-enabled"
+							checked={scheduleActive}
+							on:change={(e) => toggleSchedule(e.currentTarget.checked)}
+						/>
+						<label class="form-check-label" for="restriction-{index}-schedule-enabled">
+							Allow usage only on a recurring schedule
+						</label>
+					</div>
+					{#if restriction.schedule}
+						<div class="border rounded p-3 bg-body-tertiary">
+							<div class="row g-3">
+								<div class="col-md-6">
+									<label class="form-label small mb-1" for="restriction-{index}-schedule-tz">
+										Timezone
+									</label>
+									<select
+										class="form-select form-select-sm"
+										id="restriction-{index}-schedule-tz"
+										bind:value={restriction.schedule.timezone}
+									>
+										{#each timezoneGroups as group}
+											<optgroup label={group.label}>
+												{#each group.zones as tz}
+													<option value={tz}>{tz}</option>
+												{/each}
+											</optgroup>
+										{/each}
+									</select>
+								</div>
+
+								<div class="col-md-6">
+									<span class="form-label small mb-1 d-block">Weekdays</span>
+									<div class="d-flex flex-wrap gap-2">
+										{#each WEEKDAYS as day}
+											<label class="btn btn-sm border {restriction.schedule.days?.includes(day.value) ? 'btn-primary' : 'btn-outline-secondary'}"
+												class:pe-none={readonly}>
+												<input
+													class="btn-check"
+													type="checkbox"
+													value={day.value}
+													checked={restriction.schedule.days?.includes(day.value)}
+													on:change={() => toggleDay(day.value)}
+												/>
+												{day.label}
+											</label>
+										{/each}
+									</div>
+									<small class="text-muted">Leave empty for every day of the week.</small>
+								</div>
+
+								<div class="col-md-6">
+									<label class="form-label small mb-1" for="restriction-{index}-schedule-dom">
+										Days of month
+									</label>
+									<input
+										class="form-control form-control-sm"
+										id="restriction-{index}-schedule-dom"
+										placeholder="e.g. 1, 15, -1"
+										bind:value={domInput}
+										on:change={updateDom}
+									/>
+									<small class="text-muted">Comma-separated. Negative values count from the end of the month (-1 = last day).</small>
+								</div>
+
+								<div class="col-md-6">
+									<span class="form-label small mb-1 d-block">Time window</span>
+									<div class="d-flex align-items-center gap-2">
+										<DateTimePicker
+											id="restriction-{index}-schedule-from"
+											value={restriction.schedule.from ?? ''}
+											placeholder="Start"
+											noCalendar
+											dateFormat="H:i"
+											altFormat="H:i"
+											on:change={(e) => updateWindowField('from', e.detail)}
+										/>
+										<span>-</span>
+										<DateTimePicker
+											id="restriction-{index}-schedule-to"
+											value={restriction.schedule.to ?? ''}
+											placeholder="End"
+											noCalendar
+											dateFormat="H:i"
+											altFormat="H:i"
+											on:change={(e) => updateWindowField('to', e.detail)}
+										/>
+										{#if restriction.schedule.from || restriction.schedule.to}
+											<button
+												type="button"
+												class="btn btn-sm btn-outline-secondary"
+												on:click={clearWindow}
+												title="Clear window (allow the whole day)"
+											>
+												<i class="fas fa-times"></i>
+											</button>
+										{/if}
+									</div>
+									<small class="text-muted">Leave empty for the whole day. An end before the start describes a window wrapping around midnight.</small>
+								</div>
+
+								<div class="col-md-6">
+									<label class="form-label small mb-1" for="restriction-{index}-schedule-every">
+										Every N days
+									</label>
+									<input
+										class="form-control form-control-sm"
+										type="number"
+										id="restriction-{index}-schedule-every"
+										min="2"
+										placeholder="e.g. 2 for every other day"
+										bind:value={restriction.schedule.every}
+										on:change={updateEvery}
+									/>
+									<small class="text-muted">If set, usage is only allowed every N days.</small>
+								</div>
+
+								<div class="col-md-6">
+									<label class="form-label small mb-1" for="restriction-{index}-schedule-anchor">
+										Anchor date
+									</label>
+									<input
+										class="form-control form-control-sm"
+										type="date"
+										id="restriction-{index}-schedule-anchor"
+										bind:value={restriction.schedule.anchor}
+									/>
+									<small class="text-muted">Reference date for "every N days"; defaults to the creation date of the mytoken.</small>
+								</div>
+							</div>
+						</div>
+					{/if}
 				{/if}
 			</div>
 

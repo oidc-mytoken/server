@@ -325,6 +325,7 @@ func createMytokenEntry(
 		rot = &authFlowInfo.Rotation.Rotation
 	}
 	restr := authFlowInfo.Restrictions.Restrictions
+	authFlowInfo.Restrictions.ResolveDefaultAnchors(unixtime.Now())
 	restrictionsWhereOK := true
 	if enforcedRestrictionsTemplate != "" {
 		parser := profilerepo.NewDBProfileParser(rlog)

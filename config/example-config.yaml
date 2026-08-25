@@ -175,6 +175,7 @@ features:
   #    - geoip_disallow
   #    - usages_AT
   #    - usages_other
+  #    - schedule
 
   # Revocation for tokens issued by mytoken. Only disable this if you have good reasons for it.
   token_revocation:

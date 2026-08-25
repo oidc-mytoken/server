@@ -45,6 +45,16 @@ export interface CapabilityTemplate {
 }
 
 // Restriction types
+export interface Schedule {
+	timezone?: string; // IANA name, defaults to UTC
+	days?: number[]; // weekdays 1 (Mon) to 7 (Sun); 0 accepted as alias for 7
+	days_of_month?: number[]; // 1..31, negative values count from month end (-1 = last day)
+	from?: string; // HH:MM
+	to?: string; // HH:MM, may be before from for a window wrapping midnight
+	every?: number; // every N days starting from anchor
+	anchor?: string; // YYYY-MM-DD, defaults to the creation date of the mytoken
+}
+
 export interface Restriction {
 	nbf?: number;
 	exp?: number;
@@ -55,6 +65,7 @@ export interface Restriction {
 	geoip_disallow?: string[];
 	usages_AT?: number;
 	usages_other?: number;
+	schedule?: Schedule;
 }
 
 // UsedRestriction extends Restriction with usage tracking

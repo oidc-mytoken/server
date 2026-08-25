@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/api/v0"
+	"github.com/oidc-mytoken/utils/unixtime"
 
 	"github.com/oidc-mytoken/server/internal/db"
 	"github.com/oidc-mytoken/server/internal/db/dbrepo/encryptionkeyrepo"
@@ -222,6 +223,7 @@ func (s *service) createMytokenEntry(
 	if changed := req.Restrictions.EnforceMaxLifetime(parent.OIDCIssuer); changed && req.FailOnRestrictionsNotTighter {
 		return nil, model.BadRequestErrorResponse("requested restrictions do not respect maximum mytoken lifetime")
 	}
+	req.Restrictions.ResolveDefaultAnchors(unixtime.Now())
 	r, ok := restrictions.Tighten(rlog, parent.Restrictions, req.Restrictions.Restrictions)
 	if !ok && req.FailOnRestrictionsNotTighter {
 		return nil, model.BadRequestErrorResponse("requested restrictions are not subset of original restrictions")

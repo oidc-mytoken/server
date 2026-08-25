@@ -37,6 +37,7 @@ const ( // assert that these are in the same order as api.AllRestrictionKeys
 	RestrictionClaimGeoIPDisallow
 	RestrictionClaimUsagesAT
 	RestrictionClaimUsagesOther
+	RestrictionClaimSchedule
 	maxRestrictionClaim
 )
 

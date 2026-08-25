@@ -121,6 +121,7 @@ func NewMytoken(
 		Rotation:  rot,
 	}
 	r.EnforceMaxLifetime(oidcIss)
+	r.ResolveDefaultAnchors(now)
 	if len(r) > 0 {
 		mt.Restrictions = r
 		exp := r.GetExpires()
