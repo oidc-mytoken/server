@@ -8,13 +8,11 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"os"
 
 	"github.com/go-oidfed/lib/jwx"
 	"github.com/go-oidfed/lib/jwx/keymanagement/kms"
 	"github.com/go-oidfed/lib/jwx/keymanagement/public"
-	"github.com/golang-jwt/jwt"
 	"github.com/lestrrat-go/jwx/v4/jwa"
 	"github.com/pkg/errors"
 
@@ -118,7 +116,7 @@ const (
 type signingKeys map[KeyUsage]signingKeyMaterial
 
 type signingKeyMaterial struct {
-	SK   crypto.Signer
+	SK   jwx.SigningKey
 	PK   crypto.PublicKey
 	JWKS jwx.JWKS
 }
@@ -136,7 +134,7 @@ func init() {
 }
 
 // GetSigningKey returns the private key
-func GetSigningKey(usage KeyUsage) (sk crypto.Signer) {
+func GetSigningKey(usage KeyUsage) (sk jwx.SigningKey) {
 	k, ok := keys[usage]
 	if ok {
 		sk = k.SK
@@ -265,27 +263,16 @@ func loadKey(keyfile string, usage KeyUsage, alg jwa.SignatureAlgorithm) {
 	if err != nil {
 		panic(err)
 	}
-	var sk crypto.Signer
-	switch alg {
-	case jwa.RS256(), jwa.RS384(), jwa.RS512(), jwa.PS256(), jwa.PS384(), jwa.PS512():
-		sk, err = jwt.ParseRSAPrivateKeyFromPEM(keyFileContent)
-		if err != nil {
-			panic(err)
-		}
-	case jwa.ES256(), jwa.ES384(), jwa.ES512():
-		sk, err = jwt.ParseECPrivateKeyFromPEM(keyFileContent)
-		if err != nil {
-			panic(err)
-		}
-	default:
-		panic(fmt.Errorf("unknown signing alg"))
+	signer, err := jwx.ParseSignerFromPEM(keyFileContent, alg)
+	if err != nil {
+		panic(err)
 	}
 	keyData, found := keys[usage]
 	if !found {
 		keyData = signingKeyMaterial{}
 	}
-	keyData.SK = sk
-	keyData.PK = sk.Public()
+	keyData.SK = signer
+	keyData.PK = signer.Public()
 	keyData.JWKS, _ = jwx.KeyToJWKS(keyData.PK, alg)
 	keys[usage] = keyData
 }

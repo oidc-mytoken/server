@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/go-oidfed/lib/jwx"
 	"github.com/jmoiron/sqlx"
+	"github.com/lestrrat-go/jwx/v4/jwa"
+	jwsjwt "github.com/lestrrat-go/jwx/v4/jws"
 	"github.com/oidc-mytoken/utils/unixtime"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -148,22 +150,20 @@ func (mt *Mytoken) ExpiresIn() uint64 {
 
 // Valid checks if this Mytoken is valid
 func (mt *Mytoken) Valid() error {
-	standardClaims := jwt.StandardClaims{
-		Audience:  mt.Audience,
-		ExpiresAt: int64(mt.ExpiresAt),
-		Id:        mt.ID.String(),
-		IssuedAt:  int64(mt.IssuedAt),
-		Issuer:    mt.Issuer,
-		NotBefore: int64(mt.NotBefore),
-		Subject:   mt.Subject,
+	now := unixtime.Now()
+	if mt.ExpiresAt > 0 && now >= mt.ExpiresAt {
+		return errors.New("token is expired")
 	}
-	if err := errors.WithStack(standardClaims.Valid()); err != nil {
-		return err
+	if now < mt.IssuedAt {
+		return errors.New("token used before issued")
 	}
-	if ok := standardClaims.VerifyIssuer(config.Get().IssuerURL, true); !ok {
+	if now < mt.NotBefore {
+		return errors.New("token is not valid yet")
+	}
+	if mt.Issuer != config.Get().IssuerURL {
 		return errors.New("invalid issuer")
 	}
-	if ok := standardClaims.VerifyAudience(config.Get().IssuerURL, true); !ok {
+	if mt.Audience != config.Get().IssuerURL {
 		return errors.New("invalid Audience")
 	}
 	if ok := mt.verifyID(); !ok {
@@ -280,13 +280,24 @@ func (mt *Mytoken) ToJWT() (string, error) {
 	if mt.jwt != "" {
 		return mt.jwt, nil
 	}
-	var err error
-	j := jwt.NewWithClaims(
-		jwt.GetSigningMethod(config.Get().Signing.Mytoken.Alg), mt,
+	payload, err := json.Marshal(mt)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	signed, err := jwx.SignWithType(
+		payload, nil, "MT+JWT", mytokenSigningAlg(), jws.GetSigningKey(jws.KeyUsageMytokenSigning),
 	)
-	j.Header["typ"] = "MT+JWT"
-	mt.jwt, err = j.SignedString(jws.GetSigningKey(jws.KeyUsageMytokenSigning))
-	return mt.jwt, errors.WithStack(err)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	mt.jwt = string(signed)
+	return mt.jwt, nil
+}
+
+// mytokenSigningAlg returns the jwa.SignatureAlgorithm configured for mytoken signing
+func mytokenSigningAlg() jwa.SignatureAlgorithm {
+	alg, _ := jwa.LookupSignatureAlgorithm(config.Get().Signing.Mytoken.Alg)
+	return alg
 }
 
 // ParseJWT parses a token string into a Mytoken
@@ -300,23 +311,23 @@ func ParseJWTWithoutClaimsValidation(token string) (*Mytoken, error) {
 }
 
 func parseJWT(token string, skipCalimsValidation bool) (*Mytoken, error) {
-	parser := jwt.Parser{
-		SkipClaimsValidation: skipCalimsValidation,
-	}
-	tok, err := parser.ParseWithClaims(
-		token, &Mytoken{}, func(_ *jwt.Token) (interface{}, error) {
-			return jws.GetPublicKey(jws.KeyUsageMytokenSigning), nil
-		},
+	payload, err := jwsjwt.Verify(
+		[]byte(token), jwsjwt.WithKey(mytokenSigningAlg(), jws.GetPublicKey(jws.KeyUsageMytokenSigning)),
 	)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-
-	if mt, ok := tok.Claims.(*Mytoken); ok && tok.Valid {
-		mt.jwt = token
-		return mt, specialTokenHandling(mt)
+	var mt Mytoken
+	if err = json.Unmarshal(payload, &mt); err != nil {
+		return nil, errors.WithStack(err)
 	}
-	return nil, errors.New("token not valid")
+	if !skipCalimsValidation {
+		if err = mt.Valid(); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+	mt.jwt = token
+	return &mt, specialTokenHandling(&mt)
 }
 
 // DBMetadata return the mytokenrepohelper.MytokenDBMetadata for a Mytoken
