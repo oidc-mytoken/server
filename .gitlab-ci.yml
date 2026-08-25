@@ -9,6 +9,7 @@ include:
 variables:
   USE_GORELEASER: "true"
   UPSTREAM_PROJECT: oidc-mytoken/server
+  GOEXPERIMENT: jsonv2
 
 image: golang:1.26
 stages:
