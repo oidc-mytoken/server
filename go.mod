@@ -27,7 +27,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/redis/go-redis/v9 v9.22.0
 	github.com/sethvargo/go-limiter v1.2.0
-	github.com/sirupsen/logrus v1.9.4
+	github.com/sirupsen/logrus v1.10.1
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/valyala/fasthttp v1.73.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
