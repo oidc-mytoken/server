@@ -12,6 +12,58 @@
 <!-- ### Dependencies -->
 <!--  -->
 
+## mytoken 0.12.0
+
+### Features
+
+- Added option to cache access tokens (ATs). It can be configured per provider (and as a default for federated
+  providers)
+  that previously issued access tokens are returned on access token requests instead of requesting a new one from the
+  OP. Only access tokens that were issued for the same mytoken and the exact same scopes and audiences are reused.
+  - The reuse can be limited in different ways:
+    - `reuse_for_seconds`: reuse a cached AT while its age is below this value
+    - `reuse_percentage`: reuse a cached AT while its age is below this percentage of its lifetime
+    - `reuse_if_remaining_seconds`: reuse a cached AT while it still has at least this much lifetime remaining
+- Added schedule-based restrictions:
+  - Restrictions can now be limited to time windows and weekdays / days-of-month, support arbitrary recurrence and can be restricted to a certain timezone.
+
+### Enhancements
+
+- The SSH grant type now supports many more actions, including tokeninfo (introspect, history, subtokens, list),
+  revocation, tagging of mytokens, tag management, email management, notifications, and calendars.
+- Notifications now report the total number of subscribed tokens (direct and tag-based).
+- Tags can now be created with a custom color and name; added SQL procedures to update an existing tag's color and name.
+- OIDC federation improvements: the provider display name is used and additional information was added to the entity configuration.
+
+### Bugfixes
+
+- Fixed adding and removing tags to a mytoken when no `mom_id` was provided.
+- Fixed the frontend computing the wrong tag color; color input is now normalized by trimming a leading `#`.
+- Fixed notification token subscriptions not being handled correctly in edit mode.
+- Fixed handling of a missing access token in the OIDC refresh response.
+- Fixed the settings grant DB access not returning `OnlyTokenUpdateRes`.
+- Fixed panics in the SSH server crashing the whole server.
+
+### Dependencies
+
+- Bump go version from 1.25 to 1.26
+- Bump github.com/arran4/golang-ical from 0.3.5 to 0.3.6
+- Bump github.com/coreos/go-oidc/v3 from 3.18.0 to 3.21.0
+- Bump github.com/go-oidfed/lib from 0.10.4 to 0.11.2
+- Bump github.com/go-sql-driver/mysql from 1.10.0 to 1.10.1
+- Bump github.com/gofiber/fiber/v2 from 2.52.13 to 2.52.15
+- Bump github.com/lestrrat-go/jwx from 1.2.31 to 4.4.0 (replaced `github.com/golang-jwt/jwt`; moved from the `v3` to the `v4` module)
+- Bump github.com/oidc-mytoken/api and github.com/oidc-mytoken/utils
+- Bump github.com/pires/go-proxyproto from 0.12.0 to 0.15.0
+- Bump github.com/redis/go-redis/v9 from 9.19.0 to 9.22.0
+- Bump github.com/sethvargo/go-limiter from 1.1.0 to 1.2.0
+- Bump github.com/sirupsen/logrus from 1.9.4 to 1.10.2
+- Bump github.com/urfave/cli/v2 to 2.27.7
+- Bump github.com/valyala/fasthttp from 1.70.0 to 1.73.0
+- Bump golang.org/x/crypto from 0.50.0 to 0.56.0
+- Bump golang.org/x/mod from 0.35.0 to 0.40.0
+- Bump golang.org/x/net from 0.53.0 to 0.58.0
+
 ## mytoken 0.11.0
 
 ### Important Changes

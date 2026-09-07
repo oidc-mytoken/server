@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"slices"
 
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
@@ -80,10 +81,8 @@ func (a TokeninfoAction) MarshalJSON() ([]byte, error) {
 
 // AddToSliceIfNotFound adds the TokeninfoAction to a slice s if it is not already there
 func (a TokeninfoAction) AddToSliceIfNotFound(s *[]TokeninfoAction) {
-	for _, ss := range *s {
-		if ss == a {
-			return
-		}
+	if slices.Contains(*s, a) {
+		return
 	}
 	*s = append(*s, a)
 }

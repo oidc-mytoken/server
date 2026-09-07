@@ -15,6 +15,7 @@ type Provider interface {
 	Scopes() []string
 	Endpoints() *oauth2x.Endpoints
 	Audience() *AudienceConf
+	AccessTokenCache() *AccessTokenCacheConf
 	MaxMytokenLifetime() int64
 	AddClientAuthentication(r *resty.Request, endpoint string) *resty.Request
 	GetAuthorizationURL(

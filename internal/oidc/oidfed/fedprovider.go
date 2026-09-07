@@ -29,6 +29,9 @@ type OIDFedProvider struct {
 
 // Name implements the model.Provider interface
 func (p OIDFedProvider) Name() string {
+	if p.DisplayName != "" {
+		return p.DisplayName
+	}
 	if p.OrganizationName != "" {
 		return p.OrganizationName
 	}
@@ -65,6 +68,12 @@ func (p OIDFedProvider) Endpoints() *oauth2x.Endpoints {
 // Audience implements the model.Provider interface
 func (OIDFedProvider) Audience() *model.AudienceConf {
 	return defaultOIDFedAudienceConf
+}
+
+// AccessTokenCache implements the model.Provider interface; it returns the default configuration for federated
+// providers
+func (OIDFedProvider) AccessTokenCache() *model.AccessTokenCacheConf {
+	return config.Get().Features.Federation.AccessTokenCache
 }
 
 // MaxMytokenLifetime implements the model.Provider interface

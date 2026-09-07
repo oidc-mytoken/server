@@ -4,6 +4,7 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -158,12 +159,7 @@ func nextCors(c *fiber.Ctx) bool {
 			return false
 		}
 	}
-	for _, pre := range corsAllowedPaths {
-		if p == pre {
-			return false
-		}
-	}
-	return true
+	return !slices.Contains(corsAllowedPaths, p)
 }
 
 func addCorsMiddleware(s fiber.Router) {

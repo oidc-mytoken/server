@@ -146,6 +146,28 @@ func notificationInfoBaseWithClassToNotificationInfo(
 					if nie.Tags, err = GetNotificationTags(rlog, tx, n.NotificationID); err != nil {
 						return err
 					}
+					// Calculate total subscribed tokens (direct + tag-based)
+					if n.UserWide {
+						nie.TotalSubscribedTokens = -1 // -1 indicates "all" for user-wide notifications
+					} else {
+						// Get all MTs subscribed via tags
+						var tagSubscribedMTs []string
+						if err = tx.Select(
+							&tagSubscribedMTs, `CALL Notifications_GetTagSubscribedMTsForNotification(?)`,
+							n.NotificationID,
+						); err != nil {
+							return err
+						}
+						// Count unique tokens (direct + tag-based, avoiding duplicates)
+						tokenSet := make(map[string]bool)
+						for _, mt := range nie.SubscribedTokens {
+							tokenSet[mt] = true
+						}
+						for _, mt := range tagSubscribedMTs {
+							tokenSet[mt] = true
+						}
+						nie.TotalSubscribedTokens = len(tokenSet)
+					}
 				}
 				notificationMap[nie.NotificationID] = nie
 			}

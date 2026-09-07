@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	oidfed "github.com/go-oidfed/lib"
-	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/go-oidfed/lib/jwx"
+	"github.com/lestrrat-go/jwx/v4/jwa"
 	"github.com/oidc-mytoken/utils/context"
 	utils2 "github.com/oidc-mytoken/utils/utils"
 	"github.com/oidc-mytoken/utils/utils/fileutil"
@@ -49,22 +50,11 @@ var defaultConfig = Config{
 	},
 	Signing: signingConfs{
 		Mytoken: signingConf{
-			Alg:       jwa.ES512,
+			Alg:       "ES512",
 			RSAKeyLen: 2048,
 		},
 		OIDC: oidcSigningConf{
-			Algorithms: []string{
-				"ES512",
-				"ES384",
-				"ES256",
-				"EdDSA",
-				"PS512",
-				"PS384",
-				"PS256",
-				"RS512",
-				"RS384",
-				"RS256",
-			},
+			Algorithms:       jwx.DefaultAlgsStrings(),
 			DefaultAlgorithm: "ES512",
 			RSAKeyLen:        2048,
 			GenerateKeys:     true,
@@ -136,7 +126,7 @@ var defaultConfig = Config{
 			Enabled:                     false,
 			EntityConfigurationLifetime: 7 * 24 * 60 * 60,
 			Signing: signingConf{
-				Alg:       jwa.ES512,
+				Alg:       "ES512",
 				RSAKeyLen: 2048,
 			},
 			OPDiscovery: opDiscoveryConf{
@@ -463,9 +453,9 @@ type signingConfs struct {
 }
 
 type signingConf struct {
-	Alg       jwa.SignatureAlgorithm `yaml:"alg"`
-	KeyFile   string                 `yaml:"key_file"`
-	RSAKeyLen int                    `yaml:"rsa_key_len"`
+	Alg       string `yaml:"alg"`
+	KeyFile   string `yaml:"key_file"`
+	RSAKeyLen int    `yaml:"rsa_key_len"`
 }
 
 // oidcSigningConf holds configuration for OIDC signing with multiple algorithms
@@ -486,12 +476,16 @@ func (c *oidcSigningConf) validate() error {
 	}
 	supportedAlgs := jwa.SignatureAlgorithms()
 	for _, algStr := range c.Algorithms {
-		if !slices.Contains(supportedAlgs, jwa.SignatureAlgorithm(algStr)) {
+		if !slices.ContainsFunc(
+			supportedAlgs, func(alg jwa.SignatureAlgorithm) bool { return alg.String() == algStr },
+		) {
 			return errors.Errorf("unknown algorithm '%s' in signing.oidc.algs", algStr)
 		}
 	}
 	if c.DefaultAlgorithm != "" {
-		if !slices.Contains(supportedAlgs, jwa.SignatureAlgorithm(c.DefaultAlgorithm)) {
+		if !slices.ContainsFunc(
+			supportedAlgs, func(alg jwa.SignatureAlgorithm) bool { return alg.String() == c.DefaultAlgorithm },
+		) {
 			return errors.Errorf("unknown default algorithm '%s' in signing.oidc.default_alg", c.DefaultAlgorithm)
 		}
 		if !slices.Contains(c.Algorithms, c.DefaultAlgorithm) {
@@ -503,15 +497,16 @@ func (c *oidcSigningConf) validate() error {
 
 // ProviderConf holds information about a provider
 type ProviderConf struct {
-	Issuer               string                   `yaml:"issuer"`
-	ClientID             string                   `yaml:"client_id"`
-	ClientSecret         string                   `yaml:"client_secret"`
-	Scopes               []string                 `yaml:"scopes"`
-	MytokensMaxLifetime  int64                    `yaml:"mytokens_max_lifetime"`
-	EnforcedRestrictions EnforcedRestrictionsConf `yaml:"enforced_restrictions"`
-	Endpoints            *oauth2x.Endpoints       `yaml:"-"`
-	Name                 string                   `yaml:"name"`
-	Audience             *model.AudienceConf      `yaml:"audience"`
+	Issuer               string                      `yaml:"issuer"`
+	ClientID             string                      `yaml:"client_id"`
+	ClientSecret         string                      `yaml:"client_secret"`
+	Scopes               []string                    `yaml:"scopes"`
+	MytokensMaxLifetime  int64                       `yaml:"mytokens_max_lifetime"`
+	EnforcedRestrictions EnforcedRestrictionsConf    `yaml:"enforced_restrictions"`
+	Endpoints            *oauth2x.Endpoints          `yaml:"-"`
+	Name                 string                      `yaml:"name"`
+	Audience             *model.AudienceConf         `yaml:"audience"`
+	AccessTokenCache     *model.AccessTokenCacheConf `yaml:"access_token_caching"`
 }
 
 // EnforcedRestrictionsConf is a type for holding configuration for enforced restrictions
@@ -599,13 +594,14 @@ func (so *ServiceOperatorConf) validate() error {
 }
 
 type federationConf struct {
-	Enabled                     bool                   `yaml:"enabled"`
-	TrustAnchors                oidfed.TrustAnchors    `yaml:"trust_anchors"`
-	AuthorityHints              []string               `yaml:"authority_hints"`
-	EntityConfigurationLifetime int64                  `yaml:"entity_configuration_lifetime"`
-	Signing                     signingConf            `yaml:"signing"`
-	Entity                      *oidfed.FederationLeaf `yaml:"-"`
-	OPDiscovery                 opDiscoveryConf        `yaml:"op_discovery"`
+	Enabled                     bool                        `yaml:"enabled"`
+	TrustAnchors                oidfed.TrustAnchors         `yaml:"trust_anchors"`
+	AuthorityHints              []string                    `yaml:"authority_hints"`
+	EntityConfigurationLifetime int64                       `yaml:"entity_configuration_lifetime"`
+	Signing                     signingConf                 `yaml:"signing"`
+	Entity                      *oidfed.FederationLeaf      `yaml:"-"`
+	OPDiscovery                 opDiscoveryConf             `yaml:"op_discovery"`
+	AccessTokenCache            *model.AccessTokenCacheConf `yaml:"access_token_caching"`
 }
 
 type opDiscoveryConf struct {
@@ -636,8 +632,14 @@ func (f *federationConf) validate() (err error) {
 	if f.Signing.Alg == "" {
 		return errors.New("federation enabled, but no signing alg specified")
 	}
+	if _, ok := jwa.LookupSignatureAlgorithm(f.Signing.Alg); !ok {
+		return errors.Errorf("federation enabled, but unknown signing alg '%s' specified", f.Signing.Alg)
+	}
 	if f.EntityConfigurationLifetime == 0 {
 		f.EntityConfigurationLifetime = 7 * 24 * 60 * 60
+	}
+	if err := f.AccessTokenCache.Validate(); err != nil {
+		return errors.Wrap(err, "invalid access_token_caching in federation config")
 	}
 
 	// Validate OP discovery config
@@ -772,6 +774,9 @@ func validateProvider(p *ProviderConf, i int) error {
 	} else if p.Audience.RequestParameter == "" {
 		p.Audience.RequestParameter = model.AudienceParameterResource
 	}
+	if err := p.AccessTokenCache.Validate(); err != nil {
+		return errors.Wrapf(err, "invalid config for provider.issuer '%s' (Index %d)", p.Issuer, i)
+	}
 	return nil
 }
 
@@ -795,6 +800,9 @@ func validateSigningConfig() error {
 	}
 	if conf.Signing.Mytoken.Alg == "" {
 		return errors.New("invalid config: token signing alg not set")
+	}
+	if _, ok := jwa.LookupSignatureAlgorithm(conf.Signing.Mytoken.Alg); !ok {
+		return errors.Errorf("invalid config: unknown token signing alg '%s'", conf.Signing.Mytoken.Alg)
 	}
 	return nil
 }

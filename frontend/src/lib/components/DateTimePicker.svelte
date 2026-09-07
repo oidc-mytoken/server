@@ -9,6 +9,7 @@
 	export let placeholder: string = 'Select date and time';
 	export let disabled: boolean = false;
 	export let enableTime: boolean = true;
+	export let noCalendar: boolean = false;
 	export let dateFormat: string = 'Y-m-d H:i';
 	export let altFormat: string = 'F j, Y H:i'; // Human-readable format
 	export let minDate: string | Date | undefined = undefined;
@@ -22,6 +23,7 @@
 	onMount(() => {
 		fp = flatpickr(inputElement, {
 			enableTime,
+			noCalendar,
 			dateFormat,
 			altInput: true,
 			altFormat,

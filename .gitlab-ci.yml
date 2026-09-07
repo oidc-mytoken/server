@@ -1,14 +1,18 @@
 include:
-  - 'https://codebase.helmholtz.cloud/m-team/tools/ci-voodoo/-/raw/master/ci-include/github-status-sync.yml'
-  - "https://codebase.helmholtz.cloud/m-team/tools/ci-voodoo/raw/master/ci-include/pipeline-jobs-publish-to-repo.yml"
-
+  - project: 'm-team/tools/ci-voodoo'
+    ref: 'master'
+    file: 'ci-include/pipeline-jobs-publish-to-repo.yml'
+  - project: 'm-team/tools/ci-voodoo'
+    ref: 'master'
+    file: 'ci-include/github-status-sync.yml'
 
 variables:
   USE_GORELEASER: "true"
   UPSTREAM_PROJECT: oidc-mytoken/server
+  GOEXPERIMENT: jsonv2
   CI_DEFAULT_BRANCH: "master"
 
-image: golang:1.25
+image: golang:1.26
 stages:
   - build_frontend
   - build
@@ -102,6 +106,7 @@ package:
 #      - tags
 #      - prerel
   variables:
+    GOEXPERIMENT: ""
     GIT_STRATEGY: clone
     GIT_DEPTH: 0
     REPO_HOST: repo.data.kit.edu

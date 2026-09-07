@@ -48,13 +48,13 @@ type Restriction struct {
 // NewRestrictionsFromAPI turn api.Restrictions into Restrictions
 func NewRestrictionsFromAPI(apis api.Restrictions) (rs Restrictions) {
 	for _, a := range apis {
-		rs = append(
-			rs, &Restriction{
-				NotBefore:   unixtime.UnixTime(a.NotBefore),
-				ExpiresAt:   unixtime.UnixTime(a.ExpiresAt),
-				Restriction: *a,
-			},
-		)
+		rr := &Restriction{
+			NotBefore:   unixtime.UnixTime(a.NotBefore),
+			ExpiresAt:   unixtime.UnixTime(a.ExpiresAt),
+			Restriction: *a,
+		}
+		normalizeSchedule(rr.Schedule)
+		rs = append(rs, rr)
 	}
 	return
 }
@@ -88,6 +88,9 @@ func (r *Restrictions) ClearUnsupportedKeys() {
 		}
 		if disabledRestrictionKeys().Has(model.RestrictionClaimUsagesOther) {
 			rr.UsagesOther = nil
+		}
+		if disabledRestrictionKeys().Has(model.RestrictionClaimSchedule) {
+			rr.Schedule = nil
 		}
 		// (*r)[i] = rr
 	}
@@ -149,7 +152,13 @@ func (r *Restriction) verifyExp(now unixtime.UnixTime) bool {
 func (r *Restriction) verifyTimeBased(rlog log.Ext1FieldLogger) bool {
 	rlog.Trace("Verifying time based")
 	now := unixtime.Now()
-	return r.verifyNbf(now) && r.verifyExp(now)
+	if !r.verifyNbf(now) || !r.verifyExp(now) {
+		return false
+	}
+	if disabledRestrictionKeys().Has(model.RestrictionClaimSchedule) {
+		return true
+	}
+	return verifySchedule(r.Schedule, now.Time())
 }
 func (r *Restriction) verifyLocationBased(rlog log.Ext1FieldLogger, ip string) bool {
 	return r.verifyHosts(rlog, ip) && r.verifyGeoIP(rlog, ip)
@@ -219,14 +228,14 @@ func (r *Restriction) verifyATUsageCounts(rlog log.Ext1FieldLogger, tx *sqlx.Tx,
 	if usages == nil {
 		//  was not used before
 		rlog.WithFields(
-			map[string]interface{}{
+			map[string]any{
 				"myID": myID.String(),
 			},
 		).Debug("Did not found restriction in database; it was not used before")
 		return *r.UsagesAT > 0
 	}
 	rlog.WithFields(
-		map[string]interface{}{
+		map[string]any{
 			"myID":       myID.String(),
 			"used":       *usages,
 			"usageLimit": *r.UsagesAT,
@@ -257,14 +266,14 @@ func (r *Restriction) verifyOtherUsageCounts(rlog log.Ext1FieldLogger, tx *sqlx.
 	if usages == nil {
 		// was not used before
 		rlog.WithFields(
-			map[string]interface{}{
+			map[string]any{
 				"id": id.String(),
 			},
 		).Debug("Did not found restriction in database; it was not used before")
 		return *r.UsagesOther > 0
 	}
 	rlog.WithFields(
-		map[string]interface{}{
+		map[string]any{
 			"id":         id.String(),
 			"used":       *usages,
 			"usageLimit": *r.UsagesAT,
@@ -376,7 +385,7 @@ func (r Restrictions) WithAudiences(rlog log.Ext1FieldLogger, audiences []string
 }
 
 // Scan implements the sql.Scanner interface.
-func (r *Restrictions) Scan(src interface{}) error {
+func (r *Restrictions) Scan(src any) error {
 	if src == nil {
 		return nil
 	}
@@ -582,6 +591,12 @@ func (r *Restriction) isTighterThan(b *Restriction) bool {
 		return false
 	}
 	if iutils.CompareNullableIntsWithNilAsInfinity(r.UsagesOther, b.UsagesOther) > 0 {
+		return false
+	}
+	if r.Schedule == nil && b.Schedule != nil {
+		return false
+	}
+	if r.Schedule != nil && b.Schedule != nil && !scheduleSubset(r.Schedule, b.Schedule) {
 		return false
 	}
 	return true

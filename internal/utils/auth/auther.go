@@ -34,10 +34,10 @@ func RequireGrantType(rlog log.Ext1FieldLogger, want, got model.GrantType) *mode
 	return nil
 }
 
-// requireMytoken checks the passed universalmytoken.UniversalMytoken and if needed other request parameters like
+// RequireMytoken checks the passed universalmytoken.UniversalMytoken and if needed other request parameters like
 // authorization header and cookie value for a mytoken string. The mytoken string is parsed and if not valid an error
-// model.Response is returned.
-func requireMytoken(rlog log.Ext1FieldLogger, reqToken *universalmytoken.UniversalMytoken, ctx *fiber.Ctx) (
+// model.Response is returned. Unlike RequireValidMytoken, this does NOT check that the token is not revoked.
+func RequireMytoken(rlog log.Ext1FieldLogger, reqToken *universalmytoken.UniversalMytoken, ctx *fiber.Ctx) (
 	*mytoken.Mytoken, *model.Response,
 ) {
 	if reqToken.JWT == "" {
@@ -100,7 +100,7 @@ func RequireValidMytoken(
 ) (
 	*mytoken.Mytoken, *model.Response,
 ) {
-	mt, errRes := requireMytoken(rlog, reqToken, ctx)
+	mt, errRes := RequireMytoken(rlog, reqToken, ctx)
 	if errRes != nil {
 		return nil, errRes
 	}
@@ -309,7 +309,7 @@ func RequireMytokenIsParentOrCapability(
 }
 
 func ValidateCapabilityWithMomMode(
-	rlog log.Ext1FieldLogger, capabilityIfParent,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, capabilityIfParent,
 	capabilityIfNotParent api.Capability, mt *mytoken.Mytoken,
 	momID mtid.MOMID,
 	clientMetadata *api.ClientMetaData,
@@ -319,11 +319,11 @@ func ValidateCapabilityWithMomMode(
 	if momMode {
 		id = momID.MTID
 		if errRes := RequireMytokenIsParentOrCapability(
-			rlog, nil, capabilityIfParent, capabilityIfNotParent, mt, id, clientMetadata,
+			rlog, tx, capabilityIfParent, capabilityIfNotParent, mt, id, clientMetadata,
 		); errRes != nil {
 			return id, momMode, errRes
 		}
-		if errRes := RequireMytokensForSameUser(rlog, nil, id, mt.ID); errRes != nil {
+		if errRes := RequireMytokensForSameUser(rlog, tx, id, mt.ID); errRes != nil {
 			return id, momMode, errRes
 		}
 	}

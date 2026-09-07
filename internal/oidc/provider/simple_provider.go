@@ -53,6 +53,11 @@ func (p SimpleProvider) Audience() *model.AudienceConf {
 	return p.ProviderConf.Audience
 }
 
+// AccessTokenCache implements the Provider interface
+func (p SimpleProvider) AccessTokenCache() *model.AccessTokenCacheConf {
+	return p.ProviderConf.AccessTokenCache
+}
+
 // MaxMytokenLifetime implements the Provider interface
 func (p SimpleProvider) MaxMytokenLifetime() int64 {
 	return p.MytokensMaxLifetime

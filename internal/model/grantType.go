@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"slices"
 
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
@@ -95,10 +96,8 @@ func (g GrantType) MarshalJSON() ([]byte, error) {
 
 // AddToSliceIfNotFound adds the GrantType to a slice s if it is not already there
 func (g GrantType) AddToSliceIfNotFound(s *[]GrantType) {
-	for _, ss := range *s {
-		if ss == g {
-			return
-		}
+	if slices.Contains(*s, g) {
+		return
 	}
 	*s = append(*s, g)
 }

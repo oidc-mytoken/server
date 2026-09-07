@@ -74,7 +74,7 @@ func handleEditGrant(
 			if err := dbCallBack(rlog, tx, mt.ID, req.GrantType); err != nil {
 				return nil, model.ErrorToInternalServerErrorResponse(err)
 			}
-			return nil, nil
+			return &my.OnlyTokenUpdateRes{}, nil
 		}, false,
 	)
 }

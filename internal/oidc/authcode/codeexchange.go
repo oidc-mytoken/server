@@ -220,7 +220,7 @@ func storeTokenInDatabase(
 				return err
 			}
 			if err = storeAccessToken(
-				rlog, tx, oidcTokenRes.AccessToken, networkData, ste, authInfo.Restrictions.GetScopes(),
+				rlog, tx, oidcTokenRes, networkData, ste, authInfo.Restrictions.GetScopes(),
 				authInfo.Restrictions.GetAudiences(),
 			); err != nil {
 				return err
@@ -244,16 +244,18 @@ func storeTokenInDatabase(
 }
 
 func storeAccessToken(
-	rlog log.Ext1FieldLogger, tx *sqlx.Tx, accessToken string, networkData api.ClientMetaData,
-	ste *mytokenrepo.MytokenEntry, scopes []string, audiences []string,
+	rlog log.Ext1FieldLogger, tx *sqlx.Tx, oidcTokenRes *oidcreqres.OIDCTokenResponse,
+	networkData api.ClientMetaData, ste *mytokenrepo.MytokenEntry, scopes []string, audiences []string,
 ) error {
 	at := accesstokenrepo.AccessToken{
-		Token:     accessToken,
+		Token:     oidcTokenRes.AccessToken,
 		IP:        networkData.IP,
 		Comment:   "Initial Access Token from authorization code flow",
 		Mytoken:   ste.Token,
 		Scopes:    scopes,
 		Audiences: audiences,
+		ExpiresAt: oidcTokenRes.AccessTokenExpiresAt(rlog),
+		TokenType: oidcTokenRes.TokenType,
 	}
 	return at.Store(rlog, tx)
 }
@@ -323,6 +325,7 @@ func createMytokenEntry(
 		rot = &authFlowInfo.Rotation.Rotation
 	}
 	restr := authFlowInfo.Restrictions.Restrictions
+	authFlowInfo.Restrictions.ResolveDefaultAnchors(unixtime.Now())
 	restrictionsWhereOK := true
 	if enforcedRestrictionsTemplate != "" {
 		parser := profilerepo.NewDBProfileParser(rlog)

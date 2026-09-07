@@ -49,6 +49,13 @@ func DoFlowAndUpdate(
 	if !ok {
 		return nil, nil, errors.New("could not unmarshal oidc response")
 	}
+	if res.AccessToken == "" {
+		return nil, &oidcreqres.OIDCErrorResponse{
+			Error:            "no_access_token",
+			ErrorDescription: "OP did not return a valid access token",
+			Status:           httpRes.RawResponse.StatusCode,
+		}, nil
+	}
 	if res.RefreshToken != "" && res.RefreshToken != rt && updateFnc != nil {
 		if err = updateFnc(rlog, tx, tokenID, res.RefreshToken, mytoken); err != nil {
 			return res, nil, err

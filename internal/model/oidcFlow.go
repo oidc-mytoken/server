@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"slices"
 
 	"github.com/oidc-mytoken/api/v0"
 	"github.com/pkg/errors"
@@ -84,10 +85,5 @@ func (f OIDCFlow) AddToSliceIfNotFound(s *[]OIDCFlow) {
 
 // OIDCFlowIsInSlice checks if a OIDCFlow is present in a slice of OIDCFlows
 func OIDCFlowIsInSlice(f OIDCFlow, s []OIDCFlow) bool {
-	for _, ss := range s {
-		if ss == f {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(s, f)
 }

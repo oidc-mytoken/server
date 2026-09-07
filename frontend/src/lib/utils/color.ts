@@ -39,8 +39,9 @@ export function generateTagColor(tagName: string): string {
         return '#6c757d'; // Default gray for empty names
     }
     const hash = crc32(tagName.trim());
-    // Convert to hex, take last 6 chars (in case of overflow), pad with zeros
-    const hex = (hash & 0xFFFFFF).toString(16).padStart(6, '0');
+    // Convert to hex, take first 6 chars (upper 3 bytes) to match MySQL's LPAD(HEX(CRC32()), 6, '0')
+    // MySQL returns 8 hex digits but LPAD only pads, doesn't truncate, so first 6 chars are used
+    const hex = (hash >>> 8).toString(16).padStart(6, '0').slice(0, 6);
     return `#${hex}`;
 }
 

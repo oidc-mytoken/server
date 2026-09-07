@@ -298,6 +298,7 @@
 			if (r.geoip_disallow) adjusted.geoip_disallow = [...r.geoip_disallow];
 			if (r.usages_AT !== undefined) adjusted.usages_AT = r.usages_AT;
 			if (r.usages_other !== undefined) adjusted.usages_other = r.usages_other;
+			if (r.schedule) adjusted.schedule = JSON.parse(JSON.stringify(r.schedule));
 			return adjusted;
 		});
 		
@@ -402,7 +403,8 @@
 			geoip_allow: ur.geoip_allow,
 			geoip_disallow: ur.geoip_disallow,
 			usages_AT: ur.usages_AT,
-			usages_other: ur.usages_other
+			usages_other: ur.usages_other,
+			schedule: ur.schedule ? JSON.parse(JSON.stringify(ur.schedule)) : undefined
 		}));
 	}
 

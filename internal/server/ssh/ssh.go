@@ -12,6 +12,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/oidc-mytoken/server/internal/model"
+	mytoken "github.com/oidc-mytoken/server/internal/mytoken/pkg"
+	"github.com/oidc-mytoken/server/internal/utils/logger"
 )
 
 func decodeData(data, dataType string) ([]byte, error) {
@@ -38,6 +40,12 @@ func decodeData(data, dataType string) ([]byte, error) {
 }
 
 func handleSSHSession(s ssh.Session) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.WithField("panic", r).Error("Panic in SSH session handler")
+			_ = writeError(s, errors.New("Internal server error"))
+		}
+	}()
 	err := _handleSSHSession(s)
 	if err != nil {
 		if err = writeError(s, err); err != nil {
@@ -51,7 +59,7 @@ func writeString(s ssh.Session, str string) error {
 	return err
 }
 
-func writeJSON(s ssh.Session, o interface{}) error {
+func writeJSON(s ssh.Session, o any) error {
 	data, err := json.Marshal(o)
 	if err != nil {
 		return err
@@ -95,8 +103,78 @@ func _handleSSHSession(s ssh.Session) (err error) {
 		return handleSubtokens(s)
 	case api.SSHRequestTokenInfoListMytokens:
 		return handleListMytokens(s)
+	case api.SSHRequestTokenInfoNotifications:
+		return handleTokenInfoNotifications(req, s)
+	case api.SSHRequestRevoke:
+		return handleSSHRevoke(req, s)
+	case api.SSHRequestAddTag:
+		return handleSSHAddTag(req, s)
+	case api.SSHRequestRemoveTag:
+		return handleSSHRemoveTag(req, s)
+	case api.SSHRequestEmailGet:
+		return handleSSHEmailGet(s)
+	case api.SSHRequestEmailSet:
+		return handleSSHEmailSet(req, s)
+	case api.SSHRequestTagsList:
+		return handleSSHTagsList(s)
+	case api.SSHRequestTagCreate:
+		return handleSSHTagCreate(req, s)
+	case api.SSHRequestTagUpdate:
+		return handleSSHTagUpdate(req, s)
+	case api.SSHRequestTagDelete:
+		return handleSSHTagDelete(req, s)
+	case api.SSHRequestNotifications:
+		return handleSSHNotificationsList(s)
+	case api.SSHRequestNotificationCreate:
+		return handleSSHNotificationCreate(req, s)
+	case api.SSHRequestNotificationAddToken:
+		return handleSSHNotificationAddToken(req, s)
+	case api.SSHRequestNotificationRemoveToken:
+		return handleSSHNotificationRemoveToken(req, s)
+	case api.SSHRequestCalendars:
+		return handleSSHCalendarsList(s)
+	case api.SSHRequestCalendarCreate:
+		return handleSSHCalendarCreate(req, s)
+	case api.SSHRequestCalendarGet:
+		return handleSSHCalendarGet(req, s)
+	case api.SSHRequestCalendarUpdate:
+		return handleSSHCalendarUpdate(req, s)
+	case api.SSHRequestCalendarDelete:
+		return handleSSHCalendarDelete(req, s)
+	case api.SSHRequestCalendarAddMytoken:
+		return handleSSHCalendarAddMytoken(req, s)
+	case api.SSHRequestCalendarAddTag:
+		return handleSSHCalendarAddTag(req, s)
+	case api.SSHRequestCalendarRemoveTag:
+		return handleSSHCalendarRemoveTag(req, s)
+	case api.SSHRequestCalendarRemoveMytoken:
+		return handleSSHCalendarRemoveMytoken(req, s)
+	case api.SSHRequestNotificationUpdate:
+		return handleSSHNotificationUpdate(req, s)
+	case api.SSHRequestNotificationDelete:
+		return handleSSHNotificationDelete(req, s)
 	default:
 		return errors.New(fmt.Sprintf("Unknown request\n%s", helpError))
+	}
+}
+
+// sshSessionCtx holds the common context extracted from an SSH session
+type sshSessionCtx struct {
+	mt             *mytoken.Mytoken
+	clientMetaData *api.ClientMetaData
+	rlog           log.Ext1FieldLogger
+}
+
+// newSSHSessionCtx extracts common context from an SSH session
+func newSSHSessionCtx(s ssh.Session) sshSessionCtx {
+	ctx := s.Context()
+	return sshSessionCtx{
+		mt: ctx.Value("mytoken").(*mytoken.Mytoken),
+		clientMetaData: &api.ClientMetaData{
+			IP:        ctx.Value("ip").(string),
+			UserAgent: ctx.Value("user_agent").(string),
+		},
+		rlog: logger.GetSSHRequestLogger(ctx.Value("session").(string)),
 	}
 }
 

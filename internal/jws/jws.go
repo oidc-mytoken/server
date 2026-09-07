@@ -8,15 +8,12 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"os"
 
 	"github.com/go-oidfed/lib/jwx"
 	"github.com/go-oidfed/lib/jwx/keymanagement/kms"
 	"github.com/go-oidfed/lib/jwx/keymanagement/public"
-	"github.com/golang-jwt/jwt"
-	"github.com/lestrrat-go/jwx/jwa"
-	jwav3 "github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v4/jwa"
 	"github.com/pkg/errors"
 
 	"github.com/oidc-mytoken/server/internal/config"
@@ -25,15 +22,22 @@ import (
 // GenerateMytokenSigningKeyPair generates a cryptographic key pair for mytoken signing with the algorithm specified in
 // the mytoken config.
 func GenerateMytokenSigningKeyPair() (sk crypto.Signer, pk crypto.PublicKey, err error) {
-	return generateKeyPair(config.Get().Signing.Mytoken.Alg, config.Get().Signing.Mytoken.RSAKeyLen)
+	return generateKeyPair(algFromConfig(config.Get().Signing.Mytoken.Alg), config.Get().Signing.Mytoken.RSAKeyLen)
 }
 
 // GenerateFederationSigningKeyPair generates a cryptographic key pair for federation signing with the algorithm
 // specified in the config.
 func GenerateFederationSigningKeyPair() (sk crypto.Signer, pk crypto.PublicKey, err error) {
 	return generateKeyPair(
-		config.Get().Features.Federation.Signing.Alg, config.Get().Features.Federation.Signing.RSAKeyLen,
+		algFromConfig(config.Get().Features.Federation.Signing.Alg),
+		config.Get().Features.Federation.Signing.RSAKeyLen,
 	)
+}
+
+// algFromConfig converts a signing algorithm string from the config to a jwa.SignatureAlgorithm.
+func algFromConfig(s string) jwa.SignatureAlgorithm {
+	alg, _ := jwa.LookupSignatureAlgorithm(s)
+	return alg
 }
 
 // generateKeyPair generates a cryptographic key pair with the passed properties
@@ -42,16 +46,16 @@ func generateKeyPair(alg jwa.SignatureAlgorithm, rsaKeyLen int) (
 	err error,
 ) {
 	switch alg {
-	case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
+	case jwa.RS256(), jwa.RS384(), jwa.RS512(), jwa.PS256(), jwa.PS384(), jwa.PS512():
 		if rsaKeyLen <= 0 {
 			return nil, nil, errors.Errorf("%s specified, but no valid RSA key len", alg)
 		}
 		sk, err = rsa.GenerateKey(rand.Reader, rsaKeyLen)
-	case jwa.ES256:
+	case jwa.ES256():
 		sk, err = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	case jwa.ES384:
+	case jwa.ES384():
 		sk, err = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
-	case jwa.ES512:
+	case jwa.ES512():
 		sk, err = ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	default:
 		err = errors.Errorf("unknown signing algorithm '%s'", alg)
@@ -112,7 +116,7 @@ const (
 type signingKeys map[KeyUsage]signingKeyMaterial
 
 type signingKeyMaterial struct {
-	SK   crypto.Signer
+	SK   jwx.SigningKey
 	PK   crypto.PublicKey
 	JWKS jwx.JWKS
 }
@@ -130,7 +134,7 @@ func init() {
 }
 
 // GetSigningKey returns the private key
-func GetSigningKey(usage KeyUsage) (sk crypto.Signer) {
+func GetSigningKey(usage KeyUsage) (sk jwx.SigningKey) {
 	k, ok := keys[usage]
 	if ok {
 		sk = k.SK
@@ -185,16 +189,19 @@ func GetVersatileSigner(usage KeyUsage) jwx.VersatileSigner {
 	var alg jwa.SignatureAlgorithm
 	switch usage {
 	case KeyUsageMytokenSigning:
-		alg = config.Get().Signing.Mytoken.Alg
+		alg = algFromConfig(config.Get().Signing.Mytoken.Alg)
 	case KeyUsageFederation:
-		alg = config.Get().Features.Federation.Signing.Alg
+		alg = algFromConfig(config.Get().Features.Federation.Signing.Alg)
 	}
-	return jwx.NewSingleKeyVersatileSigner(k.SK, jwaToV3(alg))
+	return jwx.NewSingleKeyVersatileSigner(k.SK, alg)
 }
 
 // LoadMytokenSigningKey loads the private and public key for signing mytokens
 func LoadMytokenSigningKey() {
-	loadKey(config.Get().Signing.Mytoken.KeyFile, KeyUsageMytokenSigning, config.Get().Signing.Mytoken.Alg)
+	loadKey(
+		config.Get().Signing.Mytoken.KeyFile, KeyUsageMytokenSigning,
+		algFromConfig(config.Get().Signing.Mytoken.Alg),
+	)
 }
 
 // LoadOIDCSigningKey loads the private and public key(s) for signing operations within OIDC communication
@@ -202,30 +209,21 @@ func LoadOIDCSigningKey() error {
 	conf := config.Get().Signing.OIDC
 
 	// Parse algorithms
-	var algs []jwav3.SignatureAlgorithm
+	var algs []jwa.SignatureAlgorithm
 	for _, algStr := range conf.Algorithms {
-		alg, _ := jwav3.LookupSignatureAlgorithm(algStr)
+		alg, _ := jwa.LookupSignatureAlgorithm(algStr)
 		algs = append(algs, alg)
 	}
 
 	// Default algorithm
-	defaultAlg, _ := jwav3.LookupSignatureAlgorithm(conf.DefaultAlgorithm)
+	defaultAlg, _ := jwa.LookupSignatureAlgorithm(conf.DefaultAlgorithm)
 	if defaultAlg.String() == "" && len(algs) > 0 {
 		defaultAlg = algs[0]
 	}
 
-	// Create public key storage
-	oidcPKS = &public.FilesystemPublicKeyStorage{
-		Dir:    conf.KeyDir,
-		TypeID: "oidc",
-	}
-	if err := oidcPKS.Load(); err != nil {
-		return errors.Wrap(err, "failed to load OIDC public key storage")
-	}
-
 	// Create and load KMS
-	kmsInst := &kms.FilesystemKMS{
-		FilesystemKMSConfig: kms.FilesystemKMSConfig{
+	kmsInst, err := kms.NewFilesystemKMSAndPublicKeyStorage(
+		kms.FilesystemKMSConfig{
 			KMSConfig: kms.KMSConfig{
 				GenerateKeys: conf.GenerateKeys,
 				Algs:         algs,
@@ -235,13 +233,19 @@ func LoadOIDCSigningKey() error {
 			Dir:    conf.KeyDir,
 			TypeID: "oidc",
 		},
-		PKs: oidcPKS,
+	)
+	if err != nil {
+		return errors.Wrap(err, "failed to create OIDC KMS")
 	}
-
-	if err := kmsInst.Load(); err != nil {
+	if err = kmsInst.Load(); err != nil {
 		return errors.Wrap(err, "failed to load OIDC signing keys")
 	}
 	oidcKMS = kmsInst
+	if fsKMS, ok := kmsInst.(*kms.FilesystemKMS); ok {
+		oidcPKS = fsKMS.PKs
+	} else {
+		return errors.New("failed to obtain OIDC public key storage from KMS")
+	}
 	return nil
 }
 
@@ -249,7 +253,7 @@ func LoadOIDCSigningKey() error {
 func LoadFederationKey() {
 	loadKey(
 		config.Get().Features.Federation.Signing.KeyFile, KeyUsageFederation,
-		config.Get().Features.Federation.Signing.Alg,
+		algFromConfig(config.Get().Features.Federation.Signing.Alg),
 	)
 }
 
@@ -259,33 +263,16 @@ func loadKey(keyfile string, usage KeyUsage, alg jwa.SignatureAlgorithm) {
 	if err != nil {
 		panic(err)
 	}
-	var sk crypto.Signer
-	switch alg {
-	case jwa.RS256, jwa.RS384, jwa.RS512, jwa.PS256, jwa.PS384, jwa.PS512:
-		sk, err = jwt.ParseRSAPrivateKeyFromPEM(keyFileContent)
-		if err != nil {
-			panic(err)
-		}
-	case jwa.ES256, jwa.ES384, jwa.ES512:
-		sk, err = jwt.ParseECPrivateKeyFromPEM(keyFileContent)
-		if err != nil {
-			panic(err)
-		}
-	default:
-		panic(fmt.Errorf("unknown signing alg"))
+	signer, err := jwx.ParseSignerFromPEM(keyFileContent, alg)
+	if err != nil {
+		panic(err)
 	}
 	keyData, found := keys[usage]
 	if !found {
 		keyData = signingKeyMaterial{}
 	}
-	keyData.SK = sk
-	keyData.PK = sk.Public()
-	keyData.JWKS, _ = jwx.KeyToJWKS(keyData.PK, jwaToV3(alg))
+	keyData.SK = signer
+	keyData.PK = signer.Public()
+	keyData.JWKS, _ = jwx.KeyToJWKS(keyData.PK, alg)
 	keys[usage] = keyData
-}
-
-// jwaToV3 converts a jwa.SignatureAlgorithm (v1) to jwav3.SignatureAlgorithm (v3)
-func jwaToV3(alg jwa.SignatureAlgorithm) jwav3.SignatureAlgorithm {
-	v3alg, _ := jwav3.LookupSignatureAlgorithm(alg.String())
-	return v3alg
 }
