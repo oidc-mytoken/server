@@ -29,7 +29,7 @@ require (
 	github.com/sethvargo/go-limiter v1.2.0
 	github.com/sirupsen/logrus v1.10.2
 	github.com/urfave/cli/v2 v2.27.7
-	github.com/valyala/fasthttp v1.73.0
+	github.com/valyala/fasthttp v1.74.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	golang.org/x/crypto v0.56.0
 	golang.org/x/mod v0.40.0
@@ -41,7 +41,6 @@ require (
 	filippo.io/edwards25519 v1.2.0 // indirect
 	filippo.io/mldsa v0.0.0-20260711112038-ff3f469cee29 // indirect
 	github.com/adam-hanna/arrayOperations v1.0.1 // indirect
-	github.com/andybalholm/brotli v1.2.2 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
@@ -60,7 +59,7 @@ require (
 	github.com/jwx-go/ed448/v4 v4.0.5 // indirect
 	github.com/jwx-go/es256k/v4 v4.0.4 // indirect
 	github.com/jwx-go/mldsa/v4 v4.0.5 // indirect
-	github.com/klauspost/compress v1.19.2 // indirect
+	github.com/klauspost/compress v1.20.0 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.4 // indirect
 	github.com/lestrrat-go/dsig v1.4.0 // indirect
@@ -76,6 +75,7 @@ require (
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/mattn/go-runewidth v0.0.28 // indirect
 	github.com/miekg/pkcs11 v1.1.2 // indirect
+	github.com/molecule-man/go-brrr v1.0.1 // indirect
 	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect
 	github.com/olekukonko/errors v1.3.0 // indirect
 	github.com/olekukonko/ll v0.1.8 // indirect
