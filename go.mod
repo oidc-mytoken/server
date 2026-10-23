@@ -1,6 +1,6 @@
 module github.com/oidc-mytoken/server
 
-go 1.26.0
+go 1.26.9
 
 require (
 	github.com/Songmu/prompter v0.5.1
@@ -23,7 +23,7 @@ require (
 	github.com/oidc-mytoken/api v0.12.2-0.20260825103206-7acb63d5ac11
 	github.com/oidc-mytoken/utils v0.1.3
 	github.com/olekukonko/tablewriter v1.1.4
-	github.com/pires/go-proxyproto v0.15.0
+	github.com/pires/go-proxyproto v0.16.0
 	github.com/pkg/errors v0.9.1
 	github.com/redis/go-redis/v9 v9.22.0
 	github.com/sethvargo/go-limiter v1.2.0
@@ -31,8 +31,8 @@ require (
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/valyala/fasthttp v1.73.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
-	golang.org/x/crypto v0.56.0
-	golang.org/x/mod v0.40.0
+	golang.org/x/crypto v0.58.0
+	golang.org/x/mod v0.41.0
 	golang.org/x/oauth2 v0.36.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -90,10 +90,10 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/zachmann/go-utils v0.0.0-20260709061248-d06e3e0557c4 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/net v0.58.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/term v0.45.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/term v0.47.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 )
 
 replace github.com/urfave/cli/v2 => github.com/zachmann/cli/v2 v2.3.1-0.20211220102037-d619fd40a704
