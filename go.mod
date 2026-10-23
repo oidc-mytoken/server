@@ -3,7 +3,7 @@ module github.com/oidc-mytoken/server
 go 1.26.0
 
 require (
-	github.com/Songmu/prompter v0.5.1
+	github.com/Songmu/prompter v1.0.0
 	github.com/TwiN/gocache/v2 v2.4.0
 	github.com/arran4/golang-ical v0.3.6
 	github.com/coreos/go-oidc/v3 v3.21.0
@@ -91,8 +91,8 @@ require (
 	github.com/zachmann/go-utils v0.0.0-20260709061248-d06e3e0557c4 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/term v0.45.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/term v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 )
 
