@@ -3,7 +3,7 @@ module github.com/oidc-mytoken/server
 go 1.26.10
 
 require (
-	github.com/Songmu/prompter v0.5.1
+	github.com/Songmu/prompter v1.0.0
 	github.com/TwiN/gocache/v2 v2.4.0
 	github.com/arran4/golang-ical v0.3.8
 	github.com/coreos/go-oidc/v3 v3.21.0
