@@ -1,6 +1,6 @@
 module github.com/oidc-mytoken/server
 
-go 1.26.0
+go 1.26.10
 
 require (
 	github.com/Songmu/prompter v0.5.1
@@ -19,7 +19,7 @@ require (
 	github.com/jinzhu/copier v0.4.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
-	github.com/lestrrat-go/jwx/v4 v4.4.0
+	github.com/lestrrat-go/jwx/v4 v4.6.0
 	github.com/oidc-mytoken/api v0.12.2-0.20260825103206-7acb63d5ac11
 	github.com/oidc-mytoken/utils v0.1.3
 	github.com/olekukonko/tablewriter v1.1.4
@@ -86,7 +86,6 @@ require (
 	github.com/thales-e-security/pool v0.0.2 // indirect
 	github.com/tinylib/msgp v1.2.5 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fastjson v1.6.10 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/zachmann/go-utils v0.0.0-20260709061248-d06e3e0557c4 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
