@@ -1,6 +1,6 @@
 module github.com/oidc-mytoken/server
 
-go 1.26.10
+go 1.27.0
 
 require (
 	github.com/Songmu/prompter v1.0.0
@@ -10,7 +10,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/fatih/structs v1.1.0
 	github.com/gliderlabs/ssh v0.3.8
-	github.com/go-oidfed/lib v0.11.2
+	github.com/go-oidfed/lib v0.14.0
 	github.com/go-resty/resty/v2 v2.17.2
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/gofiber/fiber/v2 v2.52.16
@@ -39,7 +39,7 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.2.0 // indirect
-	filippo.io/mldsa v0.0.0-20260711112038-ff3f469cee29 // indirect
+	filippo.io/mldsa v1.0.0 // indirect
 	github.com/adam-hanna/arrayOperations v1.0.1 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -55,10 +55,10 @@ require (
 	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jarcoal/httpmock v1.4.2 // indirect
-	github.com/jwx-go/compsig/v4 v4.0.5 // indirect
+	github.com/jwx-go/compsig/v4 v4.0.6 // indirect
 	github.com/jwx-go/ed448/v4 v4.0.5 // indirect
 	github.com/jwx-go/es256k/v4 v4.0.4 // indirect
-	github.com/jwx-go/mldsa/v4 v4.0.5 // indirect
+	github.com/jwx-go/mldsa/v4 v4.0.6 // indirect
 	github.com/klauspost/compress v1.20.3 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.4 // indirect
@@ -71,7 +71,7 @@ require (
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/lestrrat-go/option/v3 v3.0.0-alpha1 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
-	github.com/mattn/go-colorable v0.1.15 // indirect
+	github.com/mattn/go-colorable v0.1.16 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/mattn/go-runewidth v0.0.28 // indirect
 	github.com/miekg/pkcs11 v1.1.2 // indirect
